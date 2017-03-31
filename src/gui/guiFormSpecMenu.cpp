@@ -359,14 +359,22 @@ void GUIFormSpecMenu::parseList(parserData* data, const std::string &element)
 
 	std::vector<std::string> parts = split(element,';');
 
-	if (((parts.size() == 4) || (parts.size() == 5)) ||
-		((parts.size() > 5) && (m_formspec_version > FORMSPEC_API_VERSION)))
+	if (((parts.size() >= 4) && (parts.size() <= 7)) ||
+		((parts.size() > 7) && (m_formspec_version > FORMSPEC_API_VERSION)))
 	{
 		std::string location = parts[0];
 		std::string listname = parts[1];
 		std::vector<std::string> v_pos  = split(parts[2],',');
 		std::vector<std::string> v_geom = split(parts[3],',');
-		std::string startindex;
+		bool has_spacing_factors = parts.size() > 5;
+		std::vector<std::string> v_spacing_factors =
+			has_spacing_factors ?
+			split(parts[5], ',') : std::vector<std::string>();
+		bool has_slot_size_factor = parts.size() > 6;
+		std::string slot_size_factor = has_slot_size_factor ? parts[6] : "";
+		const s32 border = 1;
+
+		std::string startindex = "";
 		if (parts.size() == 5)
 			startindex = parts[4];
 
@@ -388,7 +396,23 @@ void GUIFormSpecMenu::parseList(parserData* data, const std::string &element)
 		if (!startindex.empty())
 			start_i = stoi(startindex);
 
-		if (geom.X < 0 || geom.Y < 0 || start_i < 0) {
+		v2s32 _imgsize = imgsize;
+		if (has_slot_size_factor && !slot_size_factor.empty()) {
+			f32 size_factor = stof(slot_size_factor);
+			_imgsize.X = (s32)(imgsize.X * size_factor);
+			_imgsize.Y = (s32)(imgsize.Y * size_factor);
+		}
+
+		v2s32 _spacing = v2s32(spacing.X, spacing.Y);
+		if (has_spacing_factors && v_spacing_factors.size() == 2) {
+			_spacing.X = _imgsize.X + 2 * border
+				+ (s32)(stof(v_spacing_factors[0]) * (spacing.X - imgsize.X - 2 * border));
+			_spacing.Y = _imgsize.Y + 2 * border
+				+ (s32)(stof(v_spacing_factors[1]) * (spacing.Y - imgsize.Y - 2 * border));
+		}
+
+		if (geom.X < 0 || geom.Y < 0 || start_i < 0
+			|| (has_spacing_factors && v_spacing_factors.size() != 2)) {
 			errorstream<< "Invalid list element: '" << element << "'"  << std::endl;
 			return;
 		}
@@ -450,8 +474,8 @@ void GUIFormSpecMenu::parseList(parserData* data, const std::string &element)
 		gui::IGUIElement *e = new gui::IGUIElement(EGUIET_ELEMENT, Environment,
 				this, spec.fid, rect);
 
-		m_inventorylists.emplace_back(loc, listname, e, geom, start_i,
-				data->real_coordinates);
+		m_inventorylists.emplace_back(loc, listname, e, geom,
+				start_i, _imgsize, _spacing, border, data->real_coordinates);
 		m_fields.push_back(spec);
 		return;
 	}
@@ -773,13 +797,15 @@ void GUIFormSpecMenu::parseButton(parserData* data, const std::string &element,
 {
 	std::vector<std::string> parts = split(element,';');
 
-	if ((parts.size() == 4) ||
+	if ((parts.size() == 4) || (parts.size() == 5) ||
 		((parts.size() > 4) && (m_formspec_version > FORMSPEC_API_VERSION)))
 	{
 		std::vector<std::string> v_pos = split(parts[0],',');
 		std::vector<std::string> v_geom = split(parts[1],',');
 		std::string name = parts[2];
 		std::string label = parts[3];
+		video::SColor color;
+		bool has_color = parts.size() > 4 && parseColorString(parts[4], color, false);
 
 		MY_CHECKPOS("button",0);
 		MY_CHECKGEOM("button",1);
@@ -863,6 +889,18 @@ void GUIFormSpecMenu::parseButton(parserData* data, const std::string &element,
 					Environment->getVideoDriver(), pressed_texture, geom.X, geom.Y));
 			e->setScaleImage(true);
 		}
+
+		if (has_color) {
+//			set3DSkinColors(e, color);
+//			e->setColor(EGDC_WINDOW_SYMBOL, color, 1.75f);
+			e->setColor(color);
+		} else {
+			video::SColor c = video::SColor(255, 192, 211, 225);
+//			set3DSkinColors(e, c);
+//			e->setColor(EGDC_WINDOW_SYMBOL, c, 1.75f);
+			e->setColor(c);
+		}
+
 
 		if (spec.fname == data->focused_fieldname) {
 			Environment->setFocus(e);
@@ -2004,7 +2042,7 @@ void GUIFormSpecMenu::parseImageTab(parserData* data, const std::string &element
 			tab_height, tab_width, tab_padding, tab_spacing,
 			width, height, border_width, border_height, border_offset,
 			button_width, button_height, button_spacing, button_offset, button_distance,
-			content_texture, 
+			content_texture,
 			top_tab_texture, top_active_tab_texture,
 			bottom_tab_texture, bottom_active_tab_texture,
 			left_tab_texture, left_active_tab_texture,
@@ -2028,7 +2066,7 @@ void GUIFormSpecMenu::parseImageTab(parserData* data, const std::string &element
 		std::string previous_side_name = "top";
 
 		for (std::string &button : buttons) {
-			std::string side_name;            
+			std::string side_name;
 			parseTextString(button, button, side_name, ':');
 
 			if (side_name.length() > 0)
@@ -2044,7 +2082,7 @@ void GUIFormSpecMenu::parseImageTab(parserData* data, const std::string &element
 					button.find(".png", 0) != std::string::npos ||
 					button.find(".tga", 0) != std::string::npos) {
 
-				std::string scaling_value;	
+				std::string scaling_value;
 				parseTextString(button, button, scaling_value, '@');
 
 				if (scaling_value.length() > 0) {
@@ -2211,14 +2249,16 @@ void GUIFormSpecMenu::parseItemImageButton(parserData* data, const std::string &
 
 	std::vector<std::string> parts = split(element,';');
 
-	if ((parts.size() == 5) ||
-		((parts.size() > 5) && (m_formspec_version > FORMSPEC_API_VERSION)))
+	if ((parts.size() == 5) || (parts.size() == 6) ||
+		((parts.size() > 6) && (m_formspec_version > FORMSPEC_API_VERSION)))
 	{
 		std::vector<std::string> v_pos = split(parts[0],',');
 		std::vector<std::string> v_geom = split(parts[1],',');
 		std::string item_name = parts[2];
 		std::string name = parts[3];
 		std::string label = parts[4];
+		video::SColor color;
+		bool has_color = parts.size() > 5 && parseColorString(parts[5], color, false);
 
 		label = unescape_string(label);
 		item_name = unescape_string(item_name);
@@ -2261,11 +2301,28 @@ void GUIFormSpecMenu::parseItemImageButton(parserData* data, const std::string &
 			2
 		);
 
-		gui::IGUIButton *e_btn = GUIButton::addButton(Environment, rect, this, spec_btn.fid, L"");
+		GUIButton *e_btn = GUIButton::addButton(Environment, rect, this, spec_btn.fid, L"");
 
 		auto style = getStyleForElement("item_image_button", spec_btn.fname, "image_button");
 		e_btn->setNotClipped(style.getBool(StyleSpec::NOCLIP, false));
 		e_btn->setDrawBorder(style.getBool(StyleSpec::BORDER, true));
+
+//			e->setColor(style.getColor(StyleSpec::BGCOLOR));
+//			e->setHoveredColor(style.getColor(StyleSpec::BGCOLOR_HOVERED));
+//			e->setPressedColor(style.getColor(StyleSpec::BGCOLOR_PRESSED));
+//			e->setOverrideColor(style.getColor(StyleSpec::TEXTCOLOR));
+
+
+		if (has_color) {
+//			set3DSkinColors(e_btn, color);
+//			e_btn->setColor(EGDC_WINDOW_SYMBOL, color, 1.75f);
+			e_btn->setColor(color);
+		} else {
+			video::SColor c = video::SColor(255, 192, 211, 225);
+//			set3DSkinColors(e_btn, c);
+//			e_btn->setColor(EGDC_WINDOW_SYMBOL, c, 1.75f);
+			e_btn->setColor(c);
+		}
 
 		if (spec_btn.fname == data->focused_fieldname) {
 			Environment->setFocus(e_btn);
@@ -3331,11 +3388,13 @@ GUIFormSpecMenu::ItemSpec GUIFormSpecMenu::getItemAtPos(v2s32 p) const
 			core::rect<s32> rect = imgrect + base_pos + p0;
 			rect.clipAgainst(clipping_rect);
 			if (rect.getArea() > 0 && rect.isPointInside(p))
-				return ItemSpec(s.inventoryloc, s.listname, item_i);
+			//TODO:PYR CHECK THAT !
+				return ItemSpec(s.inventoryloc, s.listname, item_i, s.imgsize,
+					s.spacing, s.border);
 		}
 	}
-
-	return ItemSpec(InventoryLocation(), "", -1);
+			//TODO:PYR CHECK THAT !
+	return ItemSpec(InventoryLocation(), "", -1, imgsize, v2s32(spacing.X, spacing.Y), 1);
 }
 
 void GUIFormSpecMenu::drawList(const ListDrawSpec &s, int layer,
@@ -3408,7 +3467,7 @@ void GUIFormSpecMenu::drawList(const ListDrawSpec &s, int layer,
 			s32 y1 = rect.UpperLeftCorner.Y;
 			s32 x2 = rect.LowerRightCorner.X;
 			s32 y2 = rect.LowerRightCorner.Y;
-			s32 border = 1;
+			s32 border = s.border;
 			driver->draw2DRectangle(m_slotbordercolor,
 				core::rect<s32>(v2s32(x1 - border, y1 - border),
 								v2s32(x2 + border, y1)), &clipping_rect);
@@ -3463,7 +3522,7 @@ void GUIFormSpecMenu::drawSelectedItem()
 	ItemStack stack = list->getItem(m_selected_item->i);
 	stack.count = m_selected_amount;
 
-	core::rect<s32> imgrect(0,0,imgsize.X,imgsize.Y);
+	core::rect<s32> imgrect(0,0,m_selected_item->imgsize.X, m_selected_item->imgsize.Y);
 	core::rect<s32> rect = imgrect + (m_pointer - imgrect.getCenter());
 	rect.constrainTo(driver->getViewPort());
 	drawItemStack(driver, m_font, stack, rect, NULL, m_client, IT_ROT_DRAGGED);
@@ -3675,6 +3734,9 @@ void GUIFormSpecMenu::updateSelectedItem()
 			m_selected_item->inventoryloc = s.inventoryloc;
 			m_selected_item->listname = "craftresult";
 			m_selected_item->i = 0;
+			m_selected_item->imgsize = s.imgsize;
+			m_selected_item->spacing = s.spacing;
+			m_selected_item->border = s.border;
 			m_selected_amount = item.count;
 			m_selected_dragging = false;
 			break;

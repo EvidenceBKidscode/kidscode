@@ -36,10 +36,14 @@
 #include "IGUIEnvironment.h"
 #include "IGUIFont.h"
 #include "IVideoDriver.h"
+#include "util/string.h"
+//#include "rect.h"
 //#include "irrlicht/os.cpp"
 #include "porting.h"
 //#include "Keycodes.h"
+#include "settings.h" // for settings
 #include "log.h"
+#include "client/renderingengine.h"
 
 /*
 	todo:
@@ -59,9 +63,15 @@ namespace gui
 intlGUIEditBox::intlGUIEditBox(const wchar_t* text, bool border,
 		IGUIEnvironment* environment, IGUIElement* parent, s32 id,
 		const core::rect<s32>& rectangle, bool writable, bool has_vscrollbar)
-	: IGUIEditBox(environment, parent, id, rectangle),
-	Border(border), FrameRect(rectangle),
-	m_scrollbar_width(0), m_vscrollbar(NULL), m_writable(writable)
+	: IGUIEditBox(environment, parent, id, rectangle), MouseMarking(false),
+	Border(border), OverrideColorEnabled(false), MarkBegin(0), MarkEnd(0),
+	OverrideColor(video::SColor(101,255,255,255)), OverrideFont(0), LastBreakFont(0),
+	Operator(0), BlinkStartTime(0), CursorPos(0), HScrollPos(0), VScrollPos(0), Max(0),
+	WordWrap(false), MultiLine(false), AutoScroll(true), PasswordBox(false),
+	PasswordChar(L'*'), HAlign(EGUIA_UPPERLEFT), VAlign(EGUIA_CENTER),
+	CurrentTextRect(0,0,1,1), FrameRect(rectangle),
+	m_scrollbar_width(0), m_vscrollbar(NULL), m_writable(writable),
+	m_bg_color(video::SColor(0,0,0,0)), m_bg_color_used(false)
 {
 	#ifdef _DEBUG
 	setDebugName("intlintlGUIEditBox");
@@ -92,6 +102,11 @@ intlGUIEditBox::intlGUIEditBox(const wchar_t* text, bool border,
 
 	if (skin && has_vscrollbar) {
 		m_scrollbar_width = skin->getSize(gui::EGDS_SCROLLBAR_SIZE);
+
+		// apply gui scaling
+		m_scrollbar_width = (m_scrollbar_width / (2.0 / 3.0))
+			* RenderingEngine::getDisplayDensity()
+			* g_settings->getFloat("gui_scaling");
 
 		if (m_scrollbar_width > 0) {
 			createVScrollBar();
@@ -256,7 +271,7 @@ void intlGUIEditBox::setTextAlignment(EGUI_ALIGNMENT horizontal, EGUI_ALIGNMENT 
 //! called if an event happened.
 bool intlGUIEditBox::OnEvent(const SEvent& event)
 {
-	if (IsEnabled)
+	if (IsEnabled && m_writable)
 	{
 
 		switch(event.EventType)
@@ -770,19 +785,29 @@ void intlGUIEditBox::draw()
 
 	FrameRect = AbsoluteRect;
 
-	// draw the border
+	video::SColor default_bg_color;
+	video::SColor bg_color;
 
+	default_bg_color = m_writable ? skin->getColor(EGDC_WINDOW) : video::SColor(0);
+	bg_color = m_bg_color_used ? m_bg_color : default_bg_color;
+
+	// draw the border
 	if (Border)
 	{
-		if (m_writable) {
-			skin->draw3DSunkenPane(this, skin->getColor(EGDC_WINDOW),
+		if (m_writable)
+			skin->draw3DSunkenPane(this, bg_color,
 				false, true, FrameRect, &AbsoluteClippingRect);
-		}
+		else
+			skin->draw2DRectangle(this, bg_color, AbsoluteRect, &AbsoluteClippingRect);
 
 		FrameRect.UpperLeftCorner.X += skin->getSize(EGDS_TEXT_DISTANCE_X)+1;
 		FrameRect.UpperLeftCorner.Y += skin->getSize(EGDS_TEXT_DISTANCE_Y)+1;
 		FrameRect.LowerRightCorner.X -= skin->getSize(EGDS_TEXT_DISTANCE_X)+1;
 		FrameRect.LowerRightCorner.Y -= skin->getSize(EGDS_TEXT_DISTANCE_Y)+1;
+	}
+	else
+	{
+		skin->draw2DRectangle(this, bg_color, AbsoluteRect, &AbsoluteClippingRect);
 	}
 
 	updateVScrollBar();
@@ -927,8 +952,7 @@ void intlGUIEditBox::draw()
 
 		// draw cursor
 
-		if (WordWrap || MultiLine)
-		{
+		if (WordWrap || MultiLine) {
 			cursorLine = getLineFromPos(CursorPos);
 			txtLine = &BrokenText[cursorLine];
 			startPos = BrokenTextPositions[cursorLine];
@@ -937,7 +961,7 @@ void intlGUIEditBox::draw()
 		charcursorpos = font->getDimension(s.c_str()).Width +
 			font->getKerningWidth(L"_", CursorPos-startPos > 0 ? &((*txtLine)[CursorPos-startPos-1]) : 0);
 
-		if (m_writable)	{
+		if (m_writable) {
 			if (focus && (porting::getTimeMs() - BlinkStartTime) % 700 < 350) {
 				setTextRect(cursorLine);
 				CurrentTextRect.UpperLeftCorner.X += charcursorpos;
@@ -1198,8 +1222,10 @@ void intlGUIEditBox::breakText()
 			if (!word.empty()) {
 				// here comes the next whitespace, look if
 				// we can break the last word to the next line.
+				std::basic_string<wchar_t> enriched_word = word.c_str();
+				std::basic_string<wchar_t> unenriched_word = unescape_enriched(enriched_word);
 				s32 whitelgth = font->getDimension(whitespace.c_str()).Width;
-				s32 worldlgth = font->getDimension(word.c_str()).Width;
+				s32 worldlgth = font->getDimension(unenriched_word.c_str()).Width;
 
 				if (WordWrap && length + worldlgth + whitelgth > elWidth)
 				{
@@ -1427,14 +1453,18 @@ void intlGUIEditBox::calculateScrollPos()
 		return;
 
 	// vertical scroll position
-	if (FrameRect.LowerRightCorner.Y < CurrentTextRect.LowerRightCorner.Y)
-		VScrollPos += CurrentTextRect.LowerRightCorner.Y - FrameRect.LowerRightCorner.Y; // scrolling downwards
-	else if (FrameRect.UpperLeftCorner.Y > CurrentTextRect.UpperLeftCorner.Y)
-		VScrollPos += CurrentTextRect.UpperLeftCorner.Y - FrameRect.UpperLeftCorner.Y; // scrolling upwards
+	if (FrameRect.LowerRightCorner.Y < CurrentTextRect.LowerRightCorner.Y + VScrollPos)
+		VScrollPos = CurrentTextRect.LowerRightCorner.Y - FrameRect.LowerRightCorner.Y + VScrollPos - 1;
+
+	else if (FrameRect.UpperLeftCorner.Y > CurrentTextRect.UpperLeftCorner.Y + VScrollPos)
+		VScrollPos = CurrentTextRect.UpperLeftCorner.Y - FrameRect.UpperLeftCorner.Y + VScrollPos - 1;
+	else
+		VScrollPos = 0;
 
 	// todo: adjust scrollbar
-	if (m_vscrollbar)
+	if (m_vscrollbar) {
 		m_vscrollbar->setPos(VScrollPos);
+	}
 }
 
 //! set text markers
@@ -1488,6 +1518,8 @@ void intlGUIEditBox::createVScrollBar()
 	m_vscrollbar->setVisible(false);
 	m_vscrollbar->setSmallStep(3 * fontHeight);
 	m_vscrollbar->setLargeStep(10 * fontHeight);
+	m_vscrollbar->setMin(0);
+	m_vscrollbar->setMax(1);
 }
 
 //! Update the vertical scrollbar (visibilty & scroll position)
@@ -1543,6 +1575,13 @@ void intlGUIEditBox::updateVScrollBar()
 void intlGUIEditBox::setWritable(bool can_write_text)
 {
 	m_writable = can_write_text;
+}
+
+//! Change the background color
+void intlGUIEditBox::setBackgroundColor(const video::SColor &bg_color)
+{
+	m_bg_color = bg_color;
+	m_bg_color_used = true;
 }
 
 //! Writes attributes of the element.

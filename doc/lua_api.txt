@@ -2058,8 +2058,18 @@ Elements
   slots is one-fourth the size of an inventory slot.
 * **Note**: Lists are drawn after every other element. This might change at any time.
 
-### `listring[<inventory location>;<list name>]`
+### `list[<inventory location>;<list name>;<X>,<Y>;<W>,<H>;<starting item index>;<spacing factor width>,<spacing factor height>;<img factor size>]`
+* Show an inventory list
+* `spacing factor width` and `spacing factor height` are spacing factor sizes (relative to the slot size) of a slot
+  example 1 : (0.0,0.0) for spacing means that there are no space between slots
+  example 2 : (1.0,1.0) for spacing means that default space between slots is used
+  example 3 : (2.0,2.0) for spacing means that default space between slots x2 is used
+* `img factor size` is the size factor (relative to the screen size) of a slot : a slot is always a square
+  the default value for the `img factor size` is 1.0 (42 pixels with border included for a 800x600 screen size)
+  example 1 : 1.0 for `img factor size` means that you use the default size for a slot
+  example 2 : 2.0 for `img factor size` means that you use the default size x2 for a slot
 
+### `listring[<inventory location>;<list name>]`
 * Allows to create a ring of inventory lists
 * Shift-clicking on items in one element of the ring
   will send them to the next inventory list inside the ring
@@ -2155,8 +2165,11 @@ Elements
 * `label`, if not blank, will be text printed on the top left above the field
 * See `field_close_on_enter` to stop enter closing the formspec
 
-### `field[<X>,<Y>;<W>,<H>;<name>;<label>;<default>]`
+### `pwdfield[<X>,<Y>;<W>,<H>;<name>;<label>;<bg color>]`
+* Same as field above, but with a background color
+* `bg color` is the color of the background of the pwdfield
 
+### `field[<X>,<Y>;<W>,<H>;<name>;<label>;<default>]`
 * Textual field; will be sent to server when a button is clicked
 * When enter is pressed in field, `fields.key_enter_field` will be sent with
   the name of this field.
@@ -2170,8 +2183,11 @@ Elements
     * **Note**: no extra text or more than a single variable is supported ATM.
 * See `field_close_on_enter` to stop enter closing the formspec
 
-### `field[<name>;<label>;<default>]`
+### `field[<X>,<Y>;<W>,<H>;<name>;<label>;<bg_color>]`
+* Same as field above, but a background color
+* `bg_color` is the color of the background of the field
 
+### `field[<name>;<label>;<default>]`
 * As above, but without position/size units
 * When enter is pressed in field, `fields.key_enter_field` will be sent with
   the name of this field.
@@ -2180,19 +2196,34 @@ Elements
 * A "Proceed" button will be added automatically
 * See `field_close_on_enter` to stop enter closing the formspec
 
-### `field_close_on_enter[<name>;<close_on_enter>]`
-
+### `field[<name>;<label>;<default>;<bg color>]`
+* Same as fields above, but with a background color
+* `bg color` is the color of the background of the field
 * <name> is the name of the field
 * if <close_on_enter> is false, pressing enter in the field will submit the
   form but not close it.
 * defaults to true when not specified (ie: no tag for a field)
 
-### `textarea[<X>,<Y>;<W>,<H>;<name>;<label>;<default>]`
+### `field_close_on_enter[<name>;<close_on_enter>]`
 
+### `textarea[<X>,<Y>;<W>,<H>;<name>;<label>;<default>]`
 * Same as fields above, but with multi-line input
 * If the text overflows, a vertical scrollbar is added.
 * If the name is empty, the textarea is read-only and
   the background is not shown, which corresponds to a multi-line label.
+
+### `textarea[<X>,<Y>;<W>,<H>;<name>;<label>;<default>;<bg color>;]`
+* Same as fields above, but with a background color
+* `bg color` is the color of the background of the textarea
+
+### `textarea[<X>,<Y>;<W>,<H>;<name>;<label>;<default>;<bg color>;<scrollbar>]`
+* Same as fields above, but with an optional vertical scrollbar
+* if <scrollbar> is true an auto vertical scrollbar is added
+
+### `label[<X>,<Y>;<label>]`
+* `x` and `y` work as per field
+* `label` is the text on the label
+* Position and size units are inventory slots
 
 ### `label[<X>,<Y>;<label>]`
 
@@ -2346,8 +2377,12 @@ Elements
 * Items to be shown in dropdown
 * Index of currently selected dropdown item
 
-### `checkbox[<X>,<Y>;<name>;<label>;<selected>]`
+#### `dropdown[<X>,<Y>;<W>;<name>;<item 1>,<item 2>, ...,<item n>;<selected idx>;<bg color>;<selected item color>]`
+* Same as above, but with new colors customization
+* `bg color` is the backgroud color of the dropdown
+* `selected item color` is the selected item color inside the dropdown
 
+#### `checkbox[<X>,<Y>;<name>;<label>;<selected>]`
 * Show a checkbox
 * `name` fieldname data is transferred to Lua
 * `label` to be shown left of checkbox

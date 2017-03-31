@@ -84,11 +84,17 @@ class GUIFormSpecMenu : public GUIModalMenu
 
 		ItemSpec(const InventoryLocation &a_inventoryloc,
 				const std::string &a_listname,
-				s32 a_i) :
+				s32 a_i,
+				const v2s32 &a_imgsize,
+				const v2s32 &a_spacing,
+				s32 a_border) :
 			inventoryloc(a_inventoryloc),
 			listname(a_listname),
 			i(a_i)
 		{
+			imgsize = a_imgsize;
+			spacing = a_spacing;
+			border = a_border;
 		}
 
 		bool isValid() const { return i != -1; }
@@ -96,6 +102,9 @@ class GUIFormSpecMenu : public GUIModalMenu
 		InventoryLocation inventoryloc;
 		std::string listname;
 		s32 i = -1;
+		v2s32 imgsize;
+		v2s32 spacing;
+		s32 border;
 	};
 
 	struct ListDrawSpec
@@ -104,13 +113,16 @@ class GUIFormSpecMenu : public GUIModalMenu
 
 		ListDrawSpec(const InventoryLocation &a_inventoryloc,
 				const std::string &a_listname,
-				IGUIElement *elem, v2s32 a_geom, s32 a_start_item_i,
-				bool a_real_coordinates):
+				IGUIElement *elem /* v2s32 a_pos */ , v2s32 a_geom, s32 a_start_item_i,
+				v2s32 a_imgsize, v2s32 a_spacing, s32 a_border, bool a_real_coordinates):
 			inventoryloc(a_inventoryloc),
 			listname(a_listname),
 			e(elem),
 			geom(a_geom),
 			start_item_i(a_start_item_i),
+			imgsize(a_imgsize),
+			spacing(a_spacing),
+			border(a_border),
 			real_coordinates(a_real_coordinates)
 		{
 		}
@@ -120,6 +132,9 @@ class GUIFormSpecMenu : public GUIModalMenu
 		IGUIElement *e;
 		v2s32 geom;
 		s32 start_item_i;
+		v2s32 imgsize;
+		v2s32 spacing;
+		s32 border;
 		bool real_coordinates;
 	};
 
@@ -379,7 +394,7 @@ protected:
 	video::SColor m_default_tooltip_bgcolor;
 	video::SColor m_default_tooltip_color;
 
-	
+
 private:
 	IFormSource        *m_form_src;
 	TextDest           *m_text_dst;
