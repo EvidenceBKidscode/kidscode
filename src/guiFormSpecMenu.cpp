@@ -143,6 +143,11 @@ GUIFormSpecMenu::~GUIFormSpecMenu()
 	}
 }
 
+inline u32 clamp_u8(s32 value)
+{
+	return (u32) MYMIN(MYMAX(value, 0), 255);
+}
+
 void GUIFormSpecMenu::removeChildren()
 {
 	const core::list<gui::IGUIElement*> &children = getChildren();
@@ -2479,10 +2484,19 @@ void GUIFormSpecMenu::drawMenu()
 
 	v2u32 screenSize = driver->getScreenSize();
 	core::rect<s32> allbg(0, 0, screenSize.X ,	screenSize.Y);
-	if (m_bgfullscreen)
+
+	if (m_bgfullscreen) {
+		v3f formspec_bgcolor = g_settings->getV3F("formspec_fullscreen_bg_color");
+		m_bgcolor = video::SColor(
+			(u8) clamp_u8(g_settings->getS32("formspec_fullscreen_bg_opacity")),
+			clamp_u8(myround(formspec_bgcolor.X)),
+			clamp_u8(myround(formspec_bgcolor.Y)),
+			clamp_u8(myround(formspec_bgcolor.Z))
+		);
 		driver->draw2DRectangle(m_bgcolor, allbg, &allbg);
-	else
+	} else {
 		driver->draw2DRectangle(m_bgcolor, AbsoluteRect, &AbsoluteClippingRect);
+	}
 
 	m_tooltip_element->setVisible(false);
 
