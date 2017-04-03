@@ -1778,6 +1778,11 @@ examples.
 * Items to be shown in dropdown
 * Index of currently selected dropdown item
 
+#### `dropdown[<X>,<Y>;<W>;<name>;<item 1>,<item 2>, ...,<item n>;<selected idx>;<bg color>;<selected item color>]`
+* Same as above, but with new colors customization
+* `bg color` is the backgroud color of the dropdown
+* `selected item color` is the selected item color inside the dropdown
+
 #### `checkbox[<X>,<Y>;<name>;<label>;<selected>]`
 * Show a checkbox
 * `x` and `y`: position of checkbox
