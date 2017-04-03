@@ -191,11 +191,11 @@ private:
 	bool m_autoscroll;
 	bool m_highlight_when_not_focused;
 
-	bool m_selected_item_color_used;
-	video::SColor m_selected_item_color;
-
 	bool m_bg_color_used;
 	video::SColor m_bg_color;
+
+	bool m_selected_item_color_used;
+	video::SColor m_selected_item_color;
 };
 
 #endif
