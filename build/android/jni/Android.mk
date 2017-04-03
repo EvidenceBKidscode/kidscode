@@ -149,10 +149,12 @@ LOCAL_SRC_FILES := \
 		jni/src/genericobject.cpp                 \
 		jni/src/gettext.cpp                       \
 		jni/src/guiChatConsole.cpp                \
+		jni/src/guiComboBox.cpp                   \
 		jni/src/guiEngine.cpp                     \
 		jni/src/guiFileSelectMenu.cpp             \
 		jni/src/guiFormSpecMenu.cpp               \
 		jni/src/guiKeyChangeMenu.cpp              \
+		jni/src/guiListBox.cpp                    \
 		jni/src/guiPasswordChange.cpp             \
 		jni/src/guiTable.cpp                      \
 		jni/src/guiscalingfilter.cpp              \
