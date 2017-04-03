@@ -221,51 +221,53 @@ bool GUIComboBox::OnEvent(const SEvent& event)
 				openCloseMenu();
 				return true;
 			}
-			else if (event.KeyInput.Key == KEY_RETURN || event.KeyInput.Key == KEY_SPACE) {
-				if (!event.KeyInput.PressedDown) {
-					openCloseMenu();
-				}
+			else
+				if (event.KeyInput.Key == KEY_RETURN || event.KeyInput.Key == KEY_SPACE) {
+					if (!event.KeyInput.PressedDown) {
+						openCloseMenu();
+					}
 
-				m_list_button->setPressed(m_listbox == 0);
+					m_list_button->setPressed(m_listbox == 0);
 
-				return true;
-			} else if (event.KeyInput.PressedDown) {
-				s32 old_selected = m_selected;
-				bool absorb = true;
-				switch (event.KeyInput.Key) {
-				case KEY_DOWN:
-					setSelected(m_selected + 1);
-					break;
-				case KEY_UP:
-					setSelected(m_selected - 1);
-					break;
-				case KEY_HOME:
-				case KEY_PRIOR:
-					setSelected(0);
-					break;
-				case KEY_END:
-				case KEY_NEXT:
-					setSelected((s32)m_items.size() - 1);
-					break;
-				default:
-					absorb = false;
-				}
-
-				if (m_selected < 0)
-					setSelected(0);
-
-				if (m_selected >= (s32)m_items.size())
-					setSelected((s32)m_items.size() - 1);
-
-				if (m_selected != old_selected) {
-					sendSelectionChangedEvent();
 					return true;
 				}
+				else if (event.KeyInput.PressedDown) {
+					s32 old_selected = m_selected;
+					bool absorb = true;
+					switch (event.KeyInput.Key) {
+					case KEY_DOWN:
+						setSelected(m_selected + 1);
+						break;
+					case KEY_UP:
+						setSelected(m_selected - 1);
+						break;
+					case KEY_HOME:
+					case KEY_PRIOR:
+						setSelected(0);
+						break;
+					case KEY_END:
+					case KEY_NEXT:
+						setSelected((s32)m_items.size() - 1);
+						break;
+					default:
+						absorb = false;
+					}
 
-				if (absorb)
-					return true;
-			}
-			break;
+					if (m_selected < 0)
+						setSelected(0);
+
+					if (m_selected >= (s32)m_items.size())
+						setSelected((s32)m_items.size() - 1);
+
+					if (m_selected != old_selected) {
+						sendSelectionChangedEvent();
+						return true;
+					}
+
+					if (absorb)
+						return true;
+				}
+				break;
 
 		case EET_GUI_EVENT:
 
