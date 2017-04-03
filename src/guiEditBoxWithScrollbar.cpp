@@ -283,6 +283,7 @@ bool GUIEditBoxWithScrollBar::processKey(const SEvent& event)
 			break;
 		case KEY_KEY_C:
 			// copy to clipboard
+
 			if (!m_passwordbox && m_operator && m_mark_begin != m_mark_end) {
 				const s32 realmbgn = m_mark_begin < m_mark_end ? m_mark_begin : m_mark_end;
 				const s32 realmend = m_mark_begin < m_mark_end ? m_mark_end : m_mark_begin;
@@ -741,6 +742,7 @@ void GUIEditBoxWithScrollBar::draw()
 						m_broken_text.clear();
 						m_broken_text.push_back(core::stringw());
 					}
+
 					if (m_broken_text[0].size() != Text.size()) {
 						m_broken_text[0] = Text;
 						for (u32 q = 0; q < Text.size(); ++q)
