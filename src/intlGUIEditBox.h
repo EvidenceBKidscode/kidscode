@@ -11,6 +11,7 @@
 #include "IGUIEditBox.h"
 #include "irrArray.h"
 #include "IOSOperator.h"
+#include "IGUIScrollBar.h"
 
 namespace irr
 {
@@ -22,7 +23,8 @@ namespace gui
 
 		//! constructor
 		intlGUIEditBox(const wchar_t* text, bool border, IGUIEnvironment* environment,
-			IGUIElement* parent, s32 id, const core::rect<s32>& rectangle);
+			IGUIElement* parent, s32 id, const core::rect<s32>& rectangle,
+			bool writable = true, bool has_vscrollbar = false);
 
 		//! destructor
 		virtual ~intlGUIEditBox();
@@ -119,6 +121,12 @@ namespace gui
 		//! Updates the absolute position, splits text if required
 		virtual void updateAbsolutePosition();
 
+		//! set true if this EditBox is writable
+		virtual void setWritable(bool can_write_text);
+
+		//! Change the background color
+		void setBackgroundColor(const video::SColor &bg_color);
+
 		//! Writes attributes of the element.
 		virtual void serializeAttributes(io::IAttributes* out, io::SAttributeReadWriteOptions* options) const;
 
@@ -145,6 +153,12 @@ namespace gui
 		bool processMouse(const SEvent& event);
 		s32 getCursorPos(s32 x, s32 y);
 
+		//! Create a vertical scrollbar
+		void createVScrollBar();
+
+		//! Update the vertical scrollbar (visibilty & scroll position)
+		void updateVScrollBar();
+
 		bool MouseMarking;
 		bool Border;
 		bool OverrideColorEnabled;
@@ -168,11 +182,17 @@ namespace gui
 		core::array< s32 > BrokenTextPositions;
 
 		core::rect<s32> CurrentTextRect, FrameRect; // temporary values
+
+		u32 m_scrollbar_width;
+		IGUIScrollBar *m_vscrollbar;
+		bool m_writable;
+
+		video::SColor m_bg_color;
+		bool m_bg_color_used;
 	};
 
 
 } // end namespace gui
 } // end namespace irr
 
-//#endif // _IRR_COMPILE_WITH_GUI_
 #endif // __C_GUI_EDIT_BOX_H_INCLUDED__
