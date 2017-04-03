@@ -283,8 +283,7 @@ bool GUIEditBoxWithScrollBar::processKey(const SEvent& event)
 			break;
 		case KEY_KEY_C:
 			// copy to clipboard
-			if (!m_passwordbox && m_operator && m_mark_begin != m_mark_end)
-			{
+			if (!m_passwordbox && m_operator && m_mark_begin != m_mark_end) {
 				const s32 realmbgn = m_mark_begin < m_mark_end ? m_mark_begin : m_mark_end;
 				const s32 realmend = m_mark_begin < m_mark_end ? m_mark_end : m_mark_begin;
 
@@ -304,8 +303,7 @@ bool GUIEditBoxWithScrollBar::processKey(const SEvent& event)
 				sc = Text.subString(realmbgn, realmend - realmbgn).c_str();
 				m_operator->copyToClipboard(sc.c_str());
 
-				if (isEnabled())
-				{
+				if (isEnabled()) {
 					// delete
 					core::stringw s;
 					s = Text.subString(0, realmbgn);
@@ -645,9 +643,7 @@ bool GUIEditBoxWithScrollBar::processKey(const SEvent& event)
 		breakText();
 		calculateScrollPos();
 		sendGuiEvent(EGET_EDITBOX_CHANGED);
-	}
-	else
-	{
+	} else {
 		calculateScrollPos();
 	}
 
@@ -745,7 +741,7 @@ void GUIEditBoxWithScrollBar::draw()
 						m_broken_text.clear();
 						m_broken_text.push_back(core::stringw());
 					}
-					if (m_broken_text[0].size() != Text.size()){
+					if (m_broken_text[0].size() != Text.size()) {
 						m_broken_text[0] = Text;
 						for (u32 q = 0; q < Text.size(); ++q)
 						{
@@ -1433,7 +1429,7 @@ void GUIEditBoxWithScrollBar::updateVScrollBar()
 	}
 
 	// check if a vertical scrollbar is needed ?
-	if (getTextDimension().Height > m_frame_rect.getHeight()) {
+	if ((s32)getTextDimension().Height > m_frame_rect.getHeight()) {
 		m_frame_rect.LowerRightCorner.X -= m_scrollbar_width;
 
 		s32 scrollymax = getTextDimension().Height - m_frame_rect.getHeight();
@@ -1453,8 +1449,6 @@ void GUIEditBoxWithScrollBar::updateVScrollBar()
 			m_vscrollbar->setMax(1);
 		}
 	}
-
-
 }
 
 //! set true if this editbox is writable

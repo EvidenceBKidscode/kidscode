@@ -1635,6 +1635,10 @@ examples.
 * `label`, if not blank, will be text printed on the top left above the field
 * See field_close_on_enter to stop enter closing the formspec
 
+#### `pwdfield[<X>,<Y>;<W>,<H>;<name>;<label>;<bg color>]`
+* Same as field above, but with a background color
+* `bg color` is the color of the background of the pwdfield
+
 #### `field[<X>,<Y>;<W>,<H>;<name>;<label>;<default>]`
 * Textual field; will be sent to server when a button is clicked
 * When enter is pressed in field, fields.key_enter_field will be sent with the name
@@ -1651,6 +1655,11 @@ examples.
     * **Note**: no extra text or more than a single variable is supported ATM.
 * See field_close_on_enter to stop enter closing the formspec
 
+#### `field[<X>,<Y>;<W>,<H>;<name>;<label>;<bg_color>]`
+* Same as field above, but a background color
+* `bg_color` is the color of the background of the field
+
+
 #### `field[<name>;<label>;<default>]`
 * As above, but without position/size units
 * When enter is pressed in field, fields.key_enter_field will be sent with the name
@@ -1660,6 +1669,10 @@ examples.
 * A "Proceed" button will be added automatically
 * See field_close_on_enter to stop enter closing the formspec
 
+#### `field[<name>;<label>;<default>;<bg color>]`
+* Same as fields above, but with a background color
+* `bg color` is the color of the background of the field
+
 #### `field_close_on_enter[<name>;<close_on_enter>]`
 * <name> is the name of the field
 * if <close_on_enter> is false, pressing enter in the field will submit the form but not close it
@@ -1667,6 +1680,14 @@ examples.
 
 #### `textarea[<X>,<Y>;<W>,<H>;<name>;<label>;<default>]`
 * Same as fields above, but with multi-line input
+
+#### `textarea[<X>,<Y>;<W>,<H>;<name>;<label>;<default>;<bg color>;]`
+* Same as fields above, but with a background color
+* `bg color` is the color of the background of the textarea
+
+#### `textarea[<X>,<Y>;<W>,<H>;<name>;<label>;<default>;<bg color>;<scrollbar>]`
+* Same as fields above, but with an optional vertical scrollbar
+* if <scrollbar> is true an auto vertical scrollbar is added
 
 #### `label[<X>,<Y>;<label>]`
 * `x` and `y` work as per field
