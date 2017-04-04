@@ -1449,10 +1449,10 @@ void intlGUIEditBox::calculateScrollPos()
 
 	// vertical scroll position
 	if (FrameRect.LowerRightCorner.Y < CurrentTextRect.LowerRightCorner.Y + VScrollPos)
-		VScrollPos = CurrentTextRect.LowerRightCorner.Y - FrameRect.LowerRightCorner.Y + VScrollPos;
+		VScrollPos = CurrentTextRect.LowerRightCorner.Y - FrameRect.LowerRightCorner.Y + VScrollPos - 1;
 
 	else if (FrameRect.UpperLeftCorner.Y > CurrentTextRect.UpperLeftCorner.Y + VScrollPos)
-		VScrollPos = CurrentTextRect.UpperLeftCorner.Y - FrameRect.UpperLeftCorner.Y + VScrollPos;
+		VScrollPos = CurrentTextRect.UpperLeftCorner.Y - FrameRect.UpperLeftCorner.Y + VScrollPos - 1;
 	else
 		VScrollPos = 0;
 
@@ -1495,6 +1495,8 @@ void intlGUIEditBox::createVScrollBar()
 	scrollbarrect.UpperLeftCorner.X += FrameRect.getWidth() - m_scrollbar_width;
 	m_vscrollbar = Environment->addScrollBar(false, scrollbarrect, getParent(), getID());
 	m_vscrollbar->setVisible(false);
+	m_vscrollbar->setMin(0);
+	m_vscrollbar->setMax(1);
 	m_vscrollbar->setSmallStep(1);
 	m_vscrollbar->setLargeStep(1);
 }
@@ -1513,21 +1515,22 @@ void intlGUIEditBox::updateVScrollBar()
 		CurrentTextRect.LowerRightCorner.Y -= deltaScrollY;
 
 		s32 scrollymax = getTextDimension().Height - FrameRect.getHeight();
-		if (scrollymax != m_vscrollbar->getMax()) {
+		if (scrollymax - 1 != m_vscrollbar->getMax()) {
 			// manage a newline or a deleted line
-			m_vscrollbar->setMax(scrollymax);
+			m_vscrollbar->setMax(scrollymax - 1);
 			calculateScrollPos();
 		} else {
 			// manage a newline or a deleted line
-			VScrollPos = m_vscrollbar->getPos();
+			VScrollPos = m_vscrollbar->getPos() - 1;
 		}
 	}
 
 	// check if a vertical scrollbar is needed ?
 	if ((s32)getTextDimension().Height > FrameRect.getHeight()) {
 		s32 scrollymax = getTextDimension().Height - FrameRect.getHeight();
-		if (scrollymax != m_vscrollbar->getMax()) {
-			m_vscrollbar->setMax(scrollymax);
+		if (scrollymax - 1 != m_vscrollbar->getMax()) {
+			m_vscrollbar->setMin(0);
+			m_vscrollbar->setMax(scrollymax - 1);
 		}
 
 		if (!m_vscrollbar->isVisible() && MultiLine) {
@@ -1541,6 +1544,7 @@ void intlGUIEditBox::updateVScrollBar()
 
 			VScrollPos = 0;
 			m_vscrollbar->setPos(0);
+			m_vscrollbar->setMin(0);
 			m_vscrollbar->setMax(1);
 			m_vscrollbar->setVisible(false);
 		}
