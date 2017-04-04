@@ -104,8 +104,9 @@ intlGUIEditBox::intlGUIEditBox(const wchar_t* text, bool border,
 		m_scrollbar_width = skin->getSize(gui::EGDS_SCROLLBAR_SIZE);
 
 		// apply gui scaling
-		m_scrollbar_width = (m_scrollbar_width/(2.0/3.0)) * porting::getDisplayDensity() *
-		g_settings->getFloat("gui_scaling");
+		m_scrollbar_width = (m_scrollbar_width / (2.0 / 3.0))
+			* porting::getDisplayDensity()
+			* g_settings->getFloat("gui_scaling");
 
 		if (m_scrollbar_width > 0) {
 			createVScrollBar();
