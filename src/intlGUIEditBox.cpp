@@ -42,6 +42,7 @@
 //#include "irrlicht/os.cpp"
 #include "porting.h"
 //#include "Keycodes.h"
+#include "settings.h" // for settings
 #include "log.h"
 
 /*
@@ -101,6 +102,10 @@ intlGUIEditBox::intlGUIEditBox(const wchar_t* text, bool border,
 
 	if (skin && has_vscrollbar) {
 		m_scrollbar_width = skin->getSize(gui::EGDS_SCROLLBAR_SIZE);
+
+		// apply gui scaling
+		m_scrollbar_width = (m_scrollbar_width/(2.0/3.0)) * porting::getDisplayDensity() *
+		g_settings->getFloat("gui_scaling");
 
 		if (m_scrollbar_width > 0) {
 			createVScrollBar();
