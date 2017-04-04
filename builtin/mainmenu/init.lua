@@ -39,8 +39,14 @@ dofile(menupath .. DIR_DELIM .. "modmgr.lua")
 dofile(menupath .. DIR_DELIM .. "store.lua")
 dofile(menupath .. DIR_DELIM .. "textures.lua")
 
+dofile(menupath .. DIR_DELIM .. "dlg_singleplayer.lua")
+dofile(menupath .. DIR_DELIM .. "dlg_settings.lua")
+dofile(menupath .. DIR_DELIM .. "dlg_multiplayer.lua")
+dofile(menupath .. DIR_DELIM .. "dlg_credits.lua")
+
 dofile(menupath .. DIR_DELIM .. "dlg_config_world.lua")
 dofile(menupath .. DIR_DELIM .. "dlg_settings_advanced.lua")
+
 if PLATFORM ~= "Android" then
 	dofile(menupath .. DIR_DELIM .. "dlg_create_world.lua")
 	dofile(menupath .. DIR_DELIM .. "dlg_delete_mod.lua")
@@ -50,16 +56,10 @@ end
 
 local tabs = {}
 
-tabs.settings = dofile(menupath .. DIR_DELIM .. "tab_settings.lua")
-tabs.mods = dofile(menupath .. DIR_DELIM .. "tab_mods.lua")
-tabs.credits = dofile(menupath .. DIR_DELIM .. "tab_credits.lua")
 if PLATFORM == "Android" then
 	tabs.simple_main = dofile(menupath .. DIR_DELIM .. "tab_simple_main.lua")
 else
-	tabs.singleplayer = dofile(menupath .. DIR_DELIM .. "tab_singleplayer.lua")
-	tabs.multiplayer = dofile(menupath .. DIR_DELIM .. "tab_multiplayer.lua")
-	tabs.server = dofile(menupath .. DIR_DELIM .. "tab_server.lua")
-	tabs.texturepacks = dofile(menupath .. DIR_DELIM .. "tab_texturepacks.lua")
+	tabs.home = dofile(menupath .. DIR_DELIM .. "tab_home.lua")
 end
 
 --------------------------------------------------------------------------------
@@ -135,15 +135,8 @@ local function init_globals()
 		tv_main:add(tabs.settings)
 	else
 		tv_main:set_autosave_tab(true)
-		tv_main:add(tabs.singleplayer)
-		tv_main:add(tabs.multiplayer)
-		tv_main:add(tabs.server)
-		tv_main:add(tabs.settings)
-		tv_main:add(tabs.texturepacks)
+		tv_main:add(tabs.home)
 	end
-
-	tv_main:add(tabs.mods)
-	tv_main:add(tabs.credits)
 
 	tv_main:set_global_event_handler(main_event_handler)
 	tv_main:set_fixed_size(false)

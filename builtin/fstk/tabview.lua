@@ -149,8 +149,7 @@ local function tab_header(self)
 
 		toadd = toadd .. self.tablist[i].caption
 	end
-	return string.format("tabheader[%f,%f;%s;%s;%i;true;false]",
-			self.header_x, self.header_y, self.name, toadd, self.last_tab_index);
+	return ""
 end
 
 --------------------------------------------------------------------------------

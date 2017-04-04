@@ -17,6 +17,8 @@
 
 --------------------------------------------------------------------------------
 local function get_formspec(tabview, name, tabdata)
+	tabdata = tabdata or {}
+
 	-- Update the cached supported proto info,
 	-- it may have changed after a change by the settings menu.
 	common_update_cached_supp_proto()
@@ -32,6 +34,8 @@ local function get_formspec(tabview, name, tabdata)
 	end
 
 	local retval =
+		"size[12,6.3;true]" ..
+		"button[-0.15,5.8;2,1;btn_back;".. fgettext("< Back") .. "]" ..
 		-- Search
 		"field[0.15,0.35;6.05,0.27;te_search;;"..core.formspec_escape(tabdata.search_for).."]"..
 		"button[5.8,0.1;2,0.1;btn_mp_search;" .. fgettext("Search") .. "]" ..
@@ -55,16 +59,13 @@ local function get_formspec(tabview, name, tabdata)
 		-- Connect
 		"button[10.1,5.15;2,0.5;btn_mp_connect;" .. fgettext("Connect") .. "]"
 
-	if tabdata.fav_selected and fav_selected then
-		if gamedata.fav then
-			retval = retval .. "button[7.75,5.15;2.3,0.5;btn_delete_favorite;" ..
-				fgettext("Del. Favorite") .. "]"
-		end
-		if fav_selected.description then
-			retval = retval .. "textarea[8.1,2.3;4.23,2.9;;" ..
-				core.formspec_escape((gamedata.serverdescription or ""), true) .. ";]"
-		end
+	if gamedata.fav then
+		retval = retval .. "button[7.75,5.15;2.3,0.5;btn_delete_favorite;" ..
+			fgettext("Del. Favorite") .. "]"
 	end
+
+	retval = retval .. "textarea[8.1,2.3;4.23,2.9;;" ..
+		core.formspec_escape((gamedata.serverdescription or ""), true) .. ";]"
 
 	--favourites
 	retval = retval .. "tablecolumns[" ..
@@ -131,7 +132,13 @@ end
 
 --------------------------------------------------------------------------------
 local function main_button_handler(tabview, fields, name, tabdata)
+	tabdata = tabdata or {}
 	local serverlist = menudata.search_result or menudata.favorites
+
+	if fields["btn_back"] then
+		tabview:delete()
+		return true
+	end
 
 	if fields.te_name then
 		gamedata.playername = fields.te_name
@@ -339,11 +346,13 @@ local function on_change(type, old_tab, new_tab)
 	asyncOnlineFavourites()
 end
 
---------------------------------------------------------------------------------
-return {
-	name = "multiplayer",
-	caption = fgettext("Client"),
-	cbf_formspec = get_formspec,
-	cbf_button_handler = main_button_handler,
-	on_change = on_change
-}
+
+function create_multi_dlg()
+	local dlg = dialog_create("multiplayer",
+				  get_formspec,
+				  main_button_handler,
+				  nil)
+
+	return dlg
+end
+

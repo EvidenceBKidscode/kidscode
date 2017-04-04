@@ -93,6 +93,8 @@ local function get_formspec(tabview, name, tabdata)
 				)
 
 	retval = retval ..
+			"size[12,5.5;true]" ..
+			"button[0,4.8;2,1;btn_back;".. fgettext("< Back") .. "]" ..
 			"button[4,4.15;2.6,0.5;world_delete;".. fgettext("Delete") .. "]" ..
 			"button[6.5,4.15;2.8,0.5;world_create;".. fgettext("New") .. "]" ..
 			"button[9.2,4.15;2.55,0.5;world_configure;".. fgettext("Configure") .. "]" ..
@@ -104,13 +106,11 @@ local function get_formspec(tabview, name, tabdata)
 			dump(core.setting_getbool("enable_damage")) .. "]"..
 			"textlist[4,0.25;7.5,3.7;sp_worlds;" ..
 			menu_render_worldlist() ..
-			"button[0,6;4,1;btn_back;".. fgettext("< Back to Settings page") .. "]" ..
 			";" .. index .. "]"
 	return retval
 end
 
 local function main_button_handler(this, fields, name, tabdata)
-
 
 	local world_doubleclick = false
 
@@ -177,7 +177,6 @@ local function main_button_handler(this, fields, name, tabdata)
 		create_world_dlg:set_parent(this)
 		this:hide()
 		create_world_dlg:show()
-		mm_texture.update("singleplayer",current_game())
 		return true
 	end
 
@@ -194,7 +193,6 @@ local function main_button_handler(this, fields, name, tabdata)
 				delete_world_dlg:set_parent(this)
 				this:hide()
 				delete_world_dlg:show()
-				mm_texture.update("singleplayer",current_game())
 			end
 		end
 		
@@ -212,21 +210,11 @@ local function main_button_handler(this, fields, name, tabdata)
 				configdialog:set_parent(this)
 				this:hide()
 				configdialog:show()
-				mm_texture.update("singleplayer",current_game())
 			end
 		end
 		
 		return true
 	end
-end
-
-function create_solo_dlg()
-	local dlg = dialog_create("home",
-				  get_formspec(tabview, name, tabdata),
-				  main_button_handler(this, fields, name, tabdata),
-				  nil)
-
-	return dlg
 end
 
 local function on_change(type, old_tab, new_tab)
@@ -243,22 +231,21 @@ local function on_change(type, old_tab, new_tab)
 		if game then
 			menudata.worldlist:set_filtercriteria(game.id)
 			core.set_topleft_text(game.name)
-			mm_texture.update("singleplayer",game)
 		end
 		buttonbar:show()
 	else
 		menudata.worldlist:set_filtercriteria(nil)
 		buttonbar:hide()
 		core.set_topleft_text("")
-		mm_texture.update(new_tab,nil)
 	end
 end
 
---------------------------------------------------------------------------------
-return {
-	name = "singleplayer",
-	caption = fgettext("Singleplayer"),
-	cbf_formspec = get_formspec,
-	cbf_button_handler = main_button_handler,
-	on_change = on_change
-}
+function create_solo_dlg()
+	local dlg = dialog_create("singleplayer",
+				  get_formspec,
+				  main_button_handler,
+				  nil)
+
+	return dlg
+end
+
