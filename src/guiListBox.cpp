@@ -289,90 +289,87 @@ bool GUIListBox::OnEvent(const SEvent& event)
 				}
 
 				return true;
-			}
-			else
-				if (!event.KeyInput.PressedDown &&
-					(event.KeyInput.Key == KEY_RETURN
-						|| event.KeyInput.Key == KEY_SPACE)) {
-					if (Parent) {
-						SEvent e;
-						e.EventType = EET_GUI_EVENT;
-						e.GUIEvent.Caller = this;
-						e.GUIEvent.Element = 0;
-						e.GUIEvent.EventType = EGET_LISTBOX_SELECTED_AGAIN;
-						Parent->OnEvent(e);
-					}
-					return true;
+			} else if (!event.KeyInput.PressedDown &&
+				(event.KeyInput.Key == KEY_RETURN
+					|| event.KeyInput.Key == KEY_SPACE)) {
+				if (Parent) {
+					SEvent e;
+					e.EventType = EET_GUI_EVENT;
+					e.GUIEvent.Caller = this;
+					e.GUIEvent.Element = 0;
+					e.GUIEvent.EventType = EGET_LISTBOX_SELECTED_AGAIN;
+					Parent->OnEvent(e);
 				}
-				else if (event.KeyInput.PressedDown && event.KeyInput.Char) {
-					// change selection based on text as it is typed.
-					u32 now = porting::getTimeMs();
+				return true;
+			} else if (event.KeyInput.PressedDown && event.KeyInput.Char) {
+				// change selection based on text as it is typed.
+				u32 now = porting::getTimeMs();
 
-					if (now - m_last_key_time < 500) {
-						// add to key buffer if it isn't a key repeat
-						if (!(m_key_buffer.size() == 1
-							&& m_key_buffer[0] == event.KeyInput.Char)) {
-							m_key_buffer += L" ";
-							m_key_buffer[m_key_buffer.size() - 1] = event.KeyInput.Char;
-						}
+				if (now - m_last_key_time < 500) {
+					// add to key buffer if it isn't a key repeat
+					if (!(m_key_buffer.size() == 1
+						&& m_key_buffer[0] == event.KeyInput.Char)) {
+						m_key_buffer += L" ";
+						m_key_buffer[m_key_buffer.size() - 1] = event.KeyInput.Char;
 					}
-					else {
-						m_key_buffer = L" ";
-						m_key_buffer[0] = event.KeyInput.Char;
-					}
-					m_last_key_time = now;
+				}
+				else {
+					m_key_buffer = L" ";
+					m_key_buffer[0] = event.KeyInput.Char;
+				}
+				m_last_key_time = now;
 
-					// find the selected item, starting at the current selection
-					s32 start = m_selected;
-					// dont change selection if the key buffer matches the current item
-					if (m_selected > -1 && m_key_buffer.size() > 1) {
-						if (m_items[m_selected].text.size() >= m_key_buffer.size() &&
-							m_key_buffer.equals_ignore_case(
-								m_items[m_selected].text.subString(
-									0, m_key_buffer.size())))
+				// find the selected item, starting at the current selection
+				s32 start = m_selected;
+				// dont change selection if the key buffer matches the current item
+				if (m_selected > -1 && m_key_buffer.size() > 1) {
+					if (m_items[m_selected].text.size() >= m_key_buffer.size() &&
+						m_key_buffer.equals_ignore_case(
+							m_items[m_selected].text.subString(
+								0, m_key_buffer.size())))
+						return true;
+				}
+
+				s32 current;
+				for (current = start + 1; current < (s32)m_items.size(); ++current) {
+					if (m_items[current].text.size() >= m_key_buffer.size()) {
+						if (m_key_buffer.equals_ignore_case(m_items[current].text.subString(0, m_key_buffer.size()))) {
+							if (Parent && m_selected != current && !m_selecting && !m_move_over_select) {
+								SEvent e;
+								e.EventType = EET_GUI_EVENT;
+								e.GUIEvent.Caller = this;
+								e.GUIEvent.Element = 0;
+								e.GUIEvent.EventType = EGET_LISTBOX_CHANGED;
+								Parent->OnEvent(e);
+							}
+							setSelected(current);
 							return true;
-					}
-
-					s32 current;
-					for (current = start + 1; current < (s32)m_items.size(); ++current) {
-						if (m_items[current].text.size() >= m_key_buffer.size()) {
-							if (m_key_buffer.equals_ignore_case(m_items[current].text.subString(0, m_key_buffer.size()))) {
-								if (Parent && m_selected != current && !m_selecting && !m_move_over_select) {
-									SEvent e;
-									e.EventType = EET_GUI_EVENT;
-									e.GUIEvent.Caller = this;
-									e.GUIEvent.Element = 0;
-									e.GUIEvent.EventType = EGET_LISTBOX_CHANGED;
-									Parent->OnEvent(e);
-								}
-								setSelected(current);
-								return true;
-							}
 						}
 					}
-					for (current = 0; current <= start; ++current) {
-						if (m_items[current].text.size() >= m_key_buffer.size()) {
-							if (m_key_buffer.equals_ignore_case(
-								m_items[current].text.subString(0, m_key_buffer.size()))) {
-								if (Parent && m_selected != current &&
-									!m_selecting && !m_move_over_select) {
-									m_selected = current;
-									SEvent e;
-									e.EventType = EET_GUI_EVENT;
-									e.GUIEvent.Caller = this;
-									e.GUIEvent.Element = 0;
-									e.GUIEvent.EventType = EGET_LISTBOX_CHANGED;
-									Parent->OnEvent(e);
-								}
-								setSelected(current);
-								return true;
-							}
-						}
-					}
-
-					return true;
 				}
-				break;
+				for (current = 0; current <= start; ++current) {
+					if (m_items[current].text.size() >= m_key_buffer.size()) {
+						if (m_key_buffer.equals_ignore_case(
+							m_items[current].text.subString(0, m_key_buffer.size()))) {
+							if (Parent && m_selected != current &&
+								!m_selecting && !m_move_over_select) {
+								m_selected = current;
+								SEvent e;
+								e.EventType = EET_GUI_EVENT;
+								e.GUIEvent.Caller = this;
+								e.GUIEvent.Element = 0;
+								e.GUIEvent.EventType = EGET_LISTBOX_CHANGED;
+								Parent->OnEvent(e);
+							}
+							setSelected(current);
+							return true;
+						}
+					}
+				}
+
+				return true;
+			}
+			break;
 
 		case EET_GUI_EVENT:
 			switch (event.GUIEvent.EventType) {
