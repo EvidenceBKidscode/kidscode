@@ -175,6 +175,7 @@ end
 
 local function formspec(tabview, name, tabdata)
 	local tab_string =
+		"size[12,5.9;true]" ..
 		"box[0,0;3.5,4.5;#999999]" ..
 		"checkbox[0.25,0;cb_smooth_lighting;" .. fgettext("Smooth Lighting") .. ";"
 				.. dump(core.setting_getbool("smooth_lighting")) .. "]" ..
@@ -214,9 +215,8 @@ local function formspec(tabview, name, tabdata)
 	end
 
 	tab_string = tab_string ..
-		"button[0,4.85;3.75,0.5;btn_advanced_settings;"
-		.. fgettext("Advanced Settings") .. "]"
-
+		"button[0,4.8;3.75,0.5;btn_advanced_settings;" .. fgettext("Advanced Settings") .. "]" ..
+		"button[0,5.4;2,1;btn_back;".. fgettext("< Back") .. "]"
 
 	if core.setting_get("touchscreen_threshold") ~= nil then
 		tab_string = tab_string ..
@@ -262,6 +262,10 @@ end
 --------------------------------------------------------------------------------
 local function handle_settings_buttons(this, fields, tabname, tabdata)
 
+	if fields["btn_back"] then
+		this:delete()
+		return true
+	end
 	if fields["btn_advanced_settings"] ~= nil then
 		local adv_settings_dlg = create_adv_settings_dlg()
 		adv_settings_dlg:set_parent(this)
@@ -394,9 +398,11 @@ local function handle_settings_buttons(this, fields, tabname, tabdata)
 	return ddhandled
 end
 
-return {
-	name = "settings",
-	caption = fgettext("Settings"),
-	cbf_formspec = formspec,
-	cbf_button_handler = handle_settings_buttons
-}
+function create_settings_dlg()
+	local dlg = dialog_create("settings",
+				  formspec,
+				  handle_settings_buttons,
+				  nil)
+
+	return dlg
+end

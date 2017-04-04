@@ -74,26 +74,41 @@ local previous_contributors = {
 	"Zefram <zefram@fysh.org>",
 }
 
-return {
-	name = "credits",
-	caption = fgettext("Credits"),
-	cbf_formspec = function(tabview, name, tabdata)
-		local logofile = defaulttexturedir .. "logo.png"
-		local version = core.get_version()
-		return "image[0.5,1;" .. core.formspec_escape(logofile) .. "]" ..
-			"label[0.5,3.2;" .. version.project .. " " .. version.string .. "]" ..
-			"label[0.5,3.5;http://minetest.net]" ..
-			"tablecolumns[color;text]" ..
-			"tableoptions[background=#00000000;highlight=#00000000;border=false]" ..
-			"table[3.5,-0.25;8.5,6.05;list_credits;" ..
-			"#FFFF00," .. fgettext("Core Developers") .. ",," ..
-			table.concat(core_developers, ",,") .. ",,," ..
-			"#FFFF00," .. fgettext("Active Contributors") .. ",," ..
-			table.concat(active_contributors, ",,") .. ",,," ..
-			"#FFFF00," .. fgettext("Previous Core Developers") ..",," ..
-			table.concat(previous_core_developers, ",,") .. ",,," ..
-			"#FFFF00," .. fgettext("Previous Contributors") .. ",," ..
-			table.concat(previous_contributors, ",,") .. "," ..
-			";1]"
+local function get_formspec()
+	local logofile = defaulttexturedir .. "logo.png"
+	local version = core.get_version()
+	return
+		"size[12,5.5;true]" ..
+		"button[0,4.8;2,1;btn_back;".. fgettext("< Back") .. "]" ..
+		"image[0.5,1;" .. core.formspec_escape(logofile) .. "]" ..
+		"label[0.5,3.2;" .. version.project .. " " .. version.string .. "]" ..
+		"label[0.5,3.5;http://minetest.net]" ..
+		"tablecolumns[color;text]" ..
+		"tableoptions[background=#00000000;highlight=#00000000;border=false]" ..
+		"table[3.5,-0.25;8.5,6.05;list_credits;" ..
+		"#FFFF00," .. fgettext("Core Developers") .. ",," ..
+		table.concat(core_developers, ",,") .. ",,," ..
+		"#FFFF00," .. fgettext("Active Contributors") .. ",," ..
+		table.concat(active_contributors, ",,") .. ",,," ..
+		"#FFFF00," .. fgettext("Previous Core Developers") ..",," ..
+		table.concat(previous_core_developers, ",,") .. ",,," ..
+		"#FFFF00," .. fgettext("Previous Contributors") .. ",," ..
+		table.concat(previous_contributors, ",,") .. "," ..
+		";1]"
+end
+
+local function main_button_handler(this, fields)
+	if fields.btn_back then
+		this:delete()
 	end
-}
+
+	return true
+end
+
+function create_credits_dlg()
+	local dlg = dialog_create("credits",
+				  get_formspec,
+				  main_button_handler,
+				  nil)
+	return dlg
+end
