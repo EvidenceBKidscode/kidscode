@@ -1165,7 +1165,7 @@ void GUIFormSpecMenu::parseTextArea(parserData* data,
 	std::string label = parts[3];
 	std::string default_val = parts[4];
 	video::SColor bg_color;
-	bool has_bg_color = parts.size() > 5 && parseColorString(parts[5], bg_color, true);
+	bool has_bg_color = parts.size() > 5 && parseColorString(parts[5], bg_color, false);
 	bool has_vscrollbar = parts.size() > 6 ? is_yes(parts[6]) : false;
 
 
@@ -1275,13 +1275,6 @@ void GUIFormSpecMenu::parseTextArea(parserData* data,
 			rect.LowerRightCorner.Y = rect.UpperLeftCorner.Y + font_height;
 			addStaticText(Environment, spec.flabel.c_str(), rect, false, true, this, 0);
 		}
-	}
-
-	if (parts.size() >= 6 && !has_bg_color) {
-		// TODO: remove after 2016-11-03
-		warningstream << "field/textarea: use field_close_on_enter[name, enabled]" <<
-				" instead of the 6th param" << std::endl;
-		field_close_on_enter[name] = is_yes(parts[5]);
 	}
 
 	m_fields.push_back(spec);
