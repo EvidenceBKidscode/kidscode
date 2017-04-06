@@ -35,40 +35,50 @@ local function get_formspec(tabview, name, tabdata)
 
 	local retval =
 		"size[12,6.3;true]" ..
-		"button[-0.15,5.8;2,1;btn_back;".. fgettext("< Back") .. "]" ..
+		"background[-0.4,-0.6;12.8,7.8;" .. defaulttexturedir .. "mainmenu_bg_solo.png]" ..
+		"image_button[-0.15,5.9;2,0.8;" .. defaulttexturedir .. "mainmenu_button.png;btn_back;"..
+			minetest.colorize("#333333", fgettext("< Back")) .. ";;false]" ..
 		-- Search
-		"field[0.15,0.35;6.05,0.27;te_search;;"..core.formspec_escape(tabdata.search_for).."]"..
-		"button[5.8,0.1;2,0.1;btn_mp_search;" .. fgettext("Search") .. "]" ..
+		"field[0.15,0.35;6.05,0.27;te_search;;"..core.formspec_escape(tabdata.search_for)..";#ad934e99]"..
+		"image_button[5.8,-0.2;2,0.8;" .. defaulttexturedir .. "mainmenu_button.png;btn_mp_search;" ..
+			minetest.colorize("#333333", fgettext("Search")) .. ";;false]" ..
 
 		-- Address / Port
-		"label[7.75,-0.25;" .. fgettext("Address / Port") .. "]" ..
+		"label[7.75,-0.25;" ..
+			minetest.colorize("#333333", fgettext("Address / Port")) .. "]" ..
 		"field[8,0.65;3.25,0.5;te_address;;" ..
-			core.formspec_escape(core.setting_get("address")) .. "]" ..
+			core.formspec_escape(core.setting_get("address")) .. ";#ad934e99]" ..
 		"field[11.1,0.65;1.4,0.5;te_port;;" ..
-			core.formspec_escape(core.setting_get("remote_port")) .. "]" ..
+			core.formspec_escape(core.setting_get("remote_port")) .. ";#ad934e99]" ..
 
 		-- Name / Password
-		"label[7.75,0.95;" .. fgettext("Name / Password") .. "]" ..
+		"label[7.75,0.95;" ..
+			minetest.colorize("#333333", fgettext("Name / Password")) .. "]" ..
 		"field[8,1.85;2.9,0.5;te_name;;" ..
-			core.formspec_escape(core.setting_get("name")) .. "]" ..
-		"pwdfield[10.73,1.85;1.77,0.5;te_pwd;]" ..
+			core.formspec_escape(core.setting_get("name")) .. ";#ad934e99]" ..
+		"pwdfield[10.73,1.85;1.77,0.5;te_pwd;;#ad934e99]" ..
 
 		-- Description Background
-		"box[7.73,2.25;4.25,2.6;#999999]"..
+		"box[7.73,2.25;4.25,2.6;#ad934e]"..
 
 		-- Connect
-		"button[10.1,5.15;2,0.5;btn_mp_connect;" .. fgettext("Connect") .. "]"
+		"image_button[10.1,5;2,0.8;" .. defaulttexturedir .. "mainmenu_button.png;btn_mp_connect;" ..
+			minetest.colorize("#333333", fgettext("Connect")) .. ";;false]"
 
 	if gamedata.fav then
-		retval = retval .. "button[7.75,5.15;2.3,0.5;btn_delete_favorite;" ..
-			fgettext("Del. Favorite") .. "]"
+		retval = retval ..
+			"image_button[7.75,5;2.3,0.8;" .. defaulttexturedir ..
+				"mainmenu_button.png;btn_delete_favorite;" ..
+				minetest.colorize("#333333", fgettext("Del. Favorite")) .. ";;false]"
 	end
 
 	retval = retval .. "textarea[8.1,2.3;4.23,2.9;;" ..
 		core.formspec_escape((gamedata.serverdescription or ""), true) .. ";]"
 
 	--favourites
-	retval = retval .. "tablecolumns[" ..
+	retval = retval ..
+		"tableoptions[background=#00000000;color=#333333;highlight=#d5c4a1;highlight_text=#333333]" ..
+		"tablecolumns[" ..
 		image_column(fgettext("Favorite"), "favorite") .. ";" ..
 		image_column(fgettext("Ping")) .. ",padding=0.25;" ..
 		"color,span=3;" ..
