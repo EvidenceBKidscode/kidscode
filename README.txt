@@ -555,3 +555,8 @@ DroidSansFallBackFull:
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
+
+PixelOperator:
+
+  Released by Jayvee Enaguas (HarvettFox96) <harvettfox96[nospam]tuta.io>,
+  licensed under the SIL OFL 1.1 <http://scripts.sil.org/OFL>. (C) 2009-2016.
