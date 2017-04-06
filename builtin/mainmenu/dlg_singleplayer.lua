@@ -93,20 +93,28 @@ local function get_formspec(tabview, name, tabdata)
 				)
 
 	retval = retval ..
-			"size[12,5.5;true]" ..
-			"button[0,4.8;2,1;btn_back;".. fgettext("< Back") .. "]" ..
-			"button[4,4.15;2.6,0.5;world_delete;".. fgettext("Delete") .. "]" ..
-			"button[6.5,4.15;2.8,0.5;world_create;".. fgettext("New") .. "]" ..
-			"button[9.2,4.15;2.55,0.5;world_configure;".. fgettext("Configure") .. "]" ..
-			"button[8.5,5;3.25,0.5;play;".. fgettext("Play") .. "]" ..
-			"label[4,-0.25;".. fgettext("Select World:") .. "]"..
-			"checkbox[0.25,0.25;cb_creative_mode;".. fgettext("Creative Mode") .. ";" ..
-			dump(core.setting_getbool("creative_mode")) .. "]"..
-			"checkbox[0.25,0.7;cb_enable_damage;".. fgettext("Enable Damage") .. ";" ..
-			dump(core.setting_getbool("enable_damage")) .. "]"..
-			"textlist[4,0.25;7.5,3.7;sp_worlds;" ..
-			menu_render_worldlist() ..
-			";" .. index .. "]"
+		"size[11.8,5.5;true]" ..
+		"box[3.9,0.25;7.5,3.7;#ad934e]" ..
+		"background[-0.3,-0.3;12.4,6.5;" .. defaulttexturedir .. "mainmenu_bg_solo.png]" ..
+		"image_button[0,5;2,0.8;" .. defaulttexturedir .. "mainmenu_button.png;btn_back;" ..
+			minetest.colorize("#333333", fgettext("< Back")) .. ";;false]" ..
+		"image_button[4,4.1;2.6,0.8;" .. defaulttexturedir .. "mainmenu_button.png;world_delete;" ..
+			minetest.colorize("#333333", fgettext("Delete")) .. ";;false]" ..
+		"image_button[6.5,4.1;2.6,0.8;" .. defaulttexturedir .. "mainmenu_button.png;world_create;" ..
+			minetest.colorize("#333333", fgettext("New")) .. ";;false]" ..
+		"image_button[9,4.1;2.6,0.8;" .. defaulttexturedir .. "mainmenu_button.png;world_configure;" ..
+			minetest.colorize("#333333", fgettext("Configure")) .. ";;false]" ..
+		"image_button[9,5;2.6,0.8;" .. defaulttexturedir .. "mainmenu_button.png;play;" ..
+			minetest.colorize("#333333", fgettext("Play")) .. ";;false]" ..
+		"label[4,-0.25;".. minetest.colorize("#333333", fgettext("Select World:")) .. "]"..
+		"checkbox[0.25,0.25;cb_creative_mode;"..
+			minetest.colorize("#333333", fgettext("Creative Mode")) .. ";" ..
+		dump(core.setting_getbool("creative_mode")) .. "]"..
+		"checkbox[0.25,0.7;cb_enable_damage;"..
+			minetest.colorize("#333333", fgettext("Enable Damage")) .. ";" ..
+		dump(core.setting_getbool("enable_damage")) .. "]"..
+		"textlist[3.9,0.25;7.5,3.7;sp_worlds;" .. menu_render_worldlist() .. ";" .. index .. ";true]"
+
 	return retval
 end
 

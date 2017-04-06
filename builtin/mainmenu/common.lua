@@ -123,12 +123,12 @@ function render_serverlist_row(spec, is_favorite)
 
 		-- Choose a color depending on how many clients are connected
 		-- (relatively to clients_max)
-		if     grey_out		      then clients_color = '#aaaaaa'
+		if     grey_out		      then clients_color = '#928374'
 		elseif spec.clients == 0      then clients_color = ''        -- 0 players: default/white
-		elseif clients_percent <= 60  then clients_color = '#a1e587' -- 0-60%: green
-		elseif clients_percent <= 90  then clients_color = '#ffdc97' -- 60-90%: yellow
-		elseif clients_percent == 100 then clients_color = '#dd5b5b' -- full server: red (darker)
-		else				   clients_color = '#ffba97' -- 90-100%: orange
+		elseif clients_percent <= 60  then clients_color = '#79740e' -- 0-60%: green
+		elseif clients_percent <= 90  then clients_color = '#b57614' -- 60-90%: yellow
+		elseif clients_percent == 100 then clients_color = '#9d0006' -- full server: red (darker)
+		else				   clients_color = '#af3a03' -- 90-100%: orange
 		end
 
 		details = details .. clients_color .. ',' ..
@@ -159,7 +159,7 @@ function render_serverlist_row(spec, is_favorite)
 		details = details .. "0,"
 	end
 
-	return details .. (grey_out and '#aaaaaa,' or ',') .. text
+	return details .. (grey_out and '#928374,' or ',') .. text
 end
 
 --------------------------------------------------------------------------------

@@ -433,17 +433,22 @@ end
 local function create_change_setting_formspec(dialogdata)
 	local setting = settings[selected_setting]
 	local formspec = "size[10,5.2,true]" ..
-			"button[5,4.5;2,1;btn_done;" .. fgettext("Save") .. "]" ..
-			"button[3,4.5;2,1;btn_cancel;" .. fgettext("Cancel") .. "]" ..
+			"background[-0.2,-0.4;12.6,7.8;" .. defaulttexturedir .. "mainmenu_bg_solo.png]" ..
+			"image_button[5,4.5;2,0.8;" .. defaulttexturedir ..
+				"mainmenu_button.png;btn_done;" ..
+				minetest.colorize("#333333", fgettext("Save")) .. ";;false]" ..
+			"image_button[3,4.5;2,0.8;btn_cancel;" .. defaulttexturedir ..
+				"mainmenu_button.png;" ..
+				minetest.colorize("#333333", fgettext("Cancel")) .. ";;false]" ..
 			"tablecolumns[color;text]" ..
-			"tableoptions[background=#00000000;highlight=#00000000;border=false]" ..
+			"tableoptions[background=#00000000;" .. 			"color=#333333;highlight=#d5c4a1;highlight_text=#333333;border=false]" ..
 			"table[0,0;10,3;info;"
 
 	if setting.readable_name then
-		formspec = formspec .. "#FFFF00," .. fgettext(setting.readable_name)
+		formspec = formspec .. "#b57614," .. fgettext(setting.readable_name)
 				.. " (" .. core.formspec_escape(setting.name) .. "),"
 	else
-		formspec = formspec .. "#FFFF00," .. core.formspec_escape(setting.name) .. ","
+		formspec = formspec .. "#b57614," .. core.formspec_escape(setting.name) .. ","
 	end
 
 	formspec = formspec .. ",,"
@@ -520,7 +525,7 @@ local function create_change_setting_formspec(dialogdata)
 		if dialogdata.error_message then
 			formspec = formspec .. "tablecolumns[color;text]" ..
 			"tableoptions[background=#00000000;highlight=#00000000;border=false]" ..
-			"table[5,3.9;5,0.6;error_message;#FF0000,"
+			"table[5,3.9;5,0.6;error_message;#b57614,"
 					.. core.formspec_escape(dialogdata.error_message) .. ";0]"
 			width = 5
 			if dialogdata.entered_text then
@@ -619,11 +624,14 @@ end
 
 local function create_settings_formspec(tabview, name, tabdata)
 	local formspec = "size[12,6.5;true]" ..
+			"background[-0.2,-0.4;12.6,7.8;" .. defaulttexturedir .. "mainmenu_bg_solo.png]" ..
 			"tablecolumns[color;tree;text,width=32;text]" ..
-			"tableoptions[background=#00000000;border=false]" ..
-			"field[0.3,0.1;10.2,1;search_string;;" .. core.formspec_escape(search_string) .. "]" ..
+			"tableoptions[background=#00000000;" .. 			"color=#333333;highlight=#d5c4a1;highlight_text=#333333;border=false]" ..
+			"field[0.3,0.1;10.2,1;search_string;;" .. core.formspec_escape(search_string) .. ";#ad934e99]" ..
 			"field_close_on_enter[search_string;false]" ..
-			"button[10.2,-0.2;2,1;search;" .. fgettext("Search") .. "]" ..
+			"image_button[10.2,-0.12;2,0.8;" .. defaulttexturedir ..
+				"mainmenu_button.png;search;" ..
+				minetest.colorize("#333333", fgettext("Search")) .. ";;false]" ..
 			"table[0,0.8;12,4.5;list_settings;"
 
 	local current_level = 0
@@ -637,7 +645,7 @@ local function create_settings_formspec(tabview, name, tabdata)
 
 		if entry.type == "category" then
 			current_level = entry.level
-			formspec = formspec .. "#FFFF00," .. current_level .. "," .. fgettext(name) .. ",,"
+			formspec = formspec .. "#b57614," .. current_level .. "," .. fgettext(name) .. ",,"
 
 		elseif entry.type == "bool" then
 			local value = get_current_value(entry)
@@ -662,10 +670,17 @@ local function create_settings_formspec(tabview, name, tabdata)
 		formspec = formspec:sub(1, -2) -- remove trailing comma
 	end
 	formspec = formspec .. ";" .. selected_setting .. "]" ..
-			"button[0,6;4,1;btn_back;".. fgettext("< Back to Settings page") .. "]" ..
-			"button[10,6;2,1;btn_edit;" .. fgettext("Edit") .. "]" ..
-			"button[7,6;3,1;btn_restore;" .. fgettext("Restore Default") .. "]" ..
-			"checkbox[0,5.3;cb_tech_settings;" .. fgettext("Show technical names") .. ";"
+			"image_button[0,6;4,0.8;" .. defaulttexturedir ..
+				"mainmenu_button_long.png;btn_back;"..
+				minetest.colorize("#333333", fgettext("< Back to Settings page")) .. ";;false]" ..
+			"image_button[10,6;2,0.8;" .. defaulttexturedir ..
+				"mainmenu_button.png;btn_edit;" ..
+				minetest.colorize("#333333", fgettext("Edit")) .. ";;false]" ..
+			"image_button[7,6;3,0.8;" .. defaulttexturedir ..
+				"mainmenu_button_long.png;btn_restore;" ..
+				minetest.colorize("#333333", fgettext("Restore Default")) .. ";;false]" ..
+			"checkbox[0,5.3;cb_tech_settings;" ..
+					minetest.colorize("#333333", fgettext("Show technical names")) .. ";"
 					.. dump(core.setting_getbool("main_menu_technical_settings")) .. "]"
 
 	return formspec
