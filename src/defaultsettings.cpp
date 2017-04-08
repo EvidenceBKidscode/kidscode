@@ -152,7 +152,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("crosshair_alpha", "255");
 	settings->setDefault("hud_scaling", "1.0");
 	settings->setDefault("gui_scaling", "1.0");
-	settings->setDefault("gui_scaling_filter", "false");
+	settings->setDefault("gui_scaling_filter", "true");
 	settings->setDefault("gui_scaling_filter_txr2img", "true");
 	settings->setDefault("desynchronize_mapblock_texture_animation", "true");
 	settings->setDefault("hud_hotbar_max_width", "1.0");
@@ -161,7 +161,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("texture_clean_transparent", "false");
 	settings->setDefault("texture_min_size", "64");
 	settings->setDefault("ambient_occlusion_gamma", "2.2");
-	settings->setDefault("enable_shaders", "true");
+	settings->setDefault("enable_shaders", "false");
 	settings->setDefault("enable_particles", "true");
 	settings->setDefault("formspec_fullscreen_bg_color", "(0,0,0)");
 	settings->setDefault("formspec_fullscreen_bg_opacity", "0");
