@@ -8,8 +8,8 @@ if(${CMAKE_VERSION} STREQUAL "2.8.2")
 endif()
 
 # This can be read from ${PROJECT_NAME} after project() is called
-project(minetest)
-set(PROJECT_NAME_CAPITALIZED "Minetest")
+project(kidscode)
+set(PROJECT_NAME_CAPITALIZED "Kidscode")
 
 # Works only for cmake 3.1 and greater
 set(CMAKE_CXX_STANDARD 11)
@@ -328,5 +328,7 @@ if(DOXYGEN_FOUND)
 	)
 endif()
 
-set_target_properties( minetest PROPERTIES OUTPUT_NAME_DEBUG kidscode )
-set_target_properties( minetest PROPERTIES OUTPUT_NAME_RELEASE kidscode )
+if(BUILD_CLIENT)
+	set_target_properties(minetest PROPERTIES OUTPUT_NAME_DEBUG kidscode)
+	set_target_properties(minetest PROPERTIES OUTPUT_NAME_RELEASE kidscode)
+endif()
