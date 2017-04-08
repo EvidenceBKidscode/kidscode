@@ -6,8 +6,8 @@ if(${CMAKE_VERSION} STREQUAL "2.8.2")
 endif()
 
 # This can be read from ${PROJECT_NAME} after project() is called
-project(minetest)
-set(PROJECT_NAME_CAPITALIZED "Minetest")
+project(kidscode)
+set(PROJECT_NAME_CAPITALIZED "Kidscode")
 
 
 # Also remember to set PROTOCOL_VERSION in network/networkprotocol.h when releasing
