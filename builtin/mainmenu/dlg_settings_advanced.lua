@@ -437,8 +437,8 @@ local function create_change_setting_formspec(dialogdata)
 			"image_button[5,4.5;2,0.8;" .. defaulttexturedir ..
 				"mainmenu_button.png;btn_done;" ..
 				minetest.colorize("#333333", fgettext("Save")) .. ";;false]" ..
-			"image_button[3,4.5;2,0.8;btn_cancel;" .. defaulttexturedir ..
-				"mainmenu_button.png;" ..
+			"image_button[3,4.5;2,0.8;" .. defaulttexturedir ..
+				"mainmenu_button.png;btn_cancel;" ..
 				minetest.colorize("#333333", fgettext("Cancel")) .. ";;false]" ..
 			"tablecolumns[color;text]" ..
 			"tableoptions[background=#00000000;" .. 			"color=#333333;highlight=#d5c4a1;highlight_text=#333333;border=false]" ..
@@ -516,7 +516,7 @@ local function create_change_setting_formspec(dialogdata)
 		end
 		formspec = formspec .. "field[0.5,4;7.5,1;te_setting_value;;"
 				.. core.formspec_escape(current_value) .. "]"
-				.. "button[8,3.75;2,1;btn_browser_path;" .. fgettext("Browse") .. "]"
+				.. "button[8,3.75;2,1;btn_browser_path;" .. fgettext("Browse") .. ";#ad934e99]"
 
 	else
 		-- TODO: fancy input for float, int, flags, noise_params, v3f
@@ -533,7 +533,7 @@ local function create_change_setting_formspec(dialogdata)
 			end
 		end
 		formspec = formspec .. "field[0.5,4;" .. width .. ",1;te_setting_value;;"
-				.. core.formspec_escape(text) .. "]"
+				.. core.formspec_escape(text) .. ";#ad934e99]"
 	end
 	return formspec
 end
