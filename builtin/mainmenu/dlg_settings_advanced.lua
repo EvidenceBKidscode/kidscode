@@ -252,10 +252,8 @@ local function parse_single_file(file, filepath, read_all, result, base_level, a
 	local line = file:read("*line")
 	while line do
 		-- remove the last CR Windows character on Unix/MacOSX
-		local line_len = string.len(line)
-		local line_last_char = string.sub(line, line_len, line_len)
-		if string.byte(line_last_char) == 13 then
-			line = string.sub(line, 1, line_len - 1)
+		if string.byte(line:sub(-1)) == 13 then
+			line = line:sub(1, -2)
 		end
 
 		local error_msg = parse_setting_line(result, line, read_all, base_level, allow_secure)
