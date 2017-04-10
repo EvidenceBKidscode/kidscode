@@ -309,6 +309,11 @@ local function parse_single_file(file, filepath, read_all, result, base_level, a
 
 	local line = file:read("*line")
 	while line do
+		-- remove the last CR Windows character on Unix/MacOSX
+		if string.byte(line:sub(-1)) == 13 then
+			line = line:sub(1, -2)
+		end
+
 		local error_msg = parse_setting_line(result, line, read_all, base_level, allow_secure)
 		if error_msg then
 			core.log("error", error_msg .. " in " .. filepath .. " \"" .. line .. "\"")
