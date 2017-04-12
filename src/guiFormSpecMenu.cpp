@@ -1449,8 +1449,8 @@ void GUIFormSpecMenu::parseImageButton(parserData* data,std::string element,
 		if(!data->explicit_size)
 			warningstream<<"invalid use of image_button without a size[] element"<<std::endl;
 
-		image_name = unescape_string(image_name);
-		pressed_image_name = unescape_string(pressed_image_name);
+		image_name = image_name;
+		pressed_image_name = pressed_image_name;
 
 		std::wstring wlabel = utf8_to_wide(unescape_string(label));
 
