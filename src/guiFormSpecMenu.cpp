@@ -676,7 +676,7 @@ void GUIFormSpecMenu::parseBackground(parserData* data,std::string element)
 	{
 		std::vector<std::string> v_pos = split(parts[0],',');
 		std::vector<std::string> v_geom = split(parts[1],',');
-		std::string name = unescape_string(parts[2]);
+		std::string name = parts[2];
 
 		MY_CHECKPOS("background",0);
 		MY_CHECKGEOM("background",1);
