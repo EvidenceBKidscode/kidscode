@@ -79,15 +79,16 @@ end
 
 local function create_world_buttonhandler(this, fields)
 
-	if fields["world_create_confirm"] or
-		fields["key_enter"] then
-
+	if fields["world_create_confirm"] or fields["key_enter"] then
 		local worldname = fields["te_world_name"]
+		local worldname_special_chars = worldname:find("[^%w_]+")
+		if worldname_special_chars then
+			worldname = ""
+		end
+
 		local gameindex = core.get_textlist_index("games")
 
-		if gameindex ~= nil and
-			worldname ~= "" then
-
+		if gameindex ~= nil and worldname ~= "" then
 			local message = nil
 
 			core.setting_set("fixed_map_seed", fields["te_seed"])
@@ -115,6 +116,7 @@ local function create_world_buttonhandler(this, fields)
 			gamedata.errormessage =
 				fgettext("No worldname given or no game selected")
 		end
+
 		this:delete()
 		return true
 	end
