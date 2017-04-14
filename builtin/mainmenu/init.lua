@@ -20,47 +20,7 @@ mt_color_blue  = "#6389FF"
 mt_color_green = "#72FF63"
 mt_color_dark_green = "#25C191"
 
---for all other colors ask sfan5 to complete his work!
-
-local menupath = core.get_mainmenu_path()
-local basepath = core.get_builtin_path()
-defaulttexturedir = core.get_texturepath_share() .. DIR_DELIM .. "base" ..
-					DIR_DELIM .. "pack" .. DIR_DELIM
-
-dofile(basepath .. DIR_DELIM .. "common" .. DIR_DELIM .. "async_event.lua")
-dofile(basepath .. DIR_DELIM .. "common" .. DIR_DELIM .. "filterlist.lua")
-dofile(basepath .. DIR_DELIM .. "fstk" .. DIR_DELIM .. "buttonbar.lua")
-dofile(basepath .. DIR_DELIM .. "fstk" .. DIR_DELIM .. "dialog.lua")
-dofile(basepath .. DIR_DELIM .. "fstk" .. DIR_DELIM .. "tabview.lua")
-dofile(basepath .. DIR_DELIM .. "fstk" .. DIR_DELIM .. "ui.lua")
-dofile(menupath .. DIR_DELIM .. "common.lua")
-dofile(menupath .. DIR_DELIM .. "gamemgr.lua")
-dofile(menupath .. DIR_DELIM .. "modmgr.lua")
-dofile(menupath .. DIR_DELIM .. "store.lua")
-dofile(menupath .. DIR_DELIM .. "textures.lua")
-
-dofile(menupath .. DIR_DELIM .. "dlg_singleplayer.lua")
-dofile(menupath .. DIR_DELIM .. "dlg_settings.lua")
-dofile(menupath .. DIR_DELIM .. "dlg_multiplayer.lua")
-dofile(menupath .. DIR_DELIM .. "dlg_credits.lua")
-
-dofile(menupath .. DIR_DELIM .. "dlg_config_world.lua")
-dofile(menupath .. DIR_DELIM .. "dlg_settings_advanced.lua")
-
-if PLATFORM ~= "Android" then
-	dofile(menupath .. DIR_DELIM .. "dlg_create_world.lua")
-	dofile(menupath .. DIR_DELIM .. "dlg_delete_mod.lua")
-	dofile(menupath .. DIR_DELIM .. "dlg_delete_world.lua")
-	dofile(menupath .. DIR_DELIM .. "dlg_rename_modpack.lua")
-end
-
 local tabs = {}
-
-if PLATFORM == "Android" then
-	tabs.simple_main = dofile(menupath .. DIR_DELIM .. "tab_simple_main.lua")
-else
-	tabs.home = dofile(menupath .. DIR_DELIM .. "tab_home.lua")
-end
 
 --------------------------------------------------------------------------------
 local function main_event_handler(tabview, event)
@@ -159,5 +119,57 @@ local function init_globals()
 	core.sound_play("main_menu", true)
 end
 
+local menupath = core.get_mainmenu_path()
+local basepath = core.get_builtin_path()
+defaulttexturedir = core.get_texturepath_share() .. DIR_DELIM .. "base" ..
+	DIR_DELIM .. "pack" .. DIR_DELIM
+
+local filepath = menupath .. DIR_DELIM .. "world_index"
+local file = io.open(filepath, "r")
+
+dofile(basepath .. DIR_DELIM .. "common" .. DIR_DELIM .. "async_event.lua")
+dofile(basepath .. DIR_DELIM .. "common" .. DIR_DELIM .. "filterlist.lua")
+dofile(basepath .. DIR_DELIM .. "fstk" .. DIR_DELIM .. "buttonbar.lua")
+dofile(basepath .. DIR_DELIM .. "fstk" .. DIR_DELIM .. "dialog.lua")
+dofile(basepath .. DIR_DELIM .. "fstk" .. DIR_DELIM .. "tabview.lua")
+dofile(basepath .. DIR_DELIM .. "fstk" .. DIR_DELIM .. "ui.lua")
+dofile(menupath .. DIR_DELIM .. "common.lua")
+dofile(menupath .. DIR_DELIM .. "gamemgr.lua")
+dofile(menupath .. DIR_DELIM .. "modmgr.lua")
+dofile(menupath .. DIR_DELIM .. "store.lua")
+dofile(menupath .. DIR_DELIM .. "textures.lua")
+
+dofile(menupath .. DIR_DELIM .. "dlg_singleplayer.lua")
+dofile(menupath .. DIR_DELIM .. "dlg_settings.lua")
+dofile(menupath .. DIR_DELIM .. "dlg_multiplayer.lua")
+dofile(menupath .. DIR_DELIM .. "dlg_credits.lua")
+
+dofile(menupath .. DIR_DELIM .. "dlg_config_world.lua")
+dofile(menupath .. DIR_DELIM .. "dlg_settings_advanced.lua")
+
+if PLATFORM ~= "Android" then
+	dofile(menupath .. DIR_DELIM .. "dlg_create_world.lua")
+	dofile(menupath .. DIR_DELIM .. "dlg_delete_mod.lua")
+	dofile(menupath .. DIR_DELIM .. "dlg_delete_world.lua")
+	dofile(menupath .. DIR_DELIM .. "dlg_rename_modpack.lua")
+end
+
+if PLATFORM == "Android" then
+	tabs.simple_main = dofile(menupath .. DIR_DELIM .. "tab_simple_main.lua")
+else
+	tabs.home = dofile(menupath .. DIR_DELIM .. "tab_home.lua")
+end
+
 init_globals()
+
+if file then
+	local index = tonumber(file:read("*all"))
+	file:close()
+	os.remove(filepath)
+
+	gamedata.selected_world = menudata.worldlist:get_raw_index(index)
+	gamedata.singleplayer = true
+
+	core.start()
+end
 
