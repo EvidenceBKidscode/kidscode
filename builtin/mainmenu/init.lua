@@ -163,7 +163,7 @@ end
 init_globals()
 
 if file then
-	local index = tonumber(file:read("*all"))
+	local index = tonumber(file:read("*number"))
 	file:close()
 	os.remove(filepath)
 
