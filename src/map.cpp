@@ -1226,7 +1226,8 @@ bool Map::isBlockOccluded(MapBlock *block, v3s16 cam_pos_nodes) {
 /*
 	ServerMap
 */
-ServerMap::ServerMap(std::string savedir, IGameDef *gamedef, EmergeManager *emerge):
+ServerMap::ServerMap(const std::string &savedir, IGameDef *gamedef,
+		EmergeManager *emerge):
 	Map(dout_server, gamedef),
 	settings_mgr(g_settings, savedir + DIR_DELIM + "map_meta.txt"),
 	m_emerge(emerge),
@@ -1936,7 +1937,7 @@ std::string ServerMap::getSectorDir(v2s16 pos, int layout)
 	}
 }
 
-v2s16 ServerMap::getSectorPos(std::string dirname)
+v2s16 ServerMap::getSectorPos(const std::string &dirname)
 {
 	unsigned int x = 0, y = 0;
 	int r;
@@ -1966,7 +1967,7 @@ v2s16 ServerMap::getSectorPos(std::string dirname)
 	return pos;
 }
 
-v3s16 ServerMap::getBlockPos(std::string sectordir, std::string blockfile)
+v3s16 ServerMap::getBlockPos(const std::string &sectordir, const std::string &blockfile)
 {
 	v2s16 p2d = getSectorPos(sectordir);
 
@@ -2346,16 +2347,15 @@ bool ServerMap::saveBlock(MapBlock *block, Database *db)
 	return ret;
 }
 
-void ServerMap::loadBlock(std::string sectordir, std::string blockfile,
+void ServerMap::loadBlock(const std::string &sectordir, const std::string &blockfile,
 		MapSector *sector, bool save_after_load)
 {
 	DSTACK(FUNCTION_NAME);
 
 	std::string fullpath = sectordir + DIR_DELIM + blockfile;
 	try {
-
 		std::ifstream is(fullpath.c_str(), std::ios_base::binary);
-		if(is.good() == false)
+		if (!is.good())
 			throw FileNotGoodException("Cannot open block file");
 
 		v3s16 p3d = getBlockPos(sectordir, blockfile);
@@ -2589,6 +2589,16 @@ bool ServerMap::deleteBlock(v3s16 blockpos)
 void ServerMap::PrintInfo(std::ostream &out)
 {
 	out<<"ServerMap: ";
+}
+
+bool ServerMap::repairBlockLight(v3s16 blockpos,
+	std::map<v3s16, MapBlock *> *modified_blocks)
+{
+	MapBlock *block = emergeBlock(blockpos, false);
+	if (!block || !block->isGenerated())
+		return false;
+	voxalgo::repair_block_light(this, block, modified_blocks);
+	return true;
 }
 
 MMVManip::MMVManip(Map *map):
