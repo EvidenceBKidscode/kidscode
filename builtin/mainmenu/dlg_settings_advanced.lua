@@ -520,8 +520,10 @@ local function create_change_setting_formspec(dialogdata)
 			current_value = get_current_value(setting)
 		end
 		formspec = formspec .. "field[0.5,4;7.5,1;te_setting_value;;"
-				.. core.formspec_escape(current_value) .. "]"
-				.. "button[8,3.75;2,1;btn_browser_path;" .. fgettext("Browse") .. ";#ad934e99]"
+				.. core.formspec_escape(current_value) .. ";#ad934e99]"
+				.. "image_button[8,3.75;2,0.8;" .. defaulttexturedir ..
+					"mainmenu_button.png;btn_browser_path;" ..
+					minetest.colorize("#333333", fgettext("Browse")) .. ";;false]"
 
 	else
 		-- TODO: fancy input for float, int, flags, noise_params, v3f
