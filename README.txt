@@ -556,7 +556,7 @@ DroidSansFallBackFull:
   See the License for the specific language governing permissions and
   limitations under the License.
 
-PixelOperator:
+Liberation Sans Bold - SIL OFL 1.1 <http://scripts.sil.org/OFL>. (C) 2009-2017.
 
-  Released by Jayvee Enaguas (HarvettFox96) <harvettfox96[nospam]tuta.io>,
-  licensed under the SIL OFL 1.1 <http://scripts.sil.org/OFL>. (C) 2009-2016.
+  Copyright (c) 2012 Red Hat, Inc.
+	with Reserved Font Name Liberation.

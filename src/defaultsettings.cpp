@@ -223,7 +223,7 @@ void set_default_settings(Settings *settings)
 
 #if USE_FREETYPE
 	settings->setDefault("freetype", "true");
-	settings->setDefault("font_path", porting::getDataPath("fonts" DIR_DELIM "PixelOperator-Bold.ttf"));
+	settings->setDefault("font_path", porting::getDataPath("fonts" DIR_DELIM "LiberationSans-Bold.ttf"));
 	settings->setDefault("font_shadow", "0");
 	settings->setDefault("font_shadow_alpha", "127");
 	settings->setDefault("mono_font_path", porting::getDataPath("fonts" DIR_DELIM "Cousine-Regular.ttf"));

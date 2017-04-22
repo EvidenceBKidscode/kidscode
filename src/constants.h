@@ -112,7 +112,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #if defined(_WIN32)
 	#define TTF_DEFAULT_FONT_SIZE   (18)
 #else
-	#define TTF_DEFAULT_FONT_SIZE	(16)
+	#define TTF_DEFAULT_FONT_SIZE	(14)
 #endif
 #define DEFAULT_FONT_SIZE       (10)
 
