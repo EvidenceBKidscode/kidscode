@@ -243,7 +243,7 @@ void set_default_settings(Settings *settings)
 	std::string font_size_str = std::to_string(DEFAULT_FONT_SIZE);
 #endif
 	settings->setDefault("font_size", font_size_str);
-	settings->setDefault("mono_font_size", font_size_str);
+	settings->setDefault("mono_font_size", std::to_string(TTF_DEFAULT_FONT_SIZE + 2));
 
 
 	// Server
