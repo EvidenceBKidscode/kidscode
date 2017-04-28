@@ -85,7 +85,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 */
 
 // Size of player's main inventory
-#define PLAYER_INVENTORY_SIZE (8*4)
+#define PLAYER_INVENTORY_SIZE (8 * 4)
 
 // Maximum hit points of a player
 #define PLAYER_MAX_HP 20
@@ -116,6 +116,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #else
 	#define TTF_DEFAULT_FONT_SIZE	(14)
 #endif
-#define DEFAULT_FONT_SIZE       (10)
+#define DEFAULT_FONT_SIZE (10)
 
 #endif

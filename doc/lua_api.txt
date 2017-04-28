@@ -1591,7 +1591,7 @@ examples.
 * Sets default background color of tooltips
 * Sets default font color of tooltips
 
-#### `tooltip[<gui_element_name>;<tooltip_text>;<bgcolor>,<fontcolor>]`
+#### `tooltip[<gui_element_name>;<tooltip_text>;<bgcolor>;<fontcolor>]`
 * Adds tooltip for an element
 * `<bgcolor>` tooltip background color as `ColorString` (optional)
 * `<fontcolor>` tooltip font color as `ColorString` (optional)
@@ -1956,8 +1956,7 @@ Helper functions
 * `math.sign(x, tolerance)`
     * Get the sign of a number.
       Optional: Also returns `0` when the absolute value is within the tolerance (default: `0`)
-* `string.split(str, separator=",", include_empty=false, max_splits=-1,
-* sep_is_pattern=false)`
+* `string.split(str, separator=",", include_empty=false, max_splits=-1, sep_is_pattern=false)`
     * If `max_splits` is negative, do not limit splits.
     * `sep_is_pattern` specifies if separator is a plain string or a pattern (regex).
     * e.g. `string:split("a,b", ",") == {"a","b"}`
@@ -2029,11 +2028,11 @@ Helper functions
             max_jitter = 0.5,          -- maximum packet time jitter
             avg_jitter = 0.03,         -- average packet time jitter
             connection_uptime = 200,   -- seconds since client connected
+            prot_vers = 31,            -- protocol version used by client
 
             -- following information is available on debug build only!!!
             -- DO NOT USE IN MODS
             --ser_vers = 26,             -- serialization version used by client
-            --prot_vers = 23,            -- protocol version used by client
             --major = 0,                 -- major version number
             --minor = 4,                 -- minor version number
             --patch = 10,                -- patch version number
@@ -2636,6 +2635,8 @@ These functions return the leftover itemstack.
 * `minetest.cancel_shutdown_requests()`: cancel current delayed shutdown
 * `minetest.get_server_status()`: returns server status string
 * `minetest.get_server_uptime()`: returns the server uptime in seconds
+* `minetest.remove_player(name)`: remove player from database (if he is not connected).
+    * Returns a code (0: successful, 1: no such player, 2: player is connected)
 
 ### Bans
 * `minetest.get_ban_list()`: returns the ban list (same as `minetest.get_ban_description("")`)
@@ -3075,7 +3076,7 @@ This is basically a reference to a C++ `ServerActiveObject`
         * `sneak`: whether player can sneak (default: `true`)
         * `sneak_glitch`: whether player can use the new move code replications
           of the old sneak side-effects: sneak ladders and 2 node sneak jump
-          when next to a ledge 2 nodes up (default: `true`)
+          (default: `false`)
         * `new_move`: use new move/sneak code. When `false` the exact old code
           is used for the specific old sneak behaviour (default: `true`)
 * `get_physics_override()`: returns the table given to set_physics_override
@@ -3945,6 +3946,12 @@ Definition tables
         tiles = {tile definition 1, def2, def3, def4, def5, def6}, --[[
         ^ Textures of node; +Y, -Y, +X, -X, +Z, -Z (old field name: tile_images)
         ^ List can be shortened to needed length ]]
+        overlay_tiles = {tile definition 1, def2, def3, def4, def5, def6}, --[[
+        ^ Same as `tiles`, but these textures are drawn on top of the
+        ^ base tiles. You can use this to colorize only specific parts of
+        ^ your texture. If the texture name is an empty string, that
+        ^ overlay is not drawn. Since such tiles are drawn twice, it
+        ^ is not recommended to use overlays on very common nodes.
         special_tiles = {tile definition 1, Tile definition 2}, --[[
         ^ Special textures of node; used rarely (old field name: special_materials)
         ^ List can be shortened to needed length ]]
@@ -3972,7 +3979,9 @@ Definition tables
         diggable = true, -- If false, can never be dug
         climbable = false, -- If true, can be climbed on (ladder)
         buildable_to = false, -- If true, placed nodes can replace this node
-        floodable = false, -- If true, liquids flow into and replace this node
+        floodable = false, --[[
+        ^ If true, liquids flow into and replace this node.
+        ^ Warning: making a liquid node 'floodable' does not work and may cause problems. ]]
         liquidtype = "none", -- "none"/"source"/"flowing"
         liquid_alternative_flowing = "", -- Flowing version of source liquid
         liquid_alternative_source = "", -- Source version of flowing liquid
@@ -4033,6 +4042,14 @@ Definition tables
         ^ Node destructor; called after removing node
         ^ Not called for bulk node placement (i.e. schematics and VoxelManip)
         ^ default: nil ]]
+        on_flood = func(pos, oldnode, newnode), --[[
+        ^ Called when a liquid (newnode) is about to flood oldnode, if
+        ^ it has `floodable = true` in the nodedef. Not called for bulk
+        ^ node placement (i.e. schematics and VoxelManip) or air nodes. If
+        ^ return true the node is not flooded, but on_flood callback will
+        ^ most likely be called over and over again every liquid update
+        ^ interval. Default: nil.
+        ^ Warning: making a liquid node 'floodable' does not work and may cause problems. ]]
 
         after_place_node = func(pos, placer, itemstack, pointed_thing) --[[
         ^ Called after constructing node when node was placed using

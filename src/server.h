@@ -174,7 +174,6 @@ public:
 	void handleCommand_Init_Legacy(NetworkPacket* pkt);
 	void handleCommand_Init2(NetworkPacket* pkt);
 	void handleCommand_RequestMedia(NetworkPacket* pkt);
-	void handleCommand_ReceivedMedia(NetworkPacket* pkt);
 	void handleCommand_ClientReady(NetworkPacket* pkt);
 	void handleCommand_GotBlocks(NetworkPacket* pkt);
 	void handleCommand_PlayerPos(NetworkPacket* pkt);
@@ -307,6 +306,7 @@ public:
 	bool showFormspec(const char *name, const std::string &formspec, const std::string &formname);
 	Map & getMap() { return m_env->getMap(); }
 	ServerEnvironment & getEnv() { return *m_env; }
+	v3f findSpawnPos();
 
 	u32 hudAdd(RemotePlayer *player, HudElement *element);
 	bool hudRemove(RemotePlayer *player, u32 id);
@@ -472,8 +472,6 @@ private:
 		bool check_shout_priv = false,
 		RemotePlayer *player = NULL);
 	void handleAdminChat(const ChatEventChat *evt);
-
-	v3f findSpawnPos();
 
 	// When called, connection mutex should be locked
 	RemoteClient* getClient(u16 peer_id,ClientState state_min=CS_Active);

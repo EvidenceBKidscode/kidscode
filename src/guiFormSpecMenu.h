@@ -55,12 +55,10 @@ typedef enum {
 
 struct TextDest
 {
-	virtual ~TextDest() {};
+	virtual ~TextDest() {}
 	// This is deprecated I guess? -celeron55
-	virtual void gotText(std::wstring text){}
+	virtual void gotText(const std::wstring &text) {}
 	virtual void gotText(const StringMap &fields) = 0;
-	virtual void setFormName(std::string formname)
-	{ m_formname = formname;};
 
 	std::string m_formname;
 };
@@ -71,17 +69,18 @@ public:
 	virtual ~IFormSource(){}
 	virtual std::string getForm() = 0;
 	// Fill in variables in field text
-	virtual std::string resolveText(std::string str){ return str; }
+	virtual std::string resolveText(const std::string &str) { return str; }
 };
 
 class GUIFormSpecMenu : public GUIModalMenu
 {
 	struct ItemSpec
 	{
-		ItemSpec()
+		ItemSpec() :
+			i(-1)
 		{
-			i = -1;
 		}
+
 		ItemSpec(const InventoryLocation &a_inventoryloc,
 				const std::string &a_listname,
 				s32 a_i,
@@ -97,10 +96,8 @@ class GUIFormSpecMenu : public GUIModalMenu
 			spacing = a_spacing;
 			border = a_border;
 		}
-		bool isValid() const
-		{
-			return i != -1;
-		}
+
+		bool isValid() const { return i != -1; }
 
 		InventoryLocation inventoryloc;
 		std::string listname;
@@ -161,7 +158,8 @@ class GUIFormSpecMenu : public GUIModalMenu
 		ImageDrawSpec():
 			parent_button(NULL),
 			clip(false)
-		{}
+		{
+		}
 
 		ImageDrawSpec(const std::string &a_name,
 				const std::string &a_item_name,
@@ -174,7 +172,8 @@ class GUIFormSpecMenu : public GUIModalMenu
 			geom(a_geom),
 			scale(true),
 			clip(false)
-		{}
+		{
+		}
 
 		ImageDrawSpec(const std::string &a_name,
 				const std::string &a_item_name,
@@ -186,7 +185,8 @@ class GUIFormSpecMenu : public GUIModalMenu
 			geom(a_geom),
 			scale(true),
 			clip(false)
-		{}
+		{
+		}
 
 		ImageDrawSpec(const std::string &a_name,
 				const v2s32 &a_pos, const v2s32 &a_geom, bool clip=false):
@@ -196,7 +196,8 @@ class GUIFormSpecMenu : public GUIModalMenu
 			geom(a_geom),
 			scale(true),
 			clip(clip)
-		{}
+		{
+		}
 
 		ImageDrawSpec(const std::string &a_name,
 				const v2s32 &a_pos):
@@ -205,7 +206,8 @@ class GUIFormSpecMenu : public GUIModalMenu
 			pos(a_pos),
 			scale(false),
 			clip(false)
-		{}
+		{
+		}
 
 		std::string name;
 		std::string item_name;
@@ -225,14 +227,14 @@ class GUIFormSpecMenu : public GUIModalMenu
 				const std::wstring &default_text, int id) :
 			fname(name),
 			flabel(label),
+			fdefault(unescape_enriched(default_text)),
 			fid(id),
 			send(false),
 			ftype(f_Unknown),
 			is_exit(false)
 		{
-			//flabel = unescape_enriched(label);
-			fdefault = unescape_enriched(default_text);
 		}
+
 		std::string fname;
 		std::wstring flabel;
 		std::wstring fdefault;
@@ -243,7 +245,8 @@ class GUIFormSpecMenu : public GUIModalMenu
 		core::rect<s32> rect;
 	};
 
-	struct BoxDrawSpec {
+	struct BoxDrawSpec
+	{
 		BoxDrawSpec(v2s32 a_pos, v2s32 a_geom,irr::video::SColor a_color):
 			pos(a_pos),
 			geom(a_geom),
@@ -255,45 +258,46 @@ class GUIFormSpecMenu : public GUIModalMenu
 		irr::video::SColor color;
 	};
 
-	struct TooltipSpec {
-		TooltipSpec()
-		{
-		}
-		TooltipSpec(std::string a_tooltip, irr::video::SColor a_bgcolor,
+	struct TooltipSpec
+	{
+		TooltipSpec() {}
+		TooltipSpec(const std::string &a_tooltip, irr::video::SColor a_bgcolor,
 				irr::video::SColor a_color):
+			tooltip(utf8_to_wide(a_tooltip)),
 			bgcolor(a_bgcolor),
 			color(a_color)
 		{
-			//tooltip = unescape_enriched(utf8_to_wide(a_tooltip));
-			tooltip = utf8_to_wide(a_tooltip);
 		}
+
 		std::wstring tooltip;
 		irr::video::SColor bgcolor;
 		irr::video::SColor color;
 	};
 
-	struct StaticTextSpec {
+	struct StaticTextSpec
+	{
 		StaticTextSpec():
 			parent_button(NULL)
 		{
 		}
+
 		StaticTextSpec(const std::wstring &a_text,
 				const core::rect<s32> &a_rect):
+			text(a_text),
 			rect(a_rect),
 			parent_button(NULL)
 		{
-			//text = unescape_enriched(a_text);
-			text = a_text;
 		}
+
 		StaticTextSpec(const std::wstring &a_text,
 				const core::rect<s32> &a_rect,
 				gui::IGUIButton *a_parent_button):
+			text(a_text),
 			rect(a_rect),
 			parent_button(a_parent_button)
 		{
-			//text = unescape_enriched(a_text);
-			text = a_text;
 		}
+
 		std::wstring text;
 		core::rect<s32> rect;
 		gui::IGUIButton *parent_button;
@@ -313,7 +317,7 @@ public:
 	~GUIFormSpecMenu();
 
 	void setFormSpec(const std::string &formspec_string,
-			InventoryLocation current_inventory_location)
+			const InventoryLocation &current_inventory_location)
 	{
 		m_formspec_string = formspec_string;
 		m_current_inventory_location = current_inventory_location;
@@ -486,7 +490,7 @@ private:
 	fs_key_pendig current_keys_pending;
 	std::string current_field_enter_pending;
 
-	void parseElement(parserData* data, std::string element);
+	void parseElement(parserData* data, const std::string &element);
 
 	void parseSize(parserData* data, const std::string &element);
 	void parseContainer(parserData* data, const std::string &element);
@@ -567,22 +571,21 @@ private:
 class FormspecFormSource: public IFormSource
 {
 public:
-	FormspecFormSource(const std::string &formspec)
+	FormspecFormSource(const std::string &formspec):
+		m_formspec(formspec)
 	{
-		m_formspec = formspec;
 	}
 
 	~FormspecFormSource()
-	{}
+	{
+	}
 
-	void setForm(const std::string &formspec) {
+	void setForm(const std::string &formspec)
+	{
 		m_formspec = FORMSPEC_VERSION_STRING + formspec;
 	}
 
-	std::string getForm()
-	{
-		return m_formspec;
-	}
+	std::string getForm() { return m_formspec; }
 
 	std::string m_formspec;
 };

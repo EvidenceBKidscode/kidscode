@@ -45,7 +45,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "database-sqlite3.h"
 #include "serialization.h"
 #include "guiscalingfilter.h"
-#include "script/clientscripting.h"
+#include "script/scripting_client.h"
 #include "game.h"
 
 extern gui::IGUIEnvironment* guienv;
@@ -487,13 +487,17 @@ void Client::step(float dtime)
 					minimap_mapblock = r.mesh->moveMinimapMapblock();
 					if (minimap_mapblock == NULL)
 						do_mapper_update = false;
-				}
 
-				if (r.mesh && r.mesh->getMesh()->getMeshBufferCount() == 0) {
-					delete r.mesh;
-				} else {
-					// Replace with the new mesh
-					block->mesh = r.mesh;
+					bool is_empty = true;
+					for (int l = 0; l < MAX_TILE_LAYERS; l++)
+						if (r.mesh->getMesh(l)->getMeshBufferCount() != 0)
+							is_empty = false;
+
+					if (is_empty)
+						delete r.mesh;
+					else
+						// Replace with the new mesh
+						block->mesh = r.mesh;
 				}
 			} else {
 				delete r.mesh;
@@ -522,7 +526,6 @@ void Client::step(float dtime)
 	if (m_media_downloader && m_media_downloader->isStarted()) {
 		m_media_downloader->step(this);
 		if (m_media_downloader->isDone()) {
-			received_media();
 			delete m_media_downloader;
 			m_media_downloader = NULL;
 		}
@@ -743,14 +746,6 @@ void Client::request_media(const std::vector<std::string> &file_requests)
 			<< file_requests.size() << " files. packet size)" << std::endl;
 }
 
-void Client::received_media()
-{
-	NetworkPacket pkt(TOSERVER_RECEIVED_MEDIA, 0);
-	Send(&pkt);
-	infostream << "Client: Notifying server that we received all media"
-			<< std::endl;
-}
-
 void Client::initLocalMapSaving(const Address &address,
 		const std::string &hostname,
 		bool is_local_server)
@@ -766,7 +761,7 @@ void Client::initLocalMapSaving(const Address &address,
 
 	fs::CreateAllDirs(world_path);
 
-	m_localdb = new Database_SQLite3(world_path);
+	m_localdb = new MapDatabaseSQLite3(world_path);
 	m_localdb->beginSave();
 	actionstream << "Local map saving started, map will be saved at '" << world_path << "'" << std::endl;
 }

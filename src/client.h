@@ -49,7 +49,7 @@ class ClientMediaDownloader;
 struct MapDrawControl;
 class MtEventManager;
 struct PointedThing;
-class Database;
+class MapDatabase;
 class Minimap;
 struct MinimapMapblock;
 class Camera;
@@ -311,13 +311,10 @@ public:
 	void handleCommand_HP(NetworkPacket* pkt);
 	void handleCommand_Breath(NetworkPacket* pkt);
 	void handleCommand_MovePlayer(NetworkPacket* pkt);
-	void handleCommand_PlayerItem(NetworkPacket* pkt);
 	void handleCommand_DeathScreen(NetworkPacket* pkt);
 	void handleCommand_AnnounceMedia(NetworkPacket* pkt);
 	void handleCommand_Media(NetworkPacket* pkt);
-	void handleCommand_ToolDef(NetworkPacket* pkt);
 	void handleCommand_NodeDef(NetworkPacket* pkt);
-	void handleCommand_CraftItemDef(NetworkPacket* pkt);
 	void handleCommand_ItemDef(NetworkPacket* pkt);
 	void handleCommand_PlaySound(NetworkPacket* pkt);
 	void handleCommand_StopSound(NetworkPacket* pkt);
@@ -487,8 +484,6 @@ public:
 	bool loadMedia(const std::string &data, const std::string &filename);
 	// Send a request for conventional media transfer
 	void request_media(const std::vector<std::string> &file_requests);
-	// Send a notification that no conventional media transfer is needed
-	void received_media();
 
 	LocalClientState getState() { return m_state; }
 
@@ -648,7 +643,7 @@ private:
 	LocalClientState m_state;
 
 	// Used for saving server map to disk client-side
-	Database *m_localdb;
+	MapDatabase *m_localdb;
 	IntervalLimiter m_localdb_save_interval;
 	u16 m_cache_save_interval;
 

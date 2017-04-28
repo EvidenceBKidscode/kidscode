@@ -38,7 +38,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "settings.h"
 #include "profiler.h"
 #include "log.h"
-#include "serverscripting.h"
+#include "scripting_server.h"
 #include "nodedef.h"
 #include "itemdef.h"
 #include "craftdef.h"
@@ -60,6 +60,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "util/base64.h"
 #include "util/sha1.h"
 #include "util/hex.h"
+#include "database.h"
 
 class ClientNotFoundException : public BaseException
 {
@@ -599,7 +600,7 @@ void Server::AsyncRunStep(bool initial_step)
 		ScopeProfiler sp(g_profiler, "Server: liquid transform");
 
 		std::map<v3s16, MapBlock*> modified_blocks;
-		m_env->getMap().transformLiquids(modified_blocks);
+		m_env->getMap().transformLiquids(modified_blocks, m_env);
 #if 0
 		/*
 			Update lighting
@@ -2618,9 +2619,8 @@ void Server::RespawnPlayer(u16 peer_id)
 
 	bool repositioned = m_script->on_respawnplayer(playersao);
 	if (!repositioned) {
-		v3f pos = findSpawnPos();
 		// setPos will send the new position to client
-		playersao->setPos(pos);
+		playersao->setPos(findSpawnPos());
 	}
 
 	SendPlayerHP(peer_id);
@@ -3442,8 +3442,8 @@ v3f Server::findSpawnPos()
 		s32 range = 1 + i;
 		// We're going to try to throw the player to this position
 		v2s16 nodepos2d = v2s16(
-				-range + (myrand() % (range * 2)),
-				-range + (myrand() % (range * 2)));
+			-range + (myrand() % (range * 2)),
+			-range + (myrand() % (range * 2)));
 
 		// Get spawn level at point
 		s16 spawn_level = m_emerge->getSpawnLevelAtPoint(nodepos2d);
@@ -3479,9 +3479,16 @@ v3f Server::findSpawnPos()
 
 void Server::requestShutdown(const std::string &msg, bool reconnect, float delay)
 {
+	m_shutdown_timer = delay;
+	m_shutdown_msg = msg;
+	m_shutdown_ask_reconnect = reconnect;
+
 	if (delay == 0.0f) {
 	// No delay, shutdown immediately
 		m_shutdown_requested = true;
+		// only print to the infostream, a chat message saying 
+		// "Server Shutting Down" is sent when the server destructs.
+		infostream << "*** Immediate Server shutdown requested." << std::endl;
 	} else if (delay < 0.0f && m_shutdown_timer > 0.0f) {
 	// Negative delay, cancel shutdown if requested
 		m_shutdown_timer = 0.0f;
@@ -3495,10 +3502,7 @@ void Server::requestShutdown(const std::string &msg, bool reconnect, float delay
 		infostream << wide_to_utf8(ws.str()).c_str() << std::endl;
 		SendChatMessage(PEER_ID_INEXISTENT, ws.str());
 	} else if (delay > 0.0f) {
-	// Positive delay, delay the shutdown
-		m_shutdown_timer = delay;
-		m_shutdown_msg = msg;
-		m_shutdown_ask_reconnect = reconnect;
+	// Positive delay, tell the clients when the server will shut down
 		std::wstringstream ws;
 
 		ws << L"*** Server shutting down in "
@@ -3512,8 +3516,6 @@ void Server::requestShutdown(const std::string &msg, bool reconnect, float delay
 
 PlayerSAO* Server::emergePlayer(const char *name, u16 peer_id, u16 proto_version)
 {
-	bool newplayer = false;
-
 	/*
 		Try to get an existing player
 	*/
@@ -3534,44 +3536,18 @@ PlayerSAO* Server::emergePlayer(const char *name, u16 peer_id, u16 proto_version
 		return NULL;
 	}
 
-	// Create a new player active object
-	PlayerSAO *playersao = new PlayerSAO(m_env, peer_id, isSingleplayer());
-	player = m_env->loadPlayer(name, playersao);
-
-	// Create player if it doesn't exist
 	if (!player) {
-		newplayer = true;
-		player = new RemotePlayer(name, this->idef());
-		// Set player position
-		infostream<<"Server: Finding spawn place for player \""
-				<<name<<"\""<<std::endl;
-		playersao->setBasePosition(findSpawnPos());
-
-		// Make sure the player is saved
-		player->setModified(true);
-
-		// Add player to environment
-		m_env->addPlayer(player);
-	} else {
-		// If the player exists, ensure that they respawn inside legal bounds
-		// This fixes an assert crash when the player can't be added
-		// to the environment
-		if (objectpos_over_limit(playersao->getBasePosition())) {
-			actionstream << "Respawn position for player \""
-				<< name << "\" outside limits, resetting" << std::endl;
-			playersao->setBasePosition(findSpawnPos());
-		}
+		player = new RemotePlayer(name, idef());
 	}
 
-	playersao->initialize(player, getPlayerEffectivePrivs(player->getName()));
+	bool newplayer = false;
 
+	// Load player
+	PlayerSAO *playersao = m_env->loadPlayer(player, &newplayer, peer_id, isSingleplayer());
+
+	// Complete init with server parts
+	playersao->finalize(player, getPlayerEffectivePrivs(player->getName()));
 	player->protocol_version = proto_version;
-
-	/* Clean up old HUD elements from previous sessions */
-	player->clearHud();
-
-	/* Add object to environment */
-	m_env->addActiveObject(playersao);
 
 	/* Run scripts */
 	if (newplayer) {

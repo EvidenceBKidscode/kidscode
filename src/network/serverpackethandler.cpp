@@ -27,7 +27,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "nodedef.h"
 #include "player.h"
 #include "rollback_interface.h"
-#include "serverscripting.h"
+#include "scripting_server.h"
 #include "settings.h"
 #include "tool.h"
 #include "version.h"
@@ -672,10 +672,6 @@ void Server::handleCommand_RequestMedia(NetworkPacket* pkt)
 	}
 
 	sendRequestedMedia(pkt->getPeerId(), tosend);
-}
-
-void Server::handleCommand_ReceivedMedia(NetworkPacket* pkt)
-{
 }
 
 void Server::handleCommand_ClientReady(NetworkPacket* pkt)

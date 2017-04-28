@@ -44,6 +44,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "database.h"
 #include "database-dummy.h"
 #include "database-sqlite3.h"
+#include "script/scripting_server.h"
 #include <deque>
 #include <queue>
 #if USE_LEVELDB
@@ -637,7 +638,8 @@ s32 Map::transforming_liquid_size() {
         return m_transforming_liquid.size();
 }
 
-void Map::transformLiquids(std::map<v3s16, MapBlock*> &modified_blocks)
+void Map::transformLiquids(std::map<v3s16, MapBlock*> &modified_blocks,
+		ServerEnvironment *env)
 {
 	DSTACK(FUNCTION_NAME);
 	//TimeTaker timer("transformLiquids()");
@@ -897,7 +899,15 @@ void Map::transformLiquids(std::map<v3s16, MapBlock*> &modified_blocks)
 			// set the liquid level and flow bit to 0
 			n0.param2 = ~(LIQUID_LEVEL_MASK | LIQUID_FLOW_DOWN_MASK);
 		}
+
+		// change the node.
 		n0.setContent(new_node_content);
+
+		// on_flood() the node
+		if (floodable_node != CONTENT_AIR) {
+			if (env->getScriptIface()->node_on_flood(p0, n00, n0))
+				continue;
+		}
 
 		// Ignore light (because calling voxalgo::update_lighting_nodes)
 		n0.setLight(LIGHTBANK_DAY, 0, m_nodedef);
@@ -2276,13 +2286,13 @@ bool ServerMap::loadSectorFull(v2s16 p2d)
 }
 #endif
 
-Database *ServerMap::createDatabase(
+MapDatabase *ServerMap::createDatabase(
 	const std::string &name,
 	const std::string &savedir,
 	Settings &conf)
 {
 	if (name == "sqlite3")
-		return new Database_SQLite3(savedir);
+		return new MapDatabaseSQLite3(savedir);
 	if (name == "dummy")
 		return new Database_Dummy();
 	#if USE_LEVELDB
@@ -2294,8 +2304,11 @@ Database *ServerMap::createDatabase(
 		return new Database_Redis(conf);
 	#endif
 	#if USE_POSTGRESQL
-	else if (name == "postgresql")
-		return new Database_PostgreSQL(conf);
+	else if (name == "postgresql") {
+		std::string connect_string = "";
+		conf.getNoEx("pgsql_connection", connect_string);
+		return new MapDatabasePostgreSQL(connect_string);
+	}
 	#endif
 	else
 		throw BaseException(std::string("Database backend ") + name + " not supported.");
@@ -2316,7 +2329,7 @@ bool ServerMap::saveBlock(MapBlock *block)
 	return saveBlock(block, dbase);
 }
 
-bool ServerMap::saveBlock(MapBlock *block, Database *db)
+bool ServerMap::saveBlock(MapBlock *block, MapDatabase *db)
 {
 	v3s16 p3d = block->getPos();
 

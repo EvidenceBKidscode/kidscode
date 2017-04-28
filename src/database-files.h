@@ -1,6 +1,5 @@
 /*
 Minetest
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 Copyright (C) 2017 nerzhul, Loic Blot <loic.blot@unix-experience.fr>
 
 This program is free software; you can redistribute it and/or modify
@@ -18,25 +17,30 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
-#ifndef CLIENT_SCRIPTING_H_
-#define CLIENT_SCRIPTING_H_
+#ifndef DATABASE_FILES_HEADER
+#define DATABASE_FILES_HEADER
 
-#include "cpp_api/s_base.h"
-#include "cpp_api/s_client.h"
-#include "cpp_api/s_security.h"
+// !!! WARNING !!!
+// This backend is intended to be used on Minetest 0.4.16 only for the transition backend
+// for player files
 
-class Client;
-class LocalPlayer;
-class ClientScripting:
-	virtual public ScriptApiBase,
-	public ScriptApiSecurity,
-	public ScriptApiClient
+#include "database.h"
+
+class PlayerDatabaseFiles : public PlayerDatabase
 {
 public:
-	ClientScripting(Client *client);
-	void on_client_ready(LocalPlayer *localplayer);
+	PlayerDatabaseFiles(const std::string &savedir) : m_savedir(savedir) {}
+	virtual ~PlayerDatabaseFiles() {}
+
+	void savePlayer(RemotePlayer *player);
+	bool loadPlayer(RemotePlayer *player, PlayerSAO *sao);
+	bool removePlayer(const std::string &name);
+	void listPlayers(std::vector<std::string> &res);
 
 private:
-	virtual void InitializeModApi(lua_State *L, int top);
+	void serialize(std::ostringstream &os, RemotePlayer *player);
+
+	std::string m_savedir;
 };
+
 #endif

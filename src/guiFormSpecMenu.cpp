@@ -41,7 +41,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "filesys.h"
 #include "gettime.h"
 #include "gettext.h"
-#include "serverscripting.h"
+#include "scripting_server.h"
 #include "porting.h"
 #include "settings.h"
 #include "client.h"
@@ -1854,10 +1854,11 @@ void GUIFormSpecMenu::parseAnchor(parserData *data, const std::string &element)
 		return;
 	}
 
-	errorstream << "Invalid anchor element (" << parts.size() << "): '" << element << "'" << std::endl;
+	errorstream << "Invalid anchor element (" << parts.size() << "): '" << element
+			<< "'" << std::endl;
 }
 
-void GUIFormSpecMenu::parseElement(parserData* data, std::string element)
+void GUIFormSpecMenu::parseElement(parserData* data, const std::string &element)
 {
 	//some prechecks
 	if (element == "")
