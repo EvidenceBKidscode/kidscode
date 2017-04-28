@@ -168,7 +168,12 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("screen_w", "1024");
 	settings->setDefault("screen_h", "600");
 	settings->setDefault("autosave_screensize", "true");
+
+#if defined(__APPLE__)
+	settings->setDefault("fullscreen", "true"); // MacOS X
+#else
 	settings->setDefault("fullscreen", "false");
+#endif
 	settings->setDefault("fullscreen_bpp", "24");
 	settings->setDefault("vsync", "false");
 	settings->setDefault("fov", "72");
@@ -211,7 +216,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("formspec_default_bg_opacity", "140");
 	settings->setDefault("selectionbox_color", "(0,0,0)");
 	settings->setDefault("selectionbox_width", "2");
-	settings->setDefault("node_highlighting", "box");
+	settings->setDefault("node_highlighting", "halo");
 	settings->setDefault("crosshair_color", "(255,255,255)");
 	settings->setDefault("crosshair_alpha", "255");
 	settings->setDefault("recent_chat_messages", "6");
@@ -233,7 +238,7 @@ void set_default_settings(Settings *settings)
 #endif
 	settings->setDefault("enable_particles", "true");
 
-	settings->setDefault("arm_inertia", "true");
+	settings->setDefault("arm_inertia", "false");
 	settings->setDefault("formspec_fullscreen_bg_color", "(0,0,0)");
 	settings->setDefault("formspec_fullscreen_bg_opacity", "0");
 
@@ -243,7 +248,7 @@ void set_default_settings(Settings *settings)
 
 	// Effects
 	settings->setDefault("directional_colored_fog", "true");
-	settings->setDefault("inventory_items_animations", "false");
+	settings->setDefault("inventory_items_animations", "true");
 	settings->setDefault("mip_map", "false");
 	settings->setDefault("anisotropic_filter", "false");
 	settings->setDefault("bilinear_filter", "false");
@@ -273,7 +278,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("safe_dig_and_place", "false");
 	settings->setDefault("random_input", "false");
 	settings->setDefault("aux1_descends", "false");
-	settings->setDefault("doubletap_jump", "false");
+	settings->setDefault("doubletap_jump", "true");
 	settings->setDefault("always_fly_fast", "true");
 #ifdef __ANDROID__
 	settings->setDefault("autojump", "true");
@@ -347,12 +352,13 @@ void set_default_settings(Settings *settings)
 
 	settings->setDefault("default_game", "minetest");
 	settings->setDefault("motd", "");
-	settings->setDefault("max_users", "15");
-	settings->setDefault("creative_mode", "false");
+	settings->setDefault("max_users", "30");
+	settings->setDefault("creative_mode", "true");
+	settings->setDefault("show_statusline_on_connect", "true"); // TODO: [rebase] check utility
 	settings->setDefault("enable_damage", "true");
 	settings->setDefault("default_password", "");
 	settings->setDefault("default_privs", "interact, shout");
-	settings->setDefault("enable_pvp", "true");
+	settings->setDefault("enable_pvp", "false");
 	settings->setDefault("enable_mod_channels", "false");
 	settings->setDefault("disallow_empty_password", "false");
 	settings->setDefault("disable_anticheat", "false");
@@ -379,8 +385,8 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("csm_restriction_flags", "62");
 	settings->setDefault("csm_restriction_noderange", "0");
 	settings->setDefault("max_clearobjects_extra_loaded_blocks", "4096");
-	settings->setDefault("time_speed", "72");
-	settings->setDefault("world_start_time", "6125");
+	settings->setDefault("time_speed", "0");
+	settings->setDefault("world_start_time", "8000");
 	settings->setDefault("server_unload_unused_data_timeout", "29");
 	settings->setDefault("max_objects_per_block", "64");
 	settings->setDefault("server_map_save_interval", "5.3");
@@ -401,9 +407,9 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("emergequeue_limit_diskonly", "64");
 	settings->setDefault("emergequeue_limit_generate", "64");
 	settings->setDefault("num_emerge_threads", "1");
-	settings->setDefault("secure.enable_security", "true");
-	settings->setDefault("secure.trusted_mods", "");
-	settings->setDefault("secure.http_mods", "");
+	settings->setDefault("secure.enable_security", "false");
+	settings->setDefault("secure.trusted_mods", "kidsbot,utilities");
+	settings->setDefault("secure.http_mods", "kidsbot,player_menu,utilities");
 
 	// Physics
 	settings->setDefault("movement_acceleration_default", "3");
@@ -422,7 +428,7 @@ void set_default_settings(Settings *settings)
 	// Liquids
 	settings->setDefault("liquid_loop_max", "100000");
 	settings->setDefault("liquid_queue_purge_time", "0");
-	settings->setDefault("liquid_update", "1.0");
+	settings->setDefault("liquid_update", "0.3");
 
 	// Mapgen
 	settings->setDefault("mg_name", "v7");
@@ -455,6 +461,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("screen_w", "0");
 	settings->setDefault("screen_h", "0");
 	settings->setDefault("fullscreen", "true");
+	settings->setDefault("video_driver", "ogles2"); // TODO: [rebase] Check utility
 	settings->setDefault("touchtarget", "true");
 	settings->setDefault("TMPFolder", porting::getDataPath("tmp" DIR_DELIM));
 	settings->setDefault("touchscreen_threshold","20");
