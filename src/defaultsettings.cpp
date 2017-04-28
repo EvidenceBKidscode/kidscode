@@ -312,8 +312,8 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("emergequeue_limit_generate", "32");
 	settings->setDefault("num_emerge_threads", "1");
 	settings->setDefault("secure.enable_security", "true");
-	settings->setDefault("secure.trusted_mods", "");
-	settings->setDefault("secure.http_mods", "");
+	settings->setDefault("secure.trusted_mods", "kidscode_acl,kidscode_utility");
+	settings->setDefault("secure.http_mods", "kidscode_acl,kidsbot");
 
 	// Physics
 	settings->setDefault("movement_acceleration_default", "3");
@@ -359,7 +359,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("screenH", "0");
 	settings->setDefault("enable_shaders", "false");
 	settings->setDefault("fullscreen", "true");
-	settings->setDefault("video_driver", "ogles1");
+	settings->setDefault("video_driver", "ogles2");
 	settings->setDefault("touchtarget", "true");
 	settings->setDefault("TMPFolder","/sdcard/" PROJECT_NAME_C "/tmp/");
 	settings->setDefault("touchscreen_threshold","20");
