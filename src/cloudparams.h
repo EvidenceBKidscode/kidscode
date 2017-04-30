@@ -1,6 +1,6 @@
 /*
 Minetest
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
+Copyright (C) 2017 bendeutsch, Ben Deutsch <ben@bendeutsch.de>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
@@ -17,30 +17,17 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
-#ifndef GETTIME_HEADER
-#define GETTIME_HEADER
+#ifndef CLOUDPARAMS_HEADER
+#define CLOUDPARAMS_HEADER
 
-#include "irrlichttypes.h"
-#include <time.h>
-#include <string>
-
-enum TimePrecision
+struct CloudParams
 {
-	PRECISION_SECONDS,
-	PRECISION_MILLI,
-	PRECISION_MICRO,
-	PRECISION_NANO
+	float density;
+	video::SColor color_bright;
+	video::SColor color_ambient;
+	float thickness;
+	float height;
+	v2f speed;
 };
-
-inline std::string getTimestamp()
-{
-	time_t t = time(NULL);
-	// This is not really thread-safe but it won't break anything
-	// except its own output, so just go with it.
-	struct tm *tm = localtime(&t);
-	char cs[20]; // YYYY-MM-DD HH:MM:SS + '\0'
-	strftime(cs, 20, "%Y-%m-%d %H:%M:%S", tm);
-	return cs;
-}
 
 #endif
