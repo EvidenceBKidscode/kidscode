@@ -83,7 +83,11 @@ local function create_world_buttonhandler(this, fields)
 		local worldname = fields["te_world_name"]
 		local worldname_special_chars = worldname:find("[^%w_]+")
 		if worldname_special_chars then
-			worldname = ""
+			gamedata.errormessage =
+				fgettext("World name contains invalid characters.\n" ..
+						"Please use only letters, digits, or underscores")
+			this:delete()
+			return true
 		end
 
 		local gameindex = core.get_textlist_index("games")
@@ -112,9 +116,12 @@ local function create_world_buttonhandler(this, fields)
 				core.setting_set("mainmenu_last_selected_world",
 									menudata.worldlist:raw_index_by_uid(worldname))
 			end
-		else
+		elseif gameindex == nil then
 			gamedata.errormessage =
-				fgettext("No worldname given or no game selected")
+				fgettext("No game selected")
+		elseif worldname == "" then
+			gamedata.errormessage =
+				fgettext("No world name given")
 		end
 
 		this:delete()
