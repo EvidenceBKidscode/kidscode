@@ -1,7 +1,6 @@
 /*
 Minetest
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-Copyright (C) 2017 nerzhul, Loic Blot <loic.blot@unix-experience.fr>
+Copyright (C) 2015 Nerzhul, Loic Blot <loic.blot@unix-experience.fr>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
@@ -18,29 +17,28 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
-#ifndef CLIENT_SCRIPTING_H_
-#define CLIENT_SCRIPTING_H_
+#ifndef FACE_POSITION_CACHE_HEADER
+#define FACE_POSITION_CACHE_HEADER
 
-#include "cpp_api/s_base.h"
-#include "cpp_api/s_client.h"
-#include "cpp_api/s_security.h"
-#include "util/basic_macros.h"
+#include "irr_v3d.h"
+#include "threading/mutex.h"
+#include "util/cpp11_container.h"
 
-class Client;
-class LocalPlayer;
-class Camera;
-class ClientScripting:
-	virtual public ScriptApiBase,
-	public ScriptApiSecurity,
-	public ScriptApiClient
-{
+#include <map>
+#include <vector>
+
+/*
+ * This class permits caching getFacePosition call results.
+ * This reduces CPU usage and vector calls.
+ */
+class FacePositionCache {
 public:
-	ClientScripting(Client *client);
-	void on_client_ready(LocalPlayer *localplayer);
-	void on_camera_ready(Camera *camera);
+	static const std::vector<v3s16> &getFacePositions(u16 d);
 
 private:
-	virtual void InitializeModApi(lua_State *L, int top);
-	DISABLE_CLASS_COPY(ClientScripting);
+	static const std::vector<v3s16> &generateFacePosition(u16 d);
+	static UNORDERED_MAP<u16, std::vector<v3s16> > cache;
+	static Mutex cache_mutex;
 };
+
 #endif

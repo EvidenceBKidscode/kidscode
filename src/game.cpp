@@ -476,6 +476,7 @@ class SoundMaker
 	ISoundManager *m_sound;
 	INodeDefManager *m_ndef;
 public:
+	bool makes_footstep_sound;
 	float m_player_step_timer;
 
 	SimpleSoundSpec m_player_step_sound;
@@ -485,6 +486,7 @@ public:
 	SoundMaker(ISoundManager *sound, INodeDefManager *ndef):
 		m_sound(sound),
 		m_ndef(ndef),
+		makes_footstep_sound(true),
 		m_player_step_timer(0)
 	{
 	}
@@ -493,7 +495,8 @@ public:
 	{
 		if (m_player_step_timer <= 0 && m_player_step_sound.exists()) {
 			m_player_step_timer = 0.03;
-			m_sound->playSound(m_player_step_sound, false);
+			if (makes_footstep_sound)
+				m_sound->playSound(m_player_step_sound, false);
 		}
 	}
 
@@ -1046,6 +1049,11 @@ void KeyCache::populate()
 	key[KeyType::FREEMOVE]     = getKeySetting("keymap_freemove");
 	key[KeyType::FASTMOVE]     = getKeySetting("keymap_fastmove");
 	key[KeyType::NOCLIP]       = getKeySetting("keymap_noclip");
+	key[KeyType::HOTBAR_PREV]  = getKeySetting("keymap_hotbar_previous");
+	key[KeyType::HOTBAR_NEXT]  = getKeySetting("keymap_hotbar_next");
+	key[KeyType::MUTE]         = getKeySetting("keymap_mute");
+	key[KeyType::INC_VOLUME]   = getKeySetting("keymap_increase_volume");
+	key[KeyType::DEC_VOLUME]   = getKeySetting("keymap_decrease_volume");
 	key[KeyType::CINEMATIC]    = getKeySetting("keymap_cinematic");
 	key[KeyType::SCREENSHOT]   = getKeySetting("keymap_screenshot");
 	key[KeyType::TOGGLE_HUD]   = getKeySetting("keymap_toggle_hud");
@@ -1629,9 +1637,25 @@ void Game::run()
 			&& client->checkPrivilege("fast");
 #endif
 
+	irr::core::dimension2d<u32> previous_screen_size(g_settings->getU16("screenW"),
+		g_settings->getU16("screenH"));
+
 	while (device->run()
 			&& !(*kill || g_gamecallback->shutdown_requested
 			|| (server && server->getShutdownRequested()))) {
+
+		const irr::core::dimension2d<u32> &current_screen_size =
+			device->getVideoDriver()->getScreenSize();
+		// Verify if window size has changed and save it if it's the case
+		// Ensure evaluating settings->getBool after verifying screensize
+		// First condition is cheaper
+		if (previous_screen_size != current_screen_size &&
+				current_screen_size != irr::core::dimension2d<u32>(0,0) &&
+				g_settings->getBool("autosave_screensize")) {
+			g_settings->setU16("screenW", current_screen_size.Width);
+			g_settings->setU16("screenH", current_screen_size.Height);
+			previous_screen_size = current_screen_size;
+		}
 
 		/* Must be called immediately after a device->run() call because it
 		 * uses device->getTimer()->getTime()
@@ -2044,7 +2068,7 @@ bool Game::connectToServer(const std::string &playername,
 	}
 
 	client = new Client(device,
-			playername.c_str(), password,
+			playername.c_str(), password, *address,
 			*draw_control, texture_src, shader_src,
 			itemdef_manager, nodedef_manager, sound, eventmgr,
 			connect_address.isIPv6(), &flags);
@@ -2056,7 +2080,7 @@ bool Game::connectToServer(const std::string &playername,
 	connect_address.print(&infostream);
 	infostream << std::endl;
 
-	client->connect(connect_address, *address,
+	client->connect(connect_address,
 		simple_singleplayer_mode || local_server_mode);
 
 	/*
@@ -2474,6 +2498,30 @@ void Game::processKeyInput()
 		toggleFast();
 	} else if (wasKeyDown(KeyType::NOCLIP)) {
 		toggleNoClip();
+	} else if (wasKeyDown(KeyType::MUTE)) {
+		float volume = g_settings->getFloat("sound_volume");
+		if (volume < 0.001f) {
+			g_settings->setFloat("sound_volume", 1.0f);
+			m_statustext = narrow_to_wide(gettext("Volume changed to 100%"));
+		} else {
+			g_settings->setFloat("sound_volume", 0.0f);
+			m_statustext = narrow_to_wide(gettext("Volume changed to 0%"));
+		}
+		runData.statustext_time = 0;
+	} else if (wasKeyDown(KeyType::INC_VOLUME)) {
+		float new_volume = rangelim(g_settings->getFloat("sound_volume") + 0.1f, 0.0f, 1.0f);
+		char buf[100];
+		g_settings->setFloat("sound_volume", new_volume);
+		snprintf(buf, sizeof(buf), gettext("Volume changed to %d%%"), myround(new_volume * 100));
+		m_statustext = narrow_to_wide(buf);
+		runData.statustext_time = 0;
+	} else if (wasKeyDown(KeyType::DEC_VOLUME)) {
+		float new_volume = rangelim(g_settings->getFloat("sound_volume") - 0.1f, 0.0f, 1.0f);
+		char buf[100];
+		g_settings->setFloat("sound_volume", new_volume);
+		snprintf(buf, sizeof(buf), gettext("Volume changed to %d%%"), myround(new_volume * 100));
+		m_statustext = narrow_to_wide(buf);
+		runData.statustext_time = 0;
 	} else if (wasKeyDown(KeyType::CINEMATIC)) {
 		toggleCinematic();
 	} else if (wasKeyDown(KeyType::SCREENSHOT)) {
@@ -2541,11 +2589,13 @@ void Game::processItemSelection(u16 *new_playeritem)
 
 	s32 dir = wheel;
 
-	if (input->joystick.wasKeyDown(KeyType::SCROLL_DOWN)) {
+	if (input->joystick.wasKeyDown(KeyType::SCROLL_DOWN) ||
+			wasKeyDown(KeyType::HOTBAR_NEXT)) {
 		dir = -1;
 	}
 
-	if (input->joystick.wasKeyDown(KeyType::SCROLL_UP)) {
+	if (input->joystick.wasKeyDown(KeyType::SCROLL_UP) ||
+			wasKeyDown(KeyType::HOTBAR_PREV)) {
 		dir = 1;
 	}
 
@@ -3255,6 +3305,8 @@ void Game::processClientEvents(CameraOrientation *cam)
 
 		case CE_SET_SKY:
 			sky->setVisible(false);
+			// Whether clouds are visible in front of a custom skybox
+			sky->setCloudsEnabled(event.set_sky.clouds);
 
 			if (skybox) {
 				skybox->remove();
@@ -3264,6 +3316,7 @@ void Game::processClientEvents(CameraOrientation *cam)
 			// Handle according to type
 			if (*event.set_sky.type == "regular") {
 				sky->setVisible(true);
+				sky->setCloudsEnabled(true);
 			} else if (*event.set_sky.type == "skybox" &&
 					event.set_sky.params->size() == 6) {
 				sky->setFallbackBgColor(*event.set_sky.bgcolor);
@@ -3400,11 +3453,14 @@ void Game::updateSound(f32 dtime)
 			      camera->getCameraNode()->getUpVector());
 	sound->setListenerGain(g_settings->getFloat("sound_volume"));
 
+	LocalPlayer *player = client->getEnv().getLocalPlayer();
+
+	// Tell the sound maker whether to make footstep sounds
+	soundmaker->makes_footstep_sound = player->makes_footstep_sound;
 
 	//	Update sound maker
-	soundmaker->step(dtime);
-
-	LocalPlayer *player = client->getEnv().getLocalPlayer();
+	if (player->makes_footstep_sound)
+		soundmaker->step(dtime);
 
 	ClientMap &map = client->getEnv().getClientMap();
 	MapNode n = map.getNodeNoEx(player->getFootstepNodePos());
@@ -3528,7 +3584,8 @@ void Game::processPlayerInteraction(f32 dtime, bool show_hud, bool show_debug)
 		runData.repeat_rightclick_timer = 0;
 
 	if (playeritem_def.usable && isLeftPressed()) {
-		if (getLeftClicked())
+		if (getLeftClicked() && (!client->moddingEnabled()
+				|| !client->getScript()->on_item_use(playeritem, pointed)))
 			client->interact(4, pointed);
 	} else if (pointed.type == POINTEDTHING_NODE) {
 		ToolCapabilities playeritem_toolcap =

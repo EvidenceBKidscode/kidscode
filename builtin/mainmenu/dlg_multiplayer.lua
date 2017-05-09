@@ -47,15 +47,15 @@ local function get_formspec(tabview, name, tabdata)
 		"label[7.75,-0.25;" ..
 			minetest.colorize("#333333", fgettext("Address / Port")) .. "]" ..
 		"field[8,0.65;3.25,0.5;te_address;;" ..
-			core.formspec_escape(core.setting_get("address")) .. ";#ad934e99]" ..
+			core.formspec_escape(core.settings:get("address")) .. ";#ad934e99]" ..
 		"field[11.1,0.65;1.4,0.5;te_port;;" ..
-			core.formspec_escape(core.setting_get("remote_port")) .. ";#ad934e99]" ..
+			core.formspec_escape(core.settings:get("remote_port")) .. ";#ad934e99]" ..
 
 		-- Name / Password
 		"label[7.75,0.95;" ..
 			minetest.colorize("#333333", fgettext("Name / Password")) .. "]" ..
 		"field[8,1.85;2.9,0.5;te_name;;" ..
-			core.formspec_escape(core.setting_get("name")) .. ";#ad934e99]" ..
+			core.formspec_escape(core.settings:get("name")) .. ";#ad934e99]" ..
 		"pwdfield[10.73,1.85;1.77,0.5;te_pwd;;#ad934e99]" ..
 
 		-- Description Background
@@ -152,7 +152,7 @@ local function main_button_handler(tabview, fields, name, tabdata)
 
 	if fields.te_name then
 		gamedata.playername = fields.te_name
-		core.setting_set("name", fields.te_name)
+		core.settings:set("name", fields.te_name)
 	end
 
 	if fields.favourites then
@@ -180,8 +180,8 @@ local function main_button_handler(tabview, fields, name, tabdata)
 				gamedata.serverdescription = fav.description
 
 				if gamedata.address and gamedata.port then
-					core.setting_set("address", gamedata.address)
-					core.setting_set("remote_port", gamedata.port)
+					core.settings:set("address", gamedata.address)
+					core.settings:set("remote_port", gamedata.port)
 					core.start()
 				end
 			end
@@ -204,8 +204,8 @@ local function main_button_handler(tabview, fields, name, tabdata)
 				end
 
 				if address and port then
-					core.setting_set("address", address)
-					core.setting_set("remote_port", port)
+					core.settings:set("address", address)
+					core.settings:set("remote_port", port)
 				end
 				tabdata.fav_selected = event.row
 			end
@@ -236,8 +236,8 @@ local function main_button_handler(tabview, fields, name, tabdata)
 		local port    = fav.port
 		gamedata.serverdescription = fav.description
 		if address and port then
-			core.setting_set("address", address)
-			core.setting_set("remote_port", port)
+			core.settings:set("address", address)
+			core.settings:set("remote_port", port)
 		end
 
 		tabdata.fav_selected = fav_idx
@@ -252,8 +252,8 @@ local function main_button_handler(tabview, fields, name, tabdata)
 		asyncOnlineFavourites()
 		tabdata.fav_selected = nil
 
-		core.setting_set("address", "")
-		core.setting_set("remote_port", "30000")
+		core.settings:set("address", "")
+		core.settings:set("remote_port", "30000")
 		return true
 	end
 
@@ -310,8 +310,8 @@ local function main_button_handler(tabview, fields, name, tabdata)
 			end)
 			menudata.search_result = search_result
 			local first_server = search_result[1]
-			core.setting_set("address",     first_server.address)
-			core.setting_set("remote_port", first_server.port)
+			core.settings:set("address",     first_server.address)
+			core.settings:set("remote_port", first_server.port)
 		end
 		return true
 	end
@@ -342,8 +342,8 @@ local function main_button_handler(tabview, fields, name, tabdata)
 			gamedata.serverdescription = ""
 		end
 
-		core.setting_set("address",     fields.te_address)
-		core.setting_set("remote_port", fields.te_port)
+		core.settings:set("address",     fields.te_address)
+		core.settings:set("remote_port", fields.te_port)
 
 		core.start()
 		return true
