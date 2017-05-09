@@ -81,15 +81,6 @@ local function create_world_buttonhandler(this, fields)
 
 	if fields["world_create_confirm"] or fields["key_enter"] then
 		local worldname = fields["te_world_name"]
-		local worldname_special_chars = worldname:find("[^%w_]+")
-		if worldname_special_chars then
-			gamedata.errormessage =
-				fgettext("World name contains invalid characters.\n" ..
-						"Please use only letters, digits, or underscores")
-			this:delete()
-			return true
-		end
-
 		local gameindex = core.get_textlist_index("games")
 
 		if gameindex ~= nil and worldname ~= "" then

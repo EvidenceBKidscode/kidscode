@@ -124,9 +124,6 @@ local basepath = core.get_builtin_path()
 defaulttexturedir = core.get_texturepath_share() .. DIR_DELIM .. "base" ..
 	DIR_DELIM .. "pack" .. DIR_DELIM
 
-local filepath = menupath .. DIR_DELIM .. "world_index"
-local file = io.open(filepath, "r")
-
 dofile(basepath .. DIR_DELIM .. "common" .. DIR_DELIM .. "async_event.lua")
 dofile(basepath .. DIR_DELIM .. "common" .. DIR_DELIM .. "filterlist.lua")
 dofile(basepath .. DIR_DELIM .. "fstk" .. DIR_DELIM .. "buttonbar.lua")
@@ -161,15 +158,3 @@ else
 end
 
 init_globals()
-
-if file then
-	local index = tonumber(file:read("*number"))
-	file:close()
-	os.remove(filepath)
-
-	gamedata.selected_world = menudata.worldlist:get_raw_index(index)
-	gamedata.singleplayer = true
-
-	core.start()
-end
-
