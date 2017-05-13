@@ -1909,14 +1909,14 @@ Escape sequences
 Most text can contain escape sequences, that can for example color the text.
 There are a few exceptions: tab headers, dropdowns and vertical labels can't.
 The following functions provide escape sequences:
-* `core.get_color_escape_sequence(color)`:
+* `minetest.get_color_escape_sequence(color)`:
     * `color` is a ColorString
     * The escape sequence sets the text color to `color`
-* `core.colorize(color, message)`:
+* `minetest.colorize(color, message)`:
     * Equivalent to:
-      `core.get_color_escape_sequence(color) ..
+      `minetest.get_color_escape_sequence(color) ..
        message ..
-       core.get_color_escape_sequence("#ffffff")`
+       minetest.get_color_escape_sequence("#ffffff")`
 * `color.get_background_escape_sequence(color)`
     * `color` is a ColorString
     * The escape sequence sets the background of the whole text element to
@@ -2063,7 +2063,7 @@ Helper functions
   reliable or verifyable. Compatible forks will have a different name and
   version entirely. To check for the presence of engine features, test
   whether the functions exported by the wanted features exist. For example:
-  `if core.nodeupdate then ... end`.
+  `if minetest.nodeupdate then ... end`.
 
 ### Logging
 * `minetest.debug(...)`
@@ -2396,8 +2396,8 @@ and `minetest.auth_reload` call the authetification handler.
     *   `function EmergeAreaCallback(blockpos, action, calls_remaining, param)`
     * - `blockpos` is the *block* coordinates of the block that had been emerged
     * - `action` could be one of the following constant values:
-    *   `core.EMERGE_CANCELLED`, `core.EMERGE_ERRORED`, `core.EMERGE_FROM_MEMORY`,
-    *   `core.EMERGE_FROM_DISK`, `core.EMERGE_GENERATED`
+    *   `minetest.EMERGE_CANCELLED`, `minetest.EMERGE_ERRORED`, `minetest.EMERGE_FROM_MEMORY`,
+    *   `minetest.EMERGE_FROM_DISK`, `minetest.EMERGE_GENERATED`
     * - `calls_remaining` is the number of callbacks to be expected after this one
     * - `param` is the user-defined parameter passed to emerge_area (or nil if the
     *   parameter was absent)
@@ -2452,11 +2452,11 @@ and `minetest.auth_reload` call the authetification handler.
       might be removed.
     * returns `false` if the area is not fully generated,
       `true` otherwise
-* `core.check_single_for_falling(pos)`
+* `minetest.check_single_for_falling(pos)`
     * causes an unsupported `group:falling_node` node to fall and causes an
       unattached `group:attached_node` node to fall.
     * does not spread these updates to neighbours.
-* `core.check_for_falling(pos)`
+* `minetest.check_for_falling(pos)`
     * causes an unsupported `group:falling_node` node to fall and causes an
       unattached `group:attached_node` node to fall.
     * spread these updates to neighbours and can cause a cascade
@@ -2932,6 +2932,10 @@ Can be obtained via `minetest.get_meta(pos)`.
 #### Methods
 * All methods in MetaDataRef
 * `get_inventory()`: returns `InvRef`
+* `mark_as_private(name or {name1, name2, ...})`: Mark specific vars as private
+  This will prevent them from being sent to the client. Note that the "private"
+  status will only be remembered if an associated key-value pair exists, meaning
+  it's best to call this when initializing all other meta (e.g. on_construct).
 
 ### `ItemStackMetaRef`
 ItemStack metadata: reference extra data and functionality stored in a stack.
@@ -3441,9 +3445,9 @@ Note that the node being queried needs to have already been been registered.
 
 The following builtin node types have their Content IDs defined as constants:
 ```
-core.CONTENT_UNKNOWN (ID for "unknown" nodes)
-core.CONTENT_AIR     (ID for "air" nodes)
-core.CONTENT_IGNORE  (ID for "ignore" nodes)
+minetest.CONTENT_UNKNOWN (ID for "unknown" nodes)
+minetest.CONTENT_AIR     (ID for "air" nodes)
+minetest.CONTENT_IGNORE  (ID for "ignore" nodes)
 ```
 
 ##### Mapgen VoxelManip objects
