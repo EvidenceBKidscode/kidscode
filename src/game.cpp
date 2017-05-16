@@ -22,6 +22,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <iomanip>
 #include "camera.h"
 #include "client.h"
+#include "client/inputhandler.h"
 #include "client/tile.h"     // For TextureSource
 #include "client/keys.h"
 #include "client/joystick_controller.h"
@@ -50,7 +51,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "quicktune_shortcutter.h"
 #include "server.h"
 #include "settings.h"
-#include "shader.h"          // For ShaderSource
 #include "sky.h"
 #include "subgame.h"
 #include "tool.h"
@@ -59,18 +59,10 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "util/pointedthing.h"
 #include "irrlicht_changes/static_text.h"
 #include "version.h"
-#include "minimap.h"
-#include "mapblock_mesh.h"
 #include "script/scripting_client.h"
-
-#include "sound.h"
 
 #if USE_SOUND
 	#include "sound_openal.h"
-#endif
-
-#ifdef HAVE_TOUCHSCREENGUI
-	#include "touchscreengui.h"
 #endif
 
 extern Settings *g_settings;
@@ -2434,7 +2426,7 @@ void Game::updateStats(RunStats *stats, const FpsControl &draw_times,
 void Game::processUserInput(f32 dtime)
 {
 	// Reset input if window not active or some menu is active
-	if (!device->isWindowActive() || !noMenuActive() || guienv->hasFocus(gui_chat_console)) {
+	if (!device->isWindowActive() || isMenuActive() || guienv->hasFocus(gui_chat_console)) {
 		input->clear();
 #ifdef HAVE_TOUCHSCREENGUI
 		g_touchscreengui->hide();
@@ -2964,7 +2956,8 @@ void Game::toggleFullViewRange()
 
 void Game::updateCameraDirection(CameraOrientation *cam, float dtime)
 {
-	if ((device->isWindowActive() && noMenuActive()) || random_input) {
+	if ((device->isWindowActive() && device->isWindowFocused()
+			&& !isMenuActive()) || random_input) {
 
 #ifndef __ANDROID__
 		if (!random_input) {
@@ -2989,8 +2982,7 @@ void Game::updateCameraDirection(CameraOrientation *cam, float dtime)
 			device->getCursorControl()->setVisible(true);
 #endif
 
-		if (!m_first_loop_after_window_activation)
-			m_first_loop_after_window_activation = true;
+		m_first_loop_after_window_activation = true;
 
 	}
 }
@@ -3452,7 +3444,15 @@ void Game::updateSound(f32 dtime)
 			      v3f(0, 0, 0), // velocity
 			      camera->getDirection(),
 			      camera->getCameraNode()->getUpVector());
-	sound->setListenerGain(g_settings->getFloat("sound_volume"));
+
+	// Check if volume is in the proper range, else fix it.
+	float old_volume = g_settings->getFloat("sound_volume");
+	float new_volume = rangelim(old_volume, 0.0f, 1.0f);
+	sound->setListenerGain(new_volume);
+
+	if (old_volume != new_volume) {
+		g_settings->setFloat("sound_volume", new_volume);
+	}
 
 	LocalPlayer *player = client->getEnv().getLocalPlayer();
 
@@ -3709,12 +3709,9 @@ PointedThing Game::updatePointedThing(
 		float sin_r = 0.08 * sin(timerf);
 		float sin_g = 0.08 * sin(timerf + irr::core::PI * 0.5);
 		float sin_b = 0.08 * sin(timerf + irr::core::PI);
-		c.setRed(
-			core::clamp(core::round32(c.getRed() * (0.8 + sin_r)), 0, 255));
-		c.setGreen(
-			core::clamp(core::round32(c.getGreen() * (0.8 + sin_g)), 0, 255));
-		c.setBlue(
-			core::clamp(core::round32(c.getBlue() * (0.8 + sin_b)), 0, 255));
+		c.setRed(core::clamp(core::round32(c.getRed() * (0.8 + sin_r)), 0, 255));
+		c.setGreen(core::clamp(core::round32(c.getGreen() * (0.8 + sin_g)), 0, 255));
+		c.setBlue(core::clamp(core::round32(c.getBlue() * (0.8 + sin_b)), 0, 255));
 
 		// Set mesh final color
 		hud->setSelectionMeshColor(c);
@@ -4183,7 +4180,7 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 		if (current_formspec->getReferenceCount() == 1) {
 			current_formspec->drop();
 			current_formspec = NULL;
-		} else if (!noMenuActive()) {
+		} else if (isMenuActive()) {
 			guiroot->bringToFront(current_formspec);
 		}
 	}
