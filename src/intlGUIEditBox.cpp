@@ -1192,7 +1192,7 @@ void intlGUIEditBox::breakText()
 	s32 lastLineStart = 0;
 	s32 size = Text.size();
 	s32 length = 0;
-	s32 elWidth = RelativeRect.getWidth() - 6;
+	s32 elWidth = RelativeRect.getWidth() - 6 - m_scrollbar_width;
 	wchar_t c;
 
 	for (s32 i=0; i<size; ++i)
