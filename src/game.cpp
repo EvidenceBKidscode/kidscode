@@ -1975,8 +1975,10 @@ bool Game::initGui()
 	// Object infos are shown in this
 	guitext_info = addStaticText(guienv,
 			L"",
-			core::rect<s32>(0, 0, 400, g_fontengine->getTextHeight() * 5 + 5) + v2s32(100, 200),
+			core::rect<s32>(0, 0, driver->getScreenSize().Width, 2 * driver->getScreenSize().Height / 3),
 			false, true, guiroot);
+
+	guitext_info->setTextAlignment(irr::gui::EGUIA_CENTER, irr::gui::EGUIA_CENTER);
 
 	// Status text (displays info when showing and hiding GUI stuff, etc.)
 	guitext_status = addStaticText(guienv,
@@ -4336,6 +4338,12 @@ void Game::updateGui(const RunStats &stats, f32 dtime, const CameraOrientation &
 
 	setStaticText(guitext_info, infotext.c_str());
 	guitext_info->setVisible(flags.show_hud && g_menumgr.menuCount() == 0);
+
+	const core::rect<s32> guitext_info_rect(0, 0, screensize.X, 2 * screensize.Y / 3);
+	if (guitext_info->isVisible()) {
+		guitext_info->setRelativePosition(guitext_info_rect);
+	}
+
 
 	float statustext_time_max = 1.5;
 
