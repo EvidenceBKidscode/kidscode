@@ -1701,6 +1701,8 @@ void Game::shutdown()
 		driver->setRenderTarget(irr::video::ERT_STEREO_BOTH_BUFFERS);
 	}
 #endif
+	if (current_formspec)
+		current_formspec->quitMenu();
 
 	showOverlayMessage(wgettext("Shutting down..."), 0, 0, false);
 
@@ -3746,6 +3748,13 @@ void Game::handlePointingAtNode(const PointedThing &pointed, const ItemDefinitio
 	*/
 
 	ClientMap &map = client->getEnv().getClientMap();
+
+	if (runData.nodig_delay_timer <= 0.0 && isLeftPressed()
+			&& client->checkPrivilege("interact")) {
+		handleDigging(pointed, nodepos, playeritem_toolcap, dtime);
+	}
+
+	// This should be done after digging handling
 	NodeMetadata *meta = map.getNodeMetadata(nodepos);
 
 	if (meta) {
@@ -3757,11 +3766,6 @@ void Game::handlePointingAtNode(const PointedThing &pointed, const ItemDefinitio
 			infotext = L"Unknown node: ";
 			infotext += utf8_to_wide(nodedef_manager->get(n).name);
 		}
-	}
-
-	if (runData.nodig_delay_timer <= 0.0 && isLeftPressed()
-			&& client->checkPrivilege("interact")) {
-		handleDigging(pointed, nodepos, playeritem_toolcap, dtime);
 	}
 
 	if ((getRightClicked() ||
@@ -3979,10 +3983,9 @@ void Game::handleDigging(const PointedThing &pointed, const v3s16 &nodepos,
 		bool is_valid_position;
 		MapNode wasnode = map.getNodeNoEx(nodepos, &is_valid_position);
 		if (is_valid_position) {
-			if (client->moddingEnabled()) {
-				if (client->getScript()->on_dignode(nodepos, wasnode)) {
-					return;
-				}
+			if (client->moddingEnabled() && 
+			    		client->getScript()->on_dignode(nodepos, wasnode)) {
+				return;
 			}
 			client->removeNode(nodepos);
 		}

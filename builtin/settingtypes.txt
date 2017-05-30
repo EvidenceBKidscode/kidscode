@@ -312,6 +312,9 @@ serverlist_url (Serverlist URL) string servers.minetest.net
 #    File in client/serverlist/ that contains your favorite servers displayed in the Multiplayer Tab.
 serverlist_file (Serverlist file) string favoriteservers.txt
 
+#    Maximum size of the out chat queue. 0 to disable queueing and -1 to make the queue size unlimited
+max_out_chat_queue_size (Maximum size of the out chat queue) int 20
+
 [*Graphics]
 
 [**In-Game]
@@ -1471,7 +1474,7 @@ language (Language) enum   ,be,ca,cs,da,de,en,eo,es,et,fr,he,hu,id,it,ja,jbo,ko,
 #    -    action
 #    -    info
 #    -    verbose
-debug_log_level (Debug log level) enum action ,warning,action,info,verbose
+debug_log_level (Debug log level) enum action ,none,error,warning,action,info,verbose
 
 #    IPv6 support.
 enable_ipv6 (IPv6) bool true

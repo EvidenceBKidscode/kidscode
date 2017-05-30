@@ -1,6 +1,8 @@
 /*
 Minetest
 Copyright (C) 2010-2015 celeron55, Perttu Ahola <celeron55@gmail.com>
+Copyright (C) 2013-2016 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
+Copyright (C) 2014-2017 paramat
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
@@ -836,13 +838,17 @@ void MapgenV6::flowMud(s16 &mudflow_minpos, s16 &mudflow_maxpos)
 					v3s16(-1, 0, 0), // left
 				};
 
-				// Check that upper is air or doesn't exist.
-				// Cancel dropping if upper keeps it in place
+				// Check that upper is walkable. Cancel
+				// dropping if upper keeps it in place.
 				u32 i3 = i;
 				vm->m_area.add_y(em, i3, 1);
-				if (vm->m_area.contains(i3) == true &&
-						ndef->get(vm->m_data[i3]).walkable)
-					continue;
+				MapNode *n3 = NULL;
+
+				if (vm->m_area.contains(i3)) {
+					n3 = &vm->m_data[i3];
+					if (ndef->get(*n3).walkable)
+						continue;
+				}
 
 				// Drop mud on side
 				for (u32 di = 0; di < 4; di++) {
@@ -885,10 +891,18 @@ void MapgenV6::flowMud(s16 &mudflow_minpos, s16 &mudflow_maxpos)
 					if (!dropped_to_unknown) {
 						*n2 = *n;
 						// Set old place to be air (or water)
-						if (old_is_water)
+						if (old_is_water) {
 							*n = MapNode(c_water_source);
-						else
+						} else {
 							*n = MapNode(CONTENT_AIR);
+							// Upper (n3) is not walkable or is NULL. If it is
+							// not NULL and not air and not water it is a
+							// decoration that needs removing, to avoid
+							// unsupported decorations.
+							if (n3 && n3->getContent() != CONTENT_AIR &&
+									n3->getContent() != c_water_source)
+								*n3 = MapNode(CONTENT_AIR);
+						}
 					}
 
 					// Done
