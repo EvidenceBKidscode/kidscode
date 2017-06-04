@@ -9,11 +9,13 @@ endif()
 project(kidscode)
 set(PROJECT_NAME_CAPITALIZED "Kidscode")
 
+# Works only for cmake 3.1 and greater
+set(CMAKE_CXX_STANDARD 11)
 
 # Also remember to set PROTOCOL_VERSION in network/networkprotocol.h when releasing
 set(VERSION_MAJOR 0)
 set(VERSION_MINOR 4)
-set(VERSION_PATCH 15)
+set(VERSION_PATCH 16)
 set(VERSION_EXTRA "" CACHE STRING "Stuff to append to version string")
 
 # Change to false for releases
