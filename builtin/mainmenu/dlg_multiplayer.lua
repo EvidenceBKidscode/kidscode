@@ -15,6 +15,8 @@
 --with this program; if not, write to the Free Software Foundation, Inc.,
 --51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+local field_color = "#005597"
+
 --------------------------------------------------------------------------------
 local function get_formspec(tabview, name, tabdata)
 	tabdata = tabdata or {}
@@ -39,7 +41,7 @@ local function get_formspec(tabview, name, tabdata)
 		"image_button[-0.15,5.9;2,0.8;" .. defaulttexturedir .. "mainmenu_button.png;btn_back;"..
 			minetest.colorize("#333333", fgettext("< Back")) .. ";;false]" ..
 		-- Search
-		"field[0.15,0.35;6.05,0.27;te_search;;"..core.formspec_escape(tabdata.search_for)..";#ad934e99]"..
+		"field[0.15,0.35;6.05,0.27;te_search;;"..core.formspec_escape(tabdata.search_for)..";" .. field_color .. "99]" ..
 		"image_button[5.8,-0.2;2,0.8;" .. defaulttexturedir .. "mainmenu_button.png;btn_mp_search;" ..
 			minetest.colorize("#333333", fgettext("Search")) .. ";;false]" ..
 
@@ -47,19 +49,19 @@ local function get_formspec(tabview, name, tabdata)
 		"label[7.75,-0.25;" ..
 			minetest.colorize("#333333", fgettext("Address / Port")) .. "]" ..
 		"field[8,0.65;3.25,0.5;te_address;;" ..
-			core.formspec_escape(core.settings:get("address")) .. ";#ad934e99]" ..
+			core.formspec_escape(core.settings:get("address")) .. ";" .. field_color .. "99]" ..
 		"field[11.1,0.65;1.4,0.5;te_port;;" ..
-			core.formspec_escape(core.settings:get("remote_port")) .. ";#ad934e99]" ..
+			core.formspec_escape(core.settings:get("remote_port")) .. ";" .. field_color .. "99]" ..
 
 		-- Name / Password
 		"label[7.75,0.95;" ..
 			minetest.colorize("#333333", fgettext("Name / Password")) .. "]" ..
 		"field[8,1.85;2.9,0.5;te_name;;" ..
-			core.formspec_escape(core.settings:get("name")) .. ";#ad934e99]" ..
-		"pwdfield[10.73,1.85;1.77,0.5;te_pwd;;#ad934e99]" ..
+			core.formspec_escape(core.settings:get("name")) .. ";" .. field_color .. "99]" ..
+		"pwdfield[10.73,1.85;1.77,0.5;te_pwd;;" .. field_color .. "99]" ..
 
 		-- Description Background
-		"box[7.73,2.25;4.25,2.6;#ad934e]"..
+		"box[7.73,2.25;4.25,2.6;" .. field_color .. "]" ..
 
 		-- Connect
 		"image_button[10.1,5;2,0.8;" .. defaulttexturedir .. "mainmenu_button.png;btn_mp_connect;" ..

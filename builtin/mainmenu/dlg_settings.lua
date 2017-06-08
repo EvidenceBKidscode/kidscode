@@ -16,6 +16,8 @@
 --51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 --------------------------------------------------------------------------------
+local field_color = "#005597"
+local dropdown_color = "#6391a9;#1c5f82"
 
 local labels = {
 	leaves = {
@@ -176,39 +178,30 @@ end
 
 local function formspec(tabview, name, tabdata)
 	local tab_string =
-		"size[12,5.9;true]" ..
-		"background[-0.4,-0.4;12.8,7.3;" .. defaulttexturedir .. "mainmenu_bg_solo.png]" ..
-		"box[0,0;3.5,4.5;#ad934e]" ..
+		"size[8,5.9;true]" ..
+		"background[-0.4,-0.4;8.8,7.3;" .. defaulttexturedir .. "mainmenu_bg_solo.png]" ..
+		"box[0,0;3.5,4.5;" .. field_color .. "]" ..
 		"checkbox[0.25,0;cb_smooth_lighting;" ..
-				minetest.colorize("#333333", fgettext("Smooth Lighting")) .. ";"
+				fgettext("Smooth Lighting") .. ";"
 				.. dump(core.settings:get_bool("smooth_lighting")) .. "]" ..
 		"checkbox[0.25,0.5;cb_particles;" ..
-				minetest.colorize("#333333", fgettext("Particles")) .. ";"
+				fgettext("Particles") .. ";"
 				.. dump(core.settings:get_bool("enable_particles")) .. "]" ..
 		"checkbox[0.25,1;cb_3d_clouds;" ..
-				minetest.colorize("#333333", fgettext("3D Clouds")) .. ";"
+				fgettext("3D Clouds") .. ";"
 				.. dump(core.settings:get_bool("enable_3d_clouds")) .. "]" ..
 		"checkbox[0.25,1.5;cb_opaque_water;" ..
-				minetest.colorize("#333333", fgettext("Opaque Water")) .. ";"
+				fgettext("Opaque Water") .. ";"
 				.. dump(core.settings:get_bool("opaque_water")) .. "]" ..
 		"checkbox[0.25,2.0;cb_connected_glass;" ..
-				minetest.colorize("#333333", fgettext("Connected Glass")) .. ";"
+				fgettext("Connected Glass") .. ";"
 				.. dump(core.settings:get_bool("connected_glass")) .. "]" ..
 		"dropdown[0.25,2.8;3.3;dd_node_highlighting;" .. dd_options.node_highlighting[1] .. ";"
-				.. getSettingIndex.NodeHighlighting() .. ";#c3b07a;#d5c4a1]" ..
+				.. getSettingIndex.NodeHighlighting() .. ";" .. dropdown_color .. "]" ..
 		"dropdown[0.25,3.6;3.3;dd_leaves_style;" .. dd_options.leaves[1] .. ";"
-				.. getSettingIndex.Leaves() .. ";#c3b07a;#d5c4a1]" ..
-		"box[3.75,0;3.75,3.45;#ad934e]" ..
-		"label[3.85,0.1;" .. minetest.colorize("#333333", fgettext("Texturing:")) .. "]" ..
-		"dropdown[3.85,0.55;3.85;dd_filters;" .. dd_options.filters[1] .. ";"
-				.. getSettingIndex.Filter() .. ";#c3b07a;#d5c4a1]" ..
-		"dropdown[3.85,1.35;3.85;dd_mipmap;" .. dd_options.mipmap[1] .. ";"
-				.. getSettingIndex.Mipmap() .. ";#c3b07a;#d5c4a1]" ..
-		"label[3.85,2.15;" .. minetest.colorize("#333333", fgettext("Antialiasing:")) .. "]" ..
-		"dropdown[3.85,2.6;3.85;dd_antialiasing;" .. dd_options.antialiasing[1] .. ";"
-				.. getSettingIndex.Antialiasing() .. ";#c3b07a;#d5c4a1]" ..
-		"box[7.75,0;4,4.4;#ad934e]" ..
-		"checkbox[8,0;cb_shaders;" .. minetest.colorize("#333333", fgettext("Shaders")) .. ";"
+				.. getSettingIndex.Leaves() .. ";" .. dropdown_color .. "]" ..
+		"box[3.75,0;4,4.5;" .. field_color .. "]" ..
+		"checkbox[4,0;cb_shaders;" .. fgettext("Shaders") .. ";"
 				.. dump(core.settings:get_bool("enable_shaders")) .. "]"
 
 	if PLATFORM == "Android" then
@@ -218,7 +211,7 @@ local function formspec(tabview, name, tabdata)
 				.. fgettext("Reset singleplayer world") .. ";;false]"
 	else
 		tab_string = tab_string ..
-			"image_button[8,4.85;3.75,0.8;" .. defaulttexturedir ..
+			"image_button[4,4.8;3.75,0.8;" .. defaulttexturedir ..
 				"mainmenu_button_long.png;btn_change_keys;"
 				.. minetest.colorize("#333333", fgettext("Change keys")) .. ";;false]"
 	end
@@ -240,40 +233,43 @@ local function formspec(tabview, name, tabdata)
 
 	if core.settings:get_bool("enable_shaders") then
 		tab_string = tab_string ..
-			"checkbox[8,0.5;cb_bumpmapping;" ..
-					minetest.colorize("#333333", fgettext("Bump Mapping")) .. ";"
+			"checkbox[4,0.5;cb_bumpmapping;" ..
+					fgettext("Bump Mapping") .. ";"
 					.. dump(core.settings:get_bool("enable_bumpmapping")) .. "]" ..
-			"checkbox[8,1;cb_tonemapping;" ..
-					minetest.colorize("#333333", fgettext("Tone Mapping")) .. ";"
+			"checkbox[4,1;cb_tonemapping;" ..
+					fgettext("Tone Mapping") .. ";"
 					.. dump(core.settings:get_bool("tone_mapping")) .. "]" ..
-			"checkbox[8,1.5;cb_generate_normalmaps;" ..
-					minetest.colorize("#333333", fgettext("Normal Mapping")) .. ";"
+			"checkbox[4,1.5;cb_generate_normalmaps;" ..
+					fgettext("Normal Mapping") .. ";"
 					.. dump(core.settings:get_bool("generate_normalmaps")) .. "]" ..
-			"checkbox[8,2;cb_parallax;" ..
-					minetest.colorize("#333333", fgettext("Parallax Occlusion")) .. ";"
+			"checkbox[4,2;cb_parallax;" ..
+					fgettext("Parallax Occlusion") .. ";"
 					.. dump(core.settings:get_bool("enable_parallax_occlusion")) .. "]" ..
-			"checkbox[8,2.5;cb_waving_water;" ..
-					minetest.colorize("#333333", fgettext("Waving Water")) .. ";"
+			"checkbox[4,2.5;cb_waving_water;" ..
+					fgettext("Waving Water") .. ";"
 					.. dump(core.settings:get_bool("enable_waving_water")) .. "]" ..
-			"checkbox[8,3;cb_waving_leaves;" ..
-					minetest.colorize("#333333", fgettext("Waving Leaves")) .. ";"
+			"checkbox[4,3;cb_waving_leaves;" ..
+					fgettext("Waving Leaves") .. ";"
 					.. dump(core.settings:get_bool("enable_waving_leaves")) .. "]" ..
-			"checkbox[8,3.5;cb_waving_plants;" ..
-					minetest.colorize("#333333", fgettext("Waving Plants")) .. ";"
+			"checkbox[4,3.5;cb_waving_plants;" ..
+					fgettext("Waving Plants") .. ";"
 					.. dump(core.settings:get_bool("enable_waving_plants")) .. "]"
 	else
 		tab_string = tab_string ..
-			"tablecolumns[color;text]" ..
-			"tableoptions[background=#00000000;highlight=#00000000;border=false]" ..
-			"table[8.33,0.7;3.5,4;shaders;" ..
-				"#928374," .. fgettext("Bump Mapping") .. "," ..
-				"#928374," .. fgettext("Tone Mapping") .. "," ..
-				"#928374," .. fgettext("Normal Mapping") .. "," ..
-				"#928374," .. fgettext("Parallax Occlusion") .. "," ..
-				"#928374," .. fgettext("Waving Water") .. "," ..
-				"#928374," .. fgettext("Waving Leaves") .. "," ..
-				"#928374," .. fgettext("Waving Plants") .. "," ..
-				";1]"
+			"label[4.38,0.7;" .. core.colorize("#888888",
+					fgettext("Bump Mapping")) .. "]" ..
+			"label[4.38,1.2;" .. core.colorize("#888888",
+					fgettext("Tone Mapping")) .. "]" ..
+			"label[4.38,1.7;" .. core.colorize("#888888",
+					fgettext("Normal Mapping")) .. "]" ..
+			"label[4.38,2.2;" .. core.colorize("#888888",
+					fgettext("Parallax Occlusion")) .. "]" ..
+			"label[4.38,2.7;" .. core.colorize("#888888",
+					fgettext("Waving Water")) .. "]" ..
+			"label[4.38,3.2;" .. core.colorize("#888888",
+					fgettext("Waving Leaves")) .. "]" ..
+			"label[4.38,3.7;" .. core.colorize("#888888",
+					fgettext("Waving Plants")) .. "]"
 	end
 
 	return tab_string

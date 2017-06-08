@@ -15,6 +15,9 @@
 --with this program; if not, write to the Free Software Foundation, Inc.,
 --51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+local field_color = "#005597"
+local dropdown_color = "#6391a9;#1c5f82"
+
 local FILENAME = "settingtypes.txt"
 
 local CHAR_CLASSES = {
@@ -520,7 +523,7 @@ local function create_change_setting_formspec(dialogdata)
 			current_value = get_current_value(setting)
 		end
 		formspec = formspec .. "field[0.5,4;7.5,1;te_setting_value;;"
-				.. core.formspec_escape(current_value) .. ";#ad934e99]"
+				.. core.formspec_escape(current_value) .. ";" .. field_color .. "99]"
 				.. "image_button[8,3.75;2,0.8;" .. defaulttexturedir ..
 					"mainmenu_button.png;btn_browser_path;" ..
 					minetest.colorize("#333333", fgettext("Browse")) .. ";;false]"
@@ -540,7 +543,7 @@ local function create_change_setting_formspec(dialogdata)
 			end
 		end
 		formspec = formspec .. "field[0.5,4;" .. width .. ",1;te_setting_value;;"
-				.. core.formspec_escape(text) .. ";#ad934e99]"
+				.. core.formspec_escape(text) .. ";" .. field_color .. "99]"
 	end
 	return formspec
 end
@@ -634,7 +637,7 @@ local function create_settings_formspec(tabview, name, tabdata)
 			"background[-0.2,-0.4;12.6,7.8;" .. defaulttexturedir .. "mainmenu_bg_solo.png]" ..
 			"tablecolumns[color;tree;text,width=32;text]" ..
 			"tableoptions[background=#00000000;" .. 			"color=#333333;highlight=#d5c4a1;highlight_text=#333333;border=false]" ..
-			"field[0.3,0.1;10.2,1;search_string;;" .. core.formspec_escape(search_string) .. ";#ad934e99]" ..
+			"field[0.3,0.1;10.2,1;search_string;;" .. core.formspec_escape(search_string) .. ";" .. field_color .. "99]" ..
 			"field_close_on_enter[search_string;false]" ..
 			"image_button[10.2,-0.12;2,0.8;" .. defaulttexturedir ..
 				"mainmenu_button.png;search;" ..

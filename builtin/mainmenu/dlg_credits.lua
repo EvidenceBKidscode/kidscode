@@ -17,35 +17,12 @@
 
 --------------------------------------------------------------------------------
 
-local core_developers = {
-	"Perttu Ahola (celeron55) <celeron55@gmail.com>",
-	"Ryan Kwolek (kwolekr) <kwolekr@minetest.net>",
-	"PilzAdam <pilzadam@minetest.net>",
-	"sfan5 <sfan5@live.de>",
-	"kahrl <kahrl@gmx.net>",
-	"sapier",
-	"ShadowNinja <shadowninja@minetest.net>",
-	"Nathanaël Courant (Nore/Ekdohibs) <nore@mesecons.net>",
-	"Loic Blot (nerzhul/nrz) <loic.blot@unix-experience.fr>",
-	"Matt Gregory (paramat)",
-	"est31 <MTest31@outlook.com>",
-	"Craig Robbins (Zeno) <craig.d.robbins@gmail.com>",
-	"Auke Kok (sofar) <sofar@foo-projects.org>",
-	"Andrew Ward (rubenwardy) <rubenwardy@gmail.com>",
-}
-
-local active_contributors = {
-	"Duane Robertson <duane@duanerobertson.com>",
-	"SmallJoker <mk939@ymail.com>",
-	"Lars Hofhansl <larsh@apache.org>",
-	"Jeija <jeija@mesecons.net>",
-	"Gregory Currie (gregorycu)",
-	"Sokomine <wegwerf@anarres.dyndns.org>",
-	"TeTpaAka",
-	"Jean-Patrick G (kilbith) <jeanpatrick.guerrero@gmail.com>",
-	"Diego Martínez (kaeza) <kaeza@users.sf.net>",
-	"Dániel Juhász (juhdanad) <juhdanad@gmail.com>",
-	"Rogier <rogier777@gmail.com>",
+local credits = {
+	"© 2016-2017 Kidscode • developed upon the Minetest engine",
+	"",
+	"Didier Plasse • serial startuper",
+	"Jean-Patrick Guerrero • heroic developer",
+	"Andrei Toykhov • magic romanian educator",
 }
 
 local function get_formspec()
@@ -53,16 +30,16 @@ local function get_formspec()
 	local version = core.get_version()
 	return
 		"size[12,5.5;true]" ..
+		"image[0.5,1;" .. core.formspec_escape(logofile) .. "]" ..
+		"label[0.5,3.2;" .. core.colorize("#333333", version.project .. " " .. version.string) .. "]" ..
 		"background[-0.4,-0.6;12.8,7;" .. defaulttexturedir .. "mainmenu_bg_solo.png]" ..
 		"image_button[0,5;2,0.8;" .. defaulttexturedir .. "mainmenu_button.png;btn_back;" ..
 			minetest.colorize("#333333", fgettext("< Back")) .. ";;false]" ..
 		"tablecolumns[color;text]" ..
 		"tableoptions[background=#00000000;highlight=#00000000;color=#333333;border=false]" ..
 		"table[3.5,-0.25;8.5,6.05;list_credits;" ..
-		"#b57614," .. fgettext("Minetest Core Developers") .. ",," ..
-		table.concat(core_developers, ",,") .. ",,," ..
-		"#b57614," .. fgettext("Minetest Active Contributors") .. ",," ..
-		table.concat(active_contributors, ",,") .. ",,," ..
+		"#b57614," .. fgettext("The Kidscode's Crew") .. ",," ..
+		table.concat(credits, ",,") .. ",,," ..
 		";1]"
 end
 

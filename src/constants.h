@@ -110,11 +110,11 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 // TODO: implement dpi-based scaling for windows and remove this hack
 #if defined(_WIN32)
-	#define TTF_DEFAULT_FONT_SIZE   (18)
+	#define TTF_DEFAULT_FONT_SIZE   (19)
 #elif defined(__APPLE__)
-    #define TTF_DEFAULT_FONT_SIZE   (20)
+    #define TTF_DEFAULT_FONT_SIZE   (21)
 #else
-	#define TTF_DEFAULT_FONT_SIZE	(14)
+	#define TTF_DEFAULT_FONT_SIZE	(15)
 #endif
 #define DEFAULT_FONT_SIZE (10)
 

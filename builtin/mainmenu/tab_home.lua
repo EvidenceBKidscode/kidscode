@@ -10,10 +10,7 @@ local function get_formspec(tabview, name, tabdata)
 		"image_button[3.25,4.5;5.4,1.4;" ..
 			core.formspec_escape(defaulttexturedir .. "settings.png") .. ";settings;;true;false]" ..
 		"image_button[3.25,6;5.4,1.4;" ..
-			core.formspec_escape(defaulttexturedir .. "quit.png") .. ";quit;;true;false]" ..
-		"image_button[4.6,9;2.7,0.6;" ..
-			core.formspec_escape(defaulttexturedir .. "txt_credits.png") .. ";credits;;true;false]"
-
+			core.formspec_escape(defaulttexturedir .. "quit.png") .. ";quit;;true;false]"
 
 	return retval
 end

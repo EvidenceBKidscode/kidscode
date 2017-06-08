@@ -94,7 +94,7 @@ local function get_formspec(tabview, name, tabdata)
 
 	retval = retval ..
 		"size[11.8,5.5;true]" ..
-		"box[3.9,0.25;7.5,3.7;#ad934e]" ..
+		"box[3.9,0.25;7.5,3.7;#005597]" ..
 		"background[-0.3,-0.3;12.4,6.5;" .. defaulttexturedir .. "mainmenu_bg_solo.png]" ..
 		"image_button[0,5;2,0.8;" .. defaulttexturedir .. "mainmenu_button.png;btn_back;" ..
 			minetest.colorize("#333333", fgettext("< Back")) .. ";;false]" ..

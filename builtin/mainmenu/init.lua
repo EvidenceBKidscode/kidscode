@@ -139,7 +139,6 @@ dofile(menupath .. DIR_DELIM .. "textures.lua")
 dofile(menupath .. DIR_DELIM .. "dlg_singleplayer.lua")
 dofile(menupath .. DIR_DELIM .. "dlg_settings.lua")
 dofile(menupath .. DIR_DELIM .. "dlg_multiplayer.lua")
-dofile(menupath .. DIR_DELIM .. "dlg_credits.lua")
 
 dofile(menupath .. DIR_DELIM .. "dlg_config_world.lua")
 dofile(menupath .. DIR_DELIM .. "dlg_settings_advanced.lua")
