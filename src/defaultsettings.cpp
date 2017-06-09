@@ -128,7 +128,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("screen_w", "800");
 	settings->setDefault("screen_h", "600");
 	settings->setDefault("autosave_screensize", "true");
-	settings->setDefault("fullscreen", "false");
+	settings->setDefault("fullscreen", "true");
 	settings->setDefault("fullscreen_bpp", "24");
 	settings->setDefault("vsync", "false");
 	settings->setDefault("fov", "72");
@@ -209,7 +209,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("repeat_rightclick_time", "0.25");
 	settings->setDefault("random_input", "false");
 	settings->setDefault("aux1_descends", "false");
-	settings->setDefault("doubletap_jump", "false");
+	settings->setDefault("doubletap_jump", "true");
 	settings->setDefault("always_fly_fast", "true");
 	settings->setDefault("continuous_forward", "false");
 	settings->setDefault("enable_joysticks", "false");
