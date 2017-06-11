@@ -512,7 +512,7 @@ set(client_SRCS
 	guiEditBoxWithScrollbar.cpp
 	guiEngine.cpp
 	guiListBox.cpp
-	guiFileSelectMenu.cpp
+	guiPathSelectMenu.cpp
 	guiFormSpecMenu.cpp
 	guiKeyChangeMenu.cpp
 	guiPasswordChange.cpp

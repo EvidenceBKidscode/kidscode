@@ -340,7 +340,7 @@ void set_default_settings(Settings *settings)
 	// Liquids
 	settings->setDefault("liquid_loop_max", "100000");
 	settings->setDefault("liquid_queue_purge_time", "0");
-	settings->setDefault("liquid_update", "1.0");
+	settings->setDefault("liquid_update", "0.3");
 
 	// Mapgen
 	settings->setDefault("mg_name", "v7");
