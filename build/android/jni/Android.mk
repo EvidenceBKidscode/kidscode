@@ -153,7 +153,7 @@ LOCAL_SRC_FILES := \
 		jni/src/guiChatConsole.cpp                \
 		jni/src/guiComboBox.cpp                   \
 		jni/src/guiEngine.cpp                     \
-		jni/src/guiFileSelectMenu.cpp             \
+		jni/src/guiPathSelectMenu.cpp             \
 		jni/src/guiFormSpecMenu.cpp               \
 		jni/src/guiKeyChangeMenu.cpp              \
 		jni/src/guiListBox.cpp                    \

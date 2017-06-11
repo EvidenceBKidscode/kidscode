@@ -199,7 +199,7 @@ local function parse_setting_line(settings, line, read_all, base_level, allow_se
 		return
 	end
 
-	if setting_type == "path" then
+	if setting_type == "path" or setting_type == "filepath" then
 		local default = remaining_line:match("^(.*)$")
 
 		if not default then
@@ -209,7 +209,7 @@ local function parse_setting_line(settings, line, read_all, base_level, allow_se
 		table.insert(settings, {
 			name = name,
 			readable_name = readable_name,
-			type = "path",
+			type = setting_type,
 			default = default,
 			comment = current_comment,
 		})
@@ -517,7 +517,7 @@ local function create_change_setting_formspec(dialogdata)
 		end
 		formspec = formspec .. ";" .. selected_index .. "]"
 
-	elseif setting.type == "path" then
+	elseif setting.type == "path" or setting.type == "filepath" then
 		local current_value = dialogdata.selected_path
 		if not current_value then
 			current_value = get_current_value(setting)
@@ -527,7 +527,6 @@ local function create_change_setting_formspec(dialogdata)
 				.. "image_button[8,3.75;2,0.8;" .. defaulttexturedir ..
 					"mainmenu_button.png;btn_browser_path;" ..
 					minetest.colorize("#333333", fgettext("Browse")) .. ";;false]"
-
 	else
 		-- TODO: fancy input for float, int, flags, noise_params, v3f
 		local width = 10
@@ -621,7 +620,13 @@ local function handle_change_setting_buttons(this, fields)
 	end
 
 	if fields["btn_browser_path"] then
-		core.show_file_open_dialog("dlg_browse_path", fgettext_ne("Select path"))
+		core.show_path_select_dialog("dlg_browse_path",
+			fgettext_ne("Select directory"), false)
+	end
+
+	if fields["btn_browser_filepath"] then
+		core.show_path_select_dialog("dlg_browse_path",
+			fgettext_ne("Select file"), true)
 	end
 
 	if fields["dlg_browse_path_accepted"] then

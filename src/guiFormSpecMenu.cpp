@@ -135,13 +135,8 @@ GUIFormSpecMenu::~GUIFormSpecMenu()
 	}
 
 	delete m_selected_item;
-
-	if (m_form_src != NULL) {
-		delete m_form_src;
-	}
-	if (m_text_dst != NULL) {
-		delete m_text_dst;
-	}
+	delete m_form_src;
+	delete m_text_dst;
 }
 
 inline u32 clamp_u8(s32 value)
