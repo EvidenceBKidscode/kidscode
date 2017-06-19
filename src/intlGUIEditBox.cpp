@@ -63,16 +63,10 @@ namespace gui
 //! constructor
 intlGUIEditBox::intlGUIEditBox(const wchar_t* text, bool border,
 		IGUIEnvironment* environment, IGUIElement* parent, s32 id,
-		const core::rect<s32>& rectangle, bool writable, bool has_vscrollbar)
-	: IGUIEditBox(environment, parent, id, rectangle), MouseMarking(false),
-	Border(border), OverrideColorEnabled(false), MarkBegin(0), MarkEnd(0),
-	OverrideColor(video::SColor(101,255,255,255)), OverrideFont(0), LastBreakFont(0),
-	Operator(0), BlinkStartTime(0), CursorPos(0), HScrollPos(0), VScrollPos(0), Max(0),
-	WordWrap(false), MultiLine(false), AutoScroll(true), PasswordBox(false),
-	PasswordChar(L'*'), HAlign(EGUIA_UPPERLEFT), VAlign(EGUIA_CENTER),
-	CurrentTextRect(0,0,1,1), FrameRect(rectangle),
-	m_scrollbar_width(0), m_vscrollbar(NULL), m_writable(writable),
-	m_bg_color(video::SColor(0,0,0,0)), m_bg_color_used(false)
+		const core::rect<s32>& rectangle)
+	: IGUIEditBox(environment, parent, id, rectangle),
+	Border(border),
+	FrameRect(rectangle)
 {
 	#ifdef _DEBUG
 	setDebugName("intlintlGUIEditBox");
