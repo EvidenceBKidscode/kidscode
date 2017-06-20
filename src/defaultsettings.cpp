@@ -128,7 +128,12 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("screen_w", "800");
 	settings->setDefault("screen_h", "600");
 	settings->setDefault("autosave_screensize", "true");
+
+#if defined(__APPLE__)
+	settings->setDefault("fullscreen", "true"); // MacOS X
+#else
 	settings->setDefault("fullscreen", "false");
+#endif
 	settings->setDefault("fullscreen_bpp", "24");
 	settings->setDefault("vsync", "false");
 	settings->setDefault("fov", "72");
