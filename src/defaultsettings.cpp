@@ -275,13 +275,13 @@ void set_default_settings(Settings *settings)
 
 	settings->setDefault("default_game", "minetest");
 	settings->setDefault("motd", "");
-	settings->setDefault("max_users", "15");
-	settings->setDefault("creative_mode", "false");
+	settings->setDefault("max_users", "30");
+	settings->setDefault("creative_mode", "true");
 	settings->setDefault("show_statusline_on_connect", "true");
 	settings->setDefault("enable_damage", "true");
 	settings->setDefault("default_password", "");
 	settings->setDefault("default_privs", "");
-	settings->setDefault("enable_pvp", "true");
+	settings->setDefault("enable_pvp", "false");
 	settings->setDefault("disallow_empty_password", "false");
 	settings->setDefault("disable_anticheat", "false");
 	settings->setDefault("enable_rollback_recording", "false");
@@ -304,7 +304,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("block_send_optimize_distance", "4");
 	settings->setDefault("server_side_occlusion_culling", "true");
 	settings->setDefault("max_clearobjects_extra_loaded_blocks", "4096");
-	settings->setDefault("time_speed", "72");
+	settings->setDefault("time_speed", "0");
 	settings->setDefault("server_unload_unused_data_timeout", "29");
 	settings->setDefault("max_objects_per_block", "64");
 	settings->setDefault("server_map_save_interval", "5.3");
