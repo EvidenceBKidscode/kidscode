@@ -206,8 +206,7 @@ void Camera::addArmInertia(f32 player_yaw, f32 frametime)
 		*/
 
 		if (m_cam_vel.X > 1.0f) {
-			m_timer.X = 0.0f;
-			m_timer.X += frametime;
+			m_timer.X = frametime;
 
 			if (m_cam_vel.X > m_cam_vel_old.X)
 				m_cam_vel_old.X = m_cam_vel.X;
@@ -226,8 +225,7 @@ void Camera::addArmInertia(f32 player_yaw, f32 frametime)
 		}
 
 		if (m_cam_vel.Y > 1.0f) {
-			m_timer.Y = 0.0f;
-			m_timer.Y += frametime;
+			m_timer.Y = frametime;
 
 			if (m_cam_vel.Y > m_cam_vel_old.Y)
 				m_cam_vel_old.Y = m_cam_vel.Y;
