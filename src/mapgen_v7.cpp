@@ -59,12 +59,15 @@ MapgenV7::MapgenV7(int mapgenid, MapgenV7Params *params, EmergeManager *emerge)
 	this->large_cave_depth    = params->large_cave_depth;
 	this->lava_depth          = params->lava_depth;
 	this->float_mount_density = params->float_mount_density;
-	this->float_mount_height  = params->float_mount_height;
 	this->floatland_level     = params->floatland_level;
 	this->shadow_limit        = params->shadow_limit;
 	this->cavern_limit        = params->cavern_limit;
 	this->cavern_taper        = params->cavern_taper;
 	this->cavern_threshold    = params->cavern_threshold;
+
+	// This is to avoid a divide-by-zero.
+	// Parameter will be saved to map_meta.txt in limited form.
+	params->float_mount_height = MYMAX(params->float_mount_height, 1.0f);
 
 	// 2D noise
 	noise_terrain_base    = new Noise(&params->np_terrain_base,    seed, csize.X, csize.Z);
@@ -382,7 +385,8 @@ float MapgenV7::baseTerrainLevelFromMap(int index)
 
 bool MapgenV7::getMountainTerrainAtPoint(s16 x, s16 y, s16 z)
 {
-	float mnt_h_n = NoisePerlin2D(&noise_mount_height->np, x, z, seed);
+	float mnt_h_n =
+			MYMAX(NoisePerlin2D(&noise_mount_height->np, x, z, seed), 1.0f);
 	float density_gradient = -((float)y / mnt_h_n);
 	float mnt_n = NoisePerlin3D(&noise_mountain->np, x, y, z, seed);
 
@@ -392,7 +396,7 @@ bool MapgenV7::getMountainTerrainAtPoint(s16 x, s16 y, s16 z)
 
 bool MapgenV7::getMountainTerrainFromMap(int idx_xyz, int idx_xz, s16 y)
 {
-	float mounthn = noise_mount_height->result[idx_xz];
+	float mounthn = MYMAX(noise_mount_height->result[idx_xz], 1.0f);
 	float density_gradient = -((float)y / mounthn);
 	float mountn = noise_mountain->result[idx_xyz];
 
@@ -421,7 +425,8 @@ void MapgenV7::floatBaseExtentFromMap(s16 *float_base_min, s16 *float_base_max, 
 
 	float n_base = noise_floatland_base->result[idx_xz];
 	if (n_base > 0.0f) {
-		float n_base_height = noise_float_base_height->result[idx_xz];
+		float n_base_height =
+				MYMAX(noise_float_base_height->result[idx_xz], 1.0f);
 		float amp = n_base * n_base_height;
 		float ridge = n_base_height / 3.0f;
 		base_min = floatland_level - amp / 1.5f;

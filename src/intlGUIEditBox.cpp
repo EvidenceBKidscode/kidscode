@@ -45,6 +45,7 @@
 //#include "Keycodes.h"
 #include "settings.h" // for settings
 #include "log.h"
+#include "client/renderingengine.h"
 
 /*
 	todo:
@@ -106,7 +107,7 @@ intlGUIEditBox::intlGUIEditBox(const wchar_t* text, bool border,
 
 		// apply gui scaling
 		m_scrollbar_width = (m_scrollbar_width / (2.0 / 3.0))
-			* porting::getDisplayDensity()
+			* RenderingEngine::getDisplayDensity()
 			* g_settings->getFloat("gui_scaling");
 
 		if (m_scrollbar_width > 0) {
