@@ -24,6 +24,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "Keycodes.h"
 #include <IEventReceiver.h>
 #include <string>
+#include <cwctype>
 
 /* A key press, consisting of either an Irrlicht keycode
    or an actual char */
@@ -38,7 +39,8 @@ public:
 
 	bool operator==(const KeyPress &o) const
 	{
-		return (Char > 0 && Char == o.Char) || (valid_kcode(Key) && Key == o.Key);
+		return (Char > 0 && std::towupper(Char) == std::towupper(o.Char))
+			|| (!valid_char(o.Char) && valid_kcode(Key) && Key == o.Key);
 	}
 
 	const char *sym() const;
@@ -48,6 +50,11 @@ protected:
 	static bool valid_kcode(irr::EKEY_CODE k)
 	{
 		return k > 0 && k < irr::KEY_KEY_CODES_COUNT;
+	}
+
+	static bool valid_char(wchar_t c)
+	{
+		return std::towupper(c) >= 'A' && std::towupper(c) <= 'Z';
 	}
 
 	irr::EKEY_CODE Key;

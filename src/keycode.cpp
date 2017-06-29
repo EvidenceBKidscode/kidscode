@@ -268,6 +268,7 @@ struct table_key lookup_keykey(irr::EKEY_CODE key)
 
 struct table_key lookup_keychar(wchar_t Char)
 {
+    Char = std::towupper(Char);
 	for (u16 i = 0; i < ARRLEN(table); i++) {
 		if (table[i].Char == Char)
 			return table[i];
@@ -329,7 +330,9 @@ KeyPress::KeyPress(const irr::SEvent::SKeyInput &in, bool prefer_character)
 	Char = in.Char;
 
 	try {
-		if (valid_kcode(Key))
+		if (valid_char(Char))
+			m_name = lookup_keychar(Char).Name;
+		else if (valid_kcode(Key))
 			m_name = lookup_keykey(Key).Name;
 		else
 			m_name = lookup_keychar(Char).Name;
@@ -348,7 +351,9 @@ const char *KeyPress::name() const
 	if (m_name == "")
 		return "";
 	const char *ret;
-	if (valid_kcode(Key))
+	if (valid_char(Char))
+		ret = lookup_keychar(Char).LangName;
+	else if (valid_kcode(Key))
 		ret = lookup_keykey(Key).LangName;
 	else
 		ret = lookup_keychar(Char).LangName;
