@@ -124,7 +124,6 @@ LOCAL_SRC_FILES := \
 		jni/src/clientobject.cpp                  \
 		jni/src/clouds.cpp                        \
 		jni/src/collision.cpp                     \
-		jni/src/content_abm.cpp                   \
 		jni/src/content_cao.cpp                   \
 		jni/src/content_cso.cpp                   \
 		jni/src/content_mapblock.cpp              \
@@ -139,7 +138,6 @@ LOCAL_SRC_FILES := \
 		jni/src/database.cpp                      \
 		jni/src/debug.cpp                         \
 		jni/src/defaultsettings.cpp               \
-		jni/src/drawscene.cpp                     \
 		jni/src/dungeongen.cpp                    \
 		jni/src/emerge.cpp                        \
 		jni/src/environment.cpp                   \
@@ -273,6 +271,7 @@ LOCAL_SRC_FILES := \
 		jni/src/wieldmesh.cpp                     \
 		jni/src/client/clientlauncher.cpp         \
 		jni/src/client/inputhandler.cpp           \
+		jni/src/client/renderingengine.cpp        \
 		jni/src/client/tile.cpp                   \
 		jni/src/client/joystick_controller.cpp    \
 		jni/src/irrlicht_changes/static_text.cpp

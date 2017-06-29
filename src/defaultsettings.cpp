@@ -128,7 +128,12 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("screen_w", "800");
 	settings->setDefault("screen_h", "600");
 	settings->setDefault("autosave_screensize", "true");
+
+#if defined(__APPLE__)
+	settings->setDefault("fullscreen", "true"); // MacOS X
+#else
 	settings->setDefault("fullscreen", "false");
+#endif
 	settings->setDefault("fullscreen_bpp", "24");
 	settings->setDefault("vsync", "false");
 	settings->setDefault("fov", "72");
@@ -173,6 +178,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("enable_particles", "true");
 	settings->setDefault("formspec_fullscreen_bg_color", "(0,0,0)");
 	settings->setDefault("formspec_fullscreen_bg_opacity", "0");
+	settings->setDefault("arm_inertia", "true");
 
 	settings->setDefault("enable_minimap", "true");
 	settings->setDefault("minimap_shape_round", "true");
@@ -270,13 +276,13 @@ void set_default_settings(Settings *settings)
 
 	settings->setDefault("default_game", "minetest");
 	settings->setDefault("motd", "");
-	settings->setDefault("max_users", "15");
-	settings->setDefault("creative_mode", "false");
+	settings->setDefault("max_users", "30");
+	settings->setDefault("creative_mode", "true");
 	settings->setDefault("show_statusline_on_connect", "true");
 	settings->setDefault("enable_damage", "true");
 	settings->setDefault("default_password", "");
 	settings->setDefault("default_privs", "");
-	settings->setDefault("enable_pvp", "true");
+	settings->setDefault("enable_pvp", "false");
 	settings->setDefault("disallow_empty_password", "false");
 	settings->setDefault("disable_anticheat", "false");
 	settings->setDefault("enable_rollback_recording", "false");
@@ -299,7 +305,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("block_send_optimize_distance", "4");
 	settings->setDefault("server_side_occlusion_culling", "true");
 	settings->setDefault("max_clearobjects_extra_loaded_blocks", "4096");
-	settings->setDefault("time_speed", "72");
+	settings->setDefault("time_speed", "0");
 	settings->setDefault("server_unload_unused_data_timeout", "29");
 	settings->setDefault("max_objects_per_block", "64");
 	settings->setDefault("server_map_save_interval", "5.3");
@@ -319,9 +325,9 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("emergequeue_limit_diskonly", "32");
 	settings->setDefault("emergequeue_limit_generate", "32");
 	settings->setDefault("num_emerge_threads", "1");
-	settings->setDefault("secure.enable_security", "true");
-	settings->setDefault("secure.trusted_mods", "kidscode_acl,kidscode_utility");
-	settings->setDefault("secure.http_mods", "kidscode_acl,kidsbot,player_menu");
+	settings->setDefault("secure.enable_security", "false");
+	settings->setDefault("secure.trusted_mods", "kidscode_acl,kidscode_utility,kidsbot");
+	settings->setDefault("secure.http_mods", "kidscode_utility,kidscode_acl,kidsbot,player_menu");
 
 	// Physics
 	settings->setDefault("movement_acceleration_default", "3");

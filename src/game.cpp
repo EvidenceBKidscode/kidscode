@@ -20,6 +20,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "game.h"
 
 #include <iomanip>
+#include "client/renderingengine.h"
 #include "camera.h"
 #include "client.h"
 #include "client/inputhandler.h"
@@ -30,7 +31,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "clouds.h"
 #include "config.h"
 #include "content_cao.h"
-#include "drawscene.h"
 #include "event_manager.h"
 #include "fontengine.h"
 #include "itemdef.h"
@@ -44,6 +44,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "guiVolumeChange.h"
 #include "mainmenumanager.h"
 #include "mapblock.h"
+#include "minimap.h"
 #include "nodedef.h"         // Needed for determining pointing to nodes
 #include "nodemetadata.h"
 #include "particles.h"
@@ -152,6 +153,9 @@ struct LocalFormspecHandler : public TextDest
 
 			if (fields.find("btn_exit_os") != fields.end()) {
 				g_gamecallback->exitToOS();
+#ifndef __ANDROID__
+				RenderingEngine::get_raw_device()->closeDevice();
+#endif
 				return;
 			}
 
@@ -726,7 +730,6 @@ public:
 			minimap_yaw.getAs3Values(minimap_yaw_array);
 #endif
 			m_minimap_yaw.set(minimap_yaw_array, services);
-
 		}
 
 		SamplerLayer_t base_tex = 0,
@@ -774,8 +777,8 @@ public:
 };
 
 
-bool nodePlacementPrediction(Client &client,
-		const ItemDefinition &playeritem_def, v3s16 nodepos, v3s16 neighbourpos)
+bool nodePlacementPrediction(Client &client, const ItemDefinition &playeritem_def,
+	const ItemStack &playeritem, v3s16 nodepos, v3s16 neighbourpos)
 {
 	std::string prediction = playeritem_def.node_placement_prediction;
 	INodeDefManager *nodedef = client.ndef();
@@ -818,11 +821,13 @@ bool nodePlacementPrediction(Client &client,
 			return false;
 		}
 
+		const ContentFeatures &predicted_f = nodedef->get(id);
+
 		// Predict param2 for facedir and wallmounted nodes
 		u8 param2 = 0;
 
-		if (nodedef->get(id).param_type_2 == CPT2_WALLMOUNTED ||
-				nodedef->get(id).param_type_2 == CPT2_COLORED_WALLMOUNTED) {
+		if (predicted_f.param_type_2 == CPT2_WALLMOUNTED ||
+				predicted_f.param_type_2 == CPT2_COLORED_WALLMOUNTED) {
 			v3s16 dir = nodepos - neighbourpos;
 
 			if (abs(dir.Y) > MYMAX(abs(dir.X), abs(dir.Z))) {
@@ -834,8 +839,8 @@ bool nodePlacementPrediction(Client &client,
 			}
 		}
 
-		if (nodedef->get(id).param_type_2 == CPT2_FACEDIR ||
-				nodedef->get(id).param_type_2 == CPT2_COLORED_FACEDIR) {
+		if (predicted_f.param_type_2 == CPT2_FACEDIR ||
+				predicted_f.param_type_2 == CPT2_COLORED_FACEDIR) {
 			v3s16 dir = nodepos - floatToInt(client.getEnv().getLocalPlayer()->getPosition(), BS);
 
 			if (abs(dir.X) > abs(dir.Z)) {
@@ -848,7 +853,7 @@ bool nodePlacementPrediction(Client &client,
 		assert(param2 <= 5);
 
 		//Check attachment if node is in group attached_node
-		if (((ItemGroupList) nodedef->get(id).groups)["attached_node"] != 0) {
+		if (((ItemGroupList) predicted_f.groups)["attached_node"] != 0) {
 			static v3s16 wallmounted_dirs[8] = {
 				v3s16(0, 1, 0),
 				v3s16(0, -1, 0),
@@ -859,14 +864,36 @@ bool nodePlacementPrediction(Client &client,
 			};
 			v3s16 pp;
 
-			if (nodedef->get(id).param_type_2 == CPT2_WALLMOUNTED ||
-					nodedef->get(id).param_type_2 == CPT2_COLORED_WALLMOUNTED)
+			if (predicted_f.param_type_2 == CPT2_WALLMOUNTED ||
+					predicted_f.param_type_2 == CPT2_COLORED_WALLMOUNTED)
 				pp = p + wallmounted_dirs[param2];
 			else
 				pp = p + v3s16(0, -1, 0);
 
 			if (!nodedef->get(map.getNodeNoEx(pp)).walkable)
 				return false;
+		}
+
+		// Apply color
+		if ((predicted_f.param_type_2 == CPT2_COLOR
+				|| predicted_f.param_type_2 == CPT2_COLORED_FACEDIR
+				|| predicted_f.param_type_2 == CPT2_COLORED_WALLMOUNTED)) {
+			const std::string &indexstr = playeritem.metadata.getString(
+				"palette_index", 0);
+			if (!indexstr.empty()) {
+				s32 index = mystoi(indexstr);
+				if (predicted_f.param_type_2 == CPT2_COLOR) {
+					param2 = index;
+				} else if (predicted_f.param_type_2
+						== CPT2_COLORED_WALLMOUNTED) {
+					// param2 = pure palette index + other
+					param2 = (index & 0xf8) | (param2 & 0x07);
+				} else if (predicted_f.param_type_2
+						== CPT2_COLORED_FACEDIR) {
+					// param2 = pure palette index + other
+					param2 = (index & 0xe0) | (param2 & 0x1f);
+				}
+			}
 		}
 
 		// Add node to client map
@@ -900,14 +927,13 @@ bool nodePlacementPrediction(Client &client,
 }
 
 static inline void create_formspec_menu(GUIFormSpecMenu **cur_formspec,
-		Client *client, IrrlichtDevice *device, JoystickController *joystick,
+		Client *client, JoystickController *joystick,
 		IFormSource *fs_src, TextDest *txt_dest)
 {
 
 	if (*cur_formspec == 0) {
-		*cur_formspec = new GUIFormSpecMenu(device, joystick,
-			guiroot, -1, &g_menumgr, client, client->getTextureSource(),
-			fs_src, txt_dest);
+		*cur_formspec = new GUIFormSpecMenu(joystick, guiroot, -1, &g_menumgr,
+			client, client->getTextureSource(), fs_src, txt_dest);
 		(*cur_formspec)->doPause = false;
 
 		/*
@@ -972,9 +998,10 @@ static void updateChat(Client &client, f32 dtime, bool show_debug,
 		chat_y += 2 * line_height;
 
 	// first pass to calculate height of text to be set
+	const v2u32 &window_size = RenderingEngine::get_instance()->getWindowSize();
 	s32 width = std::min(g_fontengine->getTextWidth(recent_chat.c_str()) + 10,
-			     porting::getWindowSize().X - 20);
-	core::rect<s32> rect(10, chat_y, width, chat_y + porting::getWindowSize().Y);
+			window_size.X - 20);
+	core::rect<s32> rect(10, chat_y, width, chat_y + window_size.Y);
 	guitext_chat->setRelativePosition(rect);
 
 	//now use real height of text and adjust rect according to this size
@@ -1176,7 +1203,6 @@ public:
 	bool startup(bool *kill,
 			bool random_input,
 			InputHandler *input,
-			IrrlichtDevice *device,
 			const std::string &map_dir,
 			const std::string &playername,
 			const std::string &password,
@@ -1277,8 +1303,9 @@ protected:
 			const core::line3d<f32> &shootline, bool liquids_pointable,
 			bool look_for_object, const v3s16 &camera_offset);
 	void handlePointingAtNothing(const ItemStack &playerItem);
-	void handlePointingAtNode(const PointedThing &pointed, const ItemDefinition &playeritem_def,
-			const ToolCapabilities &playeritem_toolcap, f32 dtime);
+	void handlePointingAtNode(const PointedThing &pointed,
+		const ItemDefinition &playeritem_def, const ItemStack &playeritem,
+		const ToolCapabilities &playeritem_toolcap, f32 dtime);
 	void handlePointingAtObject(const PointedThing &pointed, const ItemStack &playeritem,
 			const v3f &player_position, bool show_debug);
 	void handleDigging(const PointedThing &pointed, const v3s16 &nodepos,
@@ -1291,7 +1318,7 @@ protected:
 	// Misc
 	void limitFps(FpsControl *fps_timings, f32 *dtime);
 
-	void showOverlayMessage(const wchar_t *msg, float dtime, int percent,
+	void showOverlayMessage(const char *msg, float dtime, int percent,
 			bool draw_clouds = true);
 
 	static void settingChangedCallback(const std::string &setting_name, void *data);
@@ -1559,7 +1586,6 @@ Game::~Game()
 bool Game::startup(bool *kill,
 		bool random_input,
 		InputHandler *input,
-		IrrlichtDevice *device,
 		const std::string &map_dir,
 		const std::string &playername,
 		const std::string &password,
@@ -1572,7 +1598,7 @@ bool Game::startup(bool *kill,
 		bool simple_singleplayer_mode)
 {
 	// "cache"
-	this->device              = device;
+	this->device              = RenderingEngine::get_raw_device();
 	this->kill                = kill;
 	this->error_message       = &error_message;
 	this->reconnect_requested = reconnect;
@@ -1584,10 +1610,11 @@ bool Game::startup(bool *kill,
 	keycache.handler = input;
 	keycache.populate();
 
-	driver              = device->getVideoDriver();
-	smgr                = device->getSceneManager();
+	driver = device->getVideoDriver();
+	smgr = RenderingEngine::get_scene_manager();
 
-	smgr->getParameters()->setAttribute(scene::OBJ_LOADER_IGNORE_MATERIAL_FILES, true);
+	RenderingEngine::get_scene_manager()->getParameters()->
+		setAttribute(scene::OBJ_LOADER_IGNORE_MATERIAL_FILES, true);
 
 	memset(&runData, 0, sizeof(runData));
 	runData.time_from_last_punch = 10.0;
@@ -1624,7 +1651,7 @@ void Game::run()
 	Profiler::GraphValues dummyvalues;
 	g_profiler->graphGet(dummyvalues);
 
-	draw_times.last_time = device->getTimer()->getTime();
+	draw_times.last_time = RenderingEngine::get_timer_time();
 
 	set_light_table(g_settings->getFloat("display_gamma"));
 
@@ -1636,12 +1663,12 @@ void Game::run()
 	irr::core::dimension2d<u32> previous_screen_size(g_settings->getU16("screen_w"),
 		g_settings->getU16("screen_h"));
 
-	while (device->run()
+	while (RenderingEngine::run()
 			&& !(*kill || g_gamecallback->shutdown_requested
 			|| (server && server->getShutdownRequested()))) {
 
 		const irr::core::dimension2d<u32> &current_screen_size =
-			device->getVideoDriver()->getScreenSize();
+			RenderingEngine::get_video_driver()->getScreenSize();
 		// Verify if window size has changed and save it if it's the case
 		// Ensure evaluating settings->getBool after verifying screensize
 		// First condition is cheaper
@@ -1704,7 +1731,7 @@ void Game::shutdown()
 	if (current_formspec)
 		current_formspec->quitMenu();
 
-	showOverlayMessage(wgettext("Shutting down..."), 0, 0, false);
+	showOverlayMessage("Shutting down...", 0, 0, false);
 
 	if (clouds)
 		clouds->drop();
@@ -1754,11 +1781,11 @@ bool Game::init(
 		u16 port,
 		const SubgameSpec &gamespec)
 {
-	texture_src = createTextureSource(device);
+	texture_src = createTextureSource();
 
-	showOverlayMessage(wgettext("Loading..."), 0, 0);
+	showOverlayMessage("Loading...", 0, 0);
 
-	shader_src = createShaderSource(device);
+	shader_src = createShaderSource();
 
 	itemdef_manager = createItemDefManager();
 	nodedef_manager = createNodeDefManager();
@@ -1812,7 +1839,7 @@ bool Game::initSound()
 bool Game::createSingleplayerServer(const std::string &map_dir,
 		const SubgameSpec &gamespec, u16 port, std::string *address)
 {
-	showOverlayMessage(wgettext("Creating server..."), 0, 5);
+	showOverlayMessage("Creating server...", 0, 5);
 
 	std::string bind_str = g_settings->get("bind_address");
 	Address bind_addr(0, 0, 0, 0, port);
@@ -1848,7 +1875,7 @@ bool Game::createSingleplayerServer(const std::string &map_dir,
 bool Game::createClient(const std::string &playername,
 		const std::string &password, std::string *address, u16 port)
 {
-	showOverlayMessage(wgettext("Creating client..."), 0, 10);
+	showOverlayMessage("Creating client...", 0, 10);
 
 	draw_control = new MapDrawControl;
 	if (!draw_control)
@@ -1883,7 +1910,7 @@ bool Game::createClient(const std::string &playername,
 	shader_src->addShaderConstantSetterFactory(scsf);
 
 	// Update cached textures, meshes and materials
-	client->afterContentReceived(device);
+	client->afterContentReceived();
 
 	/* Camera
 	 */
@@ -1895,7 +1922,7 @@ bool Game::createClient(const std::string &playername,
 	/* Clouds
 	 */
 	if (m_cache_enable_clouds) {
-		clouds = new Clouds(smgr->getRootSceneNode(), smgr, -1, time(0));
+		clouds = new Clouds(smgr, -1, time(0));
 		if (!clouds) {
 			*error_message = "Memory allocation error (clouds)";
 			errorstream << *error_message << std::endl;
@@ -1905,7 +1932,7 @@ bool Game::createClient(const std::string &playername,
 
 	/* Skybox
 	 */
-	sky = new Sky(smgr->getRootSceneNode(), smgr, -1, texture_src);
+	sky = new Sky(-1, texture_src);
 	scsf->setSky(sky);
 	skybox = NULL;	// This is used/set later on in the main run loop
 
@@ -2036,7 +2063,7 @@ bool Game::connectToServer(const std::string &playername,
 	*aborted = false;
 	bool local_server_mode = false;
 
-	showOverlayMessage(wgettext("Resolving address..."), 0, 15);
+	showOverlayMessage("Resolving address...", 0, 15);
 
 	Address connect_address(0, 0, 0, 0, port);
 
@@ -2068,8 +2095,7 @@ bool Game::connectToServer(const std::string &playername,
 		return false;
 	}
 
-	client = new Client(device,
-			playername.c_str(), password, *address,
+	client = new Client(playername.c_str(), password, *address,
 			*draw_control, texture_src, shader_src,
 			itemdef_manager, nodedef_manager, sound, eventmgr,
 			connect_address.isIPv6(), &flags);
@@ -2095,11 +2121,11 @@ bool Game::connectToServer(const std::string &playername,
 		f32 dtime;
 		f32 wait_time = 0; // in seconds
 
-		fps_control.last_time = device->getTimer()->getTime();
+		fps_control.last_time = RenderingEngine::get_timer_time();
 
 		client->initMods();
 
-		while (device->run()) {
+		while (RenderingEngine::run()) {
 
 			limitFps(&fps_control, &dtime);
 
@@ -2158,7 +2184,7 @@ bool Game::connectToServer(const std::string &playername,
 			}
 
 			// Update status
-			showOverlayMessage(wgettext("Connecting to server..."), dtime, 20);
+			showOverlayMessage("Connecting to server...", dtime, 20);
 		}
 	} catch (con::PeerNotFoundException &e) {
 		// TODO: Should something be done here? At least an info/error
@@ -2176,9 +2202,9 @@ bool Game::getServerContent(bool *aborted)
 	FpsControl fps_control = { 0 };
 	f32 dtime; // in seconds
 
-	fps_control.last_time = device->getTimer()->getTime();
+	fps_control.last_time = RenderingEngine::get_timer_time();
 
-	while (device->run()) {
+	while (RenderingEngine::run()) {
 
 		limitFps(&fps_control, &dtime);
 
@@ -2216,13 +2242,13 @@ bool Game::getServerContent(bool *aborted)
 		if (!client->itemdefReceived()) {
 			const wchar_t *text = wgettext("Item definitions...");
 			progress = 25;
-			draw_load_screen(text, device, guienv, texture_src,
+			RenderingEngine::draw_load_screen(text, guienv, texture_src,
 				dtime, progress);
 			delete[] text;
 		} else if (!client->nodedefReceived()) {
 			const wchar_t *text = wgettext("Node definitions...");
 			progress = 30;
-			draw_load_screen(text, device, guienv, texture_src,
+			RenderingEngine::draw_load_screen(text, guienv, texture_src,
 				dtime, progress);
 			delete[] text;
 		} else {
@@ -2246,8 +2272,8 @@ bool Game::getServerContent(bool *aborted)
 			}
 
 			progress = 30 + client->mediaReceiveProgress() * 35 + 0.5;
-			draw_load_screen(utf8_to_wide(message.str()), device,
-					guienv, texture_src, dtime, progress);
+			RenderingEngine::draw_load_screen(utf8_to_wide(message.str()), guienv,
+				texture_src, dtime, progress);
 		}
 	}
 
@@ -2526,7 +2552,7 @@ void Game::processKeyInput()
 	} else if (wasKeyDown(KeyType::CINEMATIC)) {
 		toggleCinematic();
 	} else if (wasKeyDown(KeyType::SCREENSHOT)) {
-		client->makeScreenshot(device);
+		client->makeScreenshot();
 	} else if (wasKeyDown(KeyType::TOGGLE_HUD)) {
 		toggleHud();
 	} else if (wasKeyDown(KeyType::MINIMAP)) {
@@ -2645,7 +2671,7 @@ void Game::openInventory()
 	 */
 
 	LocalPlayer *player = client->getEnv().getLocalPlayer();
-	if (player == NULL || player->getCAO() == NULL)
+	if (!player || !player->getCAO())
 		return;
 
 	infostream << "the_game: " << "Launching inventory" << std::endl;
@@ -2653,7 +2679,7 @@ void Game::openInventory()
 	PlayerInventoryFormSource *fs_src = new PlayerInventoryFormSource(client);
 	TextDest *txt_dst = new TextDestPlayerInventory(client);
 
-	create_formspec_menu(&current_formspec, client, device, &input->joystick, fs_src, txt_dst);
+	create_formspec_menu(&current_formspec, client, &input->joystick, fs_src, txt_dst);
 	cur_formname = "";
 
 	InventoryLocation inventoryloc;
@@ -3155,7 +3181,7 @@ void Game::processClientEvents(CameraOrientation *cam)
 				TextDestPlayerInventory *txt_dst =
 					new TextDestPlayerInventory(client, *(event.show_formspec.formname));
 
-				create_formspec_menu(&current_formspec, client, device, &input->joystick,
+				create_formspec_menu(&current_formspec, client, &input->joystick,
 					fs_src, txt_dst);
 				cur_formname = *(event.show_formspec.formname);
 			}
@@ -3168,7 +3194,7 @@ void Game::processClientEvents(CameraOrientation *cam)
 			{
 				FormspecFormSource *fs_src = new FormspecFormSource(*event.show_formspec.formspec);
 				LocalFormspecHandler *txt_dst = new LocalFormspecHandler(*event.show_formspec.formname, client);
-				create_formspec_menu(&current_formspec, client, device, &input->joystick,
+				create_formspec_menu(&current_formspec, client, &input->joystick,
 					fs_src, txt_dst);
 			}
 			delete event.show_formspec.formspec;
@@ -3178,8 +3204,7 @@ void Game::processClientEvents(CameraOrientation *cam)
 		case CE_SPAWN_PARTICLE:
 		case CE_ADD_PARTICLESPAWNER:
 		case CE_DELETE_PARTICLESPAWNER:
-			client->getParticleManager()->handleParticleEvent(&event, client,
-					smgr, player);
+			client->getParticleManager()->handleParticleEvent(&event, client, player);
 			break;
 
 		case CE_HUDADD:
@@ -3320,7 +3345,7 @@ void Game::processClientEvents(CameraOrientation *cam)
 			} else if (*event.set_sky.type == "skybox" &&
 					event.set_sky.params->size() == 6) {
 				sky->setFallbackBgColor(*event.set_sky.bgcolor);
-				skybox = smgr->addSkyBoxSceneNode(
+				skybox = RenderingEngine::get_scene_manager()->addSkyBoxSceneNode(
 						 texture_src->getTextureForMesh((*event.set_sky.params)[0]),
 						 texture_src->getTextureForMesh((*event.set_sky.params)[1]),
 						 texture_src->getTextureForMesh((*event.set_sky.params)[2]),
@@ -3404,7 +3429,7 @@ void Game::updateCamera(u32 busy_time, f32 dtime)
 		GenericCAO *playercao = player->getCAO();
 
 		// If playercao not loaded, don't change camera
-		if (playercao == NULL)
+		if (!playercao)
 			return;
 
 		camera->toggleCameraMode();
@@ -3601,7 +3626,8 @@ void Game::processPlayerInteraction(f32 dtime, bool show_hud, bool show_debug)
 		if (playeritem.name.empty() && hand_def.tool_capabilities != NULL) {
 			playeritem_toolcap = *hand_def.tool_capabilities;
 		}
-		handlePointingAtNode(pointed, playeritem_def, playeritem_toolcap, dtime);
+		handlePointingAtNode(pointed, playeritem_def, playeritem,
+			playeritem_toolcap, dtime);
 	} else if (pointed.type == POINTEDTHING_OBJECT) {
 		handlePointingAtObject(pointed, playeritem, player_position, show_debug);
 	} else if (isLeftPressed()) {
@@ -3639,7 +3665,7 @@ PointedThing Game::updatePointedThing(
 	std::vector<aabb3f> *selectionboxes = hud->getSelectionBoxes();
 	selectionboxes->clear();
 	hud->setSelectedFaceNormal(v3f(0.0, 0.0, 0.0));
-	static const bool show_entity_selectionbox = g_settings->getBool(
+	static thread_local const bool show_entity_selectionbox = g_settings->getBool(
 		"show_entity_selectionbox");
 
 	ClientMap &map = client->getEnv().getClientMap();
@@ -3736,8 +3762,9 @@ void Game::handlePointingAtNothing(const ItemStack &playerItem)
 }
 
 
-void Game::handlePointingAtNode(const PointedThing &pointed, const ItemDefinition &playeritem_def,
-		const ToolCapabilities &playeritem_toolcap, f32 dtime)
+void Game::handlePointingAtNode(const PointedThing &pointed,
+	const ItemDefinition &playeritem_def, const ItemStack &playeritem,
+	const ToolCapabilities &playeritem_toolcap, f32 dtime)
 {
 	v3s16 nodepos = pointed.node_undersurface;
 	v3s16 neighbourpos = pointed.node_abovesurface;
@@ -3785,7 +3812,7 @@ void Game::handlePointingAtNode(const PointedThing &pointed, const ItemDefinitio
 			TextDest *txt_dst = new TextDestNodeMetadata(nodepos, client);
 
 			create_formspec_menu(&current_formspec, client,
-					device, &input->joystick, fs_src, txt_dst);
+				&input->joystick, fs_src, txt_dst);
 			cur_formname = "";
 
 			current_formspec->setFormSpec(meta->getString("formspec"), inventoryloc);
@@ -3797,7 +3824,7 @@ void Game::handlePointingAtNode(const PointedThing &pointed, const ItemDefinitio
 			// If the wielded item has node placement prediction,
 			// make that happen
 			bool placed = nodePlacementPrediction(*client,
-					playeritem_def,
+					playeritem_def, playeritem,
 					nodepos, neighbourpos);
 
 			if (placed) {
@@ -3915,9 +3942,8 @@ void Game::handleDigging(const PointedThing &pointed, const v3s16 &nodepos,
 		runData.dig_time_complete = params.time;
 
 		if (m_cache_enable_particles) {
-			const ContentFeatures &features =
-					client->getNodeDefManager()->get(n);
-			client->getParticleManager()->addPunchingParticles(client, smgr,
+			const ContentFeatures &features = client->getNodeDefManager()->get(n);
+			client->getParticleManager()->addPunchingParticles(client,
 					player, nodepos, n, features);
 		}
 	}
@@ -3982,7 +4008,7 @@ void Game::handleDigging(const PointedThing &pointed, const v3s16 &nodepos,
 		bool is_valid_position;
 		MapNode wasnode = map.getNodeNoEx(nodepos, &is_valid_position);
 		if (is_valid_position) {
-			if (client->moddingEnabled() && 
+			if (client->moddingEnabled() &&
 			    		client->getScript()->on_dignode(nodepos, wasnode)) {
 				return;
 			}
@@ -3994,7 +4020,7 @@ void Game::handleDigging(const PointedThing &pointed, const v3s16 &nodepos,
 		if (m_cache_enable_particles) {
 			const ContentFeatures &features =
 				client->getNodeDefManager()->get(wasnode);
-			client->getParticleManager()->addDiggingParticles(client, smgr,
+			client->getParticleManager()->addDiggingParticles(client,
 				player, nodepos, wasnode, features);
 		}
 
@@ -4202,7 +4228,7 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 	TimeTaker tt_draw("mainloop: draw");
 	driver->beginScene(true, true, skycolor);
 
-	draw_scene(driver, smgr, *camera, *client, player, *hud, mapper,
+	RenderingEngine::draw_scene(camera, client, player, hud, mapper,
 			guienv, screensize, skycolor, flags.show_hud,
 			flags.show_minimap);
 
@@ -4278,17 +4304,17 @@ void Game::updateGui(const RunStats &stats, f32 dtime, const CameraOrientation &
 		std::ostringstream os(std::ios_base::binary);
 		os << std::fixed
 		   << PROJECT_NAME_C " " << g_version_hash
-		   << " FPS = " << fps
-		   << " (R: range_all=" << draw_control->range_all << ")"
+		   << "; " << fps << " FPS"
+		   << ", (R: range_all=" << draw_control->range_all << ")"
 		   << std::setprecision(0)
-		   << " drawtime = " << drawtime_avg
+		   << ", drawtime = " << drawtime_avg << " ms"
 		   << std::setprecision(1)
 		   << ", dtime_jitter = "
 		   << (stats.dtime_jitter.max_fraction * 100.0) << " %"
 		   << std::setprecision(1)
 		   << ", v_range = " << draw_control->wanted_range
 		   << std::setprecision(3)
-		   << ", RTT = " << client->getRTT();
+		   << ", RTT = " << client->getRTT() << " s";
 		setStaticText(guitext, utf8_to_wide(os.str()).c_str());
 		guitext->setVisible(true);
 	} else {
@@ -4309,7 +4335,7 @@ void Game::updateGui(const RunStats &stats, f32 dtime, const CameraOrientation &
 		   << "(" << (player_position.X / BS)
 		   << ", " << (player_position.Y / BS)
 		   << ", " << (player_position.Z / BS)
-		   << ") (yaw=" << (wrapDegrees_0_360(cam.camera_yaw))
+		   << ") (yaw=" << (wrapDegrees_0_360(cam.camera_yaw)) << "°"
 		   << " " << yawToDirectionString(cam.camera_yaw)
 		   << ") (seed = " << ((u64)client->getMapSeed())
 		   << ")";
@@ -4320,9 +4346,11 @@ void Game::updateGui(const RunStats &stats, f32 dtime, const CameraOrientation &
 			MapNode n = map.getNodeNoEx(runData.pointed_old.node_undersurface);
 			if (n.getContent() != CONTENT_IGNORE && nodedef->get(n).name != "unknown") {
 				const ContentFeatures &features = nodedef->get(n);
-				os << " (pointing_at = " << nodedef->get(n).name
-				   << " - " << features.tiledef[0].name.c_str()
-				   << ")";
+				os << " (pointing_at = \"" << nodedef->get(n).name
+				   << "\", param1 = " << (u64) n.getParam1()
+				   << ", param2 = " << (u64) n.getParam2()
+				   << ", tiledef[0] = \"" << features.tiledef[0].name.c_str()
+				   << "\")";
 			}
 		}
 
@@ -4445,15 +4473,12 @@ inline void Game::limitFps(FpsControl *fps_timings, f32 *dtime)
 	fps_timings->last_time = time;
 }
 
-// Note: This will free (using delete[])! \p msg. If you want to use it later,
-// pass a copy of it to this function
-// Note: \p msg must be allocated using new (not malloc())
-void Game::showOverlayMessage(const wchar_t *msg, float dtime,
-		int percent, bool draw_clouds)
+void Game::showOverlayMessage(const char *msg, float dtime, int percent, bool draw_clouds)
 {
-	draw_load_screen(msg, device, guienv, texture_src, dtime, percent,
+	const wchar_t *wmsg = wgettext(msg);
+	RenderingEngine::draw_load_screen(wmsg, guienv, texture_src, dtime, percent,
 		draw_clouds);
-	delete[] msg;
+	delete[] wmsg;
 }
 
 void Game::settingChangedCallback(const std::string &setting_name, void *data)
@@ -4500,7 +4525,7 @@ void Game::extendedResourceCleanup()
 	// Extended resource accounting
 	infostream << "Irrlicht resources after cleanup:" << std::endl;
 	infostream << "\tRemaining meshes   : "
-	           << device->getSceneManager()->getMeshCache()->getMeshCount() << std::endl;
+	           << RenderingEngine::get_mesh_cache()->getMeshCount() << std::endl;
 	infostream << "\tRemaining textures : "
 	           << driver->getTextureCount() << std::endl;
 
@@ -4637,7 +4662,7 @@ void Game::showPauseMenu()
 	FormspecFormSource *fs_src = new FormspecFormSource(os.str());
 	LocalFormspecHandler *txt_dst = new LocalFormspecHandler("MT_PAUSE_MENU");
 
-	create_formspec_menu(&current_formspec, client, device, &input->joystick, fs_src, txt_dst);
+	create_formspec_menu(&current_formspec, client, &input->joystick, fs_src, txt_dst);
 	current_formspec->setFocus("btn_continue");
 	current_formspec->doPause = true;
 }
@@ -4651,8 +4676,6 @@ void Game::showPauseMenu()
 void the_game(bool *kill,
 		bool random_input,
 		InputHandler *input,
-		IrrlichtDevice *device,
-
 		const std::string &map_dir,
 		const std::string &playername,
 		const std::string &password,
@@ -4675,7 +4698,7 @@ void the_game(bool *kill,
 
 	try {
 
-		if (game.startup(kill, random_input, input, device, map_dir,
+		if (game.startup(kill, random_input, input, map_dir,
 				playername, password, &server_address, port, error_message,
 				reconnect_requested, &chat_backend, gamespec,
 				simple_singleplayer_mode)) {

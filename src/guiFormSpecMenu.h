@@ -304,8 +304,7 @@ class GUIFormSpecMenu : public GUIModalMenu
 	};
 
 public:
-	GUIFormSpecMenu(irr::IrrlichtDevice* dev,
-			JoystickController *joystick,
+	GUIFormSpecMenu(JoystickController *joystick,
 			gui::IGUIElement* parent, s32 id,
 			IMenuManager *menumgr,
 			Client *client,
@@ -395,14 +394,12 @@ protected:
 	v2s32 pos_offset;
 	std::stack<v2s32> container_stack;
 
-	irr::IrrlichtDevice* m_device;
 	InventoryManager *m_invmgr;
 	ISimpleTextureSource *m_tsrc;
 	Client *m_client;
 
 	std::string m_formspec_string;
 	InventoryLocation m_current_inventory_location;
-
 
 	std::vector<ListDrawSpec> m_inventorylists;
 	std::vector<ListRingSpec> m_inventory_rings;
@@ -419,9 +416,9 @@ protected:
 	std::vector<std::pair<FieldSpec,gui::IGUIScrollBar*> > m_scrollbars;
 	std::vector<std::pair<FieldSpec, std::vector<std::string> > > m_dropdowns;
 
-	ItemSpec *m_selected_item;
-	u32 m_selected_amount;
-	bool m_selected_dragging;
+	ItemSpec *m_selected_item = nullptr;
+	u32 m_selected_amount = 0;
+	bool m_selected_dragging = false;
 
 	// WARNING: BLACK MAGIC
 	// Used to guess and keep up with some special things the server can do.
@@ -431,17 +428,16 @@ protected:
 
 	v2s32 m_pointer;
 	v2s32 m_old_pointer;  // Mouse position after previous mouse event
-	gui::IGUIStaticText *m_tooltip_element;
+	gui::IGUIStaticText *m_tooltip_element = nullptr;
 
 	u64 m_tooltip_show_delay;
-	u64 m_hovered_time;
-	s32 m_old_tooltip_id;
-	std::wstring m_old_tooltip;
+	u64 m_hovered_time = 0;
+	s32 m_old_tooltip_id = -1;
 
-	bool m_rmouse_auto_place;
+	bool m_rmouse_auto_place = false;
 
-	bool m_allowclose;
-	bool m_lock;
+	bool m_allowclose = true;
+	bool m_lock = false;
 	v2u32 m_lockscreensize;
 
 	bool m_bgfullscreen;
@@ -456,8 +452,8 @@ protected:
 private:
 	IFormSource        *m_form_src;
 	TextDest           *m_text_dst;
-	unsigned int        m_formspec_version;
-	std::string         m_focused_element;
+	u32                 m_formspec_version = 0;
+	std::string         m_focused_element = "";
 	JoystickController *m_joystick;
 
 	typedef struct {
@@ -484,7 +480,7 @@ private:
 	} fs_key_pendig;
 
 	fs_key_pendig current_keys_pending;
-	std::string current_field_enter_pending;
+	std::string current_field_enter_pending = "";
 
 	void parseElement(parserData* data, const std::string &element);
 
@@ -548,7 +544,7 @@ private:
 	clickpos m_doubleclickdetect[2];
 
 	int m_btn_height;
-	gui::IGUIFont *m_font;
+	gui::IGUIFont *m_font = nullptr;
 
 	std::wstring getLabelByID(s32 id);
 	std::string getNameByID(s32 id);

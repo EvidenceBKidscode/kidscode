@@ -32,7 +32,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 class KeyPress
 {
 public:
-	KeyPress();
+	KeyPress() {}
 	KeyPress(const char *name);
 
 	KeyPress(const irr::SEvent::SKeyInput &in, bool prefer_character = false);
@@ -57,9 +57,9 @@ protected:
 		return std::towupper(c) >= 'A' && std::towupper(c) <= 'Z';
 	}
 
-	irr::EKEY_CODE Key;
-	wchar_t Char;
-	std::string m_name;
+    irr::EKEY_CODE Key = irr::KEY_KEY_CODES_COUNT;
+	wchar_t Char = L'\0';
+	std::string m_name = "";
 };
 
 extern const KeyPress EscapeKey;

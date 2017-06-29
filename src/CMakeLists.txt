@@ -151,8 +151,6 @@ if(ENABLE_FREETYPE)
 	if(FREETYPE_FOUND)
 		message(STATUS "Freetype enabled.")
 		set(USE_FREETYPE TRUE)
-		set(CGUITTFONT_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/cguittfont")
-		set(CGUITTFONT_LIBRARY cguittfont)
 	endif()
 endif(ENABLE_FREETYPE)
 
@@ -370,7 +368,6 @@ set(common_SRCS
 	chat.cpp
 	clientiface.cpp
 	collision.cpp
-	content_abm.cpp
 	content_mapnode.cpp
 	content_nodemeta.cpp
 	content_sao.cpp
@@ -503,7 +500,6 @@ set(client_SRCS
 	content_cso.cpp
 	content_mapblock.cpp
 	convert_json.cpp
-	drawscene.cpp
 	filecache.cpp
 	fontengine.cpp
 	game.cpp
@@ -564,7 +560,7 @@ include_directories(
 
 
 if(USE_FREETYPE)
-	include_directories(${FREETYPE_INCLUDE_DIRS} ${CGUITTFONT_INCLUDE_DIR})
+	include_directories(${FREETYPE_INCLUDE_DIRS})
 endif()
 
 if(USE_CURL)
@@ -623,7 +619,6 @@ if(BUILD_CLIENT)
 		target_link_libraries(
 			${PROJECT_NAME}
 			${FREETYPE_LIBRARY}
-			${CGUITTFONT_LIBRARY}
 		)
 	endif()
 	if (USE_CURSES)
@@ -881,11 +876,4 @@ if (USE_GETTEXT)
 	endforeach()
 
 	add_custom_target(translations ALL COMMENT "mo update" DEPENDS ${MO_FILES})
-endif()
-
-
-# Subdirectories
-
-if (BUILD_CLIENT AND USE_FREETYPE)
-	add_subdirectory(cguittfont)
 endif()

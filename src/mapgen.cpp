@@ -98,25 +98,12 @@ STATIC_ASSERT(
 
 Mapgen::Mapgen()
 {
-	generating   = false;
-	id           = -1;
-	seed         = 0;
-	water_level  = 0;
-	mapgen_limit = 0;
-	flags        = 0;
-
-	vm        = NULL;
-	ndef      = NULL;
-	biomegen  = NULL;
-	biomemap  = NULL;
-	heightmap = NULL;
 }
 
 
 Mapgen::Mapgen(int mapgenid, MapgenParams *params, EmergeManager *emerge) :
 	gennotify(emerge->gen_notify_on, &emerge->gen_notify_on_deco_ids)
 {
-	generating   = false;
 	id           = mapgenid;
 	water_level  = params->water_level;
 	mapgen_limit = params->mapgen_limit;
@@ -138,11 +125,7 @@ Mapgen::Mapgen(int mapgenid, MapgenParams *params, EmergeManager *emerge) :
 	*/
 	seed = (s32)params->seed;
 
-	vm        = NULL;
 	ndef      = emerge->ndef;
-	biomegen  = NULL;
-	biomemap  = NULL;
-	heightmap = NULL;
 }
 
 
@@ -834,7 +817,7 @@ void MapgenBasic::generateCaves(s16 max_stone_y, s16 large_cave_depth)
 	u32 bruises_count = ps.range(0, 2);
 	for (u32 i = 0; i < bruises_count; i++) {
 		CavesRandomWalk cave(ndef, &gennotify, seed, water_level,
-			c_water_source, CONTENT_IGNORE);
+			c_water_source, CONTENT_IGNORE, lava_depth);
 
 		cave.makeCave(vm, node_min, node_max, &ps, true, max_stone_y, heightmap);
 	}
@@ -929,7 +912,6 @@ void MapgenBasic::generateDungeons(s16 max_stone_y, MgStoneType stone_type)
 
 GenerateNotifier::GenerateNotifier()
 {
-	m_notify_on = 0;
 }
 
 
