@@ -769,6 +769,32 @@ int ModApiEnvMod::l_find_nodes_in_area_under_air(lua_State *L)
 	return 1;
 }
 
+// get_nodes_in_area(minp, maxp) -> list of nodes
+int ModApiEnvMod::l_get_nodes_in_area(lua_State *L)
+{
+	GET_ENV_PTR;
+
+	v3s16 minp = read_v3s16(L, 1);
+	v3s16 maxp = read_v3s16(L, 2);
+	sortBoxVerticies(minp, maxp);
+
+	INodeDefManager *ndef = getServer(L)->ndef();
+
+	lua_newtable(L);
+	u64 i = 0;
+
+	for (s16 x = minp.X; x <= maxp.X; x++)
+	for (s16 y = minp.Y; y <= maxp.Y; y++)
+	for (s16 z = minp.Z; z <= maxp.Z; z++) {
+		v3s16 p(x, y, z);
+		MapNode n = env->getMap().getNodeNoEx(p);
+		lua_pushstring(L, ndef->get(n).name.c_str());
+		lua_rawseti(L, -2, ++i);
+	}
+
+	return 1;
+}
+
 // get_perlin(seeddiff, octaves, persistence, scale)
 // returns world-specific PerlinNoise
 int ModApiEnvMod::l_get_perlin(lua_State *L)
@@ -1145,6 +1171,7 @@ void ModApiEnvMod::Initialize(lua_State *L, int top)
 	API_FCT(find_node_near);
 	API_FCT(find_nodes_in_area);
 	API_FCT(find_nodes_in_area_under_air);
+	API_FCT(get_nodes_in_area);
 	API_FCT(fix_light);
 	API_FCT(emerge_area);
 	API_FCT(delete_area);
