@@ -250,5 +250,8 @@ if(DOXYGEN_FOUND)
 	)
 endif()
 
-set_target_properties(minetest PROPERTIES OUTPUT_NAME_DEBUG kidscode)
-set_target_properties(minetest PROPERTIES OUTPUT_NAME_RELEASE kidscode)
+
+if(BUILD_CLIENT)
+	set_target_properties(minetest PROPERTIES OUTPUT_NAME_DEBUG kidscode)
+	set_target_properties(minetest PROPERTIES OUTPUT_NAME_RELEASE kidscode)
+endif()
