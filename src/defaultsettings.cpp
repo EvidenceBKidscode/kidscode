@@ -186,7 +186,7 @@ void set_default_settings(Settings *settings)
 
 	// Effects
 	settings->setDefault("directional_colored_fog", "true");
-	settings->setDefault("inventory_items_animations", "false");
+	settings->setDefault("inventory_items_animations", "true");
 	settings->setDefault("mip_map", "false");
 	settings->setDefault("anisotropic_filter", "false");
 	settings->setDefault("bilinear_filter", "false");
