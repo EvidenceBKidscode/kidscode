@@ -124,7 +124,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("zoom_fov", "15");
 	settings->setDefault("fps_max", "60");
 	settings->setDefault("pause_fps_max", "20");
-	settings->setDefault("viewing_range", "100");
+	settings->setDefault("viewing_range", "50");
 	settings->setDefault("screen_w", "800");
 	settings->setDefault("screen_h", "600");
 	settings->setDefault("autosave_screensize", "true");
@@ -178,7 +178,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("enable_particles", "true");
 	settings->setDefault("formspec_fullscreen_bg_color", "(0,0,0)");
 	settings->setDefault("formspec_fullscreen_bg_opacity", "0");
-	settings->setDefault("arm_inertia", "true");
+	settings->setDefault("arm_inertia", "false");
 
 	settings->setDefault("enable_minimap", "true");
 	settings->setDefault("minimap_shape_round", "true");
