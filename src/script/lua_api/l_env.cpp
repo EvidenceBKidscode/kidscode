@@ -780,6 +780,7 @@ int ModApiEnvMod::l_get_nodes_in_area(lua_State *L)
 
 	INodeDefManager *ndef = getServer(L)->ndef();
 
+	luaL_checkstack(L, 3, nullptr);
 	lua_newtable(L);
 	u64 i = 0;
 
@@ -788,7 +789,12 @@ int ModApiEnvMod::l_get_nodes_in_area(lua_State *L)
 	for (s16 z = minp.Z; z <= maxp.Z; z++) {
 		v3s16 p(x, y, z);
 		MapNode n = env->getMap().getNodeNoEx(p);
+
+		lua_newtable(L);
 		lua_pushstring(L, ndef->get(n).name.c_str());
+		lua_setfield(L, -2, "name");
+		push_v3s16(L, p);
+		lua_setfield(L, -2, "pos");
 		lua_rawseti(L, -2, ++i);
 	}
 
