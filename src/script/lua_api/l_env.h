@@ -132,6 +132,10 @@ private:
 	// nodenames: eg. {"ignore", "group:tree"} or "default:dirt"
 	static int l_find_nodes_in_area_under_air(lua_State *L);
 
+	// KIDSCODE SPECIFIC (removed from upstream)
+	// get_nodes_in_area(minp, maxp, nodenames) -> list of nodenames and positions
+	static int l_get_nodes_in_area(lua_State *L);
+
 	// fix_light(p1, p2) -> true/false
 	static int l_fix_light(lua_State *L);
 
