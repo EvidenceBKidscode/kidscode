@@ -778,6 +778,18 @@ int ModApiEnvMod::l_get_nodes_in_area(lua_State *L)
 	v3s16 maxp = read_v3s16(L, 2);
 	sortBoxVerticies(minp, maxp);
 
+	v3s16 cube = maxp - minp + 1;
+
+	/* Limit for too large areas, assume default values
+	 * and give tolerances of 1 node on each side
+	 * (chunksize * MAP_BLOCKSIZE + 2)^3 = 551368
+	*/
+	if ((u64)cube.X * (u64)cube.Y * (u64)cube.Z > 551368) {
+		luaL_error(L, "get_nodes_in_area(): area volume"
+				" exceeds allowed value of 551368");
+		return 0;
+	}
+
 	INodeDefManager *ndef = getServer(L)->ndef();
 
 	luaL_checkstack(L, 3, nullptr);
