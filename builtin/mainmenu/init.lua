@@ -107,13 +107,6 @@ local function init_globals()
 	ui.set_default("maintab")
 	tv_main:show()
 
-	-- Create modstore ui
-	if PLATFORM == "Android" then
-		modstore.init({x = 12, y = 6}, 3, 2)
-	else
-		modstore.init({x = 12, y = 8}, 4, 3)
-	end
-
 	ui.update()
 
 	core.sound_play("main_menu", true)
