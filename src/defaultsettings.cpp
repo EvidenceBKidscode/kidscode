@@ -320,8 +320,8 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("emergequeue_limit_generate", "32");
 	settings->setDefault("num_emerge_threads", "1");
 	settings->setDefault("secure.enable_security", "false");
-	settings->setDefault("secure.trusted_mods", "kidscode_acl,kidsbot,utilities");
-	settings->setDefault("secure.http_mods", "kidscode_acl,kidsbot,player_menu,utilities");
+	settings->setDefault("secure.trusted_mods", "kidsbot,utilities");
+	settings->setDefault("secure.http_mods", "kidsbot,player_menu,utilities");
 
 	// Physics
 	settings->setDefault("movement_acceleration_default", "3");
