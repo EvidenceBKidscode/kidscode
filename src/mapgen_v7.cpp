@@ -40,11 +40,12 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 
 FlagDesc flagdesc_mapgen_v7[] = {
-	{"mountains",  MGV7_MOUNTAINS},
-	{"ridges",     MGV7_RIDGES},
-	{"floatlands", MGV7_FLOATLANDS},
-	{"caverns",    MGV7_CAVERNS},
-	{NULL,         0}
+	{"mountains",   MGV7_MOUNTAINS},
+	{"ridges",      MGV7_RIDGES},
+	{"floatlands",  MGV7_FLOATLANDS},
+	{"caverns",     MGV7_CAVERNS},
+	{"biomerepeat", MGV7_BIOMEREPEAT},
+	{NULL,          0}
 };
 
 
@@ -55,6 +56,7 @@ MapgenV7::MapgenV7(int mapgenid, MapgenV7Params *params, EmergeManager *emerge)
 	: MapgenBasic(mapgenid, params, emerge)
 {
 	spflags             = params->spflags;
+	mount_zero_level    = params->mount_zero_level;
 	cave_width          = params->cave_width;
 	large_cave_depth    = params->large_cave_depth;
 	lava_depth          = params->lava_depth;
@@ -148,6 +150,7 @@ MapgenV7Params::MapgenV7Params()
 void MapgenV7Params::readParams(const Settings *settings)
 {
 	settings->getFlagStrNoEx("mgv7_spflags",           spflags, flagdesc_mapgen_v7);
+	settings->getS16NoEx("mgv7_mount_zero_level",      mount_zero_level);
 	settings->getFloatNoEx("mgv7_cave_width",          cave_width);
 	settings->getS16NoEx("mgv7_large_cave_depth",      large_cave_depth);
 	settings->getS16NoEx("mgv7_lava_depth",            lava_depth);
@@ -179,6 +182,7 @@ void MapgenV7Params::readParams(const Settings *settings)
 void MapgenV7Params::writeParams(Settings *settings) const
 {
 	settings->setFlagStr("mgv7_spflags",           spflags, flagdesc_mapgen_v7, U32_MAX);
+	settings->setS16("mgv7_mount_zero_level",      mount_zero_level);
 	settings->setFloat("mgv7_cave_width",          cave_width);
 	settings->setS16("mgv7_large_cave_depth",      large_cave_depth);
 	settings->setS16("mgv7_lava_depth",            lava_depth);
@@ -285,6 +289,12 @@ void MapgenV7::makeChunk(BlockMakeData *data)
 
 	blockseed = getBlockSeed2(full_node_min, seed);
 
+	// Get zero level for biomes and decorations
+	// Optionally repeat surface biomes in floatlands
+	s16 biome_zero_level = ((spflags & MGV7_FLOATLANDS) &&
+		(spflags & MGV7_BIOMEREPEAT) && node_max.Y >= shadow_limit) ?
+		floatland_level - 1 : water_level - 1;
+
 	// Generate base and mountain terrain
 	// An initial heightmap is no longer created here for use in generateRidgeTerrain()
 	s16 stone_surface_max_y = generateTerrain();
@@ -298,7 +308,7 @@ void MapgenV7::makeChunk(BlockMakeData *data)
 
 	// Init biome generator, place biome-specific nodes, and build biomemap
 	biomegen->calcBiomeNoise(node_min);
-	MgStoneType stone_type = generateBiomes(water_level - 1);
+	MgStoneType stone_type = generateBiomes(biome_zero_level);
 
 	// Generate caverns, tunnels and classic caves
 	if (flags & MG_CAVES) {
@@ -323,7 +333,7 @@ void MapgenV7::makeChunk(BlockMakeData *data)
 	// Generate the registered decorations
 	if (flags & MG_DECORATIONS)
 		m_emerge->decomgr->placeAllDecos(this, blockseed,
-			node_min, node_max, water_level - 1);
+			node_min, node_max, biome_zero_level);
 
 	// Generate the registered ores
 	m_emerge->oremgr->placeAllOres(this, blockseed,
@@ -390,7 +400,7 @@ bool MapgenV7::getMountainTerrainAtPoint(s16 x, s16 y, s16 z)
 {
 	float mnt_h_n =
 			MYMAX(NoisePerlin2D(&noise_mount_height->np, x, z, seed), 1.0f);
-	float density_gradient = -((float)y / mnt_h_n);
+	float density_gradient = -((float)(y - mount_zero_level) / mnt_h_n);
 	float mnt_n = NoisePerlin3D(&noise_mountain->np, x, y, z, seed);
 
 	return mnt_n + density_gradient >= 0.0;
@@ -400,7 +410,7 @@ bool MapgenV7::getMountainTerrainAtPoint(s16 x, s16 y, s16 z)
 bool MapgenV7::getMountainTerrainFromMap(int idx_xyz, int idx_xz, s16 y)
 {
 	float mounthn = MYMAX(noise_mount_height->result[idx_xz], 1.0f);
-	float density_gradient = -((float)y / mounthn);
+	float density_gradient = -((float)(y - mount_zero_level) / mounthn);
 	float mountn = noise_mountain->result[idx_xyz];
 
 	return mountn + density_gradient >= 0.0;
@@ -479,7 +489,7 @@ int MapgenV7::generateTerrain()
 	}
 
 	//// Place nodes
-	v3s16 em = vm->m_area.getExtent();
+	const v3s16 &em = vm->m_area.getExtent();
 	s16 stone_surface_max_y = -MAX_MAP_GENERATION_LIMIT;
 	u32 index2d = 0;
 

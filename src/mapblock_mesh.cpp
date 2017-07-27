@@ -18,17 +18,12 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 */
 
 #include "mapblock_mesh.h"
-#include "light.h"
 #include "mapblock.h"
 #include "map.h"
 #include "profiler.h"
-#include "nodedef.h"
 #include "mesh.h"
 #include "minimap.h"
 #include "content_mapblock.h"
-#include "noise.h"
-#include "shader.h"
-#include "settings.h"
 #include "util/directiontables.h"
 #include "client/renderingengine.h"
 
@@ -202,7 +197,7 @@ u16 getFaceLight(MapNode n, MapNode n2, v3s16 face_dir, INodeDefManager *ndef)
 	Calculate smooth lighting at the XYZ- corner of p.
 	Both light banks
 */
-static u16 getSmoothLightCombined(v3s16 p, MeshMakeData *data)
+static u16 getSmoothLightCombined(const v3s16 &p, MeshMakeData *data)
 {
 	static const v3s16 dirs8[8] = {
 		v3s16(0,0,0),
@@ -602,7 +597,8 @@ static void makeFastFace(const TileSpec &tile, u16 li0, u16 li1, u16 li2, u16 li
 		if (layer->texture_id == 0)
 			continue;
 
-		dest.push_back(FastFace());
+		// equivalent to dest.push_back(FastFace()) but faster
+		dest.emplace_back();
 		FastFace& face = *dest.rbegin();
 
 		for (u8 i = 0; i < 4; i++) {
@@ -855,11 +851,10 @@ static void getTileInfo(
 */
 static void updateFastFaceRow(
 		MeshMakeData *data,
-		v3s16 startpos,
+		const v3s16 &&startpos,
 		v3s16 translate_dir,
-		v3f translate_dir_f,
-		v3s16 face_dir,
-		v3f face_dir_f,
+		const v3f &&translate_dir_f,
+		const v3s16 &&face_dir,
 		std::vector<FastFace> &dest)
 {
 	v3s16 p = startpos;
@@ -966,7 +961,6 @@ static void updateAllFastFaceRows(MeshMakeData *data,
 					v3s16(1,0,0), //dir
 					v3f  (1,0,0),
 					v3s16(0,1,0), //face dir
-					v3f  (0,1,0),
 					dest);
 		}
 	}
@@ -981,7 +975,6 @@ static void updateAllFastFaceRows(MeshMakeData *data,
 					v3s16(0,0,1), //dir
 					v3f  (0,0,1),
 					v3s16(1,0,0), //face dir
-					v3f  (1,0,0),
 					dest);
 		}
 	}
@@ -996,7 +989,6 @@ static void updateAllFastFaceRows(MeshMakeData *data,
 					v3s16(1,0,0), //dir
 					v3f  (1,0,0),
 					v3s16(0,0,1), //face dir
-					v3f  (0,0,1),
 					dest);
 		}
 	}
@@ -1130,7 +1122,7 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3s16 camera_offset):
 					m_animation_frame_offsets[std::pair<u8, u32>(layer, i)] = 0;
 				}
 				// Replace tile texture with the first animation frame
-				p.layer.texture = p.layer.frames[0].texture;
+				p.layer.texture = (*p.layer.frames)[0].texture;
 			}
 
 			if (!m_enable_shaders) {
@@ -1318,7 +1310,7 @@ bool MapBlockMesh::animate(bool faraway, float time, int crack, u32 daynight_rat
 		scene::IMeshBuffer *buf = m_mesh[i->first.first]->
 			getMeshBuffer(i->first.second);
 
-		const FrameSpec &animation_frame = tile.frames[frame];
+		const FrameSpec &animation_frame = (*tile.frames)[frame];
 		buf->getMaterial().setTexture(0, animation_frame.texture);
 		if (m_enable_shaders) {
 			if (animation_frame.normal_texture) {
@@ -1525,14 +1517,12 @@ void MeshCollector::applyTileColors()
 {
 	if (m_use_tangent_vertices)
 		for (int layer = 0; layer < MAX_TILE_LAYERS; layer++) {
-			std::vector<PreMeshBuffer> *p = &prebuffers[layer];
-			for (std::vector<PreMeshBuffer>::iterator it = p->begin();
-					it != p->end(); ++it) {
-				video::SColor tc = it->layer.color;
+			for (auto &pmb : prebuffers[layer]) {
+				video::SColor tc = pmb.layer.color;
 				if (tc == video::SColor(0xFFFFFFFF))
 					continue;
-				for (u32 index = 0; index < it->tangent_vertices.size(); index++) {
-					video::SColor *c = &it->tangent_vertices[index].Color;
+				for (auto &tangent_vertice : pmb.tangent_vertices) {
+					video::SColor *c = &tangent_vertice.Color;
 					c->set(c->getAlpha(), c->getRed() * tc.getRed() / 255,
 						c->getGreen() * tc.getGreen() / 255,
 						c->getBlue() * tc.getBlue() / 255);
@@ -1541,14 +1531,12 @@ void MeshCollector::applyTileColors()
 		}
 	else
 		for (int layer = 0; layer < MAX_TILE_LAYERS; layer++) {
-			std::vector<PreMeshBuffer> *p = &prebuffers[layer];
-			for (std::vector<PreMeshBuffer>::iterator it = p->begin();
-					it != p->end(); ++it) {
-				video::SColor tc = it->layer.color;
+			for (auto &pmb : prebuffers[layer]) {
+				video::SColor tc = pmb.layer.color;
 				if (tc == video::SColor(0xFFFFFFFF))
 					continue;
-				for (u32 index = 0; index < it->vertices.size(); index++) {
-					video::SColor *c = &it->vertices[index].Color;
+				for (auto &vertice : pmb.vertices) {
+					video::SColor *c = &vertice.Color;
 					c->set(c->getAlpha(), c->getRed() * tc.getRed() / 255,
 						c->getGreen() * tc.getGreen() / 255,
 						c->getBlue() * tc.getBlue() / 255);
