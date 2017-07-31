@@ -130,9 +130,18 @@ cmake .. \
 	-DSQLITE3_LIBRARY=$libdir/sqlite3/lib/libsqlite3.dll.a \
 	-DSQLITE3_DLL=$libdir/sqlite3/bin/libsqlite3-0.dll \
 
-make -j4
+make -j$(nproc)
 
 [ "x$NO_PACKAGE" = "x" ] && make package
+
+unzip *-win*.zip; rm *-win*.zip
+
+cp /usr/x86_64-w64-mingw32/bin/libgcc*.dll ./kidscode-win64/*-win64/bin
+cp /usr/x86_64-w64-mingw32/bin/libstdc++*.dll ./kidscode-win64/*-win64/bin
+cp /usr/x86_64-w64-mingw32/bin/libwinpthread*.dll ./kidscode-win64/*-win64/bin
+
+cd kidscode-win64
+zip kidscode.zip -r *-win64
 
 exit 0
 # EOF
