@@ -1,4 +1,19 @@
 #!/bin/bash
+
+exit_error() {
+    local prefix="<3>" suffix=""
+    if [[ -t 2 ]]; then
+	prefix=$(tput bold; tput setaf 1)
+	suffix=$(tput sgr0)
+    fi
+    printf "$prefix$*$suffix\n" >&2
+    exit 1
+}
+
+! type cmake &>/dev/null && exit_error "Please install 'cmake' to continue"
+! type unzip &>/dev/null && exit_error "Please install 'unzip' to continue"
+! type zip &>/dev/null && exit_error "Please install 'zip' to continue"
+
 set -e
 
 dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
