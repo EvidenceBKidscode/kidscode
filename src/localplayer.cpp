@@ -279,9 +279,15 @@ void LocalPlayer::move(f32 dtime, Environment *env, f32 pos_max_d,
 	// This should always apply, otherwise there are glitches
 	sanity_check(d > pos_max_d);
 
-	// TODO: this shouldn't be hardcoded but transmitted from server
-	float player_stepheight = (touching_ground) ? (BS * 0.6f) : (BS * 0.2f);
+	// Player object property step height is multiplied by BS in
+	// /src/script/common/c_content.cpp and /src/content_sao.cpp
+	float player_stepheight = (m_cao == nullptr) ? 0.0f :
+		(touching_ground ? m_cao->getStepHeight() : (0.2f * BS));
 
+	// TODO this is a problematic hack.
+	// Use a better implementation for autojump, or apply a custom stepheight
+	// to all players, as this currently creates unintended special movement
+	// abilities and advantages for Android players on a server.
 #ifdef __ANDROID__
 	player_stepheight += (0.6f * BS);
 #endif
@@ -438,7 +444,7 @@ void LocalPlayer::move(f32 dtime, Environment *env, f32 pos_max_d)
 	move(dtime, env, pos_max_d, NULL);
 }
 
-void LocalPlayer::applyControl(float dtime)
+void LocalPlayer::applyControl(float dtime, Environment *env)
 {
 	// Clear stuff
 	swimming_vertical = false;
@@ -654,9 +660,15 @@ void LocalPlayer::applyControl(float dtime)
 	else
 		incH = incV = movement_acceleration_default * BS * dtime;
 
+	const INodeDefManager *nodemgr = env->getGameDef()->ndef();
+	Map *map = &env->getMap();
+	const ContentFeatures &f = nodemgr->get(map->getNodeNoEx(getStandingNodePos()));
+	bool slippery = (itemgroup_get(f.groups, "slippery") != 0);
 	// Accelerate to target speed with maximum increment
-	accelerateHorizontal(speedH * physics_override_speed, incH * physics_override_speed);
-	accelerateVertical(speedV * physics_override_speed, incV * physics_override_speed);
+	accelerateHorizontal(speedH * physics_override_speed,
+			incH * physics_override_speed, slippery);
+	accelerateVertical(speedV * physics_override_speed,
+			incV * physics_override_speed);
 }
 
 v3s16 LocalPlayer::getStandingNodePos()
@@ -693,36 +705,44 @@ v3f LocalPlayer::getEyeOffset() const
 }
 
 // Horizontal acceleration (X and Z), Y direction is ignored
-void LocalPlayer::accelerateHorizontal(const v3f &target_speed, const f32 max_increase)
+void LocalPlayer::accelerateHorizontal(const v3f &target_speed,
+	const f32 max_increase, bool slippery)
 {
         if (max_increase == 0)
                 return;
 
-        v3f d_wanted = target_speed - m_speed;
-        d_wanted.Y = 0;
-        f32 dl = d_wanted.getLength();
-        if (dl > max_increase)
-                dl = max_increase;
+	v3f d_wanted = target_speed - m_speed;
+	if (slippery) {
+		if (target_speed == v3f())
+			d_wanted = -m_speed * 0.05f;
+		else
+			d_wanted *= 0.1f;
+	}
 
-        v3f d = d_wanted.normalize() * dl;
+	d_wanted.Y = 0.0f;
+	f32 dl = d_wanted.getLength();
+	if (dl > max_increase)
+		dl = max_increase;
 
-        m_speed.X += d.X;
-        m_speed.Z += d.Z;
+	v3f d = d_wanted.normalize() * dl;
+
+	m_speed.X += d.X;
+	m_speed.Z += d.Z;
 }
 
 // Vertical acceleration (Y), X and Z directions are ignored
 void LocalPlayer::accelerateVertical(const v3f &target_speed, const f32 max_increase)
 {
-        if (max_increase == 0)
-                return;
+	if (max_increase == 0)
+		return;
 
-        f32 d_wanted = target_speed.Y - m_speed.Y;
-        if (d_wanted > max_increase)
-                d_wanted = max_increase;
-        else if (d_wanted < -max_increase)
-                d_wanted = -max_increase;
+	f32 d_wanted = target_speed.Y - m_speed.Y;
+	if (d_wanted > max_increase)
+		d_wanted = max_increase;
+	else if (d_wanted < -max_increase)
+		d_wanted = -max_increase;
 
-        m_speed.Y += d_wanted;
+	m_speed.Y += d_wanted;
 }
 
 // Temporary option for old move code

@@ -23,6 +23,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "irrlichttypes_bloated.h"
 #include "inventory.h"
 #include "constants.h"
+#include "util/basic_macros.h"
 #include <list>
 #include <mutex>
 
@@ -88,9 +89,6 @@ struct CollisionInfo;
 struct HudElement;
 class Environment;
 
-// IMPORTANT:
-// Do *not* perform an assignment or copy operation on a Player or
-// RemotePlayer object!  This will copy the lock held for HUD synchronization
 class Player
 {
 public:
@@ -98,18 +96,20 @@ public:
 	Player(const char *name, IItemDefManager *idef);
 	virtual ~Player() = 0;
 
+	DISABLE_CLASS_COPY(Player);
+
 	virtual void move(f32 dtime, Environment *env, f32 pos_max_d)
 	{}
 	virtual void move(f32 dtime, Environment *env, f32 pos_max_d,
 			std::vector<CollisionInfo> *collision_info)
 	{}
 
-	v3f getSpeed()
+	const v3f &getSpeed() const
 	{
 		return m_speed;
 	}
 
-	void setSpeed(v3f speed)
+	void setSpeed(const v3f &speed)
 	{
 		m_speed = speed;
 	}

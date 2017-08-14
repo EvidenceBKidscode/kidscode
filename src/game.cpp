@@ -2982,8 +2982,8 @@ void Game::decreaseViewRange()
 void Game::toggleFullViewRange()
 {
 	static const wchar_t *msg[] = {
-		L"Disabled full viewing range",
-		L"Enabled full viewing range"
+		L"Normal view range",
+		L"Infinite view range"
 	};
 
 	draw_control->range_all = !draw_control->range_all;
@@ -3801,6 +3801,11 @@ void Game::handlePointingAtNode(const PointedThing &pointed,
 
 		if (meta && meta->getString("formspec") != "" && !random_input
 				&& !isKeyDown(KeyType::SNEAK)) {
+			// Report right click to server
+			if (nodedef_manager->get(map.getNodeNoEx(nodepos)).rightclickable) {
+				client->interact(3, pointed);
+			}
+
 			infostream << "Launching custom inventory view" << std::endl;
 
 			InventoryLocation inventoryloc;
