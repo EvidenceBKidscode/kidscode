@@ -18,18 +18,17 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 */
 
 #include <sstream>
-
 #include "clientiface.h"
+#include "network/connection.h"
+#include "network/serveropcodes.h"
 #include "remoteplayer.h"
 #include "settings.h"
 #include "mapblock.h"
-#include "network/connection.h"
 #include "serverenvironment.h"
 #include "map.h"
 #include "emerge.h"
 #include "content_sao.h"              // TODO this is used for cleanup of only
 #include "log.h"
-#include "network/serveropcodes.h"
 #include "util/srp.h"
 #include "face_position_cache.h"
 
@@ -623,13 +622,22 @@ std::vector<u16> ClientInterface::getClientIDs(ClientState min_state)
 	std::vector<u16> reply;
 	MutexAutoLock clientslock(m_clients_mutex);
 
-	for (RemoteClientMap::iterator i = m_clients.begin();
-		i != m_clients.end(); ++i) {
-		if (i->second->getState() >= min_state)
-			reply.push_back(i->second->peer_id);
+	for (const auto &m_client : m_clients) {
+		if (m_client.second->getState() >= min_state)
+			reply.push_back(m_client.second->peer_id);
 	}
 
 	return reply;
+}
+
+/**
+ * Verify if user limit was reached.
+ * User limit count all clients from HelloSent state (MT protocol user) to Active state
+ * @return true if user limit was reached
+ */
+bool ClientInterface::isUserLimitReached()
+{
+	return getClientIDs(CS_HelloSent).size() >= g_settings->getU16("max_users");
 }
 
 void ClientInterface::step(float dtime)
