@@ -17,8 +17,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
-#ifndef CONSTANTS_HEADER
-#define CONSTANTS_HEADER
+#pragma once
 
 /*
 	All kinds of constants.
@@ -72,7 +71,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 // floating-point and integer positions, which potentially give wrong
 // results. (negative coordinates, values between nodes, ...)
 // Use floatToInt(p, BS) and intToFloat(p, BS).
-#define BS (10.0)
+#define BS 10.0f
 
 // Dimension of a MapBlock
 #define MAP_BLOCKSIZE 16
@@ -120,5 +119,3 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 	#define TTF_DEFAULT_FONT_SIZE	(15)
 #endif
 #define DEFAULT_FONT_SIZE (10)
-
-#endif

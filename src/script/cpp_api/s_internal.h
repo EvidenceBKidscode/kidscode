@@ -24,8 +24,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 /******************************************************************************/
 /******************************************************************************/
 
-#ifndef S_INTERNAL_H_
-#define S_INTERNAL_H_
+#pragma once
 
 #include <thread>
 #include "common/c_internal.h"
@@ -33,7 +32,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "threading/mutex_auto_lock.h"
 
 #ifdef SCRIPTAPI_LOCK_DEBUG
-#include "debug.h" // assert()
+#include <cassert>
 
 class LockChecker {
 public:
@@ -84,6 +83,3 @@ private:
 		lua_State *L = getStack();                                             \
 		assert(lua_checkstack(L, 20));                                         \
 		StackUnroller stack_unroller(L);
-
-#endif /* S_INTERNAL_H_ */
-

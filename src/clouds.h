@@ -17,8 +17,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
-#ifndef CLOUDS_HEADER
-#define CLOUDS_HEADER
+#pragma once
 
 #include "irrlichttypes_extrabloated.h"
 #include <iostream>
@@ -74,7 +73,7 @@ public:
 
 	void update(const v3f &camera_p, const video::SColorf &color);
 
-	void updateCameraOffset(v3s16 camera_offset)
+	void updateCameraOffset(const v3s16 &camera_offset)
 	{
 		m_camera_offset = camera_offset;
 		updateBox();
@@ -143,7 +142,3 @@ private:
 	bool m_camera_inside_cloud = false;
 
 };
-
-
-
-#endif

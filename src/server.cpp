@@ -62,6 +62,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "database.h"
 #include "chatmessage.h"
 #include "chat_interface.h"
+#include "remoteplayer.h"
 
 class ClientNotFoundException : public BaseException
 {
@@ -95,8 +96,6 @@ void *ServerThread::run()
 
 	while (!stopRequested()) {
 		try {
-			//TimeTaker timer("AsyncRunStep() + Receive()");
-
 			m_server->AsyncRunStep();
 
 			m_server->Receive();
@@ -360,10 +359,8 @@ Server::~Server()
 	delete m_script;
 
 	// Delete detached inventories
-	for (std::map<std::string, Inventory*>::iterator
-			i = m_detached_inventories.begin();
-			i != m_detached_inventories.end(); ++i) {
-		delete i->second;
+	for (auto &detached_inventory : m_detached_inventories) {
+		delete detached_inventory.second;
 	}
 }
 
@@ -989,23 +986,17 @@ void Server::Receive()
 		m_con.Receive(&pkt);
 		peer_id = pkt.getPeerId();
 		ProcessData(&pkt);
-	}
-	catch(con::InvalidIncomingDataException &e) {
-		infostream<<"Server::Receive(): "
-				"InvalidIncomingDataException: what()="
-				<<e.what()<<std::endl;
-	}
-	catch(SerializationError &e) {
-		infostream<<"Server::Receive(): "
-				"SerializationError: what()="
-				<<e.what()<<std::endl;
-	}
-	catch(ClientStateError &e) {
+	} catch (const con::InvalidIncomingDataException &e) {
+		infostream << "Server::Receive(): InvalidIncomingDataException: what()="
+				<< e.what() << std::endl;
+	} catch (const SerializationError &e) {
+		infostream << "Server::Receive(): SerializationError: what()="
+				<< e.what() << std::endl;
+	} catch (const ClientStateError &e) {
 		errorstream << "ProcessData: peer=" << peer_id << e.what() << std::endl;
 		DenyAccess_Legacy(peer_id, L"Your client sent something server didn't expect."
 				L"Try reconnecting or updating your client");
-	}
-	catch(con::PeerNotFoundException &e) {
+	} catch (const con::PeerNotFoundException &e) {
 		// Do nothing
 	}
 }
@@ -2259,29 +2250,30 @@ void Server::SendBlocks(float dtime)
 	std::sort(queue.begin(), queue.end());
 
 	m_clients.lock();
-	for(u32 i=0; i<queue.size(); i++)
-	{
-		//TODO: Calculate limit dynamically
-		if(total_sending >= g_settings->getS32
-				("max_simultaneous_block_sends_server_total"))
-			break;
+	s32 max_blocks_to_send =
+			g_settings->getS32("max_simultaneous_block_sends_server_total");
 
-		PrioritySortedBlockTransfer q = queue[i];
+	for (const PrioritySortedBlockTransfer &block_to_send : queue) {
+		//TODO: Calculate limit dynamically
+		if (total_sending >= max_blocks_to_send)
+			break;
 
 		MapBlock *block = nullptr;
 		try {
-			block = m_env->getMap().getBlockNoCreate(q.pos);
-		} catch(const InvalidPositionException &e) {
+			block = m_env->getMap().getBlockNoCreate(block_to_send.pos);
+		} catch (const InvalidPositionException &e) {
 			continue;
 		}
 
-		RemoteClient *client = m_clients.lockedGetClientNoEx(q.peer_id, CS_Active);
+		RemoteClient *client = m_clients.lockedGetClientNoEx(block_to_send.peer_id,
+				CS_Active);
 		if (!client)
 			continue;
 
-		SendBlockNoLock(q.peer_id, block, client->serialization_version, client->net_proto_version);
+		SendBlockNoLock(block_to_send.peer_id, block, client->serialization_version,
+				client->net_proto_version);
 
-		client->SentBlock(q.pos);
+		client->SentBlock(block_to_send.pos);
 		total_sending++;
 	}
 	m_clients.unlock();
@@ -2304,14 +2296,12 @@ void Server::fillMediaCache()
 	paths.push_back(porting::path_user + DIR_DELIM + "textures" + DIR_DELIM + "server");
 
 	// Collect media file information from paths into cache
-	for(std::vector<std::string>::iterator i = paths.begin();
-			i != paths.end(); ++i) {
-		std::string mediapath = *i;
+	for (const std::string &mediapath : paths) {
 		std::vector<fs::DirListNode> dirlist = fs::GetDirListing(mediapath);
-		for (u32 j = 0; j < dirlist.size(); j++) {
-			if (dirlist[j].dir) // Ignode dirs
+		for (const fs::DirListNode &dln : dirlist) {
+			if (dln.dir) // Ignode dirs
 				continue;
-			std::string filename = dirlist[j].name;
+			std::string filename = dln.name;
 			// If name contains illegal characters, ignore the file
 			if (!string_allowed(filename, TEXTURENAME_ALLOWED_CHARS)) {
 				infostream<<"Server: ignoring illegal file name: \""
@@ -2332,7 +2322,9 @@ void Server::fillMediaCache()
 				continue;
 			}
 			// Ok, attempt to load the file and add to cache
-			std::string filepath = mediapath + DIR_DELIM + filename;
+			std::string filepath;
+			filepath.append(mediapath).append(DIR_DELIM).append(filename);
+
 			// Read data
 			std::ifstream fis(filepath.c_str(), std::ios_base::binary);
 			if (!fis.good()) {
@@ -3129,6 +3121,11 @@ bool Server::hudSetHotbarItemcount(RemotePlayer *player, s32 hotbar_itemcount)
 	return true;
 }
 
+s32 Server::hudGetHotbarItemcount(RemotePlayer *player) const
+{
+	return player->getHotbarItemcount();
+}
+
 void Server::hudSetHotbarImage(RemotePlayer *player, std::string name)
 {
 	if (!player)
@@ -3152,6 +3149,11 @@ void Server::hudSetHotbarSelectedImage(RemotePlayer *player, std::string name)
 
 	player->setHotbarSelectedImage(name);
 	SendHUDSetParam(player->peer_id, HUD_PARAM_HOTBAR_SELECTED_IMAGE, name);
+}
+
+const std::string& Server::hudGetHotbarSelectedImage(RemotePlayer *player) const
+{
+	return player->getHotbarSelectedImage();
 }
 
 bool Server::setLocalPlayerAnimations(RemotePlayer *player,

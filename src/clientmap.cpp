@@ -64,20 +64,14 @@ MapSector * ClientMap::emergeSector(v2s16 p2d)
 {
 	DSTACK(FUNCTION_NAME);
 	// Check that it doesn't exist already
-	try{
+	try {
 		return getSectorNoGenerate(p2d);
-	}
-	catch(InvalidPositionException &e)
-	{
+	} catch(InvalidPositionException &e) {
 	}
 
 	// Create a sector
-	ClientMapSector *sector = new ClientMapSector(this, p2d, m_gamedef);
-
-	{
-		//MutexAutoLock lock(m_sector_mutex); // Bulk comment-out
-		m_sectors[p2d] = sector;
-	}
+	MapSector *sector = new MapSector(this, p2d, m_gamedef);
+	m_sectors[p2d] = sector;
 
 	return sector;
 }
@@ -280,8 +274,8 @@ struct MeshBufListList
 
 	void clear()
 	{
-		for (int l = 0; l < MAX_TILE_LAYERS; l++)
-			lists[l].clear();
+		for (auto &list : lists)
+			list.clear();
 	}
 
 	void add(scene::IMeshBuffer *buf, u8 layer)
@@ -447,9 +441,7 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 	}
 
 	// Render all layers in order
-	for (int layer = 0; layer < MAX_TILE_LAYERS; layer++) {
-		std::vector<MeshBufList> &lists = drawbufs.lists[layer];
-
+	for (auto &lists : drawbufs.lists) {
 		int timecheck_counter = 0;
 		for (MeshBufList &list : lists) {
 			timecheck_counter++;

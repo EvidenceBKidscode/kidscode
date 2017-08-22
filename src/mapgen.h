@@ -19,12 +19,10 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
-#ifndef MAPGEN_HEADER
-#define MAPGEN_HEADER
+#pragma once
 
 #include "noise.h"
 #include "nodedef.h"
-#include "mapnode.h"
 #include "util/string.h"
 #include "util/container.h"
 
@@ -94,7 +92,7 @@ struct GenNotifyEvent {
 
 class GenerateNotifier {
 public:
-	GenerateNotifier();
+	GenerateNotifier() = default;
 	GenerateNotifier(u32 notify_on, std::set<u32> *notify_on_deco_ids);
 
 	void setNotifyOn(u32 notify_on);
@@ -123,7 +121,7 @@ enum MapgenType {
 };
 
 struct MapgenParams {
-	MapgenParams() {}
+	MapgenParams() = default;
 	virtual ~MapgenParams();
 
 	MapgenType mgtype = MAPGEN_DEFAULT;
@@ -182,9 +180,9 @@ public:
 	BiomeGen *biomegen = nullptr;
 	GenerateNotifier gennotify;
 
-	Mapgen();
+	Mapgen() = default;
 	Mapgen(int mapgenid, MapgenParams *params, EmergeManager *emerge);
-	virtual ~Mapgen();
+	virtual ~Mapgen() = default;
 	DISABLE_CLASS_COPY(Mapgen);
 
 	virtual MapgenType getType() const { return MAPGEN_INVALID; }
@@ -299,5 +297,3 @@ protected:
 	float cavern_threshold;
 	int lava_depth;
 };
-
-#endif

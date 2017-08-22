@@ -17,8 +17,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
-#ifndef ENVIRONMENT_HEADER
-#define ENVIRONMENT_HEADER
+#pragma once
 
 /*
 	This class is the game's environment.
@@ -49,7 +48,7 @@ class Environment
 public:
 	// Environment will delete the map passed to the constructor
 	Environment(IGameDef *gamedef);
-	virtual ~Environment();
+	virtual ~Environment() = default;
 	DISABLE_CLASS_COPY(Environment);
 
 	/*
@@ -144,5 +143,3 @@ protected:
 private:
 	std::mutex m_time_lock;
 };
-
-#endif

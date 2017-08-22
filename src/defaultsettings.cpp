@@ -344,7 +344,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("chat_message_limit_trigger_kick", "50");
 	settings->setDefault("sqlite_synchronous", "2");
 	settings->setDefault("full_block_send_enable_min_time_from_building", "2.0");
-	settings->setDefault("dedicated_server_step", "0.1");
+	settings->setDefault("dedicated_server_step", "0.09");
 	settings->setDefault("active_block_mgmt_interval", "2.0");
 	settings->setDefault("abm_interval", "1.0");
 	settings->setDefault("nodetimer_interval", "0.2");
@@ -444,8 +444,7 @@ void set_default_settings(Settings *settings)
 void override_default_settings(Settings *settings, Settings *from)
 {
 	std::vector<std::string> names = from->getNames();
-	for (size_t i = 0; i < names.size(); i++) {
-		const std::string &name = names[i];
+	for (const auto &name : names) {
 		settings->setDefault(name, from->get(name));
 	}
 }

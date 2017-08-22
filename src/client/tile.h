@@ -17,8 +17,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
-#ifndef TILE_HEADER
-#define TILE_HEADER
+#pragma once
 
 #include "irrlichttypes.h"
 #include "irr_v3d.h"
@@ -238,6 +237,8 @@ struct TileLayer
 		case TILE_MATERIAL_LIQUID_TRANSPARENT:
 			material.MaterialType = video::EMT_TRANSPARENT_ALPHA_CHANNEL;
 			break;
+		default:
+			break;
 		}
 		material.BackfaceCulling = (material_flags & MATERIAL_FLAG_BACKFACE_CULLING) != 0;
 		if (!(material_flags & MATERIAL_FLAG_TILEABLE_HORIZONTAL)) {
@@ -305,8 +306,8 @@ struct TileLayer
 struct TileSpec
 {
 	TileSpec() {
-		for (int layer = 0; layer < MAX_TILE_LAYERS; layer++)
-			layers[layer] = TileLayer();
+		for (auto &layer : layers)
+			layer = TileLayer();
 	}
 
 	/*!
@@ -330,4 +331,3 @@ struct TileSpec
 	//! The first is base texture, the second is overlay.
 	TileLayer layers[MAX_TILE_LAYERS];
 };
-#endif

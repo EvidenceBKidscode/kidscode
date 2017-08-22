@@ -17,12 +17,10 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
-#ifndef CAMERA_HEADER
-#define CAMERA_HEADER
+#pragma once
 
 #include "irrlichttypes_extrabloated.h"
 #include "inventory.h"
-#include "mesh.h"
 #include "client/tile.h"
 #include <ICameraSceneNode.h>
 #include <ISceneNode.h>
@@ -37,7 +35,7 @@ struct Nametag {
 	Nametag(scene::ISceneNode *a_parent_node,
 			const std::string &a_nametag_text,
 			const video::SColor &a_nametag_color,
-			const v3f a_nametag_pos):
+			const v3f &a_nametag_pos):
 		parent_node(a_parent_node),
 		nametag_text(a_nametag_text),
 		nametag_color(a_nametag_color),
@@ -232,5 +230,3 @@ private:
 
 	std::list<Nametag *> m_nametags;
 };
-
-#endif
