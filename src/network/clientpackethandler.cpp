@@ -1096,6 +1096,7 @@ void Client::handleCommand_HudAdd(NetworkPacket* pkt)
 	v2f offset;
 	v3f world_pos;
 	v2s32 size;
+	u32 font_size;
 
 	*pkt >> id >> type >> pos >> name >> scale >> text >> number >> item
 		>> dir >> align >> offset;
@@ -1107,6 +1108,8 @@ void Client::handleCommand_HudAdd(NetworkPacket* pkt)
 	try {
 		*pkt >> size;
 	} catch(SerializationError &e) {};
+
+	*pkt >> font_size;
 
 	ClientEvent event;
 	event.type             = CE_HUDADD;
@@ -1123,6 +1126,7 @@ void Client::handleCommand_HudAdd(NetworkPacket* pkt)
 	event.hudadd.offset    = new v2f(offset);
 	event.hudadd.world_pos = new v3f(world_pos);
 	event.hudadd.size      = new v2s32(size);
+	event.hudadd.font_size = font_size;
 	m_client_event_queue.push(event);
 }
 

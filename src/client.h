@@ -164,6 +164,7 @@ struct ClientEvent
 			v2f *offset;
 			v3f *world_pos;
 			v2s32 * size;
+			u32 font_size;
 		} hudadd;
 		struct{
 			u32 id;
