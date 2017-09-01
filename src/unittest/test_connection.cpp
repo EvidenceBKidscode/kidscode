@@ -123,8 +123,6 @@ void TestConnection::testHelpers()
 
 void TestConnection::testConnectSendReceive()
 {
-	DSTACK("TestConnection::Run");
-
 	/*
 		Test some real connections
 
@@ -246,7 +244,7 @@ void TestConnection::testConnectSendReceive()
 		NetworkPacket pkt;
 		pkt.putRawPacket((u8*) "Hello World !", 14, 0);
 
-		Buffer<u8> sentdata = pkt.oldForgePacket();
+		SharedBuffer<u8> sentdata = pkt.oldForgePacket();
 
 		infostream<<"** running client.Send()"<<std::endl;
 		client.Send(PEER_ID_SERVER, 0, &pkt, true);
@@ -261,7 +259,7 @@ void TestConnection::testConnectSendReceive()
 				<< ", data=" << (const char*)pkt.getU8Ptr(0)
 				<< std::endl;
 
-		Buffer<u8> recvdata = pkt.oldForgePacket();
+		SharedBuffer<u8> recvdata = pkt.oldForgePacket();
 
 		UASSERT(memcmp(*sentdata, *recvdata, recvdata.getSize()) == 0);
 	}

@@ -185,6 +185,7 @@ struct LocalFormspecHandler : public TextDest
 
 /* Form update callback */
 
+static const std::string empty_string = "";
 class NodeMetadataFormSource: public IFormSource
 {
 public:
@@ -193,12 +194,12 @@ public:
 		m_p(p)
 	{
 	}
-	std::string getForm()
+	const std::string &getForm() const
 	{
 		NodeMetadata *meta = m_map->getNodeMetadata(m_p);
 
 		if (!meta)
-			return "";
+			return empty_string;
 
 		return meta->getString("formspec");
 	}
@@ -224,7 +225,8 @@ public:
 		m_client(client)
 	{
 	}
-	std::string getForm()
+
+	const std::string &getForm() const
 	{
 		LocalPlayer *player = m_client->getEnv().getLocalPlayer();
 		return player->inventory_formspec;
@@ -1096,8 +1098,6 @@ void KeyCache::populate()
 	key[KeyType::QUICKTUNE_PREV] = getKeySetting("keymap_quicktune_prev");
 	key[KeyType::QUICKTUNE_INC]  = getKeySetting("keymap_quicktune_inc");
 	key[KeyType::QUICKTUNE_DEC]  = getKeySetting("keymap_quicktune_dec");
-
-	key[KeyType::DEBUG_STACKS]   = getKeySetting("keymap_print_debug_stacks");
 
 	for (int i = 0; i < 23; i++) {
 		std::string slot_key_name = "keymap_slot" + std::to_string(i + 1);
@@ -2609,14 +2609,6 @@ void Game::processKeyInput()
 		quicktune->inc();
 	} else if (wasKeyDown(KeyType::QUICKTUNE_DEC)) {
 		quicktune->dec();
-	} else if (wasKeyDown(KeyType::DEBUG_STACKS)) {
-		// Print debug stacks
-		dstream << "-----------------------------------------"
-		        << std::endl;
-		dstream << "Printing debug stacks:" << std::endl;
-		dstream << "-----------------------------------------"
-		        << std::endl;
-		debug_stacks_print();
 	}
 
 	if (!isKeyDown(KeyType::JUMP) && runData.reset_jump_timer) {
