@@ -81,11 +81,6 @@ static unsigned int font_line_height(gui::IGUIFont *font)
 	return font->getDimension(L"Ay").Height + font->getKerningHeight();
 }
 
-inline u32 clamp_u8(s32 value)
-{
-	return (u32) MYMIN(MYMAX(value, 0), 255);
-}
-
 GUIFormSpecMenu::GUIFormSpecMenu(JoystickController *joystick,
 		gui::IGUIElement *parent, s32 id, IMenuManager *menumgr,
 		Client *client, ISimpleTextureSource *tsrc, IFormSource *fsrc, TextDest *tdst,
@@ -2542,7 +2537,6 @@ void GUIFormSpecMenu::drawMenu()
 		driver->draw2DRectangle(m_fullscreen_bgcolor, allbg, &allbg);
 	else
 		driver->draw2DRectangle(m_bgcolor, AbsoluteRect, &AbsoluteClippingRect);
-	}
 
 	m_tooltip_element->setVisible(false);
 
