@@ -199,6 +199,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("crosshair_color", "(255,255,255)");
 	settings->setDefault("crosshair_alpha", "255");
 	settings->setDefault("hud_scaling", "1.0");
+	settings->setDefault("hud_grid_resolution", "1920.0");
 	settings->setDefault("gui_scaling", "1.0");
 	settings->setDefault("gui_scaling_filter", "true");
 	settings->setDefault("gui_scaling_filter_txr2img", "true");
@@ -431,6 +432,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("viewing_range", "25");
 	settings->setDefault("inventory_image_hack", "false");
 
+	/*
 	// Check for a device with a small screen
 	float x_inches = ((double) porting::getDisplaySize().X /
 			(160 * porting::getDisplayDensity()));
@@ -439,6 +441,8 @@ void set_default_settings(Settings *settings)
 	} else if (x_inches < 4.5) {
 		settings->setDefault("hud_scaling", "0.7");
 	}
+	*/
+
 	settings->setDefault("curl_verify_cert","false");
 #else
 	settings->setDefault("screen_dpi", "72");
