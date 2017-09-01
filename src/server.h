@@ -347,7 +347,7 @@ private:
 	friend class RemoteClient;
 
 	void SendMovement(u16 peer_id);
-	void SendHP(u16 peer_id, u8 hp);
+	void SendHP(u16 peer_id, u16 hp);
 	void SendBreath(u16 peer_id, u16 breath);
 	void SendAccessDenied(u16 peer_id, AccessDeniedCode reason,
 		const std::string &custom_reason, bool reconnect = false);
@@ -405,7 +405,7 @@ private:
 	void SendBlocks(float dtime);
 
 	void fillMediaCache();
-	void sendMediaAnnouncement(u16 peer_id);
+	void sendMediaAnnouncement(u16 peer_id, const std::string &lang_code);
 	void sendRequestedMedia(u16 peer_id,
 			const std::vector<std::string> &tosend);
 

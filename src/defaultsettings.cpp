@@ -189,6 +189,10 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("console_height", "1.0");
 	settings->setDefault("console_color", "(0,0,0)");
 	settings->setDefault("console_alpha", "200");
+	settings->setDefault("formspec_fullscreen_bg_color", "(0,0,0)");
+	settings->setDefault("formspec_fullscreen_bg_opacity", "140");
+	settings->setDefault("formspec_default_bg_color", "(0,0,0)");
+	settings->setDefault("formspec_default_bg_opacity", "140");
 	settings->setDefault("selectionbox_color", "(0,0,0)");
 	settings->setDefault("selectionbox_width", "2");
 	settings->setDefault("node_highlighting", "halo");
@@ -295,7 +299,6 @@ void set_default_settings(Settings *settings)
 	// Network
 	settings->setDefault("enable_ipv6", "true");
 	settings->setDefault("ipv6_server", "false");
-	settings->setDefault("workaround_window_size","5");
 	settings->setDefault("max_packets_per_iteration","1024");
 	settings->setDefault("port", "30000");
 	settings->setDefault("strict_protocol_version_checking", "false");

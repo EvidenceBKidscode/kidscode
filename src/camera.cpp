@@ -453,7 +453,7 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 busytime, f32 tool_r
 
 	// Get FOV
 	f32 fov_degrees;
-	if (player->getPlayerControl().zoom && m_client->checkLocalPrivilege("zoom")) {
+	if (player->getPlayerControl().zoom && player->getCanZoom()) {
 		fov_degrees = m_cache_zoom_fov;
 	} else {
 		fov_degrees = m_cache_fov;
@@ -620,10 +620,11 @@ void Camera::drawNametags()
 		f32 transformed_pos[4] = { pos.X, pos.Y, pos.Z, 1.0f };
 		trans.multiplyWith1x4Matrix(transformed_pos);
 		if (transformed_pos[3] > 0) {
-			std::string nametag_colorless = unescape_enriched(nametag->nametag_text);
+			std::wstring nametag_colorless =
+				unescape_translate(utf8_to_wide(nametag->nametag_text));
 			core::dimension2d<u32> textsize =
 				g_fontengine->getFont()->getDimension(
-				utf8_to_wide(nametag_colorless).c_str());
+				nametag_colorless.c_str());
 			f32 zDiv = transformed_pos[3] == 0.0f ? 1.0f :
 				core::reciprocal(transformed_pos[3]);
 			v2u32 screensize = RenderingEngine::get_video_driver()->getScreenSize();
@@ -633,8 +634,9 @@ void Camera::drawNametags()
 			screen_pos.Y = screensize.Y *
 				(0.5 - transformed_pos[1] * zDiv * 0.5) - textsize.Height / 2;
 			core::rect<s32> size(0, 0, textsize.Width, textsize.Height);
-			g_fontengine->getFont()->draw(utf8_to_wide(nametag->nametag_text).c_str(),
-					size + screen_pos, nametag->nametag_color);
+			g_fontengine->getFont()->draw(
+				translate_string(utf8_to_wide(nametag->nametag_text)).c_str(),
+				size + screen_pos, nametag->nametag_color);
 		}
 	}
 }

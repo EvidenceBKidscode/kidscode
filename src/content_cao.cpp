@@ -300,8 +300,6 @@ void GenericCAO::initialize(const std::string &data)
 			m_is_visible = false;
 			player->setCAO(this);
 		}
-		if (m_client->getProtoVersion() < 33)
-			m_env->addPlayerName(m_name);
 	}
 }
 
@@ -337,9 +335,6 @@ void GenericCAO::processInitData(const std::string &data)
 
 GenericCAO::~GenericCAO()
 {
-	if (m_is_player && m_client->getProtoVersion() < 33) {
-		m_env->removePlayerName(m_name);
-	}
 	removeFromScene(true);
 }
 
@@ -1155,9 +1150,17 @@ void GenericCAO::updateAnimation()
 #endif
 }
 
+void GenericCAO::updateAnimationSpeed()
+{
+	if (!m_animated_meshnode)
+		return;
+        
+	m_animated_meshnode->setAnimationSpeed(m_animation_speed);
+}
+
 void GenericCAO::updateBonePosition()
 {
-	if(m_bone_position.empty() || !m_animated_meshnode)
+	if (m_bone_position.empty() || !m_animated_meshnode)
 		return;
 
 	m_animated_meshnode->setJointMode(irr::scene::EJUOR_CONTROL); // To write positions to the mesh on render
@@ -1244,6 +1247,7 @@ void GenericCAO::processMessage(const std::string &data)
 			collision_box.MinEdge *= BS;
 			collision_box.MaxEdge *= BS;
 			player->setCollisionbox(collision_box);
+			player->setCanZoom(m_prop.can_zoom);
 		}
 
 		if ((m_is_player && !m_is_local_player) && m_prop.nametag.empty())
@@ -1355,6 +1359,9 @@ void GenericCAO::processMessage(const std::string &data)
 					updateAnimation();
 			}
 		}
+	} else if (cmd == GENERIC_CMD_SET_ANIMATION_SPEED) {
+		m_animation_speed = readF1000(is);
+		updateAnimationSpeed();
 	} else if (cmd == GENERIC_CMD_SET_BONE_POSITION) {
 		std::string bone = deSerializeString(is);
 		v3f position = readV3F1000(is);

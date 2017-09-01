@@ -60,6 +60,7 @@ public:
 	u8 liquid_viscosity = 0;
 	bool is_climbing = false;
 	bool swimming_vertical = false;
+	bool is_slipping = false;
 
 	float physics_override_speed = 1.0f;
 	float physics_override_jump = 1.0f;
@@ -123,11 +124,9 @@ public:
 	v3s16 getLightPosition() const;
 
 	void setYaw(f32 yaw) { m_yaw = yaw; }
-
 	f32 getYaw() const { return m_yaw; }
 
 	void setPitch(f32 pitch) { m_pitch = pitch; }
-
 	f32 getPitch() const { return m_pitch; }
 
 	inline void setPosition(const v3f &position)
@@ -142,12 +141,14 @@ public:
 
 	void setCollisionbox(const aabb3f &box) { m_collisionbox = box; }
 
+	bool getCanZoom() const { return m_can_zoom; }
+	void setCanZoom(bool can_zoom) { m_can_zoom = can_zoom; }
+
 private:
-	// clang-format off
-	void accelerateHorizontal(const v3f &target_speed, f32 max_increase, bool slippery);
-	// clang-format on
+	void accelerateHorizontal(const v3f &target_speed, const f32 max_increase);
 	void accelerateVertical(const v3f &target_speed, const f32 max_increase);
 	bool updateSneakNode(Map *map, const v3f &position, const v3f &sneak_max);
+	float getSlipFactor(Environment *env, const v3f &speedH);
 
 	v3f m_position;
 
@@ -178,6 +179,7 @@ private:
 	bool camera_barely_in_ceiling = false;
 	aabb3f m_collisionbox = aabb3f(-BS * 0.30f, 0.0f, -BS * 0.30f, BS * 0.30f,
 			BS * 1.75f, BS * 0.30f);
+	bool m_can_zoom = true;
 
 	GenericCAO *m_cao = nullptr;
 	Client *m_client;

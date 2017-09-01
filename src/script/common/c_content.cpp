@@ -56,7 +56,9 @@ void read_item_definition(lua_State* L, int index,
 	getstringfield(L, index, "name", def.name);
 	getstringfield(L, index, "description", def.description);
 	getstringfield(L, index, "inventory_image", def.inventory_image);
+	getstringfield(L, index, "inventory_overlay", def.inventory_overlay);
 	getstringfield(L, index, "wield_image", def.wield_image);
+	getstringfield(L, index, "wield_overlay", def.wield_overlay);
 	getstringfield(L, index, "palette", def.palette_image);
 
 	// Read item color.
@@ -142,8 +144,12 @@ void push_item_definition_full(lua_State *L, const ItemDefinition &i)
 	lua_setfield(L, -2, "type");
 	lua_pushstring(L, i.inventory_image.c_str());
 	lua_setfield(L, -2, "inventory_image");
+	lua_pushstring(L, i.inventory_overlay.c_str());
+	lua_setfield(L, -2, "inventory_overlay");
 	lua_pushstring(L, i.wield_image.c_str());
 	lua_setfield(L, -2, "wield_image");
+	lua_pushstring(L, i.wield_overlay.c_str());
+	lua_setfield(L, -2, "wield_overlay");
 	lua_pushstring(L, i.palette_image.c_str());
 	lua_setfield(L, -2, "palette_image");
 	push_ARGB8(L, i.color);
@@ -254,9 +260,11 @@ void read_object_properties(lua_State *L, int index,
 
 	getboolfield(L, -1, "is_visible", prop->is_visible);
 	getboolfield(L, -1, "makes_footstep_sound", prop->makes_footstep_sound);
-	getfloatfield(L, -1, "automatic_rotate", prop->automatic_rotate);
 	if (getfloatfield(L, -1, "stepheight", prop->stepheight))
 		prop->stepheight *= BS;
+	getboolfield(L, -1, "can_zoom", prop->can_zoom);
+
+	getfloatfield(L, -1, "automatic_rotate", prop->automatic_rotate);
 	lua_getfield(L, -1, "automatic_face_movement_dir");
 	if (lua_isnumber(L, -1)) {
 		prop->automatic_face_movement_dir = true;
@@ -338,10 +346,13 @@ void push_object_properties(lua_State *L, ObjectProperties *prop)
 	lua_setfield(L, -2, "is_visible");
 	lua_pushboolean(L, prop->makes_footstep_sound);
 	lua_setfield(L, -2, "makes_footstep_sound");
-	lua_pushnumber(L, prop->automatic_rotate);
-	lua_setfield(L, -2, "automatic_rotate");
 	lua_pushnumber(L, prop->stepheight / BS);
 	lua_setfield(L, -2, "stepheight");
+	lua_pushboolean(L, prop->can_zoom);
+	lua_setfield(L, -2, "can_zoom");
+
+	lua_pushnumber(L, prop->automatic_rotate);
+	lua_setfield(L, -2, "automatic_rotate");
 	if (prop->automatic_face_movement_dir)
 		lua_pushnumber(L, prop->automatic_face_movement_dir_offset);
 	else
