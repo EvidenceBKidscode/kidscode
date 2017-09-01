@@ -1119,22 +1119,22 @@ void Client::handleCommand_HudAdd(NetworkPacket* pkt)
 
 	*pkt >> font_size;
 
-	ClientEvent event;
-	event.type             = CE_HUDADD;
-	event.hudadd.id        = id;
-	event.hudadd.type      = type;
-	event.hudadd.pos       = new v2f(pos);
-	event.hudadd.name      = new std::string(name);
-	event.hudadd.scale     = new v2f(scale);
-	event.hudadd.text      = new std::string(text);
-	event.hudadd.number    = number;
-	event.hudadd.item      = item;
-	event.hudadd.dir       = dir;
-	event.hudadd.align     = new v2f(align);
-	event.hudadd.offset    = new v2f(offset);
-	event.hudadd.world_pos = new v3f(world_pos);
-	event.hudadd.size      = new v2s32(size);
-	event.hudadd.font_size = font_size;
+	ClientEvent *event = new ClientEvent();
+	event->type             = CE_HUDADD;
+	event->hudadd.id        = id;
+	event->hudadd.type      = type;
+	event->hudadd.pos       = new v2f(pos);
+	event->hudadd.name      = new std::string(name);
+	event->hudadd.scale     = new v2f(scale);
+	event->hudadd.text      = new std::string(text);
+	event->hudadd.number    = number;
+	event->hudadd.item      = item;
+	event->hudadd.dir       = dir;
+	event->hudadd.align     = new v2f(align);
+	event->hudadd.offset    = new v2f(offset);
+	event->hudadd.world_pos = new v3f(world_pos);
+	event->hudadd.size      = new v2s32(size);
+	event->hudadd.font_size = font_size;
 
 	m_client_event_queue.push(event);
 }
