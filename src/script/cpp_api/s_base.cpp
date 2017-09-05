@@ -176,12 +176,8 @@ void ScriptApiBase::loadScript(const std::string &script_path)
 
 	int error_handler = PUSH_ERROR_HANDLER(L);
 
-	bool ok;
-	if (m_secure) {
-		ok = ScriptApiSecurity::safeLoadFile(L, script_path.c_str());
-	} else {
-		ok = !luaL_loadfile(L, script_path.c_str());
-	}
+	bool ok = ScriptApiSecurity::safeLoadFile(L, script_path.c_str(), NULL, m_secure); // :PATCH:
+
 	ok = ok && !lua_pcall(L, 0, 0, error_handler);
 	if (!ok) {
 		std::string error_msg = readParam<std::string>(L, -1);
