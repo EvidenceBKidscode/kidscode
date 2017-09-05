@@ -368,6 +368,7 @@ add_subdirectory(util)
 add_subdirectory(irrlicht_changes)
 
 set(common_SRCS
+	aes.cpp
 	ban.cpp
 	cavegen.cpp
 	chat.cpp
