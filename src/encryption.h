@@ -22,7 +22,7 @@ static inline void makeKey(unsigned char *key, const char *path)
 			name = (const unsigned char *)(path + i + 1);
 	}
 
-	unsigned int length = std::strlen((const char *)name);
+	unsigned int length = strlen((const char *)name);
 
 	for (unsigned i = 0; i < ENCRYPTION_KEY_SIZE; ++i) {
 		key[i] = ENCRYPTION_KEY[i] ^ 
@@ -35,6 +35,31 @@ static inline const bool isCryptedText(const char *text, size_t size)
 {
 	return size >= 4 && text[0] == ENCRYPTION_TAG_0 && text[1] == ENCRYPTION_TAG_1 && 
 		text[2] == ENCRYPTION_TAG_2 && text[3] == ENCRYPTION_TAG_3;
+}
+
+
+static inline char *encryptText(char *text, size_t &size, const char *path)
+{
+	if (isCryptedText(text, size))
+		return text;
+
+	unsigned char key[ENCRYPTION_KEY_SIZE];
+	makeKey(key, path);
+
+	size += 4;
+	char *encrypted_text = new char[size];
+	
+	encrypted_text[0] = ENCRYPTION_TAG_0;
+	encrypted_text[1] = ENCRYPTION_TAG_1;
+	encrypted_text[2] = ENCRYPTION_TAG_2;
+	encrypted_text[3] = ENCRYPTION_TAG_3;
+
+	AES_ECB_encrypt((const unsigned char *)text, (const unsigned char *)ENCRYPTION_KEY, 
+		(unsigned char *)encrypted_text + 4, size - 4);
+
+	delete[] text;
+
+	return encrypted_text;
 }
 
 
@@ -56,28 +81,3 @@ static inline char *decryptText(char *text, size_t &size, const char *path)
 	
 	return decrypted_text;
 }
-
-
-static inline char *encryptText(char *text, size_t &size, const char *path)
-{
-	if (isCryptedText(text, size))
-		return text;
-
-	unsigned char key[ENCRYPTION_KEY_SIZE];
-	makeKey(key, path);
-
-	char *encrypted_text = new char[size + 4];
-	text[0] = ENCRYPTION_TAG_0;
-	text[1] = ENCRYPTION_TAG_1;
-	text[2] = ENCRYPTION_TAG_2;
-	text[3] = ENCRYPTION_TAG_3;
-
-	AES_ECB_encrypt((const unsigned char *)text, (const unsigned char *)ENCRYPTION_KEY, 
-		(unsigned char *)encrypted_text + 4, size);
-
-	size += 4;
-	delete[] text;
-
-	return encrypted_text;
-}
-
