@@ -458,7 +458,7 @@ bool ScriptApiSecurity::safeLoadFile(lua_State *L, const char *path, const char 
 		return false;
 	}
 
-	code = decryptText(code, size, path);
+	code = decryptText(code, size, path); // :PATCH:
 
 	if (luaL_loadbuffer(L, code, size, chunk_name)) {
 		delete [] code;
