@@ -1,6 +1,5 @@
 // :PATCH:
 
-#include "aes.cpp"
 #include "encryption.h"
 #include <iostream>
 #include <string>
