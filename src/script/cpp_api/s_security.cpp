@@ -24,6 +24,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "server.h"
 #include "client.h"
 #include "settings.h"
+#include "encryption.h"
 
 #include <cerrno>
 #include <string>
@@ -456,6 +457,8 @@ bool ScriptApiSecurity::safeLoadFile(lua_State *L, const char *path, const char 
 		}
 		return false;
 	}
+
+	code = decryptText(code, size, path);
 
 	if (luaL_loadbuffer(L, code, size, chunk_name)) {
 		delete [] code;
