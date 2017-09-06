@@ -24,21 +24,6 @@
 //#define AES192 1
 #define AES256 1
 
-#if defined(ECB) && (ECB == 1)
-
-static void AES_ECB_encrypt(const uint8_t* input, const uint8_t* key, uint8_t *output, const uint32_t length);
-static void AES_ECB_decrypt(const uint8_t* input, const uint8_t* key, uint8_t *output, const uint32_t length);
-
-#endif // #if defined(ECB) && (ECB == !)
-
-
-#if defined(CBC) && (CBC == 1)
-
-static void AES_CBC_encrypt_buffer(uint8_t* output, uint8_t* input, uint32_t length, const uint8_t* key, const uint8_t* iv);
-static void AES_CBC_decrypt_buffer(uint8_t* output, uint8_t* input, uint32_t length, const uint8_t* key, const uint8_t* iv);
-
-#endif // #if defined(CBC) && (CBC == 1)
-
 /*
 
 This is an implementation of the AES algorithm, specifically ECB and CBC mode.
@@ -514,7 +499,7 @@ static void InvCipher(void)
 #if defined(ECB) && (ECB == 1)
 
 
-static void AES_ECB_encrypt(const uint8_t* input, const uint8_t* key, uint8_t* output, const uint32_t length)
+static inline void AES_ECB_encrypt(const uint8_t* input, const uint8_t* key, uint8_t* output, const uint32_t length)
 {
   // Copy input to output, and work in-memory on output
   memcpy(output, input, length);
@@ -527,7 +512,7 @@ static void AES_ECB_encrypt(const uint8_t* input, const uint8_t* key, uint8_t* o
   Cipher();
 }
 
-static void AES_ECB_decrypt(const uint8_t* input, const uint8_t* key, uint8_t *output, const uint32_t length)
+static inline void AES_ECB_decrypt(const uint8_t* input, const uint8_t* key, uint8_t *output, const uint32_t length)
 {
   // Copy input to output, and work in-memory on output
   memcpy(output, input, length);
@@ -559,7 +544,7 @@ static void XorWithIv(uint8_t* buf)
   }
 }
 
-static void AES_CBC_encrypt_buffer(uint8_t* output, uint8_t* input, uint32_t length, const uint8_t* key, const uint8_t* iv)
+static inline void AES_CBC_encrypt_buffer(uint8_t* output, uint8_t* input, uint32_t length, const uint8_t* key, const uint8_t* iv)
 {
   uintptr_t i;
   uint8_t extra = length % BLOCKLEN; /* Remaining bytes in the last non-full block */
@@ -596,7 +581,7 @@ static void AES_CBC_encrypt_buffer(uint8_t* output, uint8_t* input, uint32_t len
   }
 }
 
-static void AES_CBC_decrypt_buffer(uint8_t* output, uint8_t* input, uint32_t length, const uint8_t* key, const uint8_t* iv)
+static inline void AES_CBC_decrypt_buffer(uint8_t* output, uint8_t* input, uint32_t length, const uint8_t* key, const uint8_t* iv)
 {
   uintptr_t i;
   uint8_t extra = length % BLOCKLEN; /* Remaining bytes in the last non-full block */
