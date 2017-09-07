@@ -382,7 +382,8 @@ bool ScriptApiSecurity::isSecure(lua_State *L)
 	}
 
 
-bool ScriptApiSecurity::safeLoadFile(lua_State *L, const char *path, const char *display_name)
+bool ScriptApiSecurity::safeLoadFile(lua_State *L, const char *path, const char *display_name,
+		const bool secure)
 {
 	FILE *fp;
 	char *chunk_name;
@@ -404,23 +405,26 @@ bool ScriptApiSecurity::safeLoadFile(lua_State *L, const char *path, const char 
 	}
 
 	size_t start = 0;
-	int c = std::getc(fp);
-	if (c == '#') {
-		// Skip the first line
-		while ((c = std::getc(fp)) != EOF && c != '\n');
-		if (c == '\n') c = std::getc(fp);
-		start = std::ftell(fp);
-	}
-
-	if (c == LUA_SIGNATURE[0]) {
-		lua_pushliteral(L, "Bytecode prohibited when mod security is enabled.");
-		std::fclose(fp);
-		if (path) {
-			delete [] chunk_name;
+	
+	if (secure) { // :PATCH:/
+		int c = std::getc(fp);
+		if (c == '#') {
+			// Skip the first line
+			while ((c = std::getc(fp)) != EOF && c != '\n');
+			if (c == '\n') c = std::getc(fp);
+			start = std::ftell(fp);
 		}
-		return false;
-	}
 
+		if (c == LUA_SIGNATURE[0]) {
+			lua_pushliteral(L, "Bytecode prohibited when mod security is enabled.");
+			std::fclose(fp);
+			if (path) {
+				delete [] chunk_name;
+			}
+			return false;
+		}
+	}
+	
 	// Read the file
 	int ret = std::fseek(fp, 0, SEEK_END);
 	if (ret) {
@@ -433,7 +437,8 @@ bool ScriptApiSecurity::safeLoadFile(lua_State *L, const char *path, const char 
 	}
 
 	size_t size = std::ftell(fp) - start;
-	char *code = new char[size];
+	char *code = new char[size + 1]; // :PATCH:
+	code[size] = 0; // :PATCH:
 	ret = std::fseek(fp, start, SEEK_SET);
 	if (ret) {
 		lua_pushfstring(L, "%s: %s", path, strerror(errno));
@@ -459,7 +464,7 @@ bool ScriptApiSecurity::safeLoadFile(lua_State *L, const char *path, const char 
 	}
 
 	code = decryptText(code, size, path); // :PATCH:
-
+	warningstream << "LOADED:" << path << "\n" << code << "\n";
 	if (luaL_loadbuffer(L, code, size, chunk_name)) {
 		delete [] code;
 		return false;
@@ -470,6 +475,7 @@ bool ScriptApiSecurity::safeLoadFile(lua_State *L, const char *path, const char 
 	if (path) {
 		delete [] chunk_name;
 	}
+	
 	return true;
 }
 
