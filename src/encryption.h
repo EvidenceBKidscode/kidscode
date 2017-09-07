@@ -5,15 +5,24 @@
 #include "aes.h"
 
 
-#define ENCRYPTION_KEY "01234567012345670123456701234567"
-#define ENCRYPTION_KEY_SIZE 32
-#define ENCRYPTION_KEY_PRIME_0 1046527
-#define ENCRYPTION_KEY_PRIME_1 2654435761
+#define ENCRYPTION_TAG 0x04030501
+#define ENCRYPTION_HEADER_SIZE 8
+#define ENCRYPTION_KEY_SIZE 8
 #define ENCRYPTION_BUFFER_SIZE 16
-#define ENCRYPTION_TAG_0 4
-#define ENCRYPTION_TAG_1 1
-#define ENCRYPTION_TAG_2 6
-#define ENCRYPTION_TAG_3 5
+
+#ifdef ENCRYPTION_DATA
+	#include "encryption_data.h"
+#else
+	#define ENCRYPTION_KEY_0 0x01234567
+	#define ENCRYPTION_KEY_1 0x01234567
+	#define ENCRYPTION_KEY_2 0x01234567
+	#define ENCRYPTION_KEY_3 0x01234567
+	#define ENCRYPTION_KEY_4 0x01234567
+	#define ENCRYPTION_KEY_5 0x01234567
+	#define ENCRYPTION_KEY_6 0x01234567
+	#define ENCRYPTION_KEY_7 0x01234567
+	#define ENCRYPTION_PRIME 0x01234567
+#endif
 
 
 static inline const char *getFileName(const char *file_path)
@@ -29,22 +38,30 @@ static inline const char *getFileName(const char *file_path)
 }
 
 
-static inline void makeKey(unsigned char *key, const char *file_path)
+static inline void makeKey(unsigned *key, const char *file_path)
 {
 	const unsigned char *name = (const unsigned char *)getFileName(file_path);
 	unsigned int length = strlen((const char *)name);
 
-	for (unsigned i = 0; i < ENCRYPTION_KEY_SIZE; ++i) {
-		key[i] = ENCRYPTION_KEY[i] * name[i % length] * ENCRYPTION_KEY_PRIME_0 +
-			i * ENCRYPTION_KEY_PRIME_1;
+	key[0] = ENCRYPTION_KEY_0 ^ ENCRYPTION_PRIME;
+	key[1] = ENCRYPTION_KEY_1 ^ key[0] * ENCRYPTION_PRIME;
+	key[2] = ENCRYPTION_KEY_2 ^ key[1] * ENCRYPTION_PRIME;
+	key[3] = ENCRYPTION_KEY_3 ^ key[2] * ENCRYPTION_PRIME;
+	key[4] = ENCRYPTION_KEY_4 ^ key[3] * ENCRYPTION_PRIME;
+	key[5] = ENCRYPTION_KEY_5 ^ key[4] * ENCRYPTION_PRIME;
+	key[6] = ENCRYPTION_KEY_6 ^ key[5] * ENCRYPTION_PRIME;
+	key[7] = ENCRYPTION_KEY_7 ^ key[6] * ENCRYPTION_PRIME;
+	
+	for (unsigned i = 0; i < length; ++i) {
+		unsigned k = i % ENCRYPTION_KEY_SIZE;
+		key[k] *= i + key[k] * name[i] * ENCRYPTION_PRIME;
 	}
 }
 
 
 static inline const bool isCryptedText(const char *text, size_t size)
 {
-	return size >= 4 && text[0] == ENCRYPTION_TAG_0 && text[1] == ENCRYPTION_TAG_1 &&
-		text[2] == ENCRYPTION_TAG_2 && text[3] == ENCRYPTION_TAG_3;
+	return size >= 4 && *((unsigned *)text) == ENCRYPTION_TAG;
 }
 
 
@@ -55,24 +72,20 @@ static inline char *encryptText(char *text, size_t &size, const char *file_path)
 
 	unsigned length = size;
 
-	size = 12 + (((length + ENCRYPTION_BUFFER_SIZE - 1) >> 4) << 4);
+	size = ENCRYPTION_HEADER_SIZE + (((length + ENCRYPTION_BUFFER_SIZE - 1) >> 4) << 4);
 	char *encrypted_text = new char[size];
 
-	encrypted_text[0] = ENCRYPTION_TAG_0;
-	encrypted_text[1] = ENCRYPTION_TAG_1;
-	encrypted_text[2] = ENCRYPTION_TAG_2;
-	encrypted_text[3] = ENCRYPTION_TAG_3;
+	*((unsigned *)encrypted_text) = ENCRYPTION_TAG;
 	((unsigned *)encrypted_text)[ 1 ] = length;
-	((unsigned *)encrypted_text)[ 2 ] = 0;
 
-	unsigned char key[ENCRYPTION_KEY_SIZE];
+	unsigned key[ENCRYPTION_KEY_SIZE];
 	makeKey(key, file_path);
 
 	aes256_context ctx;
-	aes256_init(&ctx, key);
+	aes256_init(&ctx, (unsigned char *)key);
 
 	unsigned char *input = (unsigned char *)text;
-	unsigned char *output = (unsigned char *)(encrypted_text + 12);
+	unsigned char *output = (unsigned char *)(encrypted_text + ENCRYPTION_HEADER_SIZE);
 	unsigned char buffer[ENCRYPTION_BUFFER_SIZE];
 
 	for (unsigned i = 0; i < length; i += ENCRYPTION_BUFFER_SIZE) {
@@ -105,14 +118,14 @@ static inline char *decryptText(char *text, size_t &size, const char *file_path)
 	char *decrypted_text = new char[size + 1];
 	decrypted_text[size] = 0;
 
-	unsigned char key[ENCRYPTION_KEY_SIZE];
+	unsigned key[ENCRYPTION_KEY_SIZE];
 	makeKey(key, file_path);
 
 	aes256_context ctx;
-	aes256_init(&ctx, key);
+	aes256_init(&ctx, (unsigned char *)key);
 
 	unsigned length = size;
-	unsigned char *input = (unsigned char *)(text + 12);
+	unsigned char *input = (unsigned char *)(text + ENCRYPTION_HEADER_SIZE);
 	unsigned char *output = (unsigned char *)decrypted_text;
 	unsigned char buffer[ENCRYPTION_BUFFER_SIZE];
 
