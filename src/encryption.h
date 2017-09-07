@@ -6,7 +6,7 @@
 
 
 #define ENCRYPTION_TAG 0x04030501
-#define ENCRYPTION_HEADER_SIZE 8
+#define ENCRYPTION_HEADER_SIZE 16
 #define ENCRYPTION_KEY_SIZE 8
 #define ENCRYPTION_BUFFER_SIZE 16
 
@@ -38,10 +38,9 @@ static inline const char *getFileName(const char *file_path)
 }
 
 
-static inline void makeKey(unsigned *key, const char *file_path)
+static inline void makeKey(unsigned *key, const char *file_name)
 {
-	const unsigned char *name = (const unsigned char *)getFileName(file_path);
-	unsigned int length = strlen((const char *)name);
+	unsigned int file_name_length = strlen((const char *)file_name);
 
 	key[0] = ENCRYPTION_KEY_0 ^ ENCRYPTION_PRIME;
 	key[1] = ENCRYPTION_KEY_1 ^ key[0] * ENCRYPTION_PRIME;
@@ -52,9 +51,9 @@ static inline void makeKey(unsigned *key, const char *file_path)
 	key[6] = ENCRYPTION_KEY_6 ^ key[5] * ENCRYPTION_PRIME;
 	key[7] = ENCRYPTION_KEY_7 ^ key[6] * ENCRYPTION_PRIME;
 	
-	for (unsigned i = 0; i < length; ++i) {
+	for (unsigned i = 0; i < file_name_length; ++i) {
 		unsigned k = i % ENCRYPTION_KEY_SIZE;
-		key[k] *= i + key[k] * name[i] * ENCRYPTION_PRIME;
+		key[k] *= i + key[k] * file_name[i] * ENCRYPTION_PRIME;
 	}
 }
 
@@ -65,21 +64,29 @@ static inline const bool isCryptedText(const char *text, size_t size)
 }
 
 
-static inline char *encryptText(char *text, size_t &size, const char *file_path)
+static inline const char *encryptText(const char *text, size_t &size, const char *file_path)
 {
 	if (isCryptedText(text, size))
 		return text;
 
-	unsigned length = size;
+	const char *file_name = getFileName(file_path);
 
-	size = ENCRYPTION_HEADER_SIZE + (((length + ENCRYPTION_BUFFER_SIZE - 1) >> 4) << 4);
+	unsigned decrypted_size = size;
+	unsigned encrypted_size = (((decrypted_size + ENCRYPTION_BUFFER_SIZE - 1) >> 4) << 4);
+	unsigned file_name_size = strlen(file_name) + 1;
+
+	size = ENCRYPTION_HEADER_SIZE + encrypted_size + file_name_size;
+		
 	char *encrypted_text = new char[size];
 
 	*((unsigned *)encrypted_text) = ENCRYPTION_TAG;
-	((unsigned *)encrypted_text)[ 1 ] = length;
+	((unsigned *)encrypted_text)[1] = decrypted_size;
+	((unsigned *)encrypted_text)[2] = encrypted_size;
+	((unsigned *)encrypted_text)[3] = file_name_size;
+	strcpy(encrypted_text + ENCRYPTION_HEADER_SIZE + encrypted_size, file_name);
 
 	unsigned key[ENCRYPTION_KEY_SIZE];
-	makeKey(key, file_path);
+	makeKey(key, file_name);
 
 	aes256_context ctx;
 	aes256_init(&ctx, (unsigned char *)key);
@@ -88,9 +95,9 @@ static inline char *encryptText(char *text, size_t &size, const char *file_path)
 	unsigned char *output = (unsigned char *)(encrypted_text + ENCRYPTION_HEADER_SIZE);
 	unsigned char buffer[ENCRYPTION_BUFFER_SIZE];
 
-	for (unsigned i = 0; i < length; i += ENCRYPTION_BUFFER_SIZE) {
+	for (unsigned i = 0; i < encrypted_size; i += ENCRYPTION_BUFFER_SIZE) {
 		for (unsigned j = 0; j < ENCRYPTION_BUFFER_SIZE; ++j) {
-			buffer[j] = (i + j < length) ? input[i + j] : 0;
+			buffer[j] = (i + j < decrypted_size) ? input[i + j] : 0;
 		}
 
 		aes256_encrypt_ecb(&ctx, buffer);
@@ -108,28 +115,32 @@ static inline char *encryptText(char *text, size_t &size, const char *file_path)
 }
 
 
-static inline char *decryptText(char *text, size_t &size, const char *file_path)
+static inline const char *decryptText(const char *text, size_t &size, const char *file_path)
 {
 	if (!isCryptedText(text, size))
 		return text;
 
-	size = ((unsigned *)text)[ 1 ];
+	unsigned decrypted_size = ((unsigned *)text)[ 1 ];
+	unsigned encrypted_size = ((unsigned *)text)[ 2 ];
+	
+	const char *file_name = text + ENCRYPTION_HEADER_SIZE + encrypted_size;
+
+	size = decrypted_size;
 
 	char *decrypted_text = new char[size + 1];
 	decrypted_text[size] = 0;
 
 	unsigned key[ENCRYPTION_KEY_SIZE];
-	makeKey(key, file_path);
+	makeKey(key, file_name);
 
 	aes256_context ctx;
 	aes256_init(&ctx, (unsigned char *)key);
 
-	unsigned length = size;
 	unsigned char *input = (unsigned char *)(text + ENCRYPTION_HEADER_SIZE);
 	unsigned char *output = (unsigned char *)decrypted_text;
 	unsigned char buffer[ENCRYPTION_BUFFER_SIZE];
 
-	for (unsigned i = 0; i < length; i += ENCRYPTION_BUFFER_SIZE) {
+	for (unsigned i = 0; i < encrypted_size; i += ENCRYPTION_BUFFER_SIZE) {
 		for (unsigned j = 0; j < ENCRYPTION_BUFFER_SIZE; ++j) {
 			buffer[j] = input[i + j];
 		}
@@ -137,7 +148,7 @@ static inline char *decryptText(char *text, size_t &size, const char *file_path)
 		aes256_decrypt_ecb(&ctx, buffer);
 
 		for (unsigned j = 0; j < ENCRYPTION_BUFFER_SIZE; ++j) {
-			if (i + j < length)
+			if (i + j < decrypted_size)
 				output[i + j] = buffer[j];
 		}
 	}

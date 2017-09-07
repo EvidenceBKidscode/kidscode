@@ -50,6 +50,9 @@ public:
 	void initializeSecurityClient();
 	// Checks if the Lua state has been secured
 	static bool isSecure(lua_State *L);
+	// Loads a Lua code buffer.
+	static int loadBuffer(lua_State *L, const char *buffer, size_t size,
+			const char *name); // :PATCH:
 	// Loads a file as Lua code safely (doesn't allow bytecode).
 	static bool safeLoadFile(lua_State *L, const char *path, const char *display_name = NULL,
 			const bool secure = true); // :PATCH:

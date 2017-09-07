@@ -74,7 +74,7 @@ bool processFile(const char *path, const char option)
 		if (text == NULL)
 			return false;
 
-		char *encrypted_text = encryptText(text, size, path);
+		const char *encrypted_text = encryptText(text, size, path);
 
 		if (encrypted_text != text)
 			success = writeText(encrypted_text, size, path);
@@ -89,7 +89,7 @@ bool processFile(const char *path, const char option)
 		if (text == NULL)
 			return false;
 
-		char *decrypted_text = decryptText(text, size, path);
+		const char *decrypted_text = decryptText(text, size, path);
 
 		if (decrypted_text != text)
 			success = writeText(decrypted_text, size, path);
