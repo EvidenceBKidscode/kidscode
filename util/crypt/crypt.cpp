@@ -101,7 +101,38 @@ bool processFile(const char *path, const char option)
 }
 
 
-int main(int argc, char** argv)
+void processFiles(int count, char **paths, char option)
+{
+	if ( count == 0 ) {
+		size_t size;
+		char *list = readText("CryptList.txt", size);
+		
+		if (list == NULL) {
+			puts("*** ERROR : can't read CryptList.txt");
+			return;
+		}
+		
+		for (std::string path; *list; ++list) {
+			if (*list=='\n') {
+				if (path.size() > 0)
+					processFile(path.c_str(),option);
+				path = "";
+			}
+			else
+				path += *list;
+		}
+	}
+	else {
+		for (int i = 0; i < count; ++i) {
+			if (!processFile(paths[i], option)) {
+				printf("*** ERROR : can't process file : %s\n", paths[i]);
+			}
+		}
+	}
+}
+
+
+int main(int argc, char **argv)
 {
 	char option = 0;
 
@@ -114,20 +145,15 @@ int main(int argc, char** argv)
 		++argv;
 	}
 
-	if (option) {
-		for (int i = 0; i < argc; ++i) {
-			if (!processFile(argv[i], option)) {
-				printf("*** ERROR : can't process file : %s\n", argv[i]);
-			}
-		}
-	}
+	if (option)
+		processFiles(argc, argv, option);
 	else {
 		puts("*** ERROR : missing option");
 		puts("Usage :");
-		puts("        crypt option file1.lua file2.lua ...");
-		puts("Options :");
-		puts("        -e : encrypt files");
-		puts("        -d : decrypt files");
+		puts("        crypt -e file1 file2 ... : encrypt these files");
+		puts("        crypt -d file1 file2 ... : decrypt these files");
+		puts("        crypt -e : encrypt the files specified in CryptList.txt");
+		puts("        crypt -d : decrypt the files specified in CryptList.txt");
 	}
 }
 
