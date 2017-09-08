@@ -42,7 +42,7 @@ Files can be encrypted/decrypted manually, by providing their paths as additiona
 	crypt -e *.lua
 	crypt -d *.lua
 
-But it is much more convenient to create a "CryptList.txt" file in the current folder
+The recommended way to use the tool is to create a "CryptList.txt" file in the current folder
 and call the tool without arguments :
 
 	crypt -e
