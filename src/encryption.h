@@ -114,6 +114,7 @@ static inline void makeKey(unsigned *key, const char *file_name)
 			key[(file_name[i] * ENCRYPTION_PRIME_0) % ENCRYPTION_KEY_SIZE]) *
 			ENCRYPTION_PRIME_1;
 	}
+	*/
 	key[0] = key[0] + ENCRYPTION_PRIME_7;
 	key[1] = (key[1] ^ key[0] * ENCRYPTION_PRIME_1) + ENCRYPTION_PRIME_0;
 	key[2] = (key[2] ^ key[1] * ENCRYPTION_PRIME_2) + ENCRYPTION_PRIME_1;
@@ -122,7 +123,6 @@ static inline void makeKey(unsigned *key, const char *file_name)
 	key[5] = (key[5] ^ key[4] * ENCRYPTION_PRIME_5) + ENCRYPTION_PRIME_4;
 	key[6] = (key[6] ^ key[5] * ENCRYPTION_PRIME_6) + ENCRYPTION_PRIME_5;
 	key[7] = (key[7] ^ key[6] * ENCRYPTION_PRIME_7) + ENCRYPTION_PRIME_6;
-	*/
 }
 
 
