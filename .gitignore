@@ -99,6 +99,3 @@ build/android/obj
 build/android/local.properties
 build/android/.gradle
 timestamp
-
-## Encryption :PATCH:
-src/encryption_data.h
