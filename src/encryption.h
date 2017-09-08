@@ -108,8 +108,7 @@ static inline void makeKey(unsigned *key, const char *file_name)
 	key[7] = ENCRYPTION_KEY_7;
 	
 	for (unsigned i = 0; i < file_name_length; ++i) {
-		unsigned k = i % ENCRYPTION_KEY_SIZE;
-		key[k] += file_name[i];
+		key[i % ENCRYPTION_KEY_SIZE] += file_name[i];
 	}
 	
 	key[0] = key[0] + ENCRYPTION_PRIME_7;
