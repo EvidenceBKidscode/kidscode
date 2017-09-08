@@ -393,6 +393,7 @@ extern "C"
 		if (buffer != NULL) {
 			buffer = decryptText(buffer, size, path);
 			ret = luaL_loadbuffer(L, buffer, size, path);
+			delete[] buffer;
 		}
 		
 		return ret;

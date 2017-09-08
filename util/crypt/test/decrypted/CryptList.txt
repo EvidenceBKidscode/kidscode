@@ -1,5 +1,3 @@
-
-test.lua
-
-
-
+./inventory.lua
+./init.lua
+./test.lua
