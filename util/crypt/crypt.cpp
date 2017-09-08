@@ -7,59 +7,6 @@
 
 #include "encryption.h"
 
-char *readText(const char *path, size_t &size)
-{
-	printf("Reading file : %s\n", path);
-
-	FILE *file = fopen(path, "rb");
-	if (!file)
-		return NULL;
-
-	if (fseek(file, 0, SEEK_END)) {
-		fclose(file);
-		return NULL;
-	}
-
-	size = ftell(file);
-	char *text = new char[size + 1];
-	text[size] = 0;
-
-	if (fseek(file, 0, SEEK_SET)) {
-		fclose(file);
-		delete [] text;
-		return NULL;
-	}
-
-	size_t read_size = fread(text, 1, size, file);
-	fclose(file);
-
-	if (read_size != size) {
-		delete [] text;
-		return NULL;
-	}
-
-	return text;
-}
-
-
-bool writeText(const char *text, const size_t size, const char *path)
-{
-	printf("Writing file : %s\n", path);
-
-	FILE *file = fopen(path, "wb");
-	if (!file)
-		return false;
-
-	size_t written_size = fwrite(text, 1, size, file);
-	fclose(file);
-
-	if (written_size != size)
-		return false;
-
-	return true;
-}
-
-
 bool processFile(const char *path, const char option)
 {
 	bool success = false;
