@@ -30,23 +30,28 @@ These constants are defined in "encryption.h".
 These constants can also be defined in a private file named "encryption_data.h" 
 if the ENCRYPTION_DATA constant is defined at the tool and game compilation.
 
-
 2. Encryption tool
 
 Lua files can be encrypted/decrypted using the "crypt" tool of the "adel/util/" folder.
 
 The "-e" option is used to encrypt the files, and the "-d" option to decrypt them.
 
+Only files which aren't already encrypted/decrypted are processed.
+
+Files can be encrypted/decrypted manually, by providing their paths as additional arguments :
 	crypt -e *.lua
 	crypt -d *.lua
 
-When no file name is specified, the encryption tool will try to load a "CryptList.txt" file
-in the current folder to get a list of file paths :
+But it is much more convenient to create a "CryptList.txt" file in the current folder
+and call the tool without arguments :
 
 	crypt -e
 	crypt -d
 
-Such a file can be generated automatically using the following Linux command :
+This file will contain the path of all the Lua file to encrypt or decrypt.
+
+The "CryptList.txt" file can be generated automatically using the following Linux command :
 
 	find . -iregex ".+lua" > CryptList.txt
 
+This command will create a "CryptList.txt" file with the paths of the Lua files of this folder and its subfolder.
