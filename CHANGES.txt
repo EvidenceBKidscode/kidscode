@@ -4,8 +4,6 @@ The Lua files can be encrypted using the 256 bit variant of the AES encryption a
 
 The AES key is file name dependent, and is built using eight constants and eight prime numbers defined in "encryption.h".
 
-These constants are defined in "encryption.h".
-
 #ifdef ENCRYPTION_DATA
 	#include "encryption_data.h"
 #else
@@ -27,8 +25,12 @@ These constants are defined in "encryption.h".
 	#define ENCRYPTION_PRIME_7 0x01234567
 #endif
 
-These constants can also be defined in a private file named "encryption_data.h" 
+The actual constants and prime numbers used for encryption must be kept secret.
+
+They can also be defined in a private file named "encryption_data.h" 
 if the ENCRYPTION_DATA constant is defined at the tool and game compilation.
+
+This file can be tailored per customer if needed.
 
 2. Encryption tool
 
@@ -55,3 +57,9 @@ The "CryptList.txt" file can be generated automatically using the following Linu
 	find . -iregex ".+lua" > CryptList.txt
 
 This command will create a "CryptList.txt" file with the paths of the Lua files of this folder and its subfolder.
+
+3. Usage
+
+While the files can be encrypted/decrypted in place in the development folder, 
+an easier and safer approach would be to copy the development mods in a temporary folder 
+and encrypt them there before their deployment.
