@@ -96,7 +96,7 @@ static inline const char *getFileName(const char *file_path)
 
 static inline void makeKey(unsigned *key, const char *file_name)
 {
-	unsigned int file_name_length = strlen((const char *)file_name);
+	unsigned int file_name_length = strlen(file_name);
 
 	key[0] = ENCRYPTION_KEY_0;
 	key[1] = ENCRYPTION_KEY_1;
@@ -107,14 +107,11 @@ static inline void makeKey(unsigned *key, const char *file_name)
 	key[6] = ENCRYPTION_KEY_6;
 	key[7] = ENCRYPTION_KEY_7;
 	
-	/*
 	for (unsigned i = 0; i < file_name_length; ++i) {
 		unsigned k = i % ENCRYPTION_KEY_SIZE;
-		key[k] ^= (file_name[i] + 
-			key[(file_name[i] * ENCRYPTION_PRIME_0) % ENCRYPTION_KEY_SIZE]) *
-			ENCRYPTION_PRIME_1;
+		key[k] += file_name[i];
 	}
-	*/
+	
 	key[0] = key[0] + ENCRYPTION_PRIME_7;
 	key[1] = (key[1] ^ key[0] * ENCRYPTION_PRIME_1) + ENCRYPTION_PRIME_0;
 	key[2] = (key[2] ^ key[1] * ENCRYPTION_PRIME_2) + ENCRYPTION_PRIME_1;
@@ -152,7 +149,7 @@ static inline const char *encryptText(const char *text, size_t &size, const char
 	((unsigned *)encrypted_text)[1] = decrypted_size;
 	((unsigned *)encrypted_text)[2] = encrypted_size;
 	((unsigned *)encrypted_text)[3] = file_name_size;
-	strcpy(encrypted_text + ENCRYPTION_HEADER_SIZE + encrypted_size, file_name);
+	memcpy(encrypted_text + ENCRYPTION_HEADER_SIZE + encrypted_size, file_name, file_name_size);
 
 	unsigned key[ENCRYPTION_KEY_SIZE];
 	makeKey(key, file_name);
