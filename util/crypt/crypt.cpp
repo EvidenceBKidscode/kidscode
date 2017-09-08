@@ -60,12 +60,12 @@ void processFiles(int count, char **paths, char option)
 		}
 		
 		for (std::string path; *list; ++list) {
-			if (*list=='\n') {
+			if (*list == '\n') {
 				if (path.size() > 0)
 					processFile(path.c_str(),option);
 				path = "";
 			}
-			else
+			else if (*list != '\r')
 				path += *list;
 		}
 	}

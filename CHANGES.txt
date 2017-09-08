@@ -1,0 +1,52 @@
+1. Encryption
+
+The Lua files can be encrypted using the 256 bit variant of the AES encryption algorithm.
+
+The AES key is file name dependent, and is built using eight constants and eight prime numbers defined in "encryption.h".
+
+These constants are defined in "encryption.h".
+
+#ifdef ENCRYPTION_DATA
+	#include "encryption_data.h"
+#else
+	#define ENCRYPTION_KEY_0 0x01234567
+	#define ENCRYPTION_KEY_1 0x01234567
+	#define ENCRYPTION_KEY_2 0x01234567
+	#define ENCRYPTION_KEY_3 0x01234567
+	#define ENCRYPTION_KEY_4 0x01234567
+	#define ENCRYPTION_KEY_5 0x01234567
+	#define ENCRYPTION_KEY_6 0x01234567
+	#define ENCRYPTION_KEY_7 0x01234567
+	#define ENCRYPTION_PRIME_0 0x01234567
+	#define ENCRYPTION_PRIME_1 0x01234567
+	#define ENCRYPTION_PRIME_2 0x01234567
+	#define ENCRYPTION_PRIME_3 0x01234567
+	#define ENCRYPTION_PRIME_4 0x01234567
+	#define ENCRYPTION_PRIME_5 0x01234567
+	#define ENCRYPTION_PRIME_6 0x01234567
+	#define ENCRYPTION_PRIME_7 0x01234567
+#endif
+
+These constants can also be defined in a private file named "encryption_data.h" 
+if the ENCRYPTION_DATA constant is defined at the tool and game compilation.
+
+
+2. Encryption tool
+
+Lua files can be encrypted/decrypted using the "crypt" tool of the "adel/util/" folder.
+
+The "-e" option is used to encrypt the files, and the "-d" option to decrypt them.
+
+	crypt -e *.lua
+	crypt -d *.lua
+
+When no file name is specified, the encryption tool will try to load a "CryptList.txt" file
+in the current folder to get a list of file paths :
+
+	crypt -e
+	crypt -d
+
+Such a file can be generated automatically using the following Linux command :
+
+	find . -iregex ".+lua" > CryptList.txt
+
