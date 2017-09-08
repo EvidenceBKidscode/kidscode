@@ -22,11 +22,12 @@ defined in "encryption_data.h".
 #define ENCRYPTION_PRIME_6 0x01234567
 #define ENCRYPTION_PRIME_7 0x01234567
 
-Obviously, these above values must be changed, and the the actual constants and prime numbers 
-used for encryption must be kept secret.
+Of course, the above values must be changed, if needed on a customer basis, and the version
+of "encryption_data.h" which contains the actual constants and prime numbers used for encryption 
+must absolutely be kept secret, and thus should NEVER be put on a Github repository.
 
-When the keys in this file are changed, the binaries of the encryption tool and of the game 
-client and server have to be rebuilt.
+Be aware that when the keys in this file are changed, the encryption tool, the game client and 
+the game server must ALL be rebuilt so that they use the same keys.
 
 
 2. Encryption tool
