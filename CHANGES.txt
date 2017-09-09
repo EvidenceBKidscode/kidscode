@@ -126,7 +126,7 @@ before deployment.
 The "md5.sh" shell script in the "adel/util/md5/" allows to update the production database,
 by generating an SQL script file with the required commands.
 
-It will scan all Lua file in the current folder and generate SQL commands like this one :
+It will scan all Lua files in the current folder and generate SQL commands like this one :
 
 	update maps 
 		set mods_hash_md5 = "c50f510b0072cb9467e0d4c43f96fcae" 
