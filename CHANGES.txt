@@ -5,30 +5,60 @@ The Lua files can be encrypted using the 256 bit variant of the AES encryption a
 The AES key is file name dependent, and is built using eight constants and eight prime numbers 
 defined in "adel/src/encryption_data.h".
 
-#define ENCRYPTION_KEY_0 0x01234567
-#define ENCRYPTION_KEY_1 0x01234567
-#define ENCRYPTION_KEY_2 0x01234567
-#define ENCRYPTION_KEY_3 0x01234567
-#define ENCRYPTION_KEY_4 0x01234567
-#define ENCRYPTION_KEY_5 0x01234567
-#define ENCRYPTION_KEY_6 0x01234567
-#define ENCRYPTION_KEY_7 0x01234567
-#define ENCRYPTION_PRIME_0 0x01234567
-#define ENCRYPTION_PRIME_1 0x01234567
-#define ENCRYPTION_PRIME_2 0x01234567
-#define ENCRYPTION_PRIME_3 0x01234567
-#define ENCRYPTION_PRIME_4 0x01234567
-#define ENCRYPTION_PRIME_5 0x01234567
-#define ENCRYPTION_PRIME_6 0x01234567
-#define ENCRYPTION_PRIME_7 0x01234567
+	#define ENCRYPTION_KEY_0 0x01234567
+	#define ENCRYPTION_KEY_1 0x01234567
+	#define ENCRYPTION_KEY_2 0x01234567
+	#define ENCRYPTION_KEY_3 0x01234567
+	#define ENCRYPTION_KEY_4 0x01234567
+	#define ENCRYPTION_KEY_5 0x01234567
+	#define ENCRYPTION_KEY_6 0x01234567
+	#define ENCRYPTION_KEY_7 0x01234567
+	#define ENCRYPTION_PRIME_0 0x01234567
+	#define ENCRYPTION_PRIME_1 0x01234567
+	#define ENCRYPTION_PRIME_2 0x01234567
+	#define ENCRYPTION_PRIME_3 0x01234567
+	#define ENCRYPTION_PRIME_4 0x01234567
+	#define ENCRYPTION_PRIME_5 0x01234567
+	#define ENCRYPTION_PRIME_6 0x01234567
+	#define ENCRYPTION_PRIME_7 0x01234567
 
 Of course, the above values must be changed, if needed on a customer basis, and the version
 of "encryption_data.h" which contains the actual constants and prime numbers used for encryption 
 must absolutely be kept secret, and thus should NEVER be put on a Github repository.
 
-Be aware that when the keys in this file are changed, the encryption tool, the game client and 
-the game server must ALL be rebuilt so that they use the same keys.
+Be aware that when any key or prime number is changed in "encryption_data.h" :
+- the encryption tool, the game client and the game server must be rebuilt so that they all
+  use the same keys.
+- the decrypted Lua files must be encrypted with the new encryption tool.
+- the server, the game and the encrypted Lua files must be deployed again.
 
+Big 32-bit prime numbers can be generated here :
+
+	https://asecuritysite.com/encryption/random3?val=32
+	
+There is also a list with all the 32-bit prime numbers here :
+
+	http://www.fukudat.com/prime/prime.dat.gz
+	
+Sample data :
+
+	#define ENCRYPTION_KEY_0 0x9534A53F
+	#define ENCRYPTION_KEY_1 0xE53823C4
+	#define ENCRYPTION_KEY_2 0x31986584
+	#define ENCRYPTION_KEY_3 0x3919F129
+	#define ENCRYPTION_KEY_4 0x81683587
+	#define ENCRYPTION_KEY_5 0x16E81A34
+	#define ENCRYPTION_KEY_6 0xC9835185
+	#define ENCRYPTION_KEY_7 0x246D32F5	
+	#define ENCRYPTION_PRIME_0 1977777259u
+	#define ENCRYPTION_PRIME_1 3392428841u
+	#define ENCRYPTION_PRIME_2 293353289u
+	#define ENCRYPTION_PRIME_3 891334331u
+	#define ENCRYPTION_PRIME_4 1926494413u
+	#define ENCRYPTION_PRIME_5 1460369081u
+	#define ENCRYPTION_PRIME_6 3938039173u
+	#define ENCRYPTION_PRIME_7 1340222629u
+	
 
 2. Encryption tool
 
