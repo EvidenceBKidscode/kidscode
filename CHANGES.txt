@@ -2,7 +2,7 @@
 
 The Lua files can be encrypted using the 256 bit variant of the AES encryption algorithm.
 
-The AES key is file name dependent, and is built using eight constants and eight prime numbers 
+The AES key is file name dependent, and is built using eight keys and eight prime numbers 
 defined in "adel/src/encryption_data.h".
 
 	#define ENCRYPTION_KEY_0 0x01234567
@@ -23,7 +23,7 @@ defined in "adel/src/encryption_data.h".
 	#define ENCRYPTION_PRIME_7 0x01234567
 
 Of course, the above values must be changed, if needed on a customer basis, and the version
-of "encryption_data.h" which contains the actual constants and prime numbers used for encryption 
+of "encryption_data.h" which contains the actual keys and prime numbers used for encryption 
 must absolutely be kept secret, and thus should NEVER be put on a Github repository.
 
 Be aware that when any key or prime number is changed in "encryption_data.h" :
