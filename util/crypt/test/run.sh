@@ -15,12 +15,12 @@ cp encrypted/*.lua decrypted
 cat decrypted/*.lua
 
 cd encrypted
-find . -iregex ".+lua" > CryptList.txt
+find . -name "*.lua" > CryptList.txt
 ../../crypt -d
 cat *.lua
 
 cd ../decrypted
-find . -iregex ".+lua" > CryptList.txt
+find . -name "*.lua" > CryptList.txt
 ../../crypt -e
 ../../crypt -d
 cat *.lua

@@ -52,13 +52,21 @@ This file will contain the path of all the Lua file to encrypt or decrypt.
 
 The "CryptList.txt" file can be generated automatically using the following Linux command :
 
-	find . -iregex ".+lua" > CryptList.txt
+	find . -name "*.lua" > CryptList.txt
 
 This command will create a "CryptList.txt" file with the paths of the Lua files of this folder 
 and its subfolder.
 
 
-3. Usage
+3. Compilation
+
+The following build configurations have been tested :
+
+cmake . -DBUILD_CLIENT=1 -DBUILD_SERVER=1 -DRUN_IN_PLACE=TRUE
+cmake . -DBUILD_CLIENT=1 -DBUILD_SERVER=1 -DRUN_IN_PLACE=TRUE -DENABLE_CURL=1 -DENABLE_CURSES=1 -DENABLE_LUAJIT=1
+
+
+4. Usage
 
 While the files can be encrypted/decrypted in place in the development folder, 
 an easier and safer approach would be to copy the development mods in a temporary folder 
