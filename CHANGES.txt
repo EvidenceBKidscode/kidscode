@@ -79,7 +79,7 @@ and call the tool without arguments :
 	crypt -e
 	crypt -d
 
-This file will contain the path of all the Lua file to encrypt or decrypt.
+This file will contain the paths of all the Lua files to encrypt or decrypt.
 
 The "CryptList.txt" file can be generated automatically using the following Linux command :
 
@@ -115,15 +115,19 @@ Game and server :
 
 4. Usage
 
-At any time, the Lua files can be decrypted in place in the development folder, edited, tested, 
-and then encrypted again for deployment. 
+At any time, the Lua files can be decrypted and encrypted in place in the development folder. 
 
-Another approach is to copy the Lua files in a temporary folder and encrypt them there before 
-being deployed.
+A safer approach is to copy the Lua files to deploy in a temporary folder and encrypt them there
+before deployment.
 
 
 5. Signature tool
 
-Additionally, the "md5.sh" shell script in the "adel/util/md5/" can be used to generate the SQL 
-commands required to update the MD5 file signatures in the production database.
+The "md5.sh" shell script in the "adel/util/md5/" allows to update the production database,
+by generating an SQL script file with the required commands.
 
+It will scan all Lua file in the current folder and generate SQL commands like this one :
+
+	update maps 
+		set mods_hash_md5 = "c50f510b0072cb9467e0d4c43f96fcae" 
+		where url_download = "http://assets.kidscode.com/master/test/x.lua";
