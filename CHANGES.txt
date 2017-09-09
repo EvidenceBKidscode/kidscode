@@ -3,7 +3,7 @@
 The Lua files can be encrypted using the 256 bit variant of the AES encryption algorithm.
 
 The AES key is file name dependent, and is built using eight constants and eight prime numbers 
-defined in "encryption_data.h".
+defined in "adel/src/encryption_data.h".
 
 #define ENCRYPTION_KEY_0 0x01234567
 #define ENCRYPTION_KEY_1 0x01234567
@@ -32,13 +32,14 @@ the game server must ALL be rebuilt so that they use the same keys.
 
 2. Encryption tool
 
-Lua files can be encrypted/decrypted using the "crypt" tool of the "adel/util/" folder.
+Lua files can be encrypted/decrypted using a dedicated tool in the "adel/util/crypt/" folder.
 
 The "-e" option is used to encrypt the files, and the "-d" option to decrypt them.
 
 Only files which aren't already encrypted/decrypted are processed.
 
 Files can be encrypted/decrypted manually, by providing their paths as additional arguments :
+
 	crypt -e *.lua
 	crypt -d *.lua
 
@@ -60,14 +61,39 @@ and its subfolder.
 
 3. Compilation
 
-The following build configurations have been tested :
+Encryption tool :
 
-cmake . -DBUILD_CLIENT=1 -DBUILD_SERVER=1 -DRUN_IN_PLACE=TRUE
-cmake . -DBUILD_CLIENT=1 -DBUILD_SERVER=1 -DRUN_IN_PLACE=TRUE -DENABLE_CURL=1 -DENABLE_CURSES=1 -DENABLE_LUAJIT=1
+	cd adel/util/crypt/
+	rm CMakeCache.txt
+	cmake .
+	make
+
+Game and server :
+
+	cd adel/
+	rm CMakeCache.txt
+	cmake . -DBUILD_CLIENT=1 -DBUILD_SERVER=1 -DRUN_IN_PLACE=TRUE
+	make
+	
+	or
+	
+	cd adel/
+	rm CMakeCache.txt
+	cmake . -DBUILD_CLIENT=1 -DBUILD_SERVER=1 -DRUN_IN_PLACE=TRUE -DENABLE_CURL=1 -DENABLE_CURSES=1 -DENABLE_LUAJIT=1
+	make
 
 
 4. Usage
 
-While the files can be encrypted/decrypted in place in the development folder, 
-an easier and safer approach would be to copy the development mods in a temporary folder 
-and encrypt them there before their deployment.
+At any time, the Lua files can be decrypted in place in the development folder, edited, tested, 
+and then encrypted again for deployment. 
+
+Another approach is to copy the Lua files in a temporary folder and encrypt them there before 
+being deployed.
+
+
+5. Signature tool
+
+Additionally, the "md5.sh" shell script in the "adel/util/md5/" can be used to generate the SQL 
+commands required to update the MD5 file signatures in the production database.
+
