@@ -334,6 +334,7 @@ void set_default_settings(Settings *settings)
 	// This causes frametime jitter on client side, or does it?
 	settings->setDefault("max_block_send_distance", "9");
 	settings->setDefault("block_send_optimize_distance", "4");
+	settings->setDefault("world_start_time", "8000");
 	settings->setDefault("server_side_occlusion_culling", "true");
 	settings->setDefault("csm_flavour_limits", "3");
 	settings->setDefault("csm_flavour_noderange_limit", "8");
