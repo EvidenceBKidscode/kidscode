@@ -367,10 +367,6 @@ keymap_increase_viewing_range_min (View range increase key) key +
 #    See http://irrlicht.sourceforge.net/docu/namespaceirr.html#a54da2a0e231901735e3da1b0edf72eb3
 keymap_decrease_viewing_range_min (View range decrease key) key -
 
-#    Key for printing debug stacks. Used for development.
-#    See http://irrlicht.sourceforge.net/docu/namespaceirr.html#a54da2a0e231901735e3da1b0edf72eb3
-keymap_print_debug_stacks (Print stacks) key KEY_KEY_P
-
 [Graphics]
 
 [*In-Game]
@@ -879,10 +875,9 @@ ipv6_server (IPv6 server) bool false
 [**Advanced]
 
 #    Maximum number of blocks that are simultaneously sent per client.
+#    The maximum total count is calculated dynamically:
+#    max_total = ceil((#clients + max_users) * per_client / 4)
 max_simultaneous_block_sends_per_client (Maximum simultaneous block sends per client) int 10
-
-#   Maximum number of blocks that are simultaneously sent in total.
-max_simultaneous_block_sends_server_total (Maximum simultaneous block sends total) int 40
 
 #    To reduce lag, block transfers are slowed down when a player is building something.
 #    This determines how long they are slowed down after placing or removing a node.
@@ -988,6 +983,9 @@ time_send_interval (Time send interval) int 5
 #    Controls length of day/night cycle.
 #    Examples: 72 = 20min, 360 = 4min, 1 = 24hour, 0 = day/night/whatever stays unchanged.
 time_speed (Time speed) int 72
+
+#    Time of day when a new world is started, in millihours (0-23999).
+world_start_time (World start time) int 5250 0 23999
 
 #    Interval of saving important changes in the world, stated in seconds.
 server_map_save_interval (Map save interval) float 5.3
@@ -1511,7 +1509,7 @@ mgcarpathian_np_ridge_mnt (Ridged mountain size noise) noise_params 0, 12, (743,
 mgcarpathian_np_step_mnt (Step mountain size noise) noise_params 0, 8, (509, 509, 509), 2590, 6, 0.6, 2.0
 
 #    3D noise for mountain overhangs, cliffs, etc. Usually small variations.
-mgcarpathian_np_mnt_var (Mountain variation noise) noise_params 0, 1, (499, 499, 499), 2490, 5, 0.6, 2.0
+mgcarpathian_np_mnt_var (Mountain variation noise) noise_params 0, 1, (499, 499, 499), 2490, 5, 0.55, 2.0
 
 #    First of 2 3D noises that together define tunnels.
 mgcarpathian_np_cave1 (Cave1 noise) noise_params 0, 12, (61, 61, 61), 52534, 3, 0.5, 2.0

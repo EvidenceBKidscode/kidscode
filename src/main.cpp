@@ -18,7 +18,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 */
 
 #include "irrlicht.h" // createDevice
-#include "mainmenumanager.h"
 #include "irrlichttypes_extrabloated.h"
 #include "chat_interface.h"
 #include "debug.h"
@@ -26,14 +25,12 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "server.h"
 #include "filesys.h"
 #include "version.h"
-#include "guiMainMenu.h"
 #include "game.h"
 #include "defaultsettings.h"
 #include "gettext.h"
 #include "log.h"
 #include "quicktune.h"
 #include "httpfetch.h"
-#include "guiEngine.h"
 #include "gameparams.h"
 #include "database.h"
 #include "config.h"
@@ -44,7 +41,10 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 	#include "terminal_chat_console.h"
 #endif
 #ifndef SERVER
+#include "guiMainMenu.h"
 #include "client/clientlauncher.h"
+#include "guiEngine.h"
+#include "mainmenumanager.h"
 #endif
 
 #ifdef HAVE_TOUCHSCREENGUI
@@ -322,11 +322,11 @@ static void print_allowed_options(const OptionList &allowed_options)
 static void print_version()
 {
 	std::cout << PROJECT_NAME_C " " << g_version_hash
-	          << " (" << porting::getPlatformName() << ")" << std::endl;
+		<< " (" << porting::getPlatformName() << ")" << std::endl;
 #ifndef SERVER
-	std::cout << "Using Irrlicht " << IRRLICHT_SDK_VERSION << std::endl;
+	std::cout << "Using Irrlicht " IRRLICHT_SDK_VERSION << std::endl;
 #endif
-	std::cout << "Build info: " << g_build_info << std::endl;
+	std::cout << g_build_info << std::endl;
 }
 
 static void list_game_ids()

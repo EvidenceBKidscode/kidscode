@@ -135,7 +135,6 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("zoom_fov", "15");
 
 	// Some (temporary) keys for debugging
-	settings->setDefault("keymap_print_debug_stacks", "KEY_KEY_P");
 	settings->setDefault("keymap_quicktune_prev", "KEY_HOME");
 	settings->setDefault("keymap_quicktune_next", "KEY_END");
 	settings->setDefault("keymap_quicktune_dec", "KEY_NEXT");
@@ -304,7 +303,6 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("strict_protocol_version_checking", "false");
 	settings->setDefault("player_transfer_distance", "0");
 	settings->setDefault("max_simultaneous_block_sends_per_client", "10");
-	settings->setDefault("max_simultaneous_block_sends_server_total", "40");
 	settings->setDefault("time_send_interval", "5");
 
 	settings->setDefault("default_game", "minetest");
