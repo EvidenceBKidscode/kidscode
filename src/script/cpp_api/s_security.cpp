@@ -384,7 +384,7 @@ bool ScriptApiSecurity::safeLoadString(lua_State *L, const std::string &code, co
 	return true;
 }
 
-extern "C"
+extern "C" // :PATCH:
 {
 	int luaL_loadfile(lua_State *L, const char *path)
 	{
