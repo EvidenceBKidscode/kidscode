@@ -403,8 +403,6 @@ extern "C" // :PATCH:
 int ScriptApiSecurity::loadBuffer(lua_State *L, const char *buffer, size_t size,
 		const char *name) 
 {
-	//luaL_loadfile_ptr = &luaL_loadfile_crypted;
-	
 	buffer = decryptText(buffer, size, name);
 	
 	return luaL_loadbuffer(L, buffer, size, name);
