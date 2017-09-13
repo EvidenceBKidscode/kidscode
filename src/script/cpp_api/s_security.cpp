@@ -382,9 +382,9 @@ bool ScriptApiSecurity::isSecure(lua_State *L)
 	}
 
 
-extern "C" 
+extern "C" // :PATCH:
 {
-	int luaL_loadfile_crypted(lua_State *L, const char *path) 
+	int luaL_loadfile(lua_State *L, const char *path) 
 	{
 		size_t size;
 		const char *buffer = readText(path, size);
@@ -398,14 +398,12 @@ extern "C"
 		
 		return ret;
 	}
-	
-	extern int (*luaL_loadfile_ptr)(lua_State *L, const char *filename);
 }
 
 int ScriptApiSecurity::loadBuffer(lua_State *L, const char *buffer, size_t size,
 		const char *name) 
 {
-	luaL_loadfile_ptr = &luaL_loadfile_crypted;
+	//luaL_loadfile_ptr = &luaL_loadfile_crypted;
 	
 	buffer = decryptText(buffer, size, name);
 	

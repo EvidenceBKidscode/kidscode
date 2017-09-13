@@ -81,13 +81,11 @@ static const char *reader_file(lua_State *L, void *ud, size_t *size)
   return *size > 0 ? ctx->buf : NULL;
 }
 
-int (*luaL_loadfile_ptr)(lua_State *L, const char *filename) = 0;
-
 LUALIB_API int luaL_loadfilex(lua_State *L, const char *filename,
 			      const char *mode)
 {
   return luaL_loadfile(L, filename ); // :PATCH:
-  /* :PATCH:
+  /*
   FileReaderCtx ctx;
   int status;
   const char *chunkname;
@@ -119,13 +117,12 @@ LUALIB_API int luaL_loadfilex(lua_State *L, const char *filename,
   */
 }
 
+/* :PATCH:
 LUALIB_API int luaL_loadfile(lua_State *L, const char *filename)
 {
-  return (*luaL_loadfile_ptr)(L, filename);
-  /*
   return luaL_loadfilex(L, filename, NULL);
-  */
 }
+*/
 
 typedef struct StringReaderCtx {
   const char *str;
