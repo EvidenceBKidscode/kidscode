@@ -6,7 +6,7 @@
 
 # NOTE: This build is currently only supporting x86 targets, for other targets use the original makefile. Please do not submit bugs to the LuaJIT author in case this build fails, instead use http://github.com/LuaDist/luajit
 
-project ( luajit C ASM)
+project ( lua C ASM)
 cmake_minimum_required ( VERSION 2.8 )
 include ( cmake/dist.cmake )
 include ( lua )
@@ -303,23 +303,23 @@ set ( LJCORE_C
   ${LJLIB_C}
 )
 
-add_library ( liblua SHARED ${LJCORE_C} ${DEPS} )
+add_library ( liblua STATIC ${LJCORE_C} ${DEPS} )
 target_link_libraries ( liblua ${LIBS} )
 set_target_properties ( liblua PROPERTIES OUTPUT_NAME lua CLEAN_DIRECT_OUTPUT 1 )
 
 ## LuaJIT Executable
-add_executable ( luajit src/luajit.c src/luajit.rc )
-target_link_libraries ( luajit liblua )
+add_executable ( lua src/luajit.c src/luajit.rc )
+target_link_libraries ( lua liblua )
 
 # On Windows build a no-console variant also
 if ( LUA_BUILD_WLUA )
-  add_executable ( wluajit WIN32 src/wmain.c src/luajit.c src/luajit.rc )
-  target_link_libraries ( wluajit liblua )
-  install_executable ( wluajit )
+  add_executable ( wlua WIN32 src/wmain.c src/luajit.c src/luajit.rc )
+  target_link_libraries ( wlua liblua )
+  install_executable ( wlua )
 endif ()
 
 ## INSTALL
-install_executable( luajit )
+install_executable( lua )
 install_library( liblua )
 install_header( src/lua.h src/luajit.h src/lua.hpp ${CMAKE_CURRENT_BINARY_DIR}/luaconf.h src/lualib.h src/lauxlib.h )
 
