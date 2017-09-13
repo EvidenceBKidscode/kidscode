@@ -308,18 +308,18 @@ target_link_libraries ( liblua ${LIBS} )
 set_target_properties ( liblua PROPERTIES OUTPUT_NAME lua CLEAN_DIRECT_OUTPUT 1 )
 
 ## LuaJIT Executable
-add_executable ( lua src/luajit.c src/luajit.rc )
-target_link_libraries ( lua liblua )
+#add_executable ( lua src/luajit.c src/luajit.rc )
+#target_link_libraries ( lua liblua )
 
 # On Windows build a no-console variant also
 if ( LUA_BUILD_WLUA )
-  add_executable ( wlua WIN32 src/wmain.c src/luajit.c src/luajit.rc )
-  target_link_libraries ( wlua liblua )
-  install_executable ( wlua )
+  #add_executable ( wlua WIN32 src/wmain.c src/luajit.c src/luajit.rc )
+  #target_link_libraries ( wlua liblua )
+  #install_executable ( wlua )
 endif ()
 
 ## INSTALL
-install_executable( lua )
+#install_executable( lua )
 install_library( liblua )
 install_header( src/lua.h src/luajit.h src/lua.hpp ${CMAKE_CURRENT_BINARY_DIR}/luaconf.h src/lualib.h src/lauxlib.h )
 
