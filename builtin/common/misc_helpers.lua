@@ -308,59 +308,25 @@ function core.formspec_escape(text)
 end
 
 
-function core.wrap_text(text, charlimit)
-	local retval = {}
-
-	local current_idx = 1
-
-	local start,stop = string_find(text, " ", current_idx)
-	local nl_start,nl_stop = string_find(text, "\n", current_idx)
-	local gotnewline = false
-	if nl_start ~= nil and (start == nil or nl_start < start) then
-		start = nl_start
-		stop = nl_stop
-		gotnewline = true
-	end
-	local last_line = ""
-	while start ~= nil do
-		if string.len(last_line) + (stop-start) > charlimit then
-			retval[#retval + 1] = last_line
-			last_line = ""
-		end
-
-		if last_line ~= "" then
-			last_line = last_line .. " "
-		end
-
-		last_line = last_line .. string_sub(text, current_idx, stop - 1)
-
-		if gotnewline then
-			retval[#retval + 1] = last_line
-			last_line = ""
-			gotnewline = false
-		end
-		current_idx = stop+1
-
-		start,stop = string_find(text, " ", current_idx)
-		nl_start,nl_stop = string_find(text, "\n", current_idx)
-
-		if nl_start ~= nil and (start == nil or nl_start < start) then
-			start = nl_start
-			stop = nl_stop
-			gotnewline = true
-		end
+function core.wrap_text(text, max_length, as_table)
+	local result = {}
+	local line = {}
+	if #text <= max_length then
+		return as_table and {text} or text
 	end
 
-	--add last part of text
-	if string.len(last_line) + (string.len(text) - current_idx) > charlimit then
-			retval[#retval + 1] = last_line
-			retval[#retval + 1] = string_sub(text, current_idx)
-	else
-		last_line = last_line .. " " .. string_sub(text, current_idx)
-		retval[#retval + 1] = last_line
+	for word in text:gmatch('%S+') do
+		local cur_length = #table.concat(line, ' ')
+		if cur_length > 0 and cur_length + #word + 1 >= max_length then
+			-- word wouldn't fit on current line, move to next line
+			table.insert(result, table.concat(line, ' '))
+			line = {}
+		end
+		table.insert(line, word)
 	end
 
-	return retval
+	table.insert(result, table.concat(line, ' '))
+	return as_table and result or table.concat(result, '\n')
 end
 
 --------------------------------------------------------------------------------
@@ -459,11 +425,15 @@ if INIT == "game" then
 --Wrapper for rotate_and_place() to check for sneak and assume Creative mode
 --implies infinite stacks when performing a 6d rotation.
 --------------------------------------------------------------------------------
-
+	local creative_mode_cache = core.settings:get_bool("creative_mode")
+	local function is_creative(name)
+		return creative_mode_cache or
+				core.check_player_privs(name, {creative = true})
+	end
 
 	core.rotate_node = function(itemstack, placer, pointed_thing)
 		core.rotate_and_place(itemstack, placer, pointed_thing,
-				core.settings:get_bool("creative_mode"),
+				is_creative(placer:get_player_name()),
 				{invert_wall = placer:get_player_control().sneak})
 		return itemstack
 	end

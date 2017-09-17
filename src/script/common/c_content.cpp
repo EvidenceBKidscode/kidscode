@@ -193,6 +193,7 @@ void read_object_properties(lua_State *L, int index,
 	if (getintfield(L, -1, "hp_max", hp_max))
 		prop->hp_max = (s16)rangelim(hp_max, 0, S16_MAX);
 
+	getintfield(L, -1, "breath_max", prop->breath_max);
 	getboolfield(L, -1, "physical", prop->physical);
 	getboolfield(L, -1, "collide_with_objects", prop->collideWithObjects);
 
@@ -277,6 +278,7 @@ void read_object_properties(lua_State *L, int index,
 	}
 	lua_pop(L, 1);
 	getboolfield(L, -1, "backface_culling", prop->backface_culling);
+	getintfield(L, -1, "glow", prop->glow);
 
 	getstringfield(L, -1, "nametag", prop->nametag);
 	lua_getfield(L, -1, "nametag_color");
@@ -305,6 +307,8 @@ void push_object_properties(lua_State *L, ObjectProperties *prop)
 	lua_newtable(L);
 	lua_pushnumber(L, prop->hp_max);
 	lua_setfield(L, -2, "hp_max");
+	lua_pushnumber(L, prop->breath_max);
+	lua_setfield(L, -2, "breath_max");
 	lua_pushboolean(L, prop->physical);
 	lua_setfield(L, -2, "physical");
 	lua_pushboolean(L, prop->collideWithObjects);
@@ -362,6 +366,8 @@ void push_object_properties(lua_State *L, ObjectProperties *prop)
 	lua_setfield(L, -2, "automatic_face_movement_dir");
 	lua_pushboolean(L, prop->backface_culling);
 	lua_setfield(L, -2, "backface_culling");
+	lua_pushnumber(L, prop->glow);
+	lua_setfield(L, -2, "glow");
 	lua_pushlstring(L, prop->nametag.c_str(), prop->nametag.size());
 	lua_setfield(L, -2, "nametag");
 	push_ARGB8(L, prop->nametag_color);
@@ -737,6 +743,10 @@ ContentFeatures read_content_features(lua_State *L, int index)
 	}
 	lua_pop(L, 1);
 
+	// Node immediately placed by client when node is dug
+	getstringfield(L, index, "node_dig_prediction",
+		f.node_dig_prediction);
+
 	return f;
 }
 
@@ -861,6 +871,8 @@ void push_content_features(lua_State *L, const ContentFeatures &c)
 	lua_setfield(L, -2, "legacy_facedir_simple");
 	lua_pushboolean(L, c.legacy_wallmounted);
 	lua_setfield(L, -2, "legacy_wallmounted");
+	lua_pushstring(L, c.node_dig_prediction.c_str());
+	lua_setfield(L, -2, "node_dig_prediction");
 }
 
 /******************************************************************************/
