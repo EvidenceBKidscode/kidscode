@@ -35,6 +35,7 @@ struct key_setting
 	KeyPress key;
 	std::string setting_name;
 	gui::IGUIButton *button;
+	bool advanced;
 };
 
 class GUIKeyChangeMenu : public GUIModalMenu
@@ -67,9 +68,10 @@ private:
 
 	bool resetMenu();
 
-	void add_key(int id, const wchar_t *button_name, const std::string &setting_name);
+	void add_key(int id, const wchar_t *button_name, const std::string &setting_name, bool advanced);
 
 	bool shift_down = false;
+	bool show_advanced_buttons = false;
 	s32 activeKey = -1;
 
 	std::vector<KeyPress> key_used;

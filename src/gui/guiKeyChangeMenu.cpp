@@ -31,16 +31,17 @@
 #include <IGUIFont.h>
 #include "settings.h"
 #include <algorithm>
+#include "client/renderingengine.h"
 
 #include "mainmenumanager.h"  // for g_gamecallback
 
-#define KMaxButtonPerColumns 12
+static u16 KMaxButtonPerColumns = 7;
 
 extern MainGameCallback *g_gamecallback;
 
 enum
 {
-	GUI_ID_BACK_BUTTON = 101, GUI_ID_ABORT_BUTTON, GUI_ID_SCROLL_BAR,
+	GUI_ID_ADVC_BUTTON, GUI_ID_BACK_BUTTON = 101, GUI_ID_ABORT_BUTTON, GUI_ID_SCROLL_BAR,
 	// buttons
 	GUI_ID_KEY_FORWARD_BUTTON,
 	GUI_ID_KEY_BACKWARD_BUTTON,
@@ -105,7 +106,7 @@ void GUIKeyChangeMenu::removeChildren()
 {
 	const core::list<gui::IGUIElement*> &children = getChildren();
 	core::list<gui::IGUIElement*> children_copy;
-	for (gui::IGUIElement*i : children) {
+	for (gui::IGUIElement *i : children) {
 		children_copy.push_back(i);
 	}
 
@@ -125,6 +126,22 @@ void GUIKeyChangeMenu::regenerateGui(v2u32 screensize)
 		screensize.X / 2 + 835 * s / 2,
 		screensize.Y / 2 + 430 * s / 2
 	);
+
+	if (show_advanced_buttons) // 750x580
+		DesiredRect = core::rect<s32>(
+			screensize.X / 2 - 750 * s / 2,
+			screensize.Y / 2 - 580 * s / 2,
+			screensize.X / 2 + 750 * s / 2,
+			screensize.Y / 2 + 580 * s / 2
+		);
+	else // 530x430
+		DesiredRect = core::rect<s32>(
+			screensize.X / 2 - 530 * s / 2,
+			screensize.Y / 2 - 430 * s / 2,
+			screensize.X / 2 + 530 * s / 2,
+			screensize.Y / 2 + 430 * s / 2
+		);
+
 	recalculateAbsolutePosition(false);
 
 	v2s32 size = DesiredRect.getSize();
@@ -142,33 +159,38 @@ void GUIKeyChangeMenu::regenerateGui(v2u32 screensize)
 	}
 
 	// Build buttons
-
 	v2s32 offset(25 * s, 60 * s);
+	u16 j = 0;
 
 	for(size_t i = 0; i < key_settings.size(); i++)
 	{
 		key_setting *k = key_settings.at(i);
-		{
-			core::rect<s32> rect(0, 0, 150 * s, 20 * s);
-			rect += topleft + v2s32(offset.X, offset.Y);
-			Environment->addStaticText(k->button_name, rect, false, true, this, -1);
-		}
+		if ((show_advanced_buttons && k->advanced) ||
+				(!show_advanced_buttons && !k->advanced)) {
+			{
+				core::rect<s32> rect(0, 0, 150 * s, 20 * s);
+				rect += topleft + v2s32(offset.X, offset.Y);
+				Environment->addStaticText(k->button_name, rect, false, true, this, -1);
+			}
 
-		{
-			core::rect<s32> rect(0, 0, 100 * s, 30 * s);
-			rect += topleft + v2s32(offset.X + 150 * s, offset.Y - 5 * s);
-			const wchar_t *text = wgettext(k->key.name());
-			k->button = GUIButton::addButton(Environment, rect, this, k->id, text);
-			delete[] text;
-		}
-		if ((i + 1) % KMaxButtonPerColumns == 0) {
-			offset.X += 260 * s;
-			offset.Y = 60 * s;
-		} else {
-			offset += v2s32(0, 25 * s);
+			{
+				core::rect<s32> rect(0, 0, 100 * s, 40 * s);
+				rect += topleft + v2s32(offset.X + 130 * s, offset.Y - 5 * s);
+				const wchar_t *text = wgettext(k->key.name());
+				k->button = GUIButton::addButton(Environment, rect, this, k->id, text);
+				delete[] text;
+			}
+
+			j++;
+			if ((j % KMaxButtonPerColumns) == 0) {
+				offset.X += 240 * s;
+				offset.Y = 60 * s;
+			} else {
+				offset += v2s32(0, 45 * s);
+			}
 		}
 	}
-
+/*
 	{
 		s32 option_x = offset.X;
 		s32 option_y = offset.Y + 5 * s;
@@ -183,22 +205,24 @@ void GUIKeyChangeMenu::regenerateGui(v2u32 screensize)
 		}
 		offset += v2s32(0, 25 * s);
 	}
-
+*/
+	if (show_advanced_buttons) {
 	{
-		s32 option_x = offset.X;
-		s32 option_y = offset.Y + 5 * s;
-		u32 option_w = 280 * s;
-		{
-			core::rect<s32> rect(0, 0, option_w, 30 * s);
-			rect += topleft + v2s32(option_x, option_y);
-			const wchar_t *text = wgettext("Double tap \"jump\" to toggle fly");
-			Environment->addCheckBox(g_settings->getBool("doubletap_jump"), rect, this,
-					GUI_ID_CB_DOUBLETAP_JUMP, text);
-			delete[] text;
+			s32 option_x = offset.X;
+			s32 option_y = offset.Y + 5 * s;
+			u32 option_w = 280 * s;
+			{
+				core::rect<s32> rect(0, 0, option_w, 30 * s);
+				rect += topleft + v2s32(option_x, option_y);
+				const wchar_t *text = wgettext("Double tap \"jump\" to toggle fly");
+				Environment->addCheckBox(g_settings->getBool("doubletap_jump"), rect, this,
+						GUI_ID_CB_DOUBLETAP_JUMP, text);
+				delete[] text;
+			}
+			offset += v2s32(0, 25 * s);
 		}
-		offset += v2s32(0, 25 * s);
 	}
-
+/*
 	{
 		s32 option_x = offset.X;
 		s32 option_y = offset.Y + 5 * s;
@@ -213,17 +237,25 @@ void GUIKeyChangeMenu::regenerateGui(v2u32 screensize)
 		}
 		offset += v2s32(0, 25);
 	}
+*/
 
 	{
-		core::rect<s32> rect(0, 0, 100 * s, 30 * s);
-		rect += topleft + v2s32(size.X / 2 - 105 * s, size.Y - 40 * s);
+		core::rect < s32 > rect(0, 0, 150 * s, 40 * s);
+		rect += topleft + v2s32(20 * s, size.Y - 50 * s);
+		const wchar_t *text =  wgettext("Advanced");
+		GUIButton::addButton(Environment, rect, this, GUI_ID_ADVC_BUTTON, text);
+		delete[] text;
+	}
+	{
+		core::rect < s32 > rect(0, 0, 100 * s, 40 * s);
+		rect += topleft + v2s32(size.X / 2 + (show_advanced_buttons ? 140 : 40) * s, size.Y - 50 * s);
 		const wchar_t *text =  wgettext("Save");
 		GUIButton::addButton(Environment, rect, this, GUI_ID_BACK_BUTTON, text);
 		delete[] text;
 	}
 	{
-		core::rect<s32> rect(0, 0, 100 * s, 30 * s);
-		rect += topleft + v2s32(size.X / 2 + 5 * s, size.Y - 40 * s);
+		core::rect < s32 > rect(0, 0, 100 * s, 40 * s);
+		rect += topleft + v2s32(size.X / 2 + (show_advanced_buttons ? 250 : 150) * s, size.Y - 50 * s);
 		const wchar_t *text = wgettext("Cancel");
 		GUIButton::addButton(Environment, rect, this, GUI_ID_ABORT_BUTTON, text);
 		delete[] text;
@@ -376,6 +408,11 @@ bool GUIKeyChangeMenu::OnEvent(const SEvent& event)
 				case GUI_ID_ABORT_BUTTON: //abort
 					quitMenu();
 					return true;
+				case GUI_ID_ADVC_BUTTON: //advanced
+					show_advanced_buttons = show_advanced_buttons ? false : true;
+					KMaxButtonPerColumns = show_advanced_buttons ? 10 : 7;
+					regenerateGui(v2u32(RenderingEngine::get_video_driver()->getScreenSize()));
+					return true;
 				default:
 					key_setting *k = NULL;
 
@@ -403,50 +440,52 @@ bool GUIKeyChangeMenu::OnEvent(const SEvent& event)
 	return Parent ? Parent->OnEvent(event) : false;
 }
 
-void GUIKeyChangeMenu::add_key(int id, const wchar_t *button_name, const std::string &setting_name)
+void GUIKeyChangeMenu::add_key(int id, const wchar_t *button_name, const std::string &setting_name, bool advanced)
 {
 	key_setting *k = new key_setting;
 	k->id = id;
 
 	k->button_name = button_name;
 	k->setting_name = setting_name;
+	k->advanced = advanced;
 	k->key = getKeySetting(k->setting_name.c_str());
 	key_settings.push_back(k);
 }
 
 void GUIKeyChangeMenu::init_keys()
 {
-	this->add_key(GUI_ID_KEY_FORWARD_BUTTON,   wgettext("Forward"),          "keymap_forward");
-	this->add_key(GUI_ID_KEY_BACKWARD_BUTTON,  wgettext("Backward"),         "keymap_backward");
-	this->add_key(GUI_ID_KEY_LEFT_BUTTON,      wgettext("Left"),             "keymap_left");
-	this->add_key(GUI_ID_KEY_RIGHT_BUTTON,     wgettext("Right"),            "keymap_right");
-	this->add_key(GUI_ID_KEY_USE_BUTTON,       wgettext("Special"),          "keymap_special1");
-	this->add_key(GUI_ID_KEY_JUMP_BUTTON,      wgettext("Jump"),             "keymap_jump");
-	this->add_key(GUI_ID_KEY_SNEAK_BUTTON,     wgettext("Sneak"),            "keymap_sneak");
-	this->add_key(GUI_ID_KEY_DROP_BUTTON,      wgettext("Drop"),             "keymap_drop");
-	this->add_key(GUI_ID_KEY_INVENTORY_BUTTON, wgettext("Inventory"),        "keymap_inventory");
-	this->add_key(GUI_ID_KEY_HOTBAR_PREV_BUTTON,wgettext("Prev. item"),      "keymap_hotbar_previous");
-	this->add_key(GUI_ID_KEY_HOTBAR_NEXT_BUTTON,wgettext("Next item"),       "keymap_hotbar_next");
-	this->add_key(GUI_ID_KEY_ZOOM_BUTTON,      wgettext("Zoom"),             "keymap_zoom");
-	this->add_key(GUI_ID_KEY_CAMERA_BUTTON,    wgettext("Change camera"),    "keymap_camera_mode");
-	this->add_key(GUI_ID_KEY_MINIMAP_BUTTON,   wgettext("Toggle minimap"),   "keymap_minimap");
-	this->add_key(GUI_ID_KEY_FLY_BUTTON,       wgettext("Toggle fly"),       "keymap_freemove");
-	this->add_key(GUI_ID_KEY_PITCH_MOVE,       wgettext("Toggle pitchmove"), "keymap_pitchmove");
-	this->add_key(GUI_ID_KEY_FAST_BUTTON,      wgettext("Toggle fast"),      "keymap_fastmove");
-	this->add_key(GUI_ID_KEY_NOCLIP_BUTTON,    wgettext("Toggle noclip"),    "keymap_noclip");
-	this->add_key(GUI_ID_KEY_MUTE_BUTTON,      wgettext("Mute"),             "keymap_mute");
-	this->add_key(GUI_ID_KEY_DEC_VOLUME_BUTTON,wgettext("Dec. volume"),      "keymap_decrease_volume");
-	this->add_key(GUI_ID_KEY_INC_VOLUME_BUTTON,wgettext("Inc. volume"),      "keymap_increase_volume");
-	this->add_key(GUI_ID_KEY_AUTOFWD_BUTTON,   wgettext("Autoforward"),      "keymap_autoforward");
-	this->add_key(GUI_ID_KEY_CHAT_BUTTON,      wgettext("Chat"),             "keymap_chat");
-	this->add_key(GUI_ID_KEY_SCREENSHOT_BUTTON,wgettext("Screenshot"),       "keymap_screenshot");
-	this->add_key(GUI_ID_KEY_RANGE_BUTTON,     wgettext("Range select"),     "keymap_rangeselect");
-	this->add_key(GUI_ID_KEY_DEC_RANGE_BUTTON, wgettext("Dec. range"),       "keymap_decrease_viewing_range_min");
-	this->add_key(GUI_ID_KEY_INC_RANGE_BUTTON, wgettext("Inc. range"),       "keymap_increase_viewing_range_min");
-	this->add_key(GUI_ID_KEY_CONSOLE_BUTTON,   wgettext("Console"),          "keymap_console");
-	this->add_key(GUI_ID_KEY_CMD_BUTTON,       wgettext("Command"),          "keymap_cmd");
-	this->add_key(GUI_ID_KEY_CMD_LOCAL_BUTTON, wgettext("Local command"),    "keymap_cmd_local");
-	this->add_key(GUI_ID_KEY_HUD_BUTTON,       wgettext("Toggle HUD"),       "keymap_toggle_hud");
-	this->add_key(GUI_ID_KEY_CHATLOG_BUTTON,   wgettext("Toggle chat log"),  "keymap_toggle_chat");
-	this->add_key(GUI_ID_KEY_FOG_BUTTON,       wgettext("Toggle fog"),       "keymap_toggle_fog");
+	this->add_key(GUI_ID_KEY_FORWARD_BUTTON,   wgettext("Forward"),          "keymap_forward",            false);
+	this->add_key(GUI_ID_KEY_BACKWARD_BUTTON,  wgettext("Backward"),         "keymap_backward",           false);
+	this->add_key(GUI_ID_KEY_LEFT_BUTTON,      wgettext("Left"),             "keymap_left",               false);
+	this->add_key(GUI_ID_KEY_RIGHT_BUTTON,     wgettext("Right"),            "keymap_right",              false);
+	this->add_key(GUI_ID_KEY_USE_BUTTON,       wgettext("Special"),          "keymap_special1",           true);
+	this->add_key(GUI_ID_KEY_JUMP_BUTTON,      wgettext("Jump"),             "keymap_jump",               false);
+	this->add_key(GUI_ID_KEY_SNEAK_BUTTON,     wgettext("Sneak"),            "keymap_sneak",              false);
+	this->add_key(GUI_ID_KEY_DROP_BUTTON,      wgettext("Drop"),             "keymap_drop",               false);
+	this->add_key(GUI_ID_KEY_INVENTORY_BUTTON, wgettext("Inventory"),        "keymap_inventory",          false);
+	this->add_key(GUI_ID_KEY_HOTBAR_PREV_BUTTON,wgettext("Prev. item"),      "keymap_hotbar_previous",    true);
+	this->add_key(GUI_ID_KEY_HOTBAR_NEXT_BUTTON,wgettext("Next item"),       "keymap_hotbar_next",        true);
+	this->add_key(GUI_ID_KEY_ZOOM_BUTTON,      wgettext("Zoom"),             "keymap_zoom",               false);
+	this->add_key(GUI_ID_KEY_CAMERA_BUTTON,    wgettext("Change camera"),    "keymap_camera_mode",        true);
+//	this->add_key(GUI_ID_KEY_CINEMATIC_BUTTON, wgettext("Toggle Cinematic"), "keymap_cinematic",          true);
+	this->add_key(GUI_ID_KEY_MINIMAP_BUTTON,   wgettext("Toggle minimap"),   "keymap_minimap",            true);
+	this->add_key(GUI_ID_KEY_FLY_BUTTON,       wgettext("Toggle fly"),       "keymap_freemove",           false);
+	this->add_key(GUI_ID_KEY_PITCH_MOVE,       wgettext("Toggle pitchmove"), "keymap_pitchmove",          false);
+	this->add_key(GUI_ID_KEY_FAST_BUTTON,      wgettext("Toggle fast"),      "keymap_fastmove",           true);
+	this->add_key(GUI_ID_KEY_NOCLIP_BUTTON,    wgettext("Toggle noclip"),    "keymap_noclip",             true);
+	this->add_key(GUI_ID_KEY_MUTE_BUTTON,      wgettext("Mute"),             "keymap_mute",               true);
+	this->add_key(GUI_ID_KEY_DEC_VOLUME_BUTTON,wgettext("Dec. volume"),      "keymap_decrease_volume",    true);
+	this->add_key(GUI_ID_KEY_INC_VOLUME_BUTTON,wgettext("Inc. volume"),      "keymap_increase_volume",    true);
+	this->add_key(GUI_ID_KEY_AUTOFWD_BUTTON,   wgettext("Autoforward"),      "keymap_autoforward",        true);
+	this->add_key(GUI_ID_KEY_CHAT_BUTTON,      wgettext("Chat"),             "keymap_chat",               false);
+	this->add_key(GUI_ID_KEY_SCREENSHOT_BUTTON,wgettext("Screenshot"),       "keymap_screenshot",         true);
+	this->add_key(GUI_ID_KEY_RANGE_BUTTON,     wgettext("Range select"),     "keymap_rangeselect",        true);
+	this->add_key(GUI_ID_KEY_DEC_RANGE_BUTTON, wgettext("Dec. range"),       "keymap_decrease_viewing_range_min", true);
+	this->add_key(GUI_ID_KEY_INC_RANGE_BUTTON, wgettext("Inc. range"),       "keymap_increase_viewing_range_min", true);
+	this->add_key(GUI_ID_KEY_CONSOLE_BUTTON,   wgettext("Console"),          "keymap_console",            true);
+	this->add_key(GUI_ID_KEY_CMD_BUTTON,       wgettext("Command"),          "keymap_cmd",                true);
+	this->add_key(GUI_ID_KEY_CMD_LOCAL_BUTTON, wgettext("Local command"),    "keymap_cmd_local",          true);
+	this->add_key(GUI_ID_KEY_HUD_BUTTON,       wgettext("Toggle HUD"),       "keymap_toggle_hud",         true);
+	this->add_key(GUI_ID_KEY_CHATLOG_BUTTON,   wgettext("Toggle chat log"),  "keymap_toggle_chat",        false);
+	this->add_key(GUI_ID_KEY_FOG_BUTTON,       wgettext("Toggle fog"),       "keymap_toggle_fog",         false);
 }
