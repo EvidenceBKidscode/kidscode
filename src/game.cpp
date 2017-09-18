@@ -173,6 +173,14 @@ struct LocalFormspecHandler : public TextDest
 			if (fields.find("btn_continue") != fields.end()) {
 				return;
 			}
+
+			if (fields.find("sbr_mouse_sensitivity") != fields.end()) {
+				float val = 0.0f;
+				for (auto &v : fields)
+					val = stof(v.second.substr(v.second.find(":") + 1, -1)) * 0.002f;
+
+				g_settings->setFloat("mouse_sensitivity", val);
+			}
 		}
 
 		// Don't disable this part when modding is disabled, it's used in builtin
@@ -950,7 +958,7 @@ static inline void create_formspec_menu(GUIFormSpecMenu **cur_formspec,
 #ifdef __ANDROID__
 #define SIZE_TAG "size[11,5.5]"
 #else
-#define SIZE_TAG "size[11,5.5,true]" // Fixed size on desktop
+#define SIZE_TAG "size[11,8.5,true]" // Fixed size on desktop
 #endif
 
 /******************************************************************************/
@@ -4739,12 +4747,23 @@ void Game::showPauseMenu()
 	str_formspec_escape(control_text);
 #endif
 
-	float ypos = simple_singleplayer_mode ? 0.7f : 0.1f;
+	float ypos = simple_singleplayer_mode ? 0.8f : 0.2f;
 	std::ostringstream os;
 
+	float foo = 0.f;
+
 	os << FORMSPEC_VERSION_STRING  << SIZE_TAG
-		<< "button_exit[4," << (ypos++) << ";3,0.5;btn_continue;"
-		<< strgettext("Continue") << "]";
+	   << "label[4," << (foo+=1.3f) << ";" << strgettext("Mouse sensitivity") << "]";
+
+	ypos++;
+
+	std::string mouse_sensitivity = std::to_string(g_settings->getFloat("mouse_sensitivity") * 500.0f);
+
+	os << "scrollbar[4," << (ypos++) <<
+	      ";2.8,0.6;horizontal;sbr_mouse_sensitivity;" << mouse_sensitivity << "]";
+
+	os << "button_exit[4," << (ypos++) << ";3,0.5;btn_continue;"
+	   << strgettext("Continue") << "]";
 
 	if (!simple_singleplayer_mode) {
 		os << "button_exit[4," << (ypos++) << ";3,0.5;btn_change_password;"
@@ -4763,7 +4782,7 @@ void Game::showPauseMenu()
 		<< strgettext("Exit to Menu") << "]";
 	os		<< "button_exit[4," << (ypos++) << ";3,0.5;btn_exit_os;"
 		<< strgettext("Exit to OS")   << "]"
-		<< "textarea[7.5,0.25;3.9,6.25;;" << control_text << ";]"
+		<< "textarea[7.5,0.25;3.9,9.25;;" << control_text << ";]"
 		<< "textarea[0.4,0.25;3.9,6.25;;" << PROJECT_NAME_C " " VERSION_STRING "\n"
 		<< "\n"
 		<<  strgettext("Game info:") << "\n";
