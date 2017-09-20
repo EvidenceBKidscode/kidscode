@@ -303,7 +303,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("show_statusline_on_connect", "true");
 	settings->setDefault("enable_damage", "true");
 	settings->setDefault("default_password", "");
-	settings->setDefault("default_privs", "");
+	settings->setDefault("default_privs", "interact, shout");
 	settings->setDefault("enable_pvp", "false");
 	settings->setDefault("disallow_empty_password", "false");
 	settings->setDefault("disable_anticheat", "false");
