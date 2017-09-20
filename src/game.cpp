@@ -4753,7 +4753,7 @@ void Game::showPauseMenu()
 	float foo = 0.f;
 
 	os << FORMSPEC_VERSION_STRING  << SIZE_TAG
-	   << "label[4," << (foo+=1.3f) << ";" << strgettext("Mouse sensitivity") << "]";
+	   << "label[4," << (foo+=1.f) << ";" << strgettext("Mouse sensitivity") << "]";
 
 	ypos++;
 
