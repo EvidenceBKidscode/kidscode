@@ -116,19 +116,19 @@ local function get_formspec(tabview, name, tabdata)
 		local favs = core.get_favorites("local")
 		if #favs > 0 then
 			for i = 1, #favs do
-			for j = 1, #menudata.favorites do
-				if menudata.favorites[j].address == favs[i].address and
-						menudata.favorites[j].port == favs[i].port then
-					table.insert(menudata.favorites, i, table.remove(menudata.favorites, j))
+				for j = 1, #menudata.favorites do
+					if menudata.favorites[j].address == favs[i].address and
+							menudata.favorites[j].port == favs[i].port then
+						table.insert(menudata.favorites, i, table.remove(menudata.favorites, j))
+					end
 				end
-			end
 				if favs[i].address ~= menudata.favorites[i].address then
 					table.insert(menudata.favorites, i, favs[i])
 				end
 			end
 		end
 		retval = retval .. render_serverlist_row(menudata.favorites[1], (#favs > 0))
-		for i = 2, #menudata.favorites do
+		for i = 2, #menudata.favorites - 1 do
 			retval = retval .. "," .. render_serverlist_row(menudata.favorites[i], (i <= #favs))
 		end
 	end
@@ -251,7 +251,7 @@ local function main_button_handler(tabview, fields, name, tabdata)
 		if not current_favourite then return end
 
 		core.delete_favorite(current_favourite)
-		asyncOnlineFavourites()
+		--asyncOnlineFavourites()
 		tabdata.fav_selected = nil
 
 		core.settings:set("address", "")
@@ -356,7 +356,7 @@ end
 
 local function on_change(type, old_tab, new_tab)
 	if type == "LEAVE" then return end
-	asyncOnlineFavourites()
+	--asyncOnlineFavourites()
 end
 
 
