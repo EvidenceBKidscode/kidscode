@@ -4750,10 +4750,8 @@ void Game::showPauseMenu()
 	float ypos = simple_singleplayer_mode ? 0.8f : 0.2f;
 	std::ostringstream os;
 
-	float foo = 0.f;
-
 	os << FORMSPEC_VERSION_STRING  << SIZE_TAG
-	   << "label[4," << (foo+=1.f) << ";" << strgettext("Mouse sensitivity") << "]";
+	   << "label[4," << ypos + 0.3f << ";" << strgettext("Mouse sensitivity") << "]";
 
 	ypos++;
 
