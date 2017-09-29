@@ -120,8 +120,9 @@ Hud::~Hud()
 
 void Hud::updateScaling()
 {
-	m_hud_grid_resolution = g_settings->getFloat("hud_grid_resolution");
-	m_hud_scaling = g_settings->getFloat("hud_scaling") * RenderingEngine::get_instance()->getWindowSize().X / m_hud_grid_resolution;
+	//float screenwidth = driver->getScreenSize().Width;
+	//m_hud_grid_resolution = g_settings->getFloat("hud_grid_resolution");
+	m_hud_scaling = g_settings->getFloat("hud_scaling");
 }
 
 void Hud::drawItem(ItemStack &item, const core::rect<s32>& rect,
