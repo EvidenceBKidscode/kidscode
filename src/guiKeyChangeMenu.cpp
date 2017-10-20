@@ -106,7 +106,7 @@ void GUIKeyChangeMenu::removeChildren()
 {
 	const core::list<gui::IGUIElement*> &children = getChildren();
 	core::list<gui::IGUIElement*> children_copy;
-	for (gui::IGUIElement*i : children) {
+	for (gui::IGUIElement *i : children) {
 		children_copy.push_back(i);
 	}
 
@@ -214,14 +214,14 @@ void GUIKeyChangeMenu::regenerateGui(v2u32 screensize)
 	}
 	{
 		core::rect < s32 > rect(0, 0, 100, 40);
-		rect += topleft + v2s32(size.X / 2 + 40, size.Y - 50);
+		rect += topleft + v2s32(size.X / 2 + (show_advanced_buttons ? 140 : 40), size.Y - 50);
 		const wchar_t *text =  wgettext("Save");
 		Environment->addButton(rect, this, GUI_ID_BACK_BUTTON, text);
 		delete[] text;
 	}
 	{
 		core::rect < s32 > rect(0, 0, 100, 40);
-		rect += topleft + v2s32(size.X / 2 + 150, size.Y - 50);
+		rect += topleft + v2s32(size.X / 2 + (show_advanced_buttons ? 250 : 150), size.Y - 50);
 		const wchar_t *text = wgettext("Cancel");
 		Environment->addButton(rect, this, GUI_ID_ABORT_BUTTON, text);
 		delete[] text;

@@ -42,7 +42,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "guiChatConsole.h"
 #include "guiFormSpecMenu.h"
 #include "guiKeyChangeMenu.h"
-#include "guiPasswordChange.h"
+//#include "guiPasswordChange.h"
 #include "guiVolumeChange.h"
 #include "mainmenumanager.h"
 #include "mapblock.h"
@@ -158,11 +158,6 @@ struct LocalFormspecHandler : public TextDest
 #ifndef __ANDROID__
 				RenderingEngine::get_raw_device()->closeDevice();
 #endif
-				return;
-			}
-
-			if (fields.find("btn_change_password") != fields.end()) {
-				g_gamecallback->changePassword();
 				return;
 			}
 
@@ -2359,12 +2354,6 @@ inline bool Game::handleCallbacks()
 	if (g_gamecallback->disconnect_requested) {
 		g_gamecallback->disconnect_requested = false;
 		return false;
-	}
-
-	if (g_gamecallback->changepassword_requested) {
-		(new GUIPasswordChange(guienv, guiroot, -1,
-				       &g_menumgr, client))->drop();
-		g_gamecallback->changepassword_requested = false;
 	}
 
 	if (g_gamecallback->changevolume_requested) {
@@ -4763,12 +4752,7 @@ void Game::showPauseMenu()
 	os << "button_exit[4," << (ypos++) << ";3,0.5;btn_continue;"
 	   << strgettext("Continue") << "]";
 
-	if (!simple_singleplayer_mode) {
-		os << "button_exit[4," << (ypos++) << ";3,0.5;btn_change_password;"
-			<< strgettext("Change Password") << "]";
-	} else {
-		os << "field[4.95,0;5,1.5;;" << strgettext("Game paused") << ";]";
-	}
+	os << "field[4.95,0;5,1.5;;" << strgettext("Game paused") << ";]";
 
 #ifndef __ANDROID__
 	os		<< "button_exit[4," << (ypos++) << ";3,0.5;btn_sound;"
