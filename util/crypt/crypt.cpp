@@ -11,7 +11,7 @@ bool processFile(const char *path, const char option)
 {
 	bool success = false;
 	char *text;
-	size_t size;
+	size_t size, old_size;
 
 	if (option == 'e') {
 		text = readText(path, size);
@@ -19,9 +19,10 @@ bool processFile(const char *path, const char option)
 		if (text == NULL)
 			return false;
 
+		old_size = size;
 		const char *encrypted_text = encryptText(text, size, path);
 
-		if (encrypted_text != text) {
+		if (size != old_size) {
 			printf("Encrypting file : %s\n", path);
 			success = writeText(encrypted_text, size, path);
 		}
@@ -34,9 +35,10 @@ bool processFile(const char *path, const char option)
 		if (text == NULL)
 			return false;
 
+		old_size = size;
 		const char *decrypted_text = decryptText(text, size, path);
 
-		if (decrypted_text != text) {
+		if (size != old_size) {
 			printf("Decrypting file : %s\n", path);
 			success = writeText(decrypted_text, size, path);
 		}
