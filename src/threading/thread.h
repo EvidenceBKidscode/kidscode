@@ -48,7 +48,37 @@ DEALINGS IN THE SOFTWARE.
 	#define THREAD_PRIORITY_HIGHEST      4
 #endif
 
+// :PATCH::
+class std_mutex
+{
+public:
+    std_mutex();
+    void lock();
+    void try_lock();
+    void unlock();
 
+    bool
+        locked;
+};
+
+class std_mutex_auto_lock
+{
+public:
+    std_mutex_auto_lock(std_mutex & mutex_) :
+        _mutex( &mutex_ )
+    {
+        _mutex->lock();
+    }
+
+    ~std_mutex_auto_lock()
+    {
+        _mutex->unlock();
+    }
+
+    std_mutex
+        * _mutex;
+};
+// ::PATCH:
 
 class Thread {
 public:
@@ -149,8 +179,8 @@ private:
 	bool m_joinable = false;
 	std::atomic<bool> m_request_stop;
 	std::atomic<bool> m_running;
-	std::mutex m_mutex;
-	std::mutex m_start_finished_mutex;
+	std_mutex m_mutex;    // :PATCH:
+	std_mutex m_start_finished_mutex;    // :PATCH:
 
 	std::thread *m_thread_obj;
 

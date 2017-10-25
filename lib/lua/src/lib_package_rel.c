@@ -111,6 +111,7 @@ static void setprogdir(lua_State *L) {
   // remove newline
   if (n > 1) progdir[--n] = '\0';
 #endif
+  for (char *c = progdir; *c; ++c) if (*c == '\\') *c = '/';    // :PATCH:
   if (n == 0 || n == nsize || (lb = strrchr(progdir, (int)LUA_DIRSEP[0])) == NULL)
     luaL_error(L, "unable to get process executable path");
   else {

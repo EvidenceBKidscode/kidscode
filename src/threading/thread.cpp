@@ -57,6 +57,31 @@ DEALINGS IN THE SOFTWARE.
 	#include <mach/thread_act.h>
 #endif
 
+// :PATCH::
+std_mutex::std_mutex() :
+    locked(false)
+{
+}
+
+void std_mutex::lock()
+{
+    while (locked) sleep_ms(1);
+    sleep_ms(1);
+    locked = true;
+}
+
+void std_mutex::try_lock()
+{
+    sleep_ms(1);
+    locked = true;
+}
+
+void std_mutex::unlock()
+{
+    locked = false;
+    sleep_ms(2);
+}
+// ::PATCH:
 
 Thread::Thread(const std::string &name) :
 	m_name(name),
@@ -82,7 +107,7 @@ Thread::~Thread()
 
 bool Thread::start()
 {
-	MutexAutoLock lock(m_mutex);
+	std_mutex_auto_lock lock(m_mutex);    // :PATCH:
 
 	if (m_running)
 		return false;
@@ -119,7 +144,7 @@ bool Thread::stop()
 
 bool Thread::wait()
 {
-	MutexAutoLock lock(m_mutex);
+	std_mutex_auto_lock lock(m_mutex);    // :PATCH:
 
 	if (!m_joinable)
 		return false;
