@@ -100,7 +100,8 @@ cmake . -DBUILD_CLIENT=1 -DBUILD_SERVER=0 -DRUN_IN_PLACE=1 -DCURL_INCLUDE_DIR=C:
         #else
             #define std_mutex std::mutex
             #define std_mutex_auto_lock MutexAutoLock
-        #endif        
+        #endif
+        
 éditer C:\KIDSCODE\adel\src\threading\thread.cpp
 
     remplacer MutexAutoLock par std_mutex_auto_lock
