@@ -162,7 +162,7 @@ ouvrir C:\KIDSCODE\adel\kidscode.sln avec Visual Studio 15 2017
         
         dans la section "Général" de "C/C++"
         
-            mettre "Aucun" comme format des informations de débogage
+            mettre "Aucun" comme format des informations de débogage pour la solution RelWithDebInfo Win32
         
     générer les solutions Debug/Release/RelWithDebInfo Win32
 
