@@ -1,0 +1,47 @@
+https://forum.minetest.net/viewtopic.php?t=9190
+https://github.com/mdoege/mtmake-osx
+
+installer Xcode via AppStore
+
+installer Xquartz
+
+	https://www.xquartz.org/
+	https://dl.bintray.com/xquartz/downloads/XQuartz-2.7.11.dmg
+	double-cliquer sur XQuartz.pkg
+	redémarrer
+	
+sudo xcodebuild -license
+xcode-select --install
+
+/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+
+cat /etc/paths
+
+export PATH=/usr/local/bin:$PATH
+env
+
+brew install git cmake freetype gettext hiredis irrlicht jpeg leveldb libogg libvorbis postgresql spatialindex
+brew uninstall luajit
+
+git config --global user.name "Toto"
+git config --global user.email "toto@gmail.com"
+
+cd Documents
+mkdir KIDSCODE
+cd KIDSCODE
+git clone -b windows https://github.com/cookiegranola/adel
+cd adel
+git clone --recursive https://github.com/cookiegranola/minetest_game games/minetest_game
+rm CMakeCache.txt
+cmake .
+make package
+
+cp bin/kidscode ./kidscode
+./kidscode
+
+
+
+
+ 
+
+

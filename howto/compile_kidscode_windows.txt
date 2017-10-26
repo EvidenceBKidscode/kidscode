@@ -34,6 +34,9 @@ https://git-scm.com/download/win
         + Checkout as-is, commit as-is
         + Use MinTTY
 
+git config --global user.name "Toto"
+git config --global user.email "toto@gmail.com"
+
 md C:\KIDSCODE
 cd C:\KIDSCODE
 git clone -b windows https://github.com/cookiegranola/adel
