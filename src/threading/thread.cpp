@@ -58,29 +58,46 @@ DEALINGS IN THE SOFTWARE.
 #endif
 
 // :PATCH::
-std_mutex::std_mutex() :
-    locked(false)
-{
-}
+#if defined(_WIN32) 
+	std_mutex::std_mutex() :
+		locked(false)
+	{
+		InitializeCriticalSection(&criticalSection);
+	}
+	
+	std_mutex::~std_mutex()
+	{
+		DeleteCriticalSection(&criticalSection);
+	}
 
-void std_mutex::lock()
-{
-    while (locked) sleep_ms(1);
-    sleep_ms(1);
-    locked = true;
-}
+	void std_mutex::lock()
+	{
+		bool waiting = true;
+		while (waiting) {
+			EnterCriticalSection(&criticalSection);            
+			if (!locked) {
+				locked = true;
+				waiting = false;
+			}
+			LeaveCriticalSection(&criticalSection);
+			if (waiting) sleep_ms(1);
+		}
+	}
 
-void std_mutex::try_lock()
-{
-    sleep_ms(1);
-    locked = true;
-}
+	void std_mutex::try_lock()
+	{
+		EnterCriticalSection(&criticalSection);
+		locked = true;
+		LeaveCriticalSection(&criticalSection);
+	}
 
-void std_mutex::unlock()
-{
-    locked = false;
-    sleep_ms(2);
-}
+	void std_mutex::unlock()
+	{
+		EnterCriticalSection(&criticalSection);
+		locked = false;
+		LeaveCriticalSection(&criticalSection);
+	}
+#endif
 // ::PATCH:
 
 Thread::Thread(const std::string &name) :
@@ -101,7 +118,6 @@ Thread::~Thread()
 	// Make sure start finished mutex is unlocked before it's destroyed
 	m_start_finished_mutex.try_lock();
 	m_start_finished_mutex.unlock();
-
 }
 
 

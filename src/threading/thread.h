@@ -49,35 +49,35 @@ DEALINGS IN THE SOFTWARE.
 #endif
 
 // :PATCH::
-class std_mutex
-{
-public:
-    std_mutex();
-    void lock();
-    void try_lock();
-    void unlock();
+#if defined(_WIN32)
+	#include "porting.h"
+	
+	class std_mutex {
+	public:
+		std_mutex();
+		~std_mutex();
+		void lock();
+		void try_lock();
+		void unlock();
+        
+		bool locked;
+		CRITICAL_SECTION criticalSection;
+	};
 
-    bool
-        locked;
-};
+	class std_mutex_auto_lock {
+	public:
+		std_mutex_auto_lock(std_mutex & mutex_) : _mutex( &mutex_ )
+            { _mutex->lock(); }
 
-class std_mutex_auto_lock
-{
-public:
-    std_mutex_auto_lock(std_mutex & mutex_) :
-        _mutex( &mutex_ )
-    {
-        _mutex->lock();
-    }
+		~std_mutex_auto_lock()
+            { _mutex->unlock();	}
 
-    ~std_mutex_auto_lock()
-    {
-        _mutex->unlock();
-    }
-
-    std_mutex
-        * _mutex;
-};
+		std_mutex * _mutex;
+	};
+#else
+	#define std_mutex std::mutex
+	#define std_mutex_auto_lock MutexAutoLock
+#endif
 // ::PATCH:
 
 class Thread {

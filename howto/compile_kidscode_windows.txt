@@ -1,5 +1,9 @@
 http://dev.minetest.net/Compiling_Minetest
 http://krock-works.16mb.com/MTstuff/Compile_Minetest_MSVC.txt
+https://forum.minetest.net/viewtopic.php?t=9190
+https://github.com/mdoege/mtmake-osx
+
+installer visual studio 2017 community
 
 https://cmake.org/download/
 https://cmake.org/files/v3.9/cmake-3.9.4-win64-x64.msi
@@ -64,94 +68,117 @@ cmake . -DBUILD_CLIENT=1 -DBUILD_SERVER=0 -DRUN_IN_PLACE=1 -DCURL_INCLUDE_DIR=C:
         
 éditer C:\KIDSCODE\adel\src\threading\thread.h
 
+    replacer std::mutex par std_mutex
+    
     insérer à la ligne 51; avant "class Thread {" :
                 
-        class std_mutex
-        {
-        public:
-            std_mutex();
-            void lock();
-            void try_lock();
-            void unlock();
+        #if defined(_WIN32)
+            #include "porting.h"
+            
+            class std_mutex {
+            public:
+                std_mutex();
+                ~std_mutex();
+                void lock();
+                void try_lock();
+                void unlock();
+                
+                bool locked;
+                CRITICAL_SECTION criticalSection;
+            };
 
-            bool
-                locked;
-        };
+            class std_mutex_auto_lock {
+            public:
+                std_mutex_auto_lock(std_mutex & mutex_) : _mutex( &mutex_ )
+                    { _mutex->lock(); }
 
-        class std_mutex_auto_lock
-        {
-        public:
-            std_mutex_auto_lock(std_mutex & mutex_) :
-                _mutex( &mutex_ )
-            {
-                _mutex->lock();
-            }
+                ~std_mutex_auto_lock()
+                    { _mutex->unlock();	}
 
-            ~std_mutex_auto_lock()
-            {
-                _mutex->unlock();
-            }
-
-            std_mutex
-                * _mutex;
-        };
-        
-    replacer std::mutex par std_mutex
-        
+                std_mutex * _mutex;
+            };
+        #else
+            #define std_mutex std::mutex
+            #define std_mutex_auto_lock MutexAutoLock
+        #endif        
 éditer C:\KIDSCODE\adel\src\threading\thread.cpp
 
+    remplacer MutexAutoLock par std_mutex_auto_lock
+    
     insérer à la ligne 61, avant "Thread::Thread(" :
                 
-        std_mutex::std_mutex() :
-            locked(false)
-        {
-        }
+        #if defined(_WIN32) 
+            std_mutex::std_mutex() :
+                locked(false)
+            {
+                InitializeCriticalSection(&criticalSection);
+            }
+            
+            std_mutex::~std_mutex()
+            {
+                DeleteCriticalSection(&criticalSection);
+            }
 
-        void std_mutex::lock()
-        {
-            while (locked) sleep_ms(1);
-            sleep_ms(1);
-            locked = true;
-        }
+            void std_mutex::lock()
+            {
+                bool waiting = true;
+                while (waiting) {
+                    EnterCriticalSection(&criticalSection);            
+                    if (!locked) {
+                        locked = true;
+                        waiting = false;
+                    }
+                    LeaveCriticalSection(&criticalSection);
+                    if (waiting) sleep_ms(1);
+                }
+            }
 
-        void std_mutex::try_lock()
-        {
-            sleep_ms(1);
-            locked = true;
-        }
+            void std_mutex::try_lock()
+            {
+                EnterCriticalSection(&criticalSection);
+                locked = true;
+                LeaveCriticalSection(&criticalSection);
+            }
 
-        void std_mutex::unlock()
-        {
-            locked = false;
-            sleep_ms(2);
-        }
-
-    remplacer MutexAutoLock par std_mutex_auto_lock
+            void std_mutex::unlock()
+            {
+                EnterCriticalSection(&criticalSection);
+                locked = false;
+                LeaveCriticalSection(&criticalSection);
+            }
+        #endif
 
 ouvrir C:\KIDSCODE\adel\kidscode.sln avec Visual Studio 15 2017
 
-    rajouter ceci à la fin des options d'édition des liens supplémentaires du projet minetest :
-        
-        /NODEFAULTLIB:LIBCMT
+    choisir minetest comme projet de démarrage
 
-générer la solution Debug Win32
+    dans les propriétés du projet minetest
+    
+        dans la section "Entrée" de "Editeur de liens"
+            
+            ajouter "LIBCMT" aux bibliothèques par défaut spécifiques ignorées pour les solutions Debug/Release/RelWithDebInfo Win32
+
+                %(IgnoreSpecificDefaultLibraries) LIBCMT
+        
+        dans la section "Général" de "C/C++"
+        
+            mettre "Aucun" comme format des informations de débogage
+        
+    générer les solutions Debug/Release/RelWithDebInfo Win32
 
 cd C:\KIDSCODE
 dir /b /s *.dll
 
-copy C:\KIDSCODE\curl-master\bin\libcurl.dll C:\KIDSCODE\adel\bin\Debug\
-copy C:\KIDSCODE\irrlicht-1.8.1\bin\Irrlicht.dll C:\KIDSCODE\adel\bin\Debug\
-copy C:\KIDSCODE\libogg-1.3.1\bin\libogg.dll C:\KIDSCODE\adel\bin\Debug\
-copy C:\KIDSCODE\libvorbis-1.3.3\bin\libvorbis.dll C:\KIDSCODE\adel\bin\Debug\
-copy C:\KIDSCODE\libvorbis-1.3.3\bin\libvorbisfile.dll C:\KIDSCODE\adel\bin\Debug\
-copy C:\KIDSCODE\openal-soft-1.15.1\bin\OpenAL32.dll C:\KIDSCODE\adel\bin\Debug\
-copy C:\KIDSCODE\pgsql\lib\libpq.dll C:\KIDSCODE\adel\bin\Debug\
-copy C:\KIDSCODE\spatialindex-1.8.5\bin\spatialindex-32.dll C:\KIDSCODE\adel\bin\Debug\
-copy C:\KIDSCODE\spatialindex-1.8.5\bin\spatialindex_c-32.dll C:\KIDSCODE\adel\bin\Debug\
-copy C:\KIDSCODE\zlib-1.2.8\bin\zlib1.dll C:\KIDSCODE\adel\bin\Debug\
-copy C:\KIDSCODE\zlib-1.2.8\bin\ZlibDllRelease\zlibwapi.dll C:\KIDSCODE\adel\bin\Debug\
+copy C:\KIDSCODE\curl-master\bin\libcurl.dll C:\KIDSCODE\irrlicht-1.8.1\bin\Irrlicht.dll C:\KIDSCODE\libogg-1.3.1\bin\libogg.dll C:\KIDSCODE\libvorbis-1.3.3\bin\libvorbis.dll C:\KIDSCODE\libvorbis-1.3.3\bin\libvorbisfile.dll C:\KIDSCODE\openal-soft-1.15.1\bin\OpenAL32.dll C:\KIDSCODE\pgsql\lib\libpq.dll C:\KIDSCODE\spatialindex-1.8.5\bin\spatialindex-32.dll C:\KIDSCODE\spatialindex-1.8.5\bin\spatialindex_c-32.dll C:\KIDSCODE\zlib-1.2.8\bin\zlib1.dll C:\KIDSCODE\zlib-1.2.8\bin\ZlibDllRelease\zlibwapi.dll C:\KIDSCODE\adel\bin\Debug\
 
-lancer C:\KIDSCODE\adel\bin\Debug\kidscode.exe
+copy C:\KIDSCODE\curl-master\bin\libcurl.dll C:\KIDSCODE\irrlicht-1.8.1\bin\Irrlicht.dll C:\KIDSCODE\libogg-1.3.1\bin\libogg.dll C:\KIDSCODE\libvorbis-1.3.3\bin\libvorbis.dll C:\KIDSCODE\libvorbis-1.3.3\bin\libvorbisfile.dll C:\KIDSCODE\openal-soft-1.15.1\bin\OpenAL32.dll C:\KIDSCODE\pgsql\lib\libpq.dll C:\KIDSCODE\spatialindex-1.8.5\bin\spatialindex-32.dll C:\KIDSCODE\spatialindex-1.8.5\bin\spatialindex_c-32.dll C:\KIDSCODE\zlib-1.2.8\bin\zlib1.dll C:\KIDSCODE\zlib-1.2.8\bin\ZlibDllRelease\zlibwapi.dll C:\KIDSCODE\adel\bin\Release\
+
+copy C:\KIDSCODE\curl-master\bin\libcurl.dll C:\KIDSCODE\irrlicht-1.8.1\bin\Irrlicht.dll C:\KIDSCODE\libogg-1.3.1\bin\libogg.dll C:\KIDSCODE\libvorbis-1.3.3\bin\libvorbis.dll C:\KIDSCODE\libvorbis-1.3.3\bin\libvorbisfile.dll C:\KIDSCODE\openal-soft-1.15.1\bin\OpenAL32.dll C:\KIDSCODE\pgsql\lib\libpq.dll C:\KIDSCODE\spatialindex-1.8.5\bin\spatialindex-32.dll C:\KIDSCODE\spatialindex-1.8.5\bin\spatialindex_c-32.dll C:\KIDSCODE\zlib-1.2.8\bin\zlib1.dll C:\KIDSCODE\zlib-1.2.8\bin\ZlibDllRelease\zlibwapi.dll C:\KIDSCODE\adel\bin\RelWithDebInfo\
+
+lancer 
+    C:\KIDSCODE\adel\bin\Debug\kidscode.exe ou C:\KIDSCODE\adel\bin\Release\kidscode.exe ou
+    C:\KIDSCODE\adel\bin\RelWithDebInfo\kidscode.exe
+    
 
 
 
