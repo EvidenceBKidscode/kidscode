@@ -8,12 +8,12 @@ sudo apt install build-essential cmake git libirrlicht-dev libbz2-dev libgettext
 cd Documents
 mkdir KIDSCODE
 cd KIDSCODE
-git clone -b windows --depth 1 https://github.com/cookiegranola/adel
+git clone -b windows https://github.com/cookiegranola/adel
 cd adel
-git clone --depth 1 https://github.com/cookiegranola/minetest_game games/minetest_game
+git clone --recursive https://github.com/cookiegranola/minetest_game games/minetest_game
 
 rm CMakeCache.txt
-cmake . -DBUILD_CLIENT=1 -DBUILD_SERVER=1 -DRUN_IN_PLACE=TRUE
+cmake . -DBUILD_CLIENT=1 -DBUILD_SERVER=1 -DRUN_IN_PLACE=1
 make
 
 ./bin/kidscode

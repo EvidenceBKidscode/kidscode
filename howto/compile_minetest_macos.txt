@@ -26,9 +26,9 @@ brew uninstall luajit
 cd Documents
 mkdir MINETEST
 cd MINETEST
-git clone --depth 1 https://github.com/minetest/minetest.git
+git clone https://github.com/minetest/minetest.git
 cd minetest
-git clone --depth 1 https://github.com/minetest/minetest_game.git games/minetest_game
+git clone --recursive https://github.com/minetest/minetest_game.git games/minetest_game
 
 rm CMakeCache.txt
 cmake .

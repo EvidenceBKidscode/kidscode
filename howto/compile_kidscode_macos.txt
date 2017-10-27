@@ -29,9 +29,9 @@ brew uninstall luajit
 cd Documents
 mkdir KIDSCODE
 cd KIDSCODE
-git clone -b windows --depth 1 https://github.com/cookiegranola/adel
+git clone -b windows https://github.com/cookiegranola/adel
 cd adel
-git clone --depth 1 https://github.com/cookiegranola/minetest_game games/minetest_game
+git clone --recursive https://github.com/cookiegranola/minetest_game games/minetest_game
 
 rm CMakeCache.txt
 cmake .

@@ -32,9 +32,9 @@ https://git-scm.com/download/win
 
 md C:\MINETEST
 cd C:\MINETEST
-git clone --depth 1 https://github.com/minetest/minetest.git
+git clone https://github.com/minetest/minetest.git
 cd minetest
-git clone --depth 1 https://github.com/minetest/minetest_game.git games/minetest_game
+git clone --recursive https://github.com/minetest/minetest_game.git games/minetest_game
 cd ..
 
 https://www.openal.org/downloads/
