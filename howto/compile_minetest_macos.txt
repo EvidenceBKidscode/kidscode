@@ -23,27 +23,19 @@ env
 brew install git cmake freetype gettext hiredis irrlicht jpeg leveldb libogg libvorbis postgresql spatialindex
 brew uninstall luajit
 
-git config --global user.name "Toto"
-git config --global user.email "toto@gmail.com"
-
 cd Documents
-mkdir KIDSCODE
-cd KIDSCODE
-git clone -b windows --depth 1 https://github.com/cookiegranola/adel
-cd adel
-git clone --depth 1 https://github.com/cookiegranola/minetest_game games/minetest_game
-
-cp CMakeListsMac.txt CMakeLists.txt
+mkdir MINETEST
+cd MINETEST
+git clone --depth 1 https://github.com/minetest/minetest.git
+cd minetest
+git clone --depth 1 https://github.com/minetest/minetest_game.git games/minetest_game
 
 rm CMakeCache.txt
 cmake .
 make package
 
-cp bin/kidscode ./kidscode
-./kidscode
-
-
-
+ouvrir minetest-0.5.0-dev-osx.zip
+lancer minetest
 
  
 
