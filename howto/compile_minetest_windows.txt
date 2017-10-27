@@ -35,7 +35,6 @@ cd C:\MINETEST
 git clone https://github.com/minetest/minetest.git
 cd minetest
 git clone --recursive https://github.com/minetest/minetest_game.git games/minetest_game
-cd ..
 
 https://www.openal.org/downloads/
 https://www.openal.org/downloads/oalinst.zip
@@ -52,7 +51,6 @@ https://www.dropbox.com/s/t3fuc61116lytva/Minetest_MSVC_Win32_libraries_compiled
 
     extraire Minetest_MSVC_Win32_libraries_compiled_170104.7z dans C:\MINETEST
 
-cd minetest
 del CMakeCache.txt
 cmake . -DBUILD_CLIENT=1 -DBUILD_SERVER=0 -DRUN_IN_PLACE=1 -DCURL_INCLUDE_DIR=C:\MINETEST\curl-master\include -DCURL_LIBRARY=C:\MINETEST\curl-master\bin\libcurl_imp.lib -DCURL_DLL=C:\MINETEST\curl-master\bin\libcurl.dll -DFREETYPE_INCLUDE_DIRS=C:\MINETEST\freetype-2.7.0\include -DFREETYPE_INCLUDE_DIR_freetype2=C:\MINETEST\freetype-2.7.0\include -DFREETYPE_INCLUDE_DIR_ft2build=C:\MINETEST\freetype-2.7.0\include -DFREETYPE_LIBRARY=C:\MINETEST\freetype-2.7.0\bin\freetype27.lib -DIRRLICHT_INCLUDE_DIR=C:\MINETEST\irrlicht-1.8.1\include -DIRRLICHT_LIBRARY=C:\MINETEST\irrlicht-1.8.1\bin\Irrlicht.lib -DIRRLICHT_DLL=C:\MINETEST\irrlicht-1.8.1\bin\Irrlicht.dll -DVORBIS_INCLUDE_DIR=C:\MINETEST\libvorbis-1.3.3\include -DOGG_INCLUDE_DIR=C:\MINETEST\libogg-1.3.1\include -DOGG_LIBRARY=C:\MINETEST\libogg-1.3.1\bin\libogg.lib -DOGG_DLL=C:\MINETEST\libogg-1.3.1\bin\libogg.dll -DVORBIS_LIBRARY=C:\MINETEST\libvorbis-1.3.3\bin\libvorbis.lib -DVORBIS_DLL=C:\MINETEST\libvorbis-1.3.3\bin\libvorbis.dll -DVORBISFILE_LIBRARY=C:\MINETEST\libvorbis-1.3.3\bin\libvorbisfile.lib -DVORBISFILE_DLL=C:\MINETEST\libvorbis-1.3.3\bin\libvorbisfile.dll -DOPENAL_INCLUDE_DIR=C:\MINETEST\openal-soft-1.15.1\include\AL -DOPENAL_LIBRARY=C:\MINETEST\openal-soft-1.15.1\bin\OpenAL32.lib -DOPENAL_DLL=C:\MINETEST\openal-soft-1.15.1\bin\OpenAL32.dll -DPostgreSQL_INCLUDE_DIR=C:\MINETEST\postgresql-9.5.3\include -DPostgreSQL_TYPE_INCLUDE_DIR=C:\MINETEST\postgresql-9.5.3\include -DPostgreSQL_LIBRARY=C:\MINETEST\postgresql-9.5.3\bin\libpq.lib -DPOSTGRESQL_LIBRARY=C:\MINETEST\postgresql-9.5.3\bin\libpq.lib -DSQLITE3_INCLUDE_DIR=C:\MINETEST\sqlite-3.15.2\include -DSQLITE3_LIBRARY=C:\MINETEST\sqlite-3.15.2\bin\sqlite3.lib -DZLIB_INCLUDE_DIR=C:\MINETEST\zlib-1.2.8\include -DZLIB_LIBRARIES=C:\MINETEST\zlib-1.2.8\bin\ZlibDllRelease\zlibwapi.lib -DZLIB_DLL=C:\MINETEST\zlib-1.2.8\bin\ZlibDllRelease\zlibwapi.dll
 
