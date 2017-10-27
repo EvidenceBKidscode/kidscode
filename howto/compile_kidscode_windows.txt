@@ -3,8 +3,14 @@ http://krock-works.16mb.com/MTstuff/Compile_Minetest_MSVC.txt
 https://forum.minetest.net/viewtopic.php?t=9190
 https://github.com/mdoege/mtmake-osx
 
-installer visual studio 2017 community
+https://www.visualstudio.com/fr/downloads/
 
+	télécharger et installer Visual Studio Community 2017 
+
+http://www.7-zip.org/download.html
+
+	télécharger et installer 7-Zip
+	
 https://cmake.org/download/
 https://cmake.org/files/v3.9/cmake-3.9.4-win64-x64.msi
 
@@ -43,18 +49,14 @@ git clone -b windows https://github.com/cookiegranola/adel
 cd adel
 git clone --recursive https://github.com/cookiegranola/minetest_game games/minetest_game
 
-https://www.openal.org/downloads/
-https://www.openal.org/downloads/oalinst.zip
-
-    extraire oalinst.zip dans C:\KIDSCODE\oalinst.exe
-    lancer oalinst.exe
-
-https://www.dropbox.com/s/t3fuc61116lytva/Minetest_MSVC_Win32_libraries_compiled_170104.7z
+https://www.dropbox.com/s/t3fuc61116lytva/Minetest_MSVC_Win32_libraries_compiled_170104.7z 
+(ou répertoire howto)
 
     extraire Minetest_MSVC_Win32_libraries_compiled_170104.7z dans C:\KIDSCODE
-
+	
 https://www.enterprisedb.com/postgresql-959-binaries-win32?ls=Crossover&type=Crossover
 https://get.enterprisedb.com/postgresql/postgresql-9.5.9-1-windows-binaries.zip
+(ou répertoire howto)
 
     extraire postgresql-9.5.9-1-windows-binaries.zip dans C:\KIDSCODE\pgsql
 
@@ -176,6 +178,8 @@ copy C:\KIDSCODE\curl-master\bin\libcurl.dll C:\KIDSCODE\irrlicht-1.8.1\bin\Irrl
 copy C:\KIDSCODE\curl-master\bin\libcurl.dll C:\KIDSCODE\irrlicht-1.8.1\bin\Irrlicht.dll C:\KIDSCODE\libogg-1.3.1\bin\libogg.dll C:\KIDSCODE\libvorbis-1.3.3\bin\libvorbis.dll C:\KIDSCODE\libvorbis-1.3.3\bin\libvorbisfile.dll C:\KIDSCODE\openal-soft-1.15.1\bin\OpenAL32.dll C:\KIDSCODE\pgsql\lib\libpq.dll C:\KIDSCODE\spatialindex-1.8.5\bin\spatialindex-32.dll C:\KIDSCODE\spatialindex-1.8.5\bin\spatialindex_c-32.dll C:\KIDSCODE\zlib-1.2.8\bin\zlib1.dll C:\KIDSCODE\zlib-1.2.8\bin\ZlibDllRelease\zlibwapi.dll C:\KIDSCODE\adel\bin\Release\
 
 copy C:\KIDSCODE\curl-master\bin\libcurl.dll C:\KIDSCODE\irrlicht-1.8.1\bin\Irrlicht.dll C:\KIDSCODE\libogg-1.3.1\bin\libogg.dll C:\KIDSCODE\libvorbis-1.3.3\bin\libvorbis.dll C:\KIDSCODE\libvorbis-1.3.3\bin\libvorbisfile.dll C:\KIDSCODE\openal-soft-1.15.1\bin\OpenAL32.dll C:\KIDSCODE\pgsql\lib\libpq.dll C:\KIDSCODE\spatialindex-1.8.5\bin\spatialindex-32.dll C:\KIDSCODE\spatialindex-1.8.5\bin\spatialindex_c-32.dll C:\KIDSCODE\zlib-1.2.8\bin\zlib1.dll C:\KIDSCODE\zlib-1.2.8\bin\ZlibDllRelease\zlibwapi.dll C:\KIDSCODE\adel\bin\RelWithDebInfo\
+
+(ou les copier depuis le répertoire howto/dlls)
 
 lancer 
     C:\KIDSCODE\adel\bin\Debug\kidscode.exe ou C:\KIDSCODE\adel\bin\Release\kidscode.exe ou
