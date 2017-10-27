@@ -1,0 +1,21 @@
+http://dev.minetest.net/Compiling_Minetest
+
+sudo apt install build-essential cmake git libirrlicht-dev libbz2-dev libgettextpo-dev libfreetype6-dev libpng-dev libjpeg-dev libxxf86vm-dev libgl1-mesa-dev libsqlite3-dev libogg-dev libvorbis-dev libopenal-dev libhiredis-dev libcurl3-dev zlib1g-dev libgmp-dev libjsoncpp-dev
+
+# git config --global user.name "Toto"
+# git config --global user.email "toto@gmail.com"
+
+cd Documents
+mkdir KIDSCODE
+cd KIDSCODE
+git clone -b windows --depth 1 https://github.com/cookiegranola/adel
+cd adel
+git clone --depth 1 https://github.com/cookiegranola/minetest_game games/minetest_game
+
+rm CMakeCache.txt
+cmake . -DBUILD_CLIENT=1 -DBUILD_SERVER=1 -DRUN_IN_PLACE=TRUE
+make
+
+./bin/kidscode
+
+./bin/minetestserver --worldname minetest
