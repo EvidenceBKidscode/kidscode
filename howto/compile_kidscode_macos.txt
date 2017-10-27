@@ -23,8 +23,8 @@ env
 brew install git cmake freetype gettext hiredis irrlicht jpeg leveldb libogg libvorbis postgresql spatialindex
 brew uninstall luajit
 
-git config --global user.name "Toto"
-git config --global user.email "toto@gmail.com"
+# git config --global user.name "Toto"
+# git config --global user.email "toto@gmail.com"
 
 cd Documents
 mkdir KIDSCODE
@@ -32,8 +32,6 @@ cd KIDSCODE
 git clone -b windows --depth 1 https://github.com/cookiegranola/adel
 cd adel
 git clone --depth 1 https://github.com/cookiegranola/minetest_game games/minetest_game
-
-cp CMakeListsMac.txt CMakeLists.txt
 
 rm CMakeCache.txt
 cmake .
