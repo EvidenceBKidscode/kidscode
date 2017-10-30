@@ -17,13 +17,25 @@ make
 
 ---
 
-# Lancer un serveur local sur un monde appelé "minetest"
+# Lancer un serveur local
+
+créer un monde "minetest" dans kidscode
 
 ./bin/minetestserver --worldname minetest
 
 ---
 
-# Encrypter tous les fichiers ".lua" du répertoire "adel/games"
+# Tester l'outil de crytage sur les fichiers lua de test
+
+cd util/crypt
+cmake .
+make
+cd test
+./run.sh
+
+---
+
+# Encrypter tous les fichiers lua du répertoire adel/games
 
 cd util/crypt
 cmake .

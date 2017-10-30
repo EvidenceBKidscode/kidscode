@@ -2,6 +2,6 @@
 set -x
 
 cd ../../../games
-ls
 find . -name "*.lua" > CryptList.txt
+ls
 ../util/crypt/crypt -e
