@@ -1,9 +1,6 @@
-http://dev.minetest.net/Compiling_Minetest
+# Compiler Kidscode
 
 sudo apt install build-essential cmake git libirrlicht-dev libbz2-dev libgettextpo-dev libfreetype6-dev libpng-dev libjpeg-dev libxxf86vm-dev libgl1-mesa-dev libsqlite3-dev libogg-dev libvorbis-dev libopenal-dev libhiredis-dev libcurl3-dev zlib1g-dev libgmp-dev libjsoncpp-dev
-
-# git config --global user.name "Toto"
-# git config --global user.email "toto@gmail.com"
 
 cd Documents
 mkdir KIDSCODE
@@ -18,4 +15,24 @@ make
 
 ./bin/kidscode
 
+---
+
+# Lancer un serveur local sur un monde appelé "minetest"
+
 ./bin/minetestserver --worldname minetest
+
+---
+
+# Encrypter tous les fichiers ".lua" du répertoire "adel/games"
+
+cd util/crypt
+cmake .
+make
+cd test
+./encrypt_games.sh
+
+---
+
+# Références
+
+http://dev.minetest.net/Compiling_Minetest

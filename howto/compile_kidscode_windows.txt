@@ -1,7 +1,4 @@
-http://dev.minetest.net/Compiling_Minetest
-http://krock-works.16mb.com/MTstuff/Compile_Minetest_MSVC.txt
-https://forum.minetest.net/viewtopic.php?t=9190
-https://github.com/mdoege/mtmake-osx
+# Compiler Kidscode
 
 https://www.visualstudio.com/fr/downloads/
 
@@ -40,9 +37,6 @@ https://git-scm.com/download/win
         + Checkout as-is, commit as-is
         + Use MinTTY
 
-git config --global user.name "Toto"
-git config --global user.email "toto@gmail.com"
-
 md C:\KIDSCODE
 cd C:\KIDSCODE
 git clone -b windows https://github.com/cookiegranola/adel
@@ -50,107 +44,18 @@ cd adel
 git clone --recursive https://github.com/cookiegranola/minetest_game games/minetest_game
 
 https://www.dropbox.com/s/t3fuc61116lytva/Minetest_MSVC_Win32_libraries_compiled_170104.7z 
-(ou répertoire howto)
+(ou utiliser celui du répertoire howto)
 
     extraire Minetest_MSVC_Win32_libraries_compiled_170104.7z dans C:\KIDSCODE
 	
 https://www.enterprisedb.com/postgresql-959-binaries-win32?ls=Crossover&type=Crossover
 https://get.enterprisedb.com/postgresql/postgresql-9.5.9-1-windows-binaries.zip
-(ou répertoire howto)
+(ou utiliser celui du répertoire howto)
 
     extraire postgresql-9.5.9-1-windows-binaries.zip dans C:\KIDSCODE\pgsql
 
 del CMakeCache.txt
 cmake . -DBUILD_CLIENT=1 -DBUILD_SERVER=0 -DRUN_IN_PLACE=1 -DCURL_INCLUDE_DIR=C:\KIDSCODE\curl-master\include -DCURL_LIBRARY=C:\KIDSCODE\curl-master\bin\libcurl_imp.lib -DCURL_DLL=C:\KIDSCODE\curl-master\bin\libcurl.dll -DFREETYPE_INCLUDE_DIRS=C:\KIDSCODE\freetype-2.7.0\include -DFREETYPE_INCLUDE_DIR_freetype2=C:\KIDSCODE\freetype-2.7.0\include -DFREETYPE_INCLUDE_DIR_ft2build=C:\KIDSCODE\freetype-2.7.0\include -DFREETYPE_LIBRARY=C:\KIDSCODE\freetype-2.7.0\bin\freetype27.lib -DIRRLICHT_INCLUDE_DIR=C:\KIDSCODE\irrlicht-1.8.1\include -DIRRLICHT_LIBRARY=C:\KIDSCODE\irrlicht-1.8.1\bin\Irrlicht.lib -DIRRLICHT_DLL=C:\KIDSCODE\irrlicht-1.8.1\bin\Irrlicht.dll -DVORBIS_INCLUDE_DIR=C:\KIDSCODE\libvorbis-1.3.3\include -DOGG_INCLUDE_DIR=C:\KIDSCODE\libogg-1.3.1\include -DOGG_LIBRARY=C:\KIDSCODE\libogg-1.3.1\bin\libogg.lib -DOGG_DLL=C:\KIDSCODE\libogg-1.3.1\bin\libogg.dll -DVORBIS_LIBRARY=C:\KIDSCODE\libvorbis-1.3.3\bin\libvorbis.lib -DVORBIS_DLL=C:\KIDSCODE\libvorbis-1.3.3\bin\libvorbis.dll -DVORBISFILE_LIBRARY=C:\KIDSCODE\libvorbis-1.3.3\bin\libvorbisfile.lib -DVORBISFILE_DLL=C:\KIDSCODE\libvorbis-1.3.3\bin\libvorbisfile.dll -DOPENAL_INCLUDE_DIR=C:\KIDSCODE\openal-soft-1.15.1\include\AL -DOPENAL_LIBRARY=C:\KIDSCODE\openal-soft-1.15.1\bin\OpenAL32.lib -DOPENAL_DLL=C:\KIDSCODE\openal-soft-1.15.1\bin\OpenAL32.dll -DPostgreSQL_INCLUDE_DIR=C:\KIDSCODE\postgresql-9.5.3\include -DPostgreSQL_TYPE_INCLUDE_DIR=C:\KIDSCODE\postgresql-9.5.3\include -DPostgreSQL_LIBRARY=C:\KIDSCODE\postgresql-9.5.3\bin\libpq.lib -DPOSTGRESQL_LIBRARY=C:\KIDSCODE\postgresql-9.5.3\bin\libpq.lib -DSQLITE3_INCLUDE_DIR=C:\KIDSCODE\sqlite-3.15.2\include -DSQLITE3_LIBRARY=C:\KIDSCODE\sqlite-3.15.2\bin\sqlite3.lib -DZLIB_INCLUDE_DIR=C:\KIDSCODE\zlib-1.2.8\include -DZLIB_LIBRARIES=C:\KIDSCODE\zlib-1.2.8\bin\ZlibDllRelease\zlibwapi.lib -DZLIB_DLL=C:\KIDSCODE\zlib-1.2.8\bin\ZlibDllRelease\zlibwapi.dll
-
-éditer C:\KIDSCODE\adel\lib\lua\src\lib_package_rel.c (si nécessaire)
-
-    insérer à la ligne 114, avant "if (n == 0" :
-    
-        for (char *c = progdir; *c; ++c) if (*c == '\\') *c = '/';
-        
-éditer C:\KIDSCODE\adel\src\threading\thread.h (si nécessaire)
-
-    replacer std::mutex par std_mutex
-    
-    insérer à la ligne 51; avant "class Thread {" :
-                
-        #if defined(_WIN32)
-            #include "porting.h"
-            
-            class std_mutex {
-            public:
-                std_mutex();
-                ~std_mutex();
-                void lock();
-                void try_lock();
-                void unlock();
-                
-                bool locked;
-                CRITICAL_SECTION criticalSection;
-            };
-
-            class std_mutex_auto_lock {
-            public:
-                std_mutex_auto_lock(std_mutex & mutex_) : _mutex( &mutex_ )
-                    { _mutex->lock(); }
-
-                ~std_mutex_auto_lock()
-                    { _mutex->unlock();	}
-
-                std_mutex * _mutex;
-            };
-        #else
-            #define std_mutex std::mutex
-            #define std_mutex_auto_lock MutexAutoLock
-        #endif
-        
-éditer C:\KIDSCODE\adel\src\threading\thread.cpp (si nécessaire)
-
-    remplacer MutexAutoLock par std_mutex_auto_lock
-    
-    insérer à la ligne 61, avant "Thread::Thread(" :
-                
-        #if defined(_WIN32) 
-            std_mutex::std_mutex() :
-                locked(false)
-            {
-                InitializeCriticalSection(&criticalSection);
-            }
-            
-            std_mutex::~std_mutex()
-            {
-                DeleteCriticalSection(&criticalSection);
-            }
-
-            void std_mutex::lock()
-            {
-                bool waiting = true;
-                while (waiting) {
-                    EnterCriticalSection(&criticalSection);            
-                    if (!locked) {
-                        locked = true;
-                        waiting = false;
-                    }
-                    LeaveCriticalSection(&criticalSection);
-                    if (waiting) sleep_ms(1);
-                }
-            }
-
-            void std_mutex::try_lock()
-            {
-                EnterCriticalSection(&criticalSection);
-                locked = true;
-                LeaveCriticalSection(&criticalSection);
-            }
-
-            void std_mutex::unlock()
-            {
-                EnterCriticalSection(&criticalSection);
-                locked = false;
-                LeaveCriticalSection(&criticalSection);
-            }
-        #endif
 
 ouvrir C:\KIDSCODE\adel\kidscode.sln avec Visual Studio 15 2017
 
@@ -160,7 +65,7 @@ ouvrir C:\KIDSCODE\adel\kidscode.sln avec Visual Studio 15 2017
     
         dans la section "Entrée" de "Editeur de liens"
             
-            ajouter "LIBCMT" aux bibliothèques par défaut spécifiques ignorées pour les solutions Debug/Release/RelWithDebInfo Win32
+            ajouter "LIBCMT" aux bibliothèques par défaut spécifiques ignorées pour les solutions Debug/RelWithDebInfo Win32
 
                 %(IgnoreSpecificDefaultLibraries) LIBCMT
         
@@ -168,24 +73,38 @@ ouvrir C:\KIDSCODE\adel\kidscode.sln avec Visual Studio 15 2017
         
             mettre "Aucun" comme format des informations de débogage pour la solution RelWithDebInfo Win32
         
-    générer les solutions Debug/Release/RelWithDebInfo Win32
+    générer les solutions Debug/RelWithDebInfo Win32
 
 cd C:\KIDSCODE
 dir /b /s *.dll
 
 copy C:\KIDSCODE\curl-master\bin\libcurl.dll C:\KIDSCODE\irrlicht-1.8.1\bin\Irrlicht.dll C:\KIDSCODE\libogg-1.3.1\bin\libogg.dll C:\KIDSCODE\libvorbis-1.3.3\bin\libvorbis.dll C:\KIDSCODE\libvorbis-1.3.3\bin\libvorbisfile.dll C:\KIDSCODE\openal-soft-1.15.1\bin\OpenAL32.dll C:\KIDSCODE\pgsql\lib\libpq.dll C:\KIDSCODE\spatialindex-1.8.5\bin\spatialindex-32.dll C:\KIDSCODE\spatialindex-1.8.5\bin\spatialindex_c-32.dll C:\KIDSCODE\zlib-1.2.8\bin\zlib1.dll C:\KIDSCODE\zlib-1.2.8\bin\ZlibDllRelease\zlibwapi.dll C:\KIDSCODE\adel\bin\Debug\
 
-copy C:\KIDSCODE\curl-master\bin\libcurl.dll C:\KIDSCODE\irrlicht-1.8.1\bin\Irrlicht.dll C:\KIDSCODE\libogg-1.3.1\bin\libogg.dll C:\KIDSCODE\libvorbis-1.3.3\bin\libvorbis.dll C:\KIDSCODE\libvorbis-1.3.3\bin\libvorbisfile.dll C:\KIDSCODE\openal-soft-1.15.1\bin\OpenAL32.dll C:\KIDSCODE\pgsql\lib\libpq.dll C:\KIDSCODE\spatialindex-1.8.5\bin\spatialindex-32.dll C:\KIDSCODE\spatialindex-1.8.5\bin\spatialindex_c-32.dll C:\KIDSCODE\zlib-1.2.8\bin\zlib1.dll C:\KIDSCODE\zlib-1.2.8\bin\ZlibDllRelease\zlibwapi.dll C:\KIDSCODE\adel\bin\Release\
-
 copy C:\KIDSCODE\curl-master\bin\libcurl.dll C:\KIDSCODE\irrlicht-1.8.1\bin\Irrlicht.dll C:\KIDSCODE\libogg-1.3.1\bin\libogg.dll C:\KIDSCODE\libvorbis-1.3.3\bin\libvorbis.dll C:\KIDSCODE\libvorbis-1.3.3\bin\libvorbisfile.dll C:\KIDSCODE\openal-soft-1.15.1\bin\OpenAL32.dll C:\KIDSCODE\pgsql\lib\libpq.dll C:\KIDSCODE\spatialindex-1.8.5\bin\spatialindex-32.dll C:\KIDSCODE\spatialindex-1.8.5\bin\spatialindex_c-32.dll C:\KIDSCODE\zlib-1.2.8\bin\zlib1.dll C:\KIDSCODE\zlib-1.2.8\bin\ZlibDllRelease\zlibwapi.dll C:\KIDSCODE\adel\bin\RelWithDebInfo\
 
-(ou les copier depuis le répertoire howto/dlls)
+(ou copier les fichiers du répertoire howto/dlls dans C:\KIDSCODE\adel\bin\Debug\ et C:\KIDSCODE\adel\bin\RelWithDebInfo\)
 
 lancer 
-    C:\KIDSCODE\adel\bin\Debug\kidscode.exe ou C:\KIDSCODE\adel\bin\Release\kidscode.exe ou
+    C:\KIDSCODE\adel\bin\Debug\kidscode.exe
+    ou
     C:\KIDSCODE\adel\bin\RelWithDebInfo\kidscode.exe
-    
 
+---
 
+# Tester le cryptage
 
- 
+cd util\crypt
+cmake .
+make
+cd test
+run.bat
+
+---
+
+# Références
+
+http://dev.minetest.net/Compiling_Minetest
+http://krock-works.16mb.com/MTstuff/Compile_Minetest_MSVC.txt
+https://forum.minetest.net/viewtopic.php?t=9190
+https://github.com/mdoege/mtmake-osx
+

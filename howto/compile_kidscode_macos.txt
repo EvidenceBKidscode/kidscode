@@ -1,5 +1,4 @@
-https://forum.minetest.net/viewtopic.php?t=9190
-https://github.com/mdoege/mtmake-osx
+# Compiler Kidscode
 
 installer Xcode via AppStore
 
@@ -23,9 +22,6 @@ env
 brew install git cmake freetype gettext hiredis irrlicht jpeg leveldb libogg libvorbis postgresql spatialindex
 brew uninstall luajit
 
-# git config --global user.name "Toto"
-# git config --global user.email "toto@gmail.com"
-
 cd Documents
 mkdir KIDSCODE
 cd KIDSCODE
@@ -37,12 +33,24 @@ rm CMakeCache.txt
 cmake .
 make package
 
-cp bin/kidscode ./kidscode
-./kidscode
+ouvrir minetest-0.5.0-dev-osx.zip
+lancer minetest
 
+---
 
+# Encrypter tous les fichiers ".lua" du répertoire "adel/games"
 
+cd util/crypt
+cmake .
+make
+cd test
+./encrypt_games.sh
 
- 
+Ensuite refaire un make package dans le répertoire "adel".
 
+---
 
+# Références
+
+https://forum.minetest.net/viewtopic.php?t=9190
+https://github.com/mdoege/mtmake-osx

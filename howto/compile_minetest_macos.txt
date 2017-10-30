@@ -1,5 +1,4 @@
-https://forum.minetest.net/viewtopic.php?t=9190
-https://github.com/mdoege/mtmake-osx
+# Compiler Minetest
 
 installer Xcode via AppStore
 
@@ -37,6 +36,9 @@ make package
 ouvrir minetest-0.5.0-dev-osx.zip
 lancer minetest
 
- 
+---
 
+# Références
 
+https://forum.minetest.net/viewtopic.php?t=9190
+https://github.com/mdoege/mtmake-osx

@@ -1,5 +1,4 @@
-http://dev.minetest.net/Compiling_Minetest
-http://krock-works.16mb.com/MTstuff/Compile_Minetest_MSVC.txt
+# Compiler Minetest
 
 https://cmake.org/download/
 https://cmake.org/files/v3.9/cmake-3.9.4-win64-x64.msi
@@ -98,3 +97,11 @@ copy C:\MINETEST\zlib-1.2.8\bin\zlib1.dll C:\MINETEST\minetest\bin\Debug\
 copy C:\MINETEST\zlib-1.2.8\bin\ZlibDllRelease\zlibwapi.dll C:\MINETEST\minetest\bin\Debug\
 
 lancer C:\MINETEST\minetest\bin\Debug\minetest.exe
+
+---
+
+# Références
+
+http://dev.minetest.net/Compiling_Minetest
+http://krock-works.16mb.com/MTstuff/Compile_Minetest_MSVC.txt
+
