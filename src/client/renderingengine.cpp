@@ -34,7 +34,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "inputhandler.h"
 #include "gettext.h"
 
-#if !defined(_WIN32) && !defined(__APPLE__) && !defined(__ANDROID__) && !defined(SERVER)
+#if !defined(_WIN32) && !defined(__APPLE__) && !defined(__ANDROID__) && \
+		!defined(SERVER) && !defined(__HAIKU__)
 #define XORG_USED
 #endif
 #ifdef XORG_USED
@@ -93,10 +94,11 @@ RenderingEngine::RenderingEngine(IEventReceiver *receiver)
 	params.HighPrecisionFPU = g_settings->getBool("high_precision_fpu");
 	params.ZBufferBits = 24;
 #ifdef __ANDROID__
+	// clang-format off
 	params.PrivateData = porting::app_global;
-	params.OGLES2ShaderPath = std::string(
-			porting::path_user + DIR_DELIM + "media" + DIR_DELIM + "Shaders" +
-			DIR_DELIM).c_str();
+	params.OGLES2ShaderPath = std::string(porting::path_user + DIR_DELIM + "media" +
+		DIR_DELIM + "Shaders" + DIR_DELIM).c_str();
+	// clang-format on
 #endif
 
 	m_device = createDeviceEx(params);
@@ -233,7 +235,7 @@ bool RenderingEngine::setWindowIcon()
 	const HICON hicon = LoadIcon(GetModuleHandle(NULL),
 			MAKEINTRESOURCE(130) // The ID of the ICON defined in
 					     // winresource.rc
-			);
+	);
 
 	if (hicon) {
 		SendMessage(hWnd, WM_SETICON, ICON_BIG, reinterpret_cast<LPARAM>(hicon));
@@ -998,8 +1000,14 @@ void RenderingEngine::draw_plain(Camera *camera, bool show_hud, Hud *hud,
 const char *RenderingEngine::getVideoDriverName(irr::video::E_DRIVER_TYPE type)
 {
 	static const char *driver_ids[] = {
-			"null", "software", "burningsvideo", "direct3d8", "direct3d9",
-			"opengl", "ogles1", "ogles2",
+			"null",
+			"software",
+			"burningsvideo",
+			"direct3d8",
+			"direct3d9",
+			"opengl",
+			"ogles1",
+			"ogles2",
 	};
 
 	return driver_ids[type];
@@ -1008,8 +1016,14 @@ const char *RenderingEngine::getVideoDriverName(irr::video::E_DRIVER_TYPE type)
 const char *RenderingEngine::getVideoDriverFriendlyName(irr::video::E_DRIVER_TYPE type)
 {
 	static const char *driver_names[] = {
-			"NULL Driver", "Software Renderer", "Burning's Video",
-			"Direct3D 8", "Direct3D 9", "OpenGL", "OpenGL ES1", "OpenGL ES2",
+			"NULL Driver",
+			"Software Renderer",
+			"Burning's Video",
+			"Direct3D 8",
+			"Direct3D 9",
+			"OpenGL",
+			"OpenGL ES1",
+			"OpenGL ES2",
 	};
 
 	return driver_names[type];

@@ -27,6 +27,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <json/json.h>
 #include "cpp_api/s_security.h"
 #include "porting.h"
+#include "convert_json.h"
 #include "debug.h"
 #include "log.h"
 #include "tool.h"
@@ -36,6 +37,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "util/base64.h"
 #include "config.h"
 #include "version.h"
+#include "util/hex.h"
+#include "util/sha1.h"
 #include <algorithm>
 
 
@@ -95,12 +98,14 @@ int ModApiUtil::l_parse_json(lua_State *L)
 	Json::Value root;
 
 	{
-		Json::Reader reader;
 		std::istringstream stream(jsonstr);
 
-		if (!reader.parse(stream, root)) {
-			errorstream << "Failed to parse json data "
-				<< reader.getFormattedErrorMessages();
+		Json::CharReaderBuilder builder;
+		builder.settings_["collectComments"] = false;
+		std::string errs;
+
+		if (!Json::parseFromStream(builder, stream, &root, &errs)) {
+			errorstream << "Failed to parse json data " << errs << std::endl;
 			size_t jlen = strlen(jsonstr);
 			if (jlen > 100) {
 				errorstream << "Data (" << jlen
@@ -145,11 +150,9 @@ int ModApiUtil::l_write_json(lua_State *L)
 
 	std::string out;
 	if (styled) {
-		Json::StyledWriter writer;
-		out = writer.write(root);
+		out = root.toStyledString();
 	} else {
-		Json::FastWriter writer;
-		out = writer.write(root);
+		out = fastWriteJson(root);
 	}
 	lua_pushlstring(L, out.c_str(), out.size());
 	return 1;
@@ -422,6 +425,32 @@ int ModApiUtil::l_get_version(lua_State *L)
 	return 1;
 }
 
+int ModApiUtil::l_sha1(lua_State *L)
+{
+	NO_MAP_LOCK_REQUIRED;
+	size_t size;
+	const char *data = luaL_checklstring(L, 1, &size);
+	bool hex = !lua_isboolean(L, 2) || !lua_toboolean(L, 2);
+
+	// Compute actual checksum of data
+	std::string data_sha1;
+	{
+		SHA1 ctx;
+		ctx.addBytes(data, size);
+		unsigned char *data_tmpdigest = ctx.getDigest();
+		data_sha1.assign((char*) data_tmpdigest, 20);
+		free(data_tmpdigest);
+	}
+
+	if (hex) {
+		std::string sha1_hex = hex_encode(data_sha1);
+		lua_pushstring(L, sha1_hex.c_str());
+	} else {
+		lua_pushlstring(L, data_sha1.data(), data_sha1.size());
+	}
+
+	return 1;
+}
 
 void ModApiUtil::Initialize(lua_State *L, int top)
 {
@@ -454,6 +483,7 @@ void ModApiUtil::Initialize(lua_State *L, int top)
 	API_FCT(decode_base64);
 
 	API_FCT(get_version);
+	API_FCT(sha1);
 
 	LuaSettings::create(L, g_settings, g_settings_path);
 	lua_setfield(L, top, "settings");
@@ -477,6 +507,7 @@ void ModApiUtil::InitializeClient(lua_State *L, int top)
 	API_FCT(decode_base64);
 
 	API_FCT(get_version);
+	API_FCT(sha1);
 }
 
 void ModApiUtil::InitializeAsync(lua_State *L, int top)
@@ -502,6 +533,7 @@ void ModApiUtil::InitializeAsync(lua_State *L, int top)
 	API_FCT(decode_base64);
 
 	API_FCT(get_version);
+	API_FCT(sha1);
 
 	LuaSettings::create(L, g_settings, g_settings_path);
 	lua_setfield(L, top, "settings");

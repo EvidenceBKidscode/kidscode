@@ -65,13 +65,8 @@ namespace gui
 intlGUIEditBox::intlGUIEditBox(const wchar_t* text, bool border,
 		IGUIEnvironment* environment, IGUIElement* parent, s32 id,
 		const core::rect<s32>& rectangle, bool writable, bool has_vscrollbar)
-	: IGUIEditBox(environment, parent, id, rectangle), MouseMarking(false),
-	Border(border), OverrideColorEnabled(false), MarkBegin(0), MarkEnd(0),
-	OverrideColor(video::SColor(101,255,255,255)), OverrideFont(0), LastBreakFont(0),
-	Operator(0), BlinkStartTime(0), CursorPos(0), HScrollPos(0), VScrollPos(0), Max(0),
-	WordWrap(false), MultiLine(false), AutoScroll(true), PasswordBox(false),
-	PasswordChar(L'*'), HAlign(EGUIA_UPPERLEFT), VAlign(EGUIA_CENTER),
-	CurrentTextRect(0,0,1,1), FrameRect(rectangle),
+	: IGUIEditBox(environment, parent, id, rectangle),
+	Border(border), FrameRect(rectangle),
 	m_scrollbar_width(0), m_vscrollbar(NULL), m_writable(writable),
 	m_bg_color(video::SColor(0,0,0,0)), m_bg_color_used(false)
 {
@@ -968,8 +963,7 @@ void intlGUIEditBox::draw()
 			font->getKerningWidth(L"_", CursorPos-startPos > 0 ? &((*txtLine)[CursorPos-startPos-1]) : 0);
 
 		if (m_writable)	{
-			if (focus && (porting::getTimeMs() - BlinkStartTime) % 700 < 350)
-			{
+			if (focus && (porting::getTimeMs() - BlinkStartTime) % 700 < 350) {
 				setTextRect(cursorLine);
 				CurrentTextRect.UpperLeftCorner.X += charcursorpos;
 
@@ -1110,6 +1104,14 @@ bool intlGUIEditBox::processMouse(const SEvent& event)
 			calculateScrollPos();
 			return true;
 		}
+		break;
+	case EMIE_MOUSE_WHEEL:
+		if (m_vscrollbar) {
+			s32 pos = m_vscrollbar->getPos();
+			s32 step = m_vscrollbar->getSmallStep();
+			m_vscrollbar->setPos(pos - event.MouseInput.Wheel * step);
+		}
+		break;
 	default:
 		break;
 	}
@@ -1493,22 +1495,31 @@ void intlGUIEditBox::sendGuiEvent(EGUI_EVENT_TYPE type)
 //! Create a vertical scrollbar
 void intlGUIEditBox::createVScrollBar()
 {
+	s32 fontHeight = 1;
+
+	if (OverrideFont) {
+		fontHeight = OverrideFont->getDimension(L"").Height;
+	} else {
+		if (IGUISkin* skin = Environment->getSkin()) {
+			if (IGUIFont* font = skin->getFont()) {
+				fontHeight = font->getDimension(L"").Height;
+			}
+		}
+	}
+
 	irr::core::rect<s32> scrollbarrect = FrameRect;
 	scrollbarrect.UpperLeftCorner.X += FrameRect.getWidth() - m_scrollbar_width;
 	m_vscrollbar = Environment->addScrollBar(false, scrollbarrect, getParent(), getID());
 	m_vscrollbar->setVisible(false);
-	m_vscrollbar->setMin(0);
-	m_vscrollbar->setMax(1);
-	m_vscrollbar->setSmallStep(1);
-	m_vscrollbar->setLargeStep(1);
+	m_vscrollbar->setSmallStep(3 * fontHeight);
+	m_vscrollbar->setLargeStep(10 * fontHeight);
 }
 
 //! Update the vertical scrollbar (visibilty & scroll position)
 void intlGUIEditBox::updateVScrollBar()
 {
-	if (!m_vscrollbar) {
+	if (!m_vscrollbar)
 		return;
-	}
 
 	// OnScrollBarChanged(...)
 	if (m_vscrollbar->getPos() != VScrollPos) {
@@ -1517,22 +1528,21 @@ void intlGUIEditBox::updateVScrollBar()
 		CurrentTextRect.LowerRightCorner.Y -= deltaScrollY;
 
 		s32 scrollymax = getTextDimension().Height - FrameRect.getHeight();
-		if (scrollymax - 1 != m_vscrollbar->getMax()) {
+		if (scrollymax != m_vscrollbar->getMax()) {
 			// manage a newline or a deleted line
-			m_vscrollbar->setMax(scrollymax - 1);
+			m_vscrollbar->setMax(scrollymax);
 			calculateScrollPos();
 		} else {
 			// manage a newline or a deleted line
-			VScrollPos = m_vscrollbar->getPos() - 1;
+			VScrollPos = m_vscrollbar->getPos();
 		}
 	}
 
 	// check if a vertical scrollbar is needed ?
-	if ((s32)getTextDimension().Height > FrameRect.getHeight()) {
+	if (getTextDimension().Height > (u32) FrameRect.getHeight()) {
 		s32 scrollymax = getTextDimension().Height - FrameRect.getHeight();
-		if (scrollymax - 1 != m_vscrollbar->getMax()) {
-			m_vscrollbar->setMin(0);
-			m_vscrollbar->setMax(scrollymax - 1);
+		if (scrollymax != m_vscrollbar->getMax()) {
+			m_vscrollbar->setMax(scrollymax);
 		}
 
 		if (!m_vscrollbar->isVisible() && MultiLine) {
@@ -1546,7 +1556,6 @@ void intlGUIEditBox::updateVScrollBar()
 
 			VScrollPos = 0;
 			m_vscrollbar->setPos(0);
-			m_vscrollbar->setMin(0);
 			m_vscrollbar->setMax(1);
 			m_vscrollbar->setVisible(false);
 		}
@@ -1564,7 +1573,6 @@ void intlGUIEditBox::setBackgroundColor(const video::SColor &bg_color)
 	m_bg_color = bg_color;
 	m_bg_color_used = true;
 }
-
 
 //! Writes attributes of the element.
 void intlGUIEditBox::serializeAttributes(io::IAttributes* out, io::SAttributeReadWriteOptions* options=0) const

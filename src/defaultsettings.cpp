@@ -37,6 +37,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("address", "");
 	settings->setDefault("enable_sound", "true");
 	settings->setDefault("sound_volume", "0.8");
+	settings->setDefault("mute_sound", "false");
 	settings->setDefault("enable_mesh_cache", "false");
 	settings->setDefault("mesh_generation_interval", "0");
 	settings->setDefault("meshgen_block_cache_size", "20");
@@ -138,6 +139,8 @@ void set_default_settings(Settings *settings)
 #endif
 	settings->setDefault("fsaa", "0");
 	settings->setDefault("undersampling", "0");
+	settings->setDefault("world_aligned_mode", "enable");
+	settings->setDefault("autoscale_mode", "disable");
 	settings->setDefault("enable_fog", "true");
 	settings->setDefault("fog_start", "0.4");
 	settings->setDefault("3d_mode", "none");
@@ -148,7 +151,8 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("fps_max", "60");
 	settings->setDefault("pause_fps_max", "20");
 	settings->setDefault("viewing_range", "50");
-	settings->setDefault("screen_w", "800");
+	settings->setDefault("near_plane", "0.1");
+	settings->setDefault("screen_w", "1024");
 	settings->setDefault("screen_h", "600");
 	settings->setDefault("autosave_screensize", "true");
 
@@ -188,6 +192,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("node_highlighting", "halo");
 	settings->setDefault("crosshair_color", "(255,255,255)");
 	settings->setDefault("crosshair_alpha", "255");
+	settings->setDefault("recent_chat_messages", "6");
 	settings->setDefault("hud_scaling", "1.0");
 	settings->setDefault("hud_grid_resolution", "1920.0");
 	settings->setDefault("gui_scaling", "1.0");
@@ -305,6 +310,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("default_password", "");
 	settings->setDefault("default_privs", "interact, shout");
 	settings->setDefault("enable_pvp", "false");
+	settings->setDefault("enable_mod_channels", "false");
 	settings->setDefault("disallow_empty_password", "false");
 	settings->setDefault("disable_anticheat", "false");
 	settings->setDefault("enable_rollback_recording", "false");

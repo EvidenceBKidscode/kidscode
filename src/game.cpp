@@ -1889,10 +1889,8 @@ bool Game::createSingleplayerServer(const std::string &map_dir,
 		return false;
 	}
 
-	server = new Server(map_dir, gamespec, simple_singleplayer_mode,
-			    bind_addr.isIPv6(), false);
-
-	server->start(bind_addr);
+	server = new Server(map_dir, gamespec, simple_singleplayer_mode, bind_addr, false);
+	server->start();
 
 	return true;
 }
@@ -2058,6 +2056,9 @@ bool Game::initGui()
 	// Remove stale "recent" chat messages from previous connections
 	chat_backend->clearRecentChat();
 
+	// Make sure the size of the recent messages buffer is right
+	chat_backend->applySettings();
+    
 	// Chat backend and console
 	gui_chat_console = new GUIChatConsole(guienv, guienv->getRootGUIElement(),
 			-1, chat_backend, client, &g_menumgr);
@@ -2190,27 +2191,8 @@ bool Game::connectToServer(const std::string &playername,
 
 			wait_time += dtime;
 			// Only time out if we aren't waiting for the server we started
-			if ((!address->empty()) && (wait_time > 10)) {
-				bool sent_old_init = g_settings->getFlag("send_pre_v25_init");
-				// If no pre v25 init was sent, and no answer was received,
-				// but the low level connection could be established
-				// (meaning that we have a peer id), then we probably wanted
-				// to connect to a legacy server. In this case, tell the user
-				// to enable the option to be able to connect.
-				if (!sent_old_init &&
-						(client->getProtoVersion() == 0) &&
-						client->connectedToServer()) {
-					*error_message = "Connection failure: init packet not "
-					"recognized by server.\n"
-					"Most likely the server uses an old protocol version (<v25).\n"
-					"Please ask the server owner to update to 0.4.13 or later.\n"
-					"To still connect to the server in the meantime,\n"
-					"you can enable the 'send_pre_v25_init' setting by editing minetest.conf,\n"
-					"or by enabling the 'Client -> Network -> Support older Servers'\n"
-					"entry in the advanced settings menu.";
-				} else {
-					*error_message = "Connection timed out.";
-				}
+			if (!address->empty() && wait_time > 10) {
+				*error_message = "Connection timed out.";
 				errorstream << *error_message << std::endl;
 				break;
 			}
@@ -2552,14 +2534,12 @@ void Game::processKeyInput()
 	} else if (wasKeyDown(KeyType::NOCLIP)) {
 		toggleNoClip();
 	} else if (wasKeyDown(KeyType::MUTE)) {
-		float volume = g_settings->getFloat("sound_volume");
-		if (volume < 0.001f) {
-			g_settings->setFloat("sound_volume", 1.0f);
-			showStatusTextSimple("Volume changed to 100%");
-		} else {
-			g_settings->setFloat("sound_volume", 0.0f);
-			showStatusTextSimple("Volume changed to 0%");
-		}
+		bool new_mute_sound = !g_settings->getBool("mute_sound");
+		g_settings->setBool("mute_sound", new_mute_sound);
+		if (new_mute_sound)
+			showStatusTextSimple("Sound muted");
+		else
+			showStatusTextSimple("Sound unmuted");
 		runData.statustext_time = 0;
 	} else if (wasKeyDown(KeyType::INC_VOLUME)) {
 		float new_volume = rangelim(g_settings->getFloat("sound_volume") + 0.1f, 0.0f, 1.0f);
@@ -2693,14 +2673,17 @@ void Game::openInventory()
 	infostream << "the_game: " << "Launching inventory" << std::endl;
 
 	PlayerInventoryFormSource *fs_src = new PlayerInventoryFormSource(client);
-	TextDest *txt_dst = new TextDestPlayerInventory(client);
-
-	create_formspec_menu(&current_formspec, client, &input->joystick, fs_src, txt_dst);
-	cur_formname = "";
 
 	InventoryLocation inventoryloc;
 	inventoryloc.setCurrentPlayer();
-	current_formspec->setFormSpec(fs_src->getForm(), inventoryloc);
+
+	if (!client->moddingEnabled()
+			|| !client->getScript()->on_inventory_open(fs_src->m_client->getInventory(inventoryloc))) {
+		TextDest *txt_dst = new TextDestPlayerInventory(client);
+		create_formspec_menu(&current_formspec, client, &input->joystick, fs_src, txt_dst);
+		cur_formname = "";
+		current_formspec->setFormSpec(fs_src->getForm(), inventoryloc);
+	}
 }
 
 
@@ -3564,13 +3547,18 @@ void Game::updateSound(f32 dtime)
 			      camera->getDirection(),
 			      camera->getCameraNode()->getUpVector());
 
-	// Check if volume is in the proper range, else fix it.
-	float old_volume = g_settings->getFloat("sound_volume");
-	float new_volume = rangelim(old_volume, 0.0f, 1.0f);
-	sound->setListenerGain(new_volume);
+	bool mute_sound = g_settings->getBool("mute_sound");
+	if (mute_sound) {
+		sound->setListenerGain(0.0f);
+	} else {
+		// Check if volume is in the proper range, else fix it.
+		float old_volume = g_settings->getFloat("sound_volume");
+		float new_volume = rangelim(old_volume, 0.0f, 1.0f);
+		sound->setListenerGain(new_volume);
 
-	if (old_volume != new_volume) {
-		g_settings->setFloat("sound_volume", new_volume);
+		if (old_volume != new_volume) {
+			g_settings->setFloat("sound_volume", new_volume);
+		}
 	}
 
 	LocalPlayer *player = client->getEnv().getLocalPlayer();
@@ -3719,8 +3707,13 @@ void Game::processPlayerInteraction(f32 dtime, bool show_hud, bool show_debug)
 	} else if (pointed.type == POINTEDTHING_NODE) {
 		ToolCapabilities playeritem_toolcap =
 				playeritem.getToolCapabilities(itemdef_manager);
-		if (playeritem.name.empty() && hand_def.tool_capabilities != NULL) {
-			playeritem_toolcap = *hand_def.tool_capabilities;
+		if (playeritem.name.empty()) {
+			const ToolCapabilities *handToolcap = hlist
+				? &hlist->getItem(0).getToolCapabilities(itemdef_manager)
+				: itemdef_manager->get("").tool_capabilities;
+
+			if (handToolcap != nullptr)
+				playeritem_toolcap = *handToolcap;
 		}
 		handlePointingAtNode(pointed, playeritem_def, playeritem,
 			playeritem_toolcap, dtime);
@@ -4022,9 +4015,9 @@ void Game::handleDigging(const PointedThing &pointed, const v3s16 &nodepos,
 	// If can't dig, try hand
 	if (!params.diggable) {
 		InventoryList *hlist = local_inventory->getList("hand");
-		const ItemDefinition &hand =
-			hlist ? hlist->getItem(0).getDefinition(itemdef_manager) : itemdef_manager->get("");
-		const ToolCapabilities *tp = hand.tool_capabilities;
+		const ToolCapabilities *tp = hlist
+			? &hlist->getItem(0).getToolCapabilities(itemdef_manager)
+			: itemdef_manager->get("").tool_capabilities;
 
 		if (tp)
 			params = getDigParams(nodedef_manager->get(n).groups, tp);
