@@ -953,7 +953,7 @@ static inline void create_formspec_menu(GUIFormSpecMenu **cur_formspec,
 #ifdef __ANDROID__
 #define SIZE_TAG "size[11,5.5]"
 #else
-#define SIZE_TAG "size[11,8.5,true]" // Fixed size on desktop
+#define SIZE_TAG "size[3.5,6.5,true]" // Fixed size on desktop
 #endif
 
 /******************************************************************************/
@@ -4740,68 +4740,30 @@ void Game::showPauseMenu()
 	std::ostringstream os;
 
 	os << FORMSPEC_VERSION_STRING  << SIZE_TAG
-	   << "label[4," << ypos + 0.3f << ";" << strgettext("Mouse sensitivity") << "]";
+	   << "label[0.3," << ypos + 0.3f << ";" << strgettext("Mouse sensitivity") << "]";
 
 	ypos++;
 
 	std::string mouse_sensitivity = std::to_string(g_settings->getFloat("mouse_sensitivity") * 500.0f);
 
-	os << "scrollbar[4," << (ypos++) <<
+	os << "scrollbar[0.3," << (ypos++) <<
 	      ";2.8,0.6;horizontal;sbr_mouse_sensitivity;" << mouse_sensitivity << "]";
 
-	os << "button_exit[4," << (ypos++) << ";3,0.5;btn_continue;"
+	os << "button_exit[0.3," << (ypos++) << ";3,0.5;btn_continue;"
 	   << strgettext("Continue") << "]";
 
-	os << "field[4.95,0;5,1.5;;" << strgettext("Game paused") << ";]";
+	os << "field[0.8,0;5,1.5;;" << strgettext("Game paused") << ";]";
 
 #ifndef __ANDROID__
-	os		<< "button_exit[4," << (ypos++) << ";3,0.5;btn_sound;"
+	os		<< "button_exit[0.3," << (ypos++) << ";3,0.5;btn_sound;"
 		<< strgettext("Sound Volume") << "]";
-	os		<< "button_exit[4," << (ypos++) << ";3,0.5;btn_key_config;"
+	os		<< "button_exit[0.3," << (ypos++) << ";3,0.5;btn_key_config;"
 		<< strgettext("Change Keys")  << "]";
 #endif
 	//      os << "button_exit[4," << (ypos++) << ";3,0.5;btn_exit_menu;"
 	//	   << strgettext("Exit to Menu") << "]";
-	os		<< "button_exit[4," << (ypos++) << ";3,0.5;btn_exit_os;"
-		<< strgettext("Exit to OS")   << "]"
-		<< "textarea[7.5,0.25;3.9,9.25;;" << control_text << ";]"
-		<< "textarea[0.4,0.25;3.9,6.25;;" << PROJECT_NAME_C " " VERSION_STRING "\n"
-		<< "\n"
-		<<  strgettext("Game info:") << "\n";
-	const std::string &address = client->getAddressName();
-	static const std::string mode = strgettext("- Mode: ");
-	if (!simple_singleplayer_mode) {
-		Address serverAddress = client->getServerAddress();
-		if (!address.empty()) {
-			os << mode << strgettext("Remote server") << "\n"
-					<< strgettext("- Address: ") << address;
-		} else {
-			os << mode << strgettext("Hosting server");
-		}
-		os << "\n" << strgettext("- Port: ") << serverAddress.getPort() << "\n";
-	} else {
-		os << mode << strgettext("Singleplayer") << "\n";
-	}
-	if (simple_singleplayer_mode || address.empty()) {
-		static const std::string on = strgettext("On");
-		static const std::string off = strgettext("Off");
-		const std::string &damage = g_settings->getBool("enable_damage") ? on : off;
-		const std::string &creative = g_settings->getBool("creative_mode") ? on : off;
-		const std::string &announced = g_settings->getBool("server_announce") ? on : off;
-		os << strgettext("- Damage: ") << damage << "\n"
-				<< strgettext("- Creative Mode: ") << creative << "\n";
-		if (!simple_singleplayer_mode) {
-			const std::string &pvp = g_settings->getBool("enable_pvp") ? on : off;
-			os << strgettext("- PvP: ") << pvp << "\n"
-					<< strgettext("- Public: ") << announced << "\n";
-			std::string server_name = g_settings->get("server_name");
-			str_formspec_escape(server_name);
-			if (announced == on && !server_name.empty())
-				os << strgettext("- Server Name: ") << server_name;
-
-		}
-	}
-	os << ";]";
+	os		<< "button_exit[0.3," << (ypos++) << ";3,0.5;btn_exit_os;"
+		<< strgettext("Exit to OS")   << "];";
 
 	/* Create menu */
 	/* Note: FormspecFormSource and LocalFormspecHandler  *
