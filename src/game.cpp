@@ -953,7 +953,7 @@ static inline void create_formspec_menu(GUIFormSpecMenu **cur_formspec,
 #ifdef __ANDROID__
 #define SIZE_TAG "size[11,5.5]"
 #else
-#define SIZE_TAG "size[3.5,6.5,true]" // Fixed size on desktop
+#define SIZE_TAG "size[3.5,7.5,true]" // Fixed size on desktop
 #endif
 
 /******************************************************************************/
@@ -4729,7 +4729,7 @@ void Game::showPauseMenu()
 	str_formspec_escape(control_text);
 #endif
 
-	float ypos = simple_singleplayer_mode ? 0.8f : 0.2f;
+	float ypos = 0.8f;
 	std::ostringstream os;
 
 	os << FORMSPEC_VERSION_STRING  << SIZE_TAG
@@ -4753,10 +4753,10 @@ void Game::showPauseMenu()
 	os		<< "button_exit[0.3," << (ypos++) << ";3,0.5;btn_key_config;"
 		<< strgettext("Change Keys")  << "]";
 #endif
-	//      os << "button_exit[4," << (ypos++) << ";3,0.5;btn_exit_menu;"
-	//	   << strgettext("Exit to Menu") << "]";
-	os		<< "button_exit[0.3," << (ypos++) << ";3,0.5;btn_exit_os;"
-		<< strgettext("Exit to OS")   << "];";
+	      os << "button_exit[0.3," << (ypos++) << ";3,0.5;btn_exit_menu;"
+		 << strgettext("Exit to Menu") << "]";
+	      os << "button_exit[0.3," << (ypos++) << ";3,0.5;btn_exit_os;"
+		 << strgettext("Exit to OS")   << "];";
 
 	/* Create menu */
 	/* Note: FormspecFormSource and LocalFormspecHandler  *
