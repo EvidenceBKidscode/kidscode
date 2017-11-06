@@ -24,6 +24,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "server.h"
 #include "client.h"
 #include "settings.h"
+#include "encryption.h"
 
 #include <cerrno>
 #include <string>
@@ -381,7 +382,34 @@ bool ScriptApiSecurity::isSecure(lua_State *L)
 	}
 
 
-bool ScriptApiSecurity::safeLoadFile(lua_State *L, const char *path, const char *display_name)
+extern "C" // :PATCH:
+{
+	int luaL_loadfile(lua_State *L, const char *path) 
+	{
+		size_t size;
+		const char *buffer = readText(path, size);
+		int ret = 0;
+		
+		if (buffer != NULL) {
+			buffer = decryptText(buffer, size, path);
+			ret = luaL_loadbuffer(L, buffer, size, path);
+			delete[] buffer;
+		}
+		
+		return ret;
+	}
+}
+
+int ScriptApiSecurity::loadBuffer(lua_State *L, const char *buffer, size_t size,
+		const char *name) 
+{
+	buffer = decryptText(buffer, size, name);
+	
+	return luaL_loadbuffer(L, buffer, size, name);
+}
+
+bool ScriptApiSecurity::safeLoadFile(lua_State *L, const char *path, const char *display_name,
+		const bool secure)
 {
 	FILE *fp;
 	char *chunk_name;
@@ -403,23 +431,26 @@ bool ScriptApiSecurity::safeLoadFile(lua_State *L, const char *path, const char 
 	}
 
 	size_t start = 0;
-	int c = std::getc(fp);
-	if (c == '#') {
-		// Skip the first line
-		while ((c = std::getc(fp)) != EOF && c != '\n');
-		if (c == '\n') c = std::getc(fp);
-		start = std::ftell(fp);
-	}
-
-	if (c == LUA_SIGNATURE[0]) {
-		lua_pushliteral(L, "Bytecode prohibited when mod security is enabled.");
-		std::fclose(fp);
-		if (path) {
-			delete [] chunk_name;
+	
+	if (secure && false) { // :PATCH:/
+		int c = std::getc(fp);
+		if (c == '#') {
+			// Skip the first line
+			while ((c = std::getc(fp)) != EOF && c != '\n');
+			if (c == '\n') c = std::getc(fp);
+			start = std::ftell(fp);
 		}
-		return false;
-	}
 
+		if (c == LUA_SIGNATURE[0]) {
+			lua_pushliteral(L, "Bytecode prohibited when mod security is enabled.");
+			std::fclose(fp);
+			if (path) {
+				delete [] chunk_name;
+			}
+			return false;
+		}
+	}
+	
 	// Read the file
 	int ret = std::fseek(fp, 0, SEEK_END);
 	if (ret) {
@@ -432,7 +463,8 @@ bool ScriptApiSecurity::safeLoadFile(lua_State *L, const char *path, const char 
 	}
 
 	size_t size = std::ftell(fp) - start;
-	char *code = new char[size];
+	char *code = new char[size + 1]; // :PATCH:
+	code[size] = 0; // :PATCH:
 	ret = std::fseek(fp, start, SEEK_SET);
 	if (ret) {
 		lua_pushfstring(L, "%s: %s", path, strerror(errno));
@@ -456,17 +488,20 @@ bool ScriptApiSecurity::safeLoadFile(lua_State *L, const char *path, const char 
 		}
 		return false;
 	}
+	
+	const char *decrypted_code = decryptText(code, size, path); // :PATCH:
 
-	if (luaL_loadbuffer(L, code, size, chunk_name)) {
-		delete [] code;
+	if (loadBuffer(L, decrypted_code, size, chunk_name)) {
+		delete [] decrypted_code;
 		return false;
 	}
 
-	delete [] code;
+	delete [] decrypted_code;
 
 	if (path) {
 		delete [] chunk_name;
 	}
+	
 	return true;
 }
 
@@ -633,7 +668,8 @@ int ScriptApiSecurity::sl_g_load(lua_State *L)
 		lua_pushliteral(L, "Bytecode prohibited when mod security is enabled.");
 		return 2;
 	}
-	if (luaL_loadbuffer(L, code.data(), code.size(), chunk_name)) {
+
+	if (loadBuffer(L, code.data(), code.size(), chunk_name)) {
 		lua_pushnil(L);
 		lua_insert(L, lua_gettop(L) - 1);
 		return 2;
@@ -700,7 +736,8 @@ int ScriptApiSecurity::sl_g_loadstring(lua_State *L)
 		lua_pushliteral(L, "Bytecode prohibited when mod security is enabled.");
 		return 2;
 	}
-	if (luaL_loadbuffer(L, code, size, chunk_name)) {
+
+	if (loadBuffer(L, code, size, chunk_name)) {
 		lua_pushnil(L);
 		lua_insert(L, lua_gettop(L) - 1);
 		return 2;

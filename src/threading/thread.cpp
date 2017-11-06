@@ -57,6 +57,48 @@ DEALINGS IN THE SOFTWARE.
 	#include <mach/thread_act.h>
 #endif
 
+// :PATCH::
+#if defined(_WIN32) 
+	std_mutex::std_mutex() :
+		locked(false)
+	{
+		InitializeCriticalSection(&criticalSection);
+	}
+	
+	std_mutex::~std_mutex()
+	{
+		DeleteCriticalSection(&criticalSection);
+	}
+
+	void std_mutex::lock()
+	{
+		bool waiting = true;
+		while (waiting) {
+			EnterCriticalSection(&criticalSection);            
+			if (!locked) {
+				locked = true;
+				waiting = false;
+			}
+			LeaveCriticalSection(&criticalSection);
+			if (waiting) sleep_ms(1);
+		}
+	}
+
+	void std_mutex::try_lock()
+	{
+		EnterCriticalSection(&criticalSection);
+		locked = true;
+		LeaveCriticalSection(&criticalSection);
+	}
+
+	void std_mutex::unlock()
+	{
+		EnterCriticalSection(&criticalSection);
+		locked = false;
+		LeaveCriticalSection(&criticalSection);
+	}
+#endif
+// ::PATCH:
 
 Thread::Thread(const std::string &name) :
 	m_name(name),
@@ -74,15 +116,14 @@ Thread::~Thread()
 	kill();
 
 	// Make sure start finished mutex is unlocked before it's destroyed
-	if (m_start_finished_mutex.try_lock())
-		m_start_finished_mutex.unlock();
-
+	m_start_finished_mutex.try_lock();
+	m_start_finished_mutex.unlock();
 }
 
 
 bool Thread::start()
 {
-	MutexAutoLock lock(m_mutex);
+	std_mutex_auto_lock lock(m_mutex);    // :PATCH:
 
 	if (m_running)
 		return false;
@@ -119,7 +160,7 @@ bool Thread::stop()
 
 bool Thread::wait()
 {
-	MutexAutoLock lock(m_mutex);
+	std_mutex_auto_lock lock(m_mutex);    // :PATCH:
 
 	if (!m_joinable)
 		return false;

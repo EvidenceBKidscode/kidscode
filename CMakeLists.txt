@@ -6,8 +6,13 @@ if(${CMAKE_VERSION} STREQUAL "2.8.2")
 endif()
 
 # This can be read from ${PROJECT_NAME} after project() is called
-project(kidscode)
-set(PROJECT_NAME_CAPITALIZED "Kidscode")
+if(APPLE) # :PATCH::
+	project(minetest)
+	set(PROJECT_NAME_CAPITALIZED "Minetest")
+else()
+	project(kidscode)
+	set(PROJECT_NAME_CAPITALIZED "Kidscode")
+endif() # ::PATCH:
 
 # Works only for cmake 3.1 and greater
 set(CMAKE_CXX_STANDARD 11)
@@ -105,6 +110,8 @@ elseif(UNIX) # Linux, BSD etc
 		set(LOCALEDIR "${CMAKE_INSTALL_PREFIX}/share/${PROJECT_NAME}/locale")
 	endif()
 endif()
+
+link_directories("${CMAKE_CURRENT_LIST_DIR}/lib/lua") # :PATCH:
 
 set(CUSTOM_SHAREDIR "" CACHE STRING "Directory to install data files into")
 if(NOT CUSTOM_SHAREDIR STREQUAL "")
@@ -271,7 +278,9 @@ if(DOXYGEN_FOUND)
 endif()
 
 
-if(BUILD_CLIENT)
-	set_target_properties(minetest PROPERTIES OUTPUT_NAME_DEBUG kidscode)
-	set_target_properties(minetest PROPERTIES OUTPUT_NAME_RELEASE kidscode)
-endif()
+if(NOT APPLE) # :PATCH::
+	if(BUILD_CLIENT)
+		set_target_properties(minetest PROPERTIES OUTPUT_NAME_DEBUG kidscode)
+		set_target_properties(minetest PROPERTIES OUTPUT_NAME_RELEASE kidscode)
+	endif()
+endif() # ::PATCH:
