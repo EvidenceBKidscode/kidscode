@@ -39,12 +39,13 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "log.h"
 #include "filesys.h"
 #include "gettext.h"
-#include "guiChatConsole.h"
-#include "guiFormSpecMenu.h"
-#include "guiKeyChangeMenu.h"
-//#include "guiPasswordChange.h"
-#include "guiVolumeChange.h"
-#include "mainmenumanager.h"
+#include "gui/guiChatConsole.h"
+#include "gui/guiComboBox.h"
+#include "gui/guiFormSpecMenu.h"
+#include "gui/guiKeyChangeMenu.h"
+#include "gui/guiListBox.h"
+#include "gui/guiVolumeChange.h"
+#include "gui/mainmenumanager.h"
 #include "mapblock.h"
 #include "minimap.h"
 #include "nodedef.h"         // Needed for determining pointing to nodes
@@ -1659,6 +1660,8 @@ bool Game::startup(bool *kill,
 	if (!createClient(playername, password, address, port))
 		return false;
 
+	RenderingEngine::initialize(client, hud);
+
 	return true;
 }
 
@@ -1748,6 +1751,7 @@ void Game::run()
 
 void Game::shutdown()
 {
+	RenderingEngine::finalize();
 #if IRRLICHT_VERSION_MAJOR == 1 && IRRLICHT_VERSION_MINOR <= 8
 	if (g_settings->get("3d_mode") == "pageflip") {
 		driver->setRenderTarget(irr::video::ERT_STEREO_BOTH_BUFFERS);
@@ -4345,9 +4349,20 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 	TimeTaker tt_draw("mainloop: draw");
 	driver->beginScene(true, true, skycolor);
 
-	RenderingEngine::draw_scene(camera, client, player, hud, mapper,
-			guienv, screensize, skycolor, flags.show_hud,
-			flags.show_minimap);
+	bool draw_wield_tool = (flags.show_hud &&
+			(player->hud_flags & HUD_FLAG_WIELDITEM_VISIBLE) &&
+			(camera->getCameraMode() == CAMERA_MODE_FIRST));
+	bool draw_crosshair = (
+			(player->hud_flags & HUD_FLAG_CROSSHAIR_VISIBLE) &&
+			(camera->getCameraMode() != CAMERA_MODE_THIRD_FRONT));
+#ifdef HAVE_TOUCHSCREENGUI
+	try {
+		draw_crosshair = !g_settings->getBool("touchtarget");
+	} catch (SettingNotFoundException) {
+	}
+#endif
+	RenderingEngine::draw_scene(skycolor, flags.show_hud, flags.show_minimap,
+			draw_wield_tool, draw_crosshair);
 
 	/*
 		Profiler graph
@@ -4408,7 +4423,7 @@ inline static const char *yawToDirectionString(int yaw)
 
 void Game::updateGui(const RunStats &stats, f32 dtime, const CameraOrientation &cam)
 {
-	v2u32 screensize = driver->getScreenSize();
+	v2u32 screensize = RenderingEngine::get_instance()->getWindowSize();
 	LocalPlayer *player = client->getEnv().getLocalPlayer();
 	v3f player_position = player->getPosition();
 

@@ -214,7 +214,8 @@ when registering it.
 
 The `:` prefix can also be used for maintaining backwards compatibility.
 
-### Aliases
+Aliases
+-------
 Aliases can be added by using `minetest.register_alias(name, convert_to)` or
 `minetest.register_alias_force(name, convert_to)`.
 
@@ -234,6 +235,75 @@ you have an item called `epiclylongmodname:stuff`, you could do
     minetest.register_alias("stuff", "epiclylongmodname:stuff")
 
 and be able to use `/giveme stuff`.
+
+Mapgen aliases
+--------------
+In a game, a certain number of these must be set to tell core mapgens which
+of the game's nodes are to be used by the core mapgens. For example:
+
+    minetest.register_alias("mapgen_stone", "default:stone")
+
+### Aliases needed for all mapgens except Mapgen v6
+
+Base terrain:
+
+"mapgen_stone"
+"mapgen_water_source"
+"mapgen_river_water_source"
+
+Caves:
+
+"mapgen_lava_source"
+
+Dungeons:
+
+Only needed for registered biomes where 'node_stone' is stone:
+"mapgen_cobble"
+"mapgen_stair_cobble"
+"mapgen_mossycobble"
+Only needed for registered biomes where 'node_stone' is desert stone:
+"mapgen_desert_stone"
+"mapgen_stair_desert_stone"
+Only needed for registered biomes where 'node_stone' is sandstone:
+"mapgen_sandstone"
+"mapgen_sandstonebrick"
+"mapgen_stair_sandstone_block"
+
+### Aliases needed for Mapgen v6
+
+Terrain and biomes:
+
+"mapgen_stone"
+"mapgen_water_source"
+"mapgen_lava_source"
+"mapgen_dirt"
+"mapgen_dirt_with_grass"
+"mapgen_sand"
+"mapgen_gravel"
+"mapgen_desert_stone"
+"mapgen_desert_sand"
+"mapgen_dirt_with_snow"
+"mapgen_snowblock"
+"mapgen_snow"
+"mapgen_ice"
+
+Flora:
+
+"mapgen_tree"
+"mapgen_leaves"
+"mapgen_apple"
+"mapgen_jungletree"
+"mapgen_jungleleaves"
+"mapgen_junglegrass"
+"mapgen_pine_tree"
+"mapgen_pine_needles"
+
+Dungeons:
+
+"mapgen_cobble"
+"mapgen_stair_cobble"
+"mapgen_mossycobble"
+"mapgen_stair_desert_stone"
 
 Textures
 --------
@@ -2417,6 +2487,10 @@ Strings that need to be translated can contain several escapes, preceded by `@`.
       * nil: return all entries,
       * true: return only subdirectory names, or
       * false: return only file names.
+* `minetest.safe_file_write(path, content)`: returns boolean indicating success
+    * Replaces contents of file at path with new contents in a safe (atomic) way.
+      Use this instead of below code when writing e.g. database files:
+      `local f = io.open(path, "wb"); f:write(content); f:close()`
 * `minetest.get_version()`: returns a table containing components of the
    engine version.  Components:
     * `project`: Name of the project, eg, "Minetest"
@@ -2450,6 +2524,8 @@ Call these functions only at load time!
 * `minetest.register_craftitem(name, item definition)`
 * `minetest.unregister_item(name)`
 * `minetest.register_alias(name, convert_to)`
+    * Also use this to set the 'mapgen aliases' needed in a game for the core
+    * mapgens. See 'Mapgen aliases' section above.
 * `minetest.register_alias_force(name, convert_to)`
 * `minetest.register_craft(recipe)`
     * Check recipe table syntax for different types below.
@@ -4271,6 +4347,8 @@ Definition tables
     --  ^ For players only. Defaults to `minetest.PLAYER_MAX_BREATH_DEFAULT`
         can_zoom = true,
     --  ^ For players only. Enables the zoom feature. Defaults to true
+        eye_height = 1.625,
+    --  ^ For players only. Camera height above feet position in nodes. Defaults to 1.625
         physical = true,
         collide_with_objects = true, -- collide with other objects if physical = true
         weight = 5,
@@ -4298,15 +4376,16 @@ Definition tables
         backface_culling = true, -- false to disable backface_culling for model
         glow = 0,
     --  ^ Add this much extra lighting when calculating texture color.
-          value < 0 disables light's effect on texture color.
-          For faking self-lighting, UI style entities, or programmatic coloring in mods.
+    --    Value < 0 disables light's effect on texture color.
+    --    For faking self-lighting, UI style entities, or programmatic coloring in mods.
         nametag = "", -- by default empty, for players their name is shown if empty
         nametag_color = <color>, -- sets color of nametag as ColorSpec
         infotext = "", -- by default empty, text to be shown when pointed at object
         static_save = true,
-    --  ^ If false, never save this object statically. It will simply be deleted when the block gets unloaded.
-    --  ^ The get_staticdata() callback is never called then.
-    --  ^ Defaults to 'true'
+    --  ^ If false, never save this object statically. It will simply be deleted when the
+    --    block gets unloaded.
+    --    The get_staticdata() callback is never called then.
+    --    Defaults to 'true'
     }
 
 ### Entity definition (`register_entity`)
