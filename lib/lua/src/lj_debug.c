@@ -348,9 +348,12 @@ void lj_debug_shortname(char *out, GCstr *str)
       if (((const unsigned char *)src)[len] < ' ') break;
     strcpy(out, "[string \""); out += 9;
     if (src[len] != '\0') {  /* Must truncate? */
-      if (len > LUA_IDSIZE-15) len = LUA_IDSIZE-15;
-      strncpy(out, src, len); out += len;
+      if (len > LUA_IDSIZE-15) {
+		src += len - (LUA_IDSIZE-15);
+		len = LUA_IDSIZE-15;
+	  }
       strcpy(out, "..."); out += 3;
+      strncpy(out, src, len); out += len;
     } else {
       strcpy(out, src); out += len;
     }
