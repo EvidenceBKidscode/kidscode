@@ -203,8 +203,9 @@ void luaO_chunkid (char *out, const char *source, size_t bufflen) {
       if (len > bufflen) len = bufflen;
       strcpy(out, "[string \"");
       if (source[len] != '\0') {  /* must truncate? */
-        strncat(out, source, len);
+        source += (len-bufflen);
         strcat(out, "...");
+        strncat(out, source, len);
       }
       else
         strcat(out, source);
