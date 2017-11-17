@@ -648,7 +648,11 @@ std::vector<std::basic_string<T> > split(const std::basic_string<T> &s, T delim)
 	return tokens;
 }
 
-std::wstring translate_string(const std::wstring &s);
+std::wstring translate_string(const std::wstring &s); // :PATCH:
+
+void fix_string(std::wstring &s); // :PATCH:
+
+std::wstring fix_string(const std::wstring &s);
 
 inline std::wstring unescape_translate(const std::wstring &s) {
 	return unescape_enriched(translate_string(s));

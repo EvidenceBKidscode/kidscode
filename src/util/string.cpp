@@ -942,3 +942,60 @@ std::wstring translate_string(const std::wstring &s) {
 	translate_all(s, i, res);
 	return res;
 }
+
+void fix_string(std::wstring &s) { // :PATCH:
+	int l = s.size();
+	int j = 0;
+	for (int i = 0; i < l; ++i)
+	{
+		unsigned c = s[i];
+		if (c >= 0xc3 && i+1 < l) {
+			unsigned c2 = s[i+1];
+			if (c2 >= 0xA0 && c2 <= 0xBF) {
+				// lowercase letters
+				c = c2 + 0x40;
+			} else {
+				// uppercase letters
+				switch (c2) {
+					case 0x20AC : c = 0xC0; break; // À
+					case 0x81 : c = 0xC1; break; // Á
+					case 0x201A : c = 0xC2; break; // Â
+					case 0x192 : c = 0xC3; break; // Ã
+					case 0x201E : c = 0xC4; break; // Ä
+					case 0x2026 : c = 0xC5; break; // Å
+					case 0x2020 : c = 0xC6; break; // Æ
+					case 0x2021 : c = 0xC7; break; // Ç
+					case 0x2C6 : c = 0xC8; break; // È
+					case 0x2030 : c = 0xC9; break; // É
+					case 0x160 : c = 0xCA; break; // Ê
+					case 0x2039 : c = 0xCB; break; // Ë
+					case 0x152 : c = 0xCC; break; // Ì
+					case 0x8D : c = 0xCD; break; // Í
+					case 0x17D : c = 0xCE; break; // Î
+					case 0x8F : c = 0xCF; break; // Ï
+					case 0x2018 : c = 0xD1; break; // Ñ
+					case 0x2019 : c = 0xD2; break; // Ò
+					case 0x201C : c = 0xD3; break; // Ó
+					case 0x201D : c = 0xD4; break; // Ô
+					case 0x2022 : c = 0xD5; break; // Õ
+					case 0x2013 : c = 0xD6; break; // Ö
+					case 0x2122 : c = 0xD9; break; // Ù
+					case 0x161 : c = 0xDA; break; // Ú
+					case 0x203A : c = 0xDB; break; // Û
+					case 0x153 : c = 0xDC; break; // Ü
+					case 0x9D : c = 0xDD; break; // Ý
+					default : c='?';
+				}
+			}
+			++i;
+		}
+		s[j++]=c;
+	}
+	s.resize(j);
+}
+
+std::wstring fix_string(const std::wstring &s) { // :PATCH:
+	std::wstring res(s);
+	fix_string(res);
+	return res;
+}

@@ -986,10 +986,10 @@ static void updateChat(Client &client, f32 dtime, bool show_debug,
 	// Display all messages in a static text element
 	unsigned int recent_chat_count = chat_backend.getRecentBuffer().getLineCount();
 	EnrichedString recent_chat     = chat_backend.getRecentChat();
-	EnrichedString recent_chat_fixed(recent_chat.getFixedString()); // :PATCH:
+	recent_chat.fix();
 	unsigned int line_height       = g_fontengine->getLineHeight();
 
-	setStaticText(guitext_chat, recent_chat_fixed);
+	setStaticText(guitext_chat, recent_chat);
 
 	// Update gui element size and position
 	s32 chat_y = 5;
@@ -999,7 +999,7 @@ static void updateChat(Client &client, f32 dtime, bool show_debug,
 
 	// first pass to calculate height of text to be set
 	const v2u32 &window_size = RenderingEngine::get_instance()->getWindowSize();
-	s32 width = std::min(g_fontengine->getTextWidth(recent_chat_fixed.c_str()) + 10,
+	s32 width = std::min(g_fontengine->getTextWidth(recent_chat.c_str()) + 10,
 			window_size.X - 20);
 	core::rect<s32> rect(10, chat_y, width, chat_y + window_size.Y);
 	guitext_chat->setRelativePosition(rect);
