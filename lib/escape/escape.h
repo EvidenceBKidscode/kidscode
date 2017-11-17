@@ -9,7 +9,7 @@
 
 #define ESCAPE_CHAR '\\'
 
-std::string getEncodedName(std::string name)
+static inline std::string getEncodedName(std::string name)
 {
 	size_t l = name.length();
 	const char *str = name.c_str();
@@ -33,7 +33,7 @@ std::string getEncodedName(std::string name)
 	return encoded_name;
 }
 
-std::string getDecodedName(std::string name)
+static inline std::string getDecodedName(std::string name)
 {
 	size_t l = name.length();
 	const char *str = name.c_str();
