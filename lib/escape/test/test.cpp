@@ -11,7 +11,7 @@ int main()
 	std::cout << encoded_name << std::endl;
 	
 	std::string decoded_name = getDecodedName(encoded_name);
-	std::cout << name << std::endl;
+	std::cout << decoded_name << std::endl;
 	
 	assert(decoded_name == name);
 	
