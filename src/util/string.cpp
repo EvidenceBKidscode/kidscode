@@ -467,24 +467,24 @@ u64 read_seed(const char *str)
 	return num;
 }
 
-void parseTextString(const std::string &value, std::string &text, std::string &params, 
+void parseTextString(const std::string &value, std::string &text, std::string &params,
 		const char sep, const char esc)
 {
 	u32 i;
 	for (i = 0; i < value.length(); ++i) {
 		char c = value[i];
-		
+
 		if (c == esc)
 			++i;
 		else if (c == sep)
 			break;
 	}
-	
+
 	if (i + 1 < value.length())
 		params = value.substr(i + 1);
 	else
 		params = "";
-		
+
 	text = value.substr(0, i);
 }
 
@@ -833,4 +833,71 @@ irr::core::stringw strtostrw(const std::string &str)
 
 	text[size] = L'\0';
 	return text;
+}
+
+void fix_accented_characters(std::wstring &s,
+	std::vector<irr::video::SColor> *colors) { // :PATCH:
+	int l = s.size();
+	int nl = 0;
+	for (int i = 0; i < l; ++i, ++nl) {
+		if (colors)
+			(*colors)[nl] = (*colors)[i];
+
+		unsigned c = s[i];
+		if (c >= 0xc3 && i+1 < l) {
+			unsigned nc = 0;
+			unsigned c2 = s[i+1];
+			if (c2 >= 0x80 && c2 <= 0xBF) {
+				// lowercase letters
+				nc = c2 + 0x40;
+			} else {
+				// uppercase letters
+				switch (c2) {
+					case 0x20AC : nc = 0xC0; break; // À
+					case 0x201A : nc = 0xC2; break; // Â
+					case 0x192 : nc = 0xC3; break; // Ã
+					case 0x201E : nc = 0xC4; break; // Ä
+					case 0x2026 : nc = 0xC5; break; // Å
+					case 0x2020 : nc = 0xC6; break; // Æ
+					case 0x2021 : nc = 0xC7; break; // Ç
+					case 0x2C6 : nc = 0xC8; break; // È
+					case 0x2030 : nc = 0xC9; break; // É
+					case 0x160 : nc = 0xCA; break; // Ê
+					case 0x2039 : nc = 0xCB; break; // Ë
+					case 0x152 : nc = 0xCC; break; // Ì
+					case 0x17D : nc = 0xCE; break; // Î
+					case 0x2018 : nc = 0xD1; break; // Ñ
+					case 0x2019 : nc = 0xD2; break; // Ò
+					case 0x201C : nc = 0xD3; break; // Ó
+					case 0x201D : nc = 0xD4; break; // Ô
+					case 0x2022 : nc = 0xD5; break; // Õ
+					case 0x2013 : nc = 0xD6; break; // Ö
+					case 0x2122 : nc = 0xD9; break; // Ù
+					case 0x161 : nc = 0xDA; break; // Ú
+					case 0x203A : nc = 0xDB; break; // Û
+					case 0x153 : nc = 0xDC; break; // Ü
+				}
+			}
+			if (nc) {
+				s[nl]=nc;
+				++i;
+			}
+			else {
+				s[nl]=c;
+			}
+		} else {
+			s[nl]=c;
+		}
+	}
+
+	s.resize(nl);
+
+	if (colors)
+		colors->resize(nl);
+}
+
+std::wstring fix_string(const std::wstring &s) { // :PATCH:
+	std::wstring res(s);
+	fix_accented_characters(res, 0);
+	return res;
 }

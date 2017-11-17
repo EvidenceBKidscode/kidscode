@@ -50,6 +50,9 @@ public:
 	const wchar_t *c_str() const;
 	const std::vector<irr::video::SColor> &getColors() const;
 	const std::wstring &getString() const;
+	const std::wstring getFixedString() const; // :PATCH:
+	const EnrichedString getFixedEnrichedString() const; // :PATCH:
+	void fix(); // :PATCH:
 	inline bool operator==(const EnrichedString &other) const
 	{
 		return (m_string == other.m_string && m_colors == other.m_colors);
