@@ -186,8 +186,8 @@ size_t Decoration::placeDeco(Mapgen *mg, u32 blockseed, v3s16 nmin, v3s16 nmax)
 
 				// Get all floors and ceilings in node column
 				u16 size = (nmax.Y - nmin.Y + 1) / 2;
-				s16 floors[size];
-				s16 ceilings[size];
+				s16 *floors = new s16[size]; // :PATCH:
+				s16 *ceilings = new s16[size]; // :PATCH:
 				u16 num_floors = 0;
 				u16 num_ceilings = 0;
 
@@ -207,6 +207,9 @@ size_t Decoration::placeDeco(Mapgen *mg, u32 blockseed, v3s16 nmin, v3s16 nmax)
 									GENNOTIFY_DECORATION, pos, index);
 					}
 				}
+
+				delete[] floors; // :PATCH:
+				delete[] ceilings; // :PATCH:
 
 				if ((flags & DECO_ALL_CEILINGS) && num_ceilings > 0) {
 					// Ceiling decorations
