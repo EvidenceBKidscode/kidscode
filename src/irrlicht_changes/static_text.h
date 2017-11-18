@@ -217,9 +217,9 @@ inline void setStaticText(irr::gui::IGUIStaticText *static_text, const EnrichedS
 	// without rtti support in irrlicht
 	if (static_text->hasType(irr::gui::EGUIET_ENRICHED_STATIC_TEXT)) {
 		irr::gui::StaticText* stext = static_cast<irr::gui::StaticText*>(static_text);
-		stext->setText(text);
+		stext->setText(text.getFixedEnrichedString()); // :PATCH:
 	} else {
-		static_text->setText(text.c_str());
+		static_text->setText(text.getFixedString().c_str()); // :PATCH:
 	}
 }
 
@@ -235,12 +235,12 @@ inline irr::gui::IGUIStaticText *addStaticText(
 		s32 id = -1,
 		bool fillBackground = false)
 {
-	return guienv->addStaticText(text.c_str(), rectangle, border, wordWrap, parent, id, fillBackground);
+	return guienv->addStaticText(text.getFixedString().c_str(), rectangle, border, wordWrap, parent, id, fillBackground); // :PATCH:
 }
 
 inline void setStaticText(irr::gui::IGUIStaticText *static_text, const EnrichedString &text)
 {
-	static_text->setText(text.c_str());
+	static_text->setText(text.getFixedString().c_str()); // :PATCH:
 }
 
 #endif

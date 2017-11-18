@@ -650,7 +650,7 @@ std::vector<std::basic_string<T> > split(const std::basic_string<T> &s, T delim)
 
 std::wstring translate_string(const std::wstring &s); // :PATCH:
 
-void fix_string(std::wstring &s); // :PATCH:
+void fix_accented_characters(std::wstring &s); // :PATCH:
 
 std::wstring fix_string(const std::wstring &s);
 

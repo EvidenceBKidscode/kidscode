@@ -986,7 +986,6 @@ static void updateChat(Client &client, f32 dtime, bool show_debug,
 	// Display all messages in a static text element
 	unsigned int recent_chat_count = chat_backend.getRecentBuffer().getLineCount();
 	EnrichedString recent_chat     = chat_backend.getRecentChat();
-	recent_chat.fix();
 	unsigned int line_height       = g_fontengine->getLineHeight();
 
 	setStaticText(guitext_chat, recent_chat);
