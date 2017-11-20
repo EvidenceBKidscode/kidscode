@@ -946,8 +946,8 @@ std::wstring translate_string(const std::wstring &s) {
 void fix_accented_characters(std::wstring &s) { // :PATCH:
 	#ifdef _WIN32
 		int l = s.size();
-		int j = 0;
-		for (int i = 0; i < l; ++i, ++j) {
+		int nl = 0;
+		for (int i = 0; i < l; ++i, ++nl) {
 			unsigned c = s[i];
 			if (c >= 0xc3 && i+1 < l) {
 				unsigned nc = 0;
@@ -984,18 +984,17 @@ void fix_accented_characters(std::wstring &s) { // :PATCH:
 					}
 				}
 				if (nc) {
-					s[j]=nc;
+					s[nl]=nc;
 					++i;
 				}
 				else
-					s[j]=c;
+					s[nl]=c;
 			} else {
-				s[j]=c;
+				s[nl]=c;
 			}
 		}
 
-		if (j != s.size())
-			s.resize(j);
+		s.resize(nl);
 	#endif
 }
 
