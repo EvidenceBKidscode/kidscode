@@ -300,11 +300,11 @@ inline std::string trim(const std::string &str)
 {
 	size_t front = 0;
 
-	while (std::isspace(str[front]))
+	while (std::isspace((unsigned char)str[front]))
 		++front;
 
 	size_t back = str.size();
-	while (back > front && std::isspace(str[back - 1]))
+	while (back > front && std::isspace((unsigned char)str[back - 1]))
 		--back;
 
 	return str.substr(front, back - front);
