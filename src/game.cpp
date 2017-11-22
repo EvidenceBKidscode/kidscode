@@ -3069,7 +3069,14 @@ void Game::updateCameraOrientation(CameraOrientation *cam, float dtime)
 #endif
 
 		s32 dx = input->getMousePos().X - (driver->getScreenSize().Width / 2);
+
+		if (abs(dx) < 2) // :PATCH:
+			dx = 0;
+			
 		s32 dy = input->getMousePos().Y - (driver->getScreenSize().Height / 2);
+
+		if (abs(dy) < 2) // :PATCH:
+			dy = 0;
 
 		if (m_invert_mouse || camera->getCameraMode() == CAMERA_MODE_THIRD_FRONT) {
 			dy = -dy;
