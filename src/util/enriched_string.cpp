@@ -31,7 +31,8 @@ EnrichedString::EnrichedString(const std::wstring &string,
 		const std::vector<SColor> &colors):
 	m_string(string),
 	m_colors(colors)
-{}
+{
+}
 
 EnrichedString::EnrichedString(const std::wstring &s, const SColor &color)
 {
@@ -162,4 +163,29 @@ const std::vector<SColor> &EnrichedString::getColors() const
 const std::wstring &EnrichedString::getString() const
 {
 	return m_string;
+}
+
+const std::wstring EnrichedString::getFixedString() const // :PATCH:
+{
+	#ifdef _WIN32
+		return fix_string(m_string);
+	#else
+		return m_string;
+	#endif
+}
+
+const EnrichedString EnrichedString::getFixedEnrichedString() const // :PATCH:
+{
+	#ifdef _WIN32
+		return EnrichedString(getFixedString());
+	#else
+		return *this;
+	#endif
+}
+
+void EnrichedString::fix() // :PATCH:
+{
+	#ifdef _WIN32
+		fix_accented_characters(m_string);
+	#endif
 }
