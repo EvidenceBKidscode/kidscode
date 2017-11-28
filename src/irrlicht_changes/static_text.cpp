@@ -45,8 +45,8 @@ StaticText::StaticText(const EnrichedString &text, bool border,
 	setDebugName("StaticText");
 	#endif
 
-	Text = text.c_str();
-	cText = text;
+	cText = text.getFixedEnrichedString(); // :PATCH:
+	Text = cText.c_str(); // :PATCH:
 	if (environment && environment->getSkin())
 	{
 		BGColor = environment->getSkin()->getColor(gui::EGDC_3D_FACE);

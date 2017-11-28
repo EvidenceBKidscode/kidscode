@@ -300,11 +300,11 @@ inline std::string trim(const std::string &str)
 {
 	size_t front = 0;
 
-	while (std::isspace(str[front]))
+	while (std::isspace((unsigned char)str[front]))
 		++front;
 
 	size_t back = str.size();
-	while (back > front && std::isspace(str[back - 1]))
+	while (back > front && std::isspace((unsigned char)str[back - 1]))
 		--back;
 
 	return str.substr(front, back - front);
@@ -648,7 +648,11 @@ std::vector<std::basic_string<T> > split(const std::basic_string<T> &s, T delim)
 	return tokens;
 }
 
-std::wstring translate_string(const std::wstring &s);
+std::wstring translate_string(const std::wstring &s); // :PATCH:
+
+void fix_accented_characters(std::wstring &s); // :PATCH:
+
+std::wstring fix_string(const std::wstring &s);
 
 inline std::wstring unescape_translate(const std::wstring &s) {
 	return unescape_enriched(translate_string(s));

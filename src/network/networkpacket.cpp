@@ -59,11 +59,11 @@ void NetworkPacket::putRawPacket(u8 *data, u32 datasize, session_t peer_id)
 	m_datasize = datasize - 2;
 	m_peer_id = peer_id;
 
-	m_data.resize(m_datasize);
-
 	// split command and datas
 	m_command = readU16(&data[0]);
-	memcpy(&m_data[0], &data[2], m_datasize);
+	m_data.resize(m_datasize); // :PATCH:
+	if (m_datasize > 0) // :PATCH:
+		memcpy(&m_data[0], &data[2], m_datasize);
 }
 
 const char* NetworkPacket::getString(u32 from_offset)

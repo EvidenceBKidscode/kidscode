@@ -110,11 +110,11 @@ const v3s16 g_27dirs[27] =
 	v3s16(0,0,0),
 };
 
-constexpr const u8 wallmounted_to_facedir[6] = {
+const u8 wallmounted_to_facedir[6] = {
 	20,
 	0,
-	16 + 1,
-	12 + 3,
+	17, // :PATCH: 16 + 1,
+	15, // :PATCH: 12 + 3,
 	8,
-	4 + 2
+	6 // :PATCH: 4 + 2
 };
