@@ -172,10 +172,36 @@ struct LocalFormspecHandler : public TextDest
 
 			if (fields.find("sbr_mouse_sensitivity") != fields.end()) {
 				float val = 0.0f;
-				for (auto &v : fields)
-					val = stof(v.second.substr(v.second.find(":") + 1, -1)) * 0.002f;
+				for (auto &v : fields) {
+					if (v.first == "sbr_mouse_sensitivity") {
+						val = stof(v.second.substr(v.second.find(":") + 1, -1)) * 0.002f;
+						g_settings->setFloat("mouse_sensitivity", val);
+						break;
+					}
+				}
+			}
 
-				g_settings->setFloat("mouse_sensitivity", val);
+			if (fields.find("sbr_gui_scaling") != fields.end()) {
+				float val = 0.0f;
+				for (auto &v : fields) {
+					if (v.first == "sbr_gui_scaling") {
+						val = stof(v.second.substr(v.second.find(":") + 1, -1)) * 0.002f;
+						g_settings->setFloat("gui_scaling", val);
+						break;
+					}
+				}
+			}
+
+			if (fields.find("sbr_viewing_range") != fields.end()) {
+				float val = 0.0f;
+				for (auto &v : fields) {
+					if (v.first == "sbr_viewing_range") {
+						val = (stof(v.second.substr(v.second.find(":") + 1, -1)) * 100.0f) / 250.0f;
+						std::cout << val << std::endl;
+						g_settings->setFloat("viewing_range", val);
+						break;
+					}
+				}
 			}
 		}
 
@@ -954,7 +980,7 @@ static inline void create_formspec_menu(GUIFormSpecMenu **cur_formspec,
 #ifdef __ANDROID__
 #define SIZE_TAG "size[11,5.5]"
 #else
-#define SIZE_TAG "size[3.5,7.5,true]" // Fixed size on desktop
+#define SIZE_TAG "size[3.6,9.5,true]" // Fixed size on desktop
 #endif
 
 /******************************************************************************/
@@ -4754,18 +4780,44 @@ void Game::showPauseMenu()
 	float ypos = 0.8f;
 	std::ostringstream os;
 
-	os << FORMSPEC_VERSION_STRING  << SIZE_TAG
-	   << "label[0.3," << ypos + 0.3f << ";" << strgettext("Mouse sensitivity") << "]";
+	os << FORMSPEC_VERSION_STRING << SIZE_TAG;
 
-	ypos++;
+	ypos+=0.2f;
 
+	os << "button_exit[0.3," << (ypos++) << ";3,0.5;btn_continue;"
+	   << strgettext("Continue") << "]";
+
+
+
+
+	os << "label[0.3," << ypos << ";" << strgettext("Mouse sensitivity") << "]";
+	ypos+=0.5f;
 	std::string mouse_sensitivity = std::to_string(g_settings->getFloat("mouse_sensitivity") * 500.0f);
 
 	os << "scrollbar[0.3," << (ypos++) <<
 	      ";2.8,0.6;horizontal;sbr_mouse_sensitivity;" << mouse_sensitivity << "]";
 
-	os << "button_exit[0.3," << (ypos++) << ";3,0.5;btn_continue;"
-	   << strgettext("Continue") << "]";
+
+
+
+	os << "label[0.3," << (ypos-=0.2f) << ";" << strgettext("Viewing range") << "]";
+	ypos+=0.5f;
+	std::string viewing_range = std::to_string((g_settings->getFloat("viewing_range") / 100.0f) * 250.0f);
+
+	os << "scrollbar[0.3," << (ypos++) <<
+	      ";2.8,0.6;horizontal;sbr_viewing_range;" << viewing_range << "]";
+
+
+
+
+	os << "label[0.3," << (ypos-=0.2f) << ";" << strgettext("GUI scaling") << "]";
+	ypos+=0.5f;
+	std::string gui_scaling = std::to_string(g_settings->getFloat("gui_scaling") * 500.0f);
+
+	os << "scrollbar[0.3," << (ypos++) <<
+	      ";2.8,0.6;horizontal;sbr_gui_scaling;" << gui_scaling << "]";
+
+
 
 	os << "field[0.8,0;5,1.5;;" << strgettext("Game paused") << ";]";
 
