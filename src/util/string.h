@@ -29,6 +29,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <iomanip>
 #include <cctype>
 #include <unordered_map>
+#include <SColor.h>
 
 #define STRINGIFY(x) #x
 #define TOSTRING(x) STRINGIFY(x)
@@ -650,7 +651,8 @@ std::vector<std::basic_string<T> > split(const std::basic_string<T> &s, T delim)
 
 std::wstring translate_string(const std::wstring &s); // :PATCH:
 
-void fix_accented_characters(std::wstring &s); // :PATCH:
+void fix_accented_characters(std::wstring &s,
+	std::vector<irr::video::SColor> *colors); // :PATCH:
 
 std::wstring fix_string(const std::wstring &s);
 

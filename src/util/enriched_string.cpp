@@ -167,15 +167,17 @@ const std::wstring &EnrichedString::getString() const
 
 const std::wstring EnrichedString::getFixedString() const // :PATCH:
 {
-    return fix_string(m_string);
+	return fix_string(m_string);
 }
 
 const EnrichedString EnrichedString::getFixedEnrichedString() const // :PATCH:
 {
-    return EnrichedString(getFixedString());
+	EnrichedString s(*this);
+	s.fix();
+	return s;
 }
 
 void EnrichedString::fix() // :PATCH:
 {
-    fix_accented_characters(m_string);
+	fix_accented_characters(m_string, &m_colors);
 }
