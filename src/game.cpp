@@ -197,7 +197,6 @@ struct LocalFormspecHandler : public TextDest
 				for (auto &v : fields) {
 					if (v.first == "sbr_viewing_range") {
 						val = (stof(v.second.substr(v.second.find(":") + 1, -1)) * 100.0f) / 250.0f;
-						std::cout << val << std::endl;
 						g_settings->setFloat("viewing_range", val);
 						break;
 					}
@@ -4782,42 +4781,25 @@ void Game::showPauseMenu()
 
 	os << FORMSPEC_VERSION_STRING << SIZE_TAG;
 
-	ypos+=0.2f;
+	ypos += 0.2f;
 
 	os << "button_exit[0.3," << (ypos++) << ";3,0.5;btn_continue;"
 	   << strgettext("Continue") << "]";
 
-
-
-
 	os << "label[0.3," << ypos << ";" << strgettext("Mouse sensitivity") << "]";
-	ypos+=0.5f;
+	ypos += 0.5f;
 	std::string mouse_sensitivity = std::to_string(g_settings->getFloat("mouse_sensitivity") * 500.0f);
+	os << "scrollbar[0.3," << (ypos++) << ";2.8,0.6;horizontal;sbr_mouse_sensitivity;" << mouse_sensitivity << "]";
 
-	os << "scrollbar[0.3," << (ypos++) <<
-	      ";2.8,0.6;horizontal;sbr_mouse_sensitivity;" << mouse_sensitivity << "]";
-
-
-
-
-	os << "label[0.3," << (ypos-=0.2f) << ";" << strgettext("Viewing range") << "]";
-	ypos+=0.5f;
+	os << "label[0.3," << (ypos -= 0.2f) << ";" << strgettext("Viewing range") << "]";
+	ypos += 0.5f;
 	std::string viewing_range = std::to_string((g_settings->getFloat("viewing_range") / 100.0f) * 250.0f);
+	os << "scrollbar[0.3," << (ypos++) << ";2.8,0.6;horizontal;sbr_viewing_range;" << viewing_range << "]";
 
-	os << "scrollbar[0.3," << (ypos++) <<
-	      ";2.8,0.6;horizontal;sbr_viewing_range;" << viewing_range << "]";
-
-
-
-
-	os << "label[0.3," << (ypos-=0.2f) << ";" << strgettext("GUI scaling") << "]";
-	ypos+=0.5f;
+	os << "label[0.3," << (ypos -= 0.2f) << ";" << strgettext("GUI scaling") << "]";
+	ypos += 0.5f;
 	std::string gui_scaling = std::to_string(g_settings->getFloat("gui_scaling") * 500.0f);
-
-	os << "scrollbar[0.3," << (ypos++) <<
-	      ";2.8,0.6;horizontal;sbr_gui_scaling;" << gui_scaling << "]";
-
-
+	os << "scrollbar[0.3," << (ypos++) << ";2.8,0.6;horizontal;sbr_gui_scaling;" << gui_scaling << "]";
 
 	os << "field[0.8,0;5,1.5;;" << strgettext("Game paused") << ";]";
 
