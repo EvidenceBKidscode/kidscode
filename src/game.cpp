@@ -1507,6 +1507,8 @@ private:
 	bool m_cache_enable_noclip;
 	bool m_cache_enable_free_move;
 	f32  m_cache_mouse_sensitivity;
+	f32  m_cache_mouse_dampening_influence;
+	f32  m_cache_mouse_dampening_speed;
 	f32  m_cache_joystick_frustum_sensitivity;
 	f32  m_repeat_right_click_time;
 	f32  m_cache_cam_smoothing;
@@ -1556,6 +1558,10 @@ Game::Game() :
 	g_settings->registerChangedCallback("enable_fog",
 		&settingChangedCallback, this);
 	g_settings->registerChangedCallback("mouse_sensitivity",
+		&settingChangedCallback, this);
+	g_settings->registerChangedCallback("mouse_dampening_influence",
+		&settingChangedCallback, this);
+	g_settings->registerChangedCallback("mouse_dampening_speed",
 		&settingChangedCallback, this);
 	g_settings->registerChangedCallback("joystick_frustum_sensitivity",
 		&settingChangedCallback, this);
@@ -1617,6 +1623,10 @@ Game::~Game()
 	g_settings->deregisterChangedCallback("enable_fog",
 		&settingChangedCallback, this);
 	g_settings->deregisterChangedCallback("mouse_sensitivity",
+		&settingChangedCallback, this);
+	g_settings->deregisterChangedCallback("mouse_dampening_influence",
+		&settingChangedCallback, this);
+	g_settings->deregisterChangedCallback("mouse_dampening_speed",
 		&settingChangedCallback, this);
 	g_settings->deregisterChangedCallback("repeat_rightclick_time",
 		&settingChangedCallback, this);
@@ -3093,22 +3103,39 @@ void Game::updateCameraOrientation(CameraOrientation *cam, float dtime)
 	} else {
 #endif
 
-		s32 dx = input->getMousePos().X - (driver->getScreenSize().Width / 2);
+	s32 dx = input->getMousePos().X - (driver->getScreenSize().Width / 2);
+	s32 dy = input->getMousePos().Y - (driver->getScreenSize().Height / 2);
 
-		if (abs(dx) < 2) // :PATCH:
-			dx = 0;
+	static f32 dampening_factor = 1.0f;
+	
+	if (m_cache_mouse_dampening_influence > 0.0f) {
+		f32 mouse_speed = 0.0f;
+		f32 offset_factor = 1000.0f / driver->getScreenSize().Width;
+		f32 x_offset = dx * offset_factor;
+		f32 y_offset = dy * offset_factor;
+		
+		if (dtime > 0.0f)
+			mouse_speed = sqrtf(x_offset * x_offset + y_offset * y_offset) / dtime;
+		
+		if (mouse_speed >= m_cache_mouse_dampening_speed) {
+			dampening_factor = 1.0f;
+		} else {
+			dampening_factor -= dtime * m_cache_mouse_dampening_influence;
 			
-		s32 dy = input->getMousePos().Y - (driver->getScreenSize().Height / 2);
-
-		if (abs(dy) < 2) // :PATCH:
-			dy = 0;
-
-		if (m_invert_mouse || camera->getCameraMode() == CAMERA_MODE_THIRD_FRONT) {
-			dy = -dy;
+			if (dampening_factor < 0.0f)
+				dampening_factor = 0.0f;
+		
+			dx = dx * dampening_factor;
+			dy = dy * dampening_factor;
 		}
+	}
+	
+	if (m_invert_mouse || camera->getCameraMode() == CAMERA_MODE_THIRD_FRONT) {
+		dy = -dy;
+	}
 
-		cam->camera_yaw   -= dx * m_cache_mouse_sensitivity;
-		cam->camera_pitch += dy * m_cache_mouse_sensitivity;
+	cam->camera_yaw   -= dx * m_cache_mouse_sensitivity;
+	cam->camera_pitch += dy * m_cache_mouse_sensitivity;
 
 #ifdef HAVE_TOUCHSCREENGUI
 	}
@@ -4677,6 +4704,8 @@ void Game::readSettings()
 	m_cache_enable_particles             = g_settings->getBool("enable_particles");
 	m_cache_enable_fog                   = g_settings->getBool("enable_fog");
 	m_cache_mouse_sensitivity            = g_settings->getFloat("mouse_sensitivity");
+	m_cache_mouse_dampening_influence 	 = g_settings->getFloat("mouse_dampening_influence");
+	m_cache_mouse_dampening_speed 	 	 = g_settings->getFloat("mouse_dampening_speed");
 	m_cache_joystick_frustum_sensitivity = g_settings->getFloat("joystick_frustum_sensitivity");
 	m_repeat_right_click_time            = g_settings->getFloat("repeat_rightclick_time");
 
@@ -4694,7 +4723,8 @@ void Game::readSettings()
 	m_cache_fog_start = rangelim(m_cache_fog_start, 0.0f, 0.99f);
 	m_cache_cam_smoothing = rangelim(m_cache_cam_smoothing, 0.01f, 1.0f);
 	m_cache_mouse_sensitivity = rangelim(m_cache_mouse_sensitivity, 0.001, 100.0);
-
+	m_cache_mouse_dampening_influence = rangelim(m_cache_mouse_dampening_influence, 0.0, 100.0);
+	m_cache_mouse_dampening_speed = rangelim(m_cache_mouse_dampening_speed, 0.0, 1000.0);
 }
 
 /****************************************************************************/

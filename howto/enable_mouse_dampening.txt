@@ -1,0 +1,17 @@
+# Enable the mouse dampening for the 3D camera orientation
+
+Start the kidscode client :
+
+	Settings > Advanced > Control
+	
+		Mouse dampening influence : 1.0
+		
+			The mouse dampening is disabled if the influence is 0.
+			
+			Lower values make the dampening slower, thus softer.
+			Higher values make the dampening faster, thus harder.
+		
+		Mouse dampening speed : 200.0
+
+			If the mouse speed is less than this amount of pixels per second (on a normalized 1000-pixels wide screen),
+			it quickly slows down until it stops.
