@@ -2,7 +2,7 @@
 
 Start the kidscode client :
 
-	Settings > Advanced > Control
+	Settings > Advanced Settings > Controls
 	
 		Mouse dampening influence : 1.0
 		
