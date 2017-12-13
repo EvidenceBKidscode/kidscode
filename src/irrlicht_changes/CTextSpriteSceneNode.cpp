@@ -118,7 +118,18 @@ void CTextSpriteSceneNode::setText(const wchar_t* text)
 		if (*c == L'\n')
 		{
 			LineCount += lineScale;
-			lineBreaks += 1.0;
+			
+			if (lineBreaks > 0.0)
+			{
+				Text += L' ';
+				charLineBreaks.push_back(lineBreaks);
+				charTopColors.push_back(topColor);
+				charBottomColors.push_back(bottomColor);
+				charScales.push_back(scale);
+				lineScale = scale;
+			}
+			
+			lineBreaks = 1.0;
 		}
 		else
 		{
@@ -156,7 +167,6 @@ void CTextSpriteSceneNode::setText(const wchar_t* text)
 			}
 			
 			Text += *c;
-			
 			charLineBreaks.push_back(lineBreaks);
 			charTopColors.push_back(topColor);
 			charBottomColors.push_back(bottomColor);
