@@ -26,7 +26,7 @@ CTextSpriteSceneNode::CTextSpriteSceneNode(ISceneNode* parent, ISceneManager* mg
 		const f32 xPadding, const f32 yPadding,
 		const f32 xOffset, const f32 yOffset, 
 		const f32 spacing, const f32 baseOffset)
-	: IBillboardTextSceneNode(parent, mgr, id, position),
+	: IBillboardSceneNode(parent, mgr, id, position),
 		LineCount(1), Font(0), TopColor(colorTop), BottomColor(bottomColor), 
 		Background(background), BackgroundColor(backgroundColor), 
 		BorderColor(borderColor), Border(border), 
@@ -343,6 +343,7 @@ void CTextSpriteSceneNode::resize()
 
 	// make billboard look to camera
 	core::vector3df pos = getAbsolutePosition();
+	pos.Y = 200; // :DEBUG:	
 
 	core::vector3df campos = camera->getAbsolutePosition();
 	core::vector3df target = camera->getTarget();
@@ -429,7 +430,7 @@ void CTextSpriteSceneNode::renderBackground()
 
 	if (!camera || !driver)
 		return;
-		
+
 	video::S3DVertex vertices[4];
 	u16 indices[6];
 	f32 border = Size.Height / LineCount * Border;
@@ -437,7 +438,7 @@ void CTextSpriteSceneNode::renderBackground()
 	f32 y_padding = Size.Height / LineCount * YPadding;
 	f32 width = Size.Width + x_padding * 2;
 	f32 height = Size.Height + y_padding * 2;
-	
+
 	indices[0] = 0;
 	indices[1] = 2;
 	indices[2] = 1;
@@ -460,7 +461,8 @@ void CTextSpriteSceneNode::renderBackground()
 	// make billboard look to camera
 
 	core::vector3df pos = getAbsolutePosition();
-
+	pos.Y = 200; // :DEBUG:
+	
 	core::vector3df campos = camera->getAbsolutePosition();
 	core::vector3df target = camera->getTarget();
 	core::vector3df up = camera->getUpVector();
@@ -536,6 +538,28 @@ void CTextSpriteSceneNode::renderBackground()
 	vertices[3].Pos = pos + horizontal + vertical;
 	vertices[0].Pos = pos + horizontal + borderHorizontal + vertical;
 	driver->drawIndexedTriangleList(vertices, 4, indices, 2);
+	
+	// :DEBUG:
+
+	driver->setTransform(video::ETS_WORLD, AbsoluteTransformation);
+
+	video::SMaterial m;
+	m.Lighting = false;
+	driver->setMaterial(m);
+
+	driver->draw3DLine(
+		getAbsolutePosition(),
+		core::vector3df(getAbsolutePosition().X,2000,getAbsolutePosition().Z),
+		video::SColor(255, 0, 0, 255)
+		);
+
+	driver->setMaterial(m);
+	driver->draw3DLine(
+		pos,
+		core::vector3df(pos.X,2000,pos.Z),
+		video::SColor(255, 255, 0, 255)
+		);
+	printf("POS: %f %f %f\n", pos.X, pos.Y, pos.Z);
 }
 
 
@@ -893,7 +917,7 @@ void CTextSpriteSceneNode::parseColor(const std::string& color_string,
 //! Adds a text scene node, which uses billboards
 CTextSpriteSceneNode* CTextSpriteSceneNode::addBillboardTextSceneNode(
 		gui::IGUIFont* font, const wchar_t* text, 
-		gui::IGUIEnvironment* environment, ISceneManager* smgr, ISceneNode* parent,
+		gui::IGUIEnvironment* environment, ISceneManager* mgr, ISceneNode* parent,
 		const core::dimension2d<f32>& size,
 		const core::vector3df& position, s32 id,
 		const video::SColor colorTop, const video::SColor colorBottom,
@@ -910,15 +934,15 @@ CTextSpriteSceneNode* CTextSpriteSceneNode::addBillboardTextSceneNode(
 		return 0;
 
 	if (!parent)
-		parent = smgr->getRootSceneNode();
+		parent = mgr->getRootSceneNode();
 
-	CTextSpriteSceneNode* node = new CTextSpriteSceneNode(parent, smgr, id, font, text, position, size,
-		colorTop, colorBottom, background, backgroundColor, borderColor, border,
-		xPadding, yPadding, xOffset, yOffset, spacing, baseOffset);
+	CTextSpriteSceneNode* node = 
+			new CTextSpriteSceneNode(parent, mgr, id, font, text, position, size,
+					colorTop, colorBottom, background, backgroundColor, borderColor, border,
+					xPadding, yPadding, xOffset, yOffset, spacing, baseOffset);
 	node->drop();
 
 	return node;
-
 }
 } // end namespace scene
 } // end namespace irr

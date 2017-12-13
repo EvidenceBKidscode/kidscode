@@ -7,7 +7,7 @@
 
 #include <irrlicht.h> // :PATCH:
 #include "ITextSceneNode.h"
-#include "IBillboardTextSceneNode.h"
+#include "IBillboardSceneNode.h"
 #include "IGUIFont.h"
 #include "IGUIFontBitmap.h"
 #include "ISceneCollisionManager.h"
@@ -18,7 +18,7 @@ namespace irr
 {
 namespace scene
 {
-	class CTextSpriteSceneNode : public IBillboardTextSceneNode
+	class CTextSpriteSceneNode : public IBillboardSceneNode
 	{
 	public:
 
@@ -104,7 +104,7 @@ namespace scene
 		
 		//! Adds a text scene node, which uses billboards
 		static CTextSpriteSceneNode* addBillboardTextSceneNode(gui::IGUIFont* font, const wchar_t* text,
-			gui::IGUIEnvironment* environment, ISceneManager* smgr, ISceneNode* parent = 0,
+			gui::IGUIEnvironment* environment, ISceneManager* mgr, ISceneNode* parent = 0,
 			const core::dimension2d<f32>& size = core::dimension2d<f32>(10.0f, 10.0f),
 			const core::vector3df& position = core::vector3df(0,0,0), s32 id=-1,
 			const video::SColor colorTop = 0xFFFFFFFF, const video::SColor colorBottom = 0xFFFFFFFF,

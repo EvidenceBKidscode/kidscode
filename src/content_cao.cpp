@@ -604,11 +604,9 @@ void GenericCAO::addToScene(ITextureSource *tsrc)
 		
 		text_size.Width *= (f32)font_size.Width / font_size.Height;
 		
-		scene::ISceneManager* smgr = RenderingEngine::get_scene_manager();
-		
 		m_textspritenode = scene::CTextSpriteSceneNode::addBillboardTextSceneNode(
 				font, wtext.c_str(), 
-				smgr->getGUIEnvironment(), smgr, NULL, 
+				m_smgr->getGUIEnvironment(), m_smgr, NULL, 
 				text_size, v3f(0,0,0), -1,
 				top_color, bottom_color, true, background_color, border_color, border, 
 				x_padding, y_padding, x_offset, y_offset, spacing, base_offset);
