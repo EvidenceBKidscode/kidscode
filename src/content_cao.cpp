@@ -377,6 +377,11 @@ scene::ISceneNode* GenericCAO::getSceneNode()
 	if (m_spritenode) {
 		return m_spritenode;
 	}
+	
+	if (m_textspritenode) {
+		return m_textspritenode;
+	}
+	
 	return NULL;
 }
 
@@ -449,6 +454,10 @@ void GenericCAO::removeFromScene(bool permanent)
 		m_spritenode->remove();
 		m_spritenode->drop();
 		m_spritenode = NULL;
+	} else if (m_textspritenode) {
+		m_textspritenode->remove();
+		m_textspritenode->drop();
+		m_textspritenode = NULL;
 	}
 
 	if (m_nametag) {
@@ -491,57 +500,6 @@ void GenericCAO::addToScene(ITextureSource *tsrc)
 			setBillboardTextureMatrix(m_spritenode,
 					txs, tys, 0, 0);
 		}
-	} else if (m_prop.visual == "upright_sprite") {
-		scene::SMesh *mesh = new scene::SMesh();
-		double dx = BS * m_prop.visual_size.X / 2;
-		double dy = BS * m_prop.visual_size.Y / 2;
-		u8 li = m_last_light;
-		video::SColor c(255, li, li, li);
-
-		{ // Front
-			scene::IMeshBuffer *buf = new scene::SMeshBuffer();
-			video::S3DVertex vertices[4] = {
-				video::S3DVertex(-dx, -dy, 0, 0,0,0, c, 1,1),
-				video::S3DVertex( dx, -dy, 0, 0,0,0, c, 0,1),
-				video::S3DVertex( dx,  dy, 0, 0,0,0, c, 0,0),
-				video::S3DVertex(-dx,  dy, 0, 0,0,0, c, 1,0),
-			};
-			u16 indices[] = {0,1,2,2,3,0};
-			buf->append(vertices, 4, indices, 6);
-			// Set material
-			buf->getMaterial().setFlag(video::EMF_LIGHTING, false);
-			buf->getMaterial().setFlag(video::EMF_BILINEAR_FILTER, false);
-			buf->getMaterial().setFlag(video::EMF_FOG_ENABLE, true);
-			buf->getMaterial().MaterialType = video::EMT_TRANSPARENT_ALPHA_CHANNEL;
-			// Add to mesh
-			mesh->addMeshBuffer(buf);
-			buf->drop();
-		}
-		{ // Back
-			scene::IMeshBuffer *buf = new scene::SMeshBuffer();
-			video::S3DVertex vertices[4] = {
-				video::S3DVertex( dx,-dy, 0, 0,0,0, c, 1,1),
-				video::S3DVertex(-dx,-dy, 0, 0,0,0, c, 0,1),
-				video::S3DVertex(-dx, dy, 0, 0,0,0, c, 0,0),
-				video::S3DVertex( dx, dy, 0, 0,0,0, c, 1,0),
-			};
-			u16 indices[] = {0,1,2,2,3,0};
-			buf->append(vertices, 4, indices, 6);
-			// Set material
-			buf->getMaterial().setFlag(video::EMF_LIGHTING, false);
-			buf->getMaterial().setFlag(video::EMF_BILINEAR_FILTER, false);
-			buf->getMaterial().setFlag(video::EMF_FOG_ENABLE, true);
-			buf->getMaterial().MaterialType = video::EMT_TRANSPARENT_ALPHA_CHANNEL_REF;
-			// Add to mesh
-			mesh->addMeshBuffer(buf);
-			buf->drop();
-		}
-		m_meshnode = RenderingEngine::get_scene_manager()->addMeshSceneNode(mesh, NULL);
-		m_meshnode->grab();
-		mesh->drop();
-		// Set it to use the materials of the meshbuffers directly.
-		// This is needed for changing the texture in the future
-		m_meshnode->setReadOnlyMaterials(true);
 	} else if (m_prop.visual == "text_sprite") { // :PATCH:
 		infostream<<"GenericCAO::addToScene(): text"<<std::endl;
 		std::string text;
@@ -618,6 +576,57 @@ void GenericCAO::addToScene(ITextureSource *tsrc)
 			setBillboardTextureMatrix(m_textspritenode,
 					txs, tys, 0, 0);
 		}
+	} else if (m_prop.visual == "upright_sprite") {
+		scene::SMesh *mesh = new scene::SMesh();
+		double dx = BS * m_prop.visual_size.X / 2;
+		double dy = BS * m_prop.visual_size.Y / 2;
+		u8 li = m_last_light;
+		video::SColor c(255, li, li, li);
+
+		{ // Front
+			scene::IMeshBuffer *buf = new scene::SMeshBuffer();
+			video::S3DVertex vertices[4] = {
+				video::S3DVertex(-dx, -dy, 0, 0,0,0, c, 1,1),
+				video::S3DVertex( dx, -dy, 0, 0,0,0, c, 0,1),
+				video::S3DVertex( dx,  dy, 0, 0,0,0, c, 0,0),
+				video::S3DVertex(-dx,  dy, 0, 0,0,0, c, 1,0),
+			};
+			u16 indices[] = {0,1,2,2,3,0};
+			buf->append(vertices, 4, indices, 6);
+			// Set material
+			buf->getMaterial().setFlag(video::EMF_LIGHTING, false);
+			buf->getMaterial().setFlag(video::EMF_BILINEAR_FILTER, false);
+			buf->getMaterial().setFlag(video::EMF_FOG_ENABLE, true);
+			buf->getMaterial().MaterialType = video::EMT_TRANSPARENT_ALPHA_CHANNEL;
+			// Add to mesh
+			mesh->addMeshBuffer(buf);
+			buf->drop();
+		}
+		{ // Back
+			scene::IMeshBuffer *buf = new scene::SMeshBuffer();
+			video::S3DVertex vertices[4] = {
+				video::S3DVertex( dx,-dy, 0, 0,0,0, c, 1,1),
+				video::S3DVertex(-dx,-dy, 0, 0,0,0, c, 0,1),
+				video::S3DVertex(-dx, dy, 0, 0,0,0, c, 0,0),
+				video::S3DVertex( dx, dy, 0, 0,0,0, c, 1,0),
+			};
+			u16 indices[] = {0,1,2,2,3,0};
+			buf->append(vertices, 4, indices, 6);
+			// Set material
+			buf->getMaterial().setFlag(video::EMF_LIGHTING, false);
+			buf->getMaterial().setFlag(video::EMF_BILINEAR_FILTER, false);
+			buf->getMaterial().setFlag(video::EMF_FOG_ENABLE, true);
+			buf->getMaterial().MaterialType = video::EMT_TRANSPARENT_ALPHA_CHANNEL_REF;
+			// Add to mesh
+			mesh->addMeshBuffer(buf);
+			buf->drop();
+		}
+		m_meshnode = RenderingEngine::get_scene_manager()->addMeshSceneNode(mesh, NULL);
+		m_meshnode->grab();
+		mesh->drop();
+		// Set it to use the materials of the meshbuffers directly.
+		// This is needed for changing the texture in the future
+		m_meshnode->setReadOnlyMaterials(true);
 	} else if(m_prop.visual == "cube") {
 		infostream<<"GenericCAO::addToScene(): cube"<<std::endl;
 		scene::IMesh *mesh = createCubeMesh(v3f(BS,BS,BS));

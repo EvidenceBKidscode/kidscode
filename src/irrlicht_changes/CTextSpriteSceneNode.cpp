@@ -343,7 +343,6 @@ void CTextSpriteSceneNode::resize()
 
 	// make billboard look to camera
 	core::vector3df pos = getAbsolutePosition();
-	pos.Y = 200; // :DEBUG:	
 
 	core::vector3df campos = camera->getAbsolutePosition();
 	core::vector3df target = camera->getTarget();
@@ -461,7 +460,6 @@ void CTextSpriteSceneNode::renderBackground()
 	// make billboard look to camera
 
 	core::vector3df pos = getAbsolutePosition();
-	pos.Y = 200; // :DEBUG:
 	
 	core::vector3df campos = camera->getAbsolutePosition();
 	core::vector3df target = camera->getTarget();
@@ -538,28 +536,6 @@ void CTextSpriteSceneNode::renderBackground()
 	vertices[3].Pos = pos + horizontal + vertical;
 	vertices[0].Pos = pos + horizontal + borderHorizontal + vertical;
 	driver->drawIndexedTriangleList(vertices, 4, indices, 2);
-	
-	// :DEBUG:
-
-	driver->setTransform(video::ETS_WORLD, AbsoluteTransformation);
-
-	video::SMaterial m;
-	m.Lighting = false;
-	driver->setMaterial(m);
-
-	driver->draw3DLine(
-		getAbsolutePosition(),
-		core::vector3df(getAbsolutePosition().X,2000,getAbsolutePosition().Z),
-		video::SColor(255, 0, 0, 255)
-		);
-
-	driver->setMaterial(m);
-	driver->draw3DLine(
-		pos,
-		core::vector3df(pos.X,2000,pos.Z),
-		video::SColor(255, 255, 0, 255)
-		);
-	printf("POS: %f %f %f\n", pos.X, pos.Y, pos.Z);
 }
 
 
