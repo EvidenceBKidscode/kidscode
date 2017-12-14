@@ -18,17 +18,6 @@ namespace irr
 namespace video
 {
 	class IVideoDriver;
-	
-	class ITextureLoader // :PATCH:
-	{
-	public:
-		ITextureLoader() {};
-
-		virtual ~ITextureLoader() {};
-
-		virtual video::ITexture* getTexture(
-				const std::string &name, u32 *id = 0) = 0;
-	};
 }
 namespace gui
 {
@@ -310,17 +299,6 @@ namespace gui
 		//! Implement this to set the attributes of your scene node animator for
 		//! scripting languages, editors, debuggers or xml deserialization purposes.
 		virtual void deserializeAttributes(io::IAttributes* in, io::SAttributeReadWriteOptions* options=0);
-		
-		
-		//! returns the texture loader
-		virtual video::ITextureLoader* getTextureLoader() const;
-
-		//! sets the texture loader
-		virtual void setTextureLoader(video::ITextureLoader* newTextureLoader);
-		
-		//! gets a texture
-		virtual video::ITexture* getTexture(const std::string& name, 
-			video::ITextureLoader* texture_loader=0) const;
 
 		//! gets the colors
 		virtual void getColors(video::SColor* colors); // ::PATCH:
@@ -337,8 +315,6 @@ namespace gui
 		bool UseGradient;
 
 		EGUI_SKIN_TYPE Type;
-		
-		video::ITextureLoader* TextureLoader;
 	};
 
 	#define set3DSkinColors(skin, button_color) \

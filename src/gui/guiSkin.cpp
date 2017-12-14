@@ -17,7 +17,7 @@ namespace gui
 {
 
 GUISkin::GUISkin(EGUI_SKIN_TYPE type, video::IVideoDriver* driver)
-: SpriteBank(0), Driver(driver), Type(type), TextureLoader(0)
+: SpriteBank(0), Driver(driver), Type(type)
 {
 	#ifdef _DEBUG
 	setDebugName("GUISkin");
@@ -1045,34 +1045,6 @@ void GUISkin::deserializeAttributes(io::IAttributes* in, io::SAttributeReadWrite
 
 	for (i=0; i<EGDI_COUNT; ++i)
 		Icons[i] = in->getAttributeAsInt(GUISkinIconNames[i]);
-}
-
-
-//! returns the texture loader
-video::ITextureLoader* GUISkin::getTextureLoader() const
-{
-	return TextureLoader;
-}
-
-
-//! sets the texture loader
-void GUISkin::setTextureLoader(video::ITextureLoader* newTextureLoader)
-{
-	TextureLoader = newTextureLoader;
-}
-
-
-//! gets a texture
-video::ITexture* GUISkin::getTexture(const std::string& name, 
-	video::ITextureLoader* texture_loader) const
-{
-	if (texture_loader)
-		return texture_loader->getTexture(name);
-		
-	if (TextureLoader)
-		return TextureLoader->getTexture(name);
-		
-	return 0;
 }
 
 
