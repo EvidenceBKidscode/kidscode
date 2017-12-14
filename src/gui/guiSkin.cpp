@@ -981,7 +981,7 @@ void GUISkin::drawColoredIcon(IGUIElement* element, EGUI_DEFAULT_ICON icon,
 {
 	if (!SpriteBank)
 		return;
-		
+
 	if (!colors)
 		colors = Colors;
 
