@@ -79,11 +79,17 @@ bool MyEventReceiver::OnEvent(const SEvent &event)
 			if (event.MouseInput.Event == EMIE_LMOUSE_PRESSED_DOWN) {
 				leftclicked = true;
 			}
+			if (event.MouseInput.Event == EMIE_MMOUSE_PRESSED_DOWN) {
+				middleclicked = true;
+			}
 			if (event.MouseInput.Event == EMIE_RMOUSE_PRESSED_DOWN) {
 				rightclicked = true;
 			}
 			if (event.MouseInput.Event == EMIE_LMOUSE_LEFT_UP) {
 				leftreleased = true;
+			}
+			if (event.MouseInput.Event == EMIE_MMOUSE_LEFT_UP) {
+				middlereleased = true;
 			}
 			if (event.MouseInput.Event == EMIE_RMOUSE_LEFT_UP) {
 				rightreleased = true;

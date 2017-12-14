@@ -1362,6 +1362,11 @@ protected:
 		return input->getLeftClicked() ||
 			input->joystick.getWasKeyDown(KeyType::MOUSE_L);
 	}
+	inline bool getMiddleClicked()
+	{
+		return input->getMiddleClicked() ||
+			input->joystick.getWasKeyDown(KeyType::MOUSE_M);
+	}
 	inline bool getRightClicked()
 	{
 		return input->getRightClicked() ||
@@ -1372,6 +1377,11 @@ protected:
 		return input->getLeftState() ||
 			input->joystick.isKeyDown(KeyType::MOUSE_L);
 	}
+	inline bool isMiddlePressed()
+	{
+		return input->getMiddleState() ||
+			input->joystick.isKeyDown(KeyType::MOUSE_M);
+	}
 	inline bool isRightPressed()
 	{
 		return input->getRightState() ||
@@ -1381,6 +1391,16 @@ protected:
 	{
 		return input->getLeftReleased() ||
 			input->joystick.wasKeyReleased(KeyType::MOUSE_L);
+	}
+	inline bool getMiddleReleased()
+	{
+		return input->getMiddleReleased() ||
+			input->joystick.wasKeyReleased(KeyType::MOUSE_M);
+	}
+	inline bool getRightReleased()
+	{
+		return input->getRightReleased() ||
+			input->joystick.wasKeyReleased(KeyType::MOUSE_R);
 	}
 
 	inline bool isKeyDown(GameKeyType k)
@@ -3169,6 +3189,7 @@ void Game::updatePlayerControl(const CameraOrientation &cam)
 		isKeyDown(KeyType::SNEAK),
 		isKeyDown(KeyType::ZOOM),
 		isLeftPressed(),
+		isMiddlePressed(),
 		isRightPressed(),
 		cam.camera_pitch,
 		cam.camera_yaw,
@@ -3185,7 +3206,8 @@ void Game::updatePlayerControl(const CameraOrientation &cam)
 			( (u32)(isKeyDown(KeyType::SPECIAL1)                      & 0x1) << 5) |
 			( (u32)(isKeyDown(KeyType::SNEAK)                         & 0x1) << 6) |
 			( (u32)(isLeftPressed()                                   & 0x1) << 7) |
-			( (u32)(isRightPressed()                                  & 0x1) << 8
+			( (u32)(isRightPressed()                                  & 0x1) << 8) |
+			( (u32)(isMiddlePressed()                                 & 0x1) << 9
 		);
 
 #ifdef ANDROID
@@ -3795,15 +3817,19 @@ void Game::processPlayerInteraction(f32 dtime, bool show_hud, bool show_debug)
 		camera->setDigging(0); // left click animation
 
 	input->resetLeftClicked();
+	input->resetMiddleClicked();
 	input->resetRightClicked();
 
 	input->joystick.clearWasKeyDown(KeyType::MOUSE_L);
+	input->joystick.clearWasKeyDown(KeyType::MOUSE_M);
 	input->joystick.clearWasKeyDown(KeyType::MOUSE_R);
 
 	input->resetLeftReleased();
+	input->resetMiddleReleased();
 	input->resetRightReleased();
 
 	input->joystick.clearWasKeyReleased(KeyType::MOUSE_L);
+	input->joystick.clearWasKeyReleased(KeyType::MOUSE_M);
 	input->joystick.clearWasKeyReleased(KeyType::MOUSE_R);
 }
 

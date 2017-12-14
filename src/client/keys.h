@@ -100,6 +100,7 @@ public:
 
 		// joystick specific keys
 		MOUSE_L,
+		MOUSE_M,
 		MOUSE_R,
 		SCROLL_UP,
 		SCROLL_DOWN,
