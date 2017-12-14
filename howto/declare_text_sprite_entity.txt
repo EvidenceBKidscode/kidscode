@@ -1,0 +1,43 @@
+# Declare a text sprite entity
+
+## Sample
+
+	initial_properties = {
+		visual = "text_sprite",
+		visual_size = {x = 1.0, y = 1.0},
+		mesh = "{orange}{1.5}K{1}idscode!!!\n{#0FF/#00F}Érîthréà\n{#ABCDEF/#456789}Eûphôriâ\n\nÉqt{0.5}Éqt{1.2}Éqt\n{orange/red}\\\\\\{\\^\\}^0.1;0.2;0.0;0.0;0.0;1.0;0.22",
+		colors = { "#F080F0FF", "#F01020FF", "#80808080", "#40404080" },
+	},
+
+	...
+	
+	obj:set_sprite_text(""\\\\\\{\\^\\}\n\n{orange}Kidscode\n{#0FF/#00F}Érîthréà\n{#ABCDEF/#456789}Eûphôriâ");
+
+## Parameters
+
+- visual_size : X scale, Y scale
+- mesh : text, border size, X padding, Y padding, X offset, Y offset, spacing, base line offset
+- colors : text top color, text bottom color, background color, border color
+
+The text separator is the circumflex.
+
+The value separator is the semicolon.
+
+## Values
+
+- border size : tells the size of the border (in character height unit)
+- X/Y padding : tells how much padding is added between the text and the border (in character size unit)
+- X/Y offset : tells how much offset is added to the text position inside the frame (in character size unit)
+- spacing : tells how much space is added between contiguous characters (1.0 by default)
+- base line offset : tells where the base line is located (from 0.0 to 1.0)
+
+The actual text frame width is computed from the frame height and longest text line width.
+
+The text can contains named or hexadecimal colors between accolades.
+Hexadecimal colors start by a hash mark, and can contain 3 or 6 hexadecimal digits.
+Both the top and bottom colors can be provided, by separating them with a slash character.
+
+The text can also contain scales between accolades.
+The default scale is 1.
+
+Special characters can be escaped by preceding them with a backslash character.

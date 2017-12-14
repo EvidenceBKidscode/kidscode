@@ -1,0 +1,19 @@
+# Set HUD text size
+
+Add an optional "font_size" field when calling hud_add :
+
+	player:hud_add({
+		hud_elem_type = "text",
+		name = "Areas",
+		number = 0xFFFFFF,
+		position = {x=0, y=1},
+		offset = {x=8, y=-8},
+		text = areaString,
+		scale = {x=200, y=60},
+		alignment = {x=1, y=-1},
+		font_size = 30,
+	})
+
+If it is omitted or set to zero, then the default font size is used.
+
+Warning : the servers must be updated, as the "hud_add" protocol now transmits a "font_size" parameter.

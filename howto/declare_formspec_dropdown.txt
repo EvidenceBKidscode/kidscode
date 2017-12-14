@@ -1,0 +1,38 @@
+# Declare a formspec dropdown
+
+## Sample
+
+	minetest.register_node(":default:test_dropdown", {
+		description = "test dropdown",
+		tiles = {"aaa.png"},
+		groups = {snappy = 3},
+
+		on_rightclick = function(_,_, clicker)
+			local formspec = [[
+				size[6,6]
+				dropdown[0,0;4;dd;Doom,Quake;1;#200040FF;#8000FFFF;#A000FFFF]
+			]]
+
+			local player_name = clicker:get_player_name()
+			minetest.show_formspec(player_name, "test_dropdown", formspec)
+		end,
+	})
+
+## Arguments
+
+The argument separator is the semicolon.
+
+The value separator in an argument is the comma.
+
+Up to 8 arguments can be provided.
+
+1. X position (float), Y position (float)
+2. width (float)
+3. name
+4. first item name, second item name, ...
+5. selected item name
+6. background color (#RRGGBBAA or color name)
+7. selected item color (#RRGGBBAA or color name)
+8. button color (#RRGGBBAA or color name)
+
+Only the first 5 arguments are mandatory.

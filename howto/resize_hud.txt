@@ -1,0 +1,10 @@
+# Resize HUD
+
+The size and offset of the HUD bar, images and texts are automatically scaled proportionally to the window width.
+ 
+The hud scaling factor is influence by the "hud_scaling" factor and the "hud_grid_resolution" divisor global settings : 
+
+	hud_scaling = 1.0
+	hud_grid_resolution = 1920.0
+	
+Small screen devices can use a lower hud grid resolution, like 960.0.

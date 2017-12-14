@@ -1,0 +1,37 @@
+# Declare a formspec image tab
+
+## Sample
+
+	minetest.register_node(":default:test_tabheader", {
+		description = "test tabheader",
+		tiles = {"aaa.png"},
+		groups = {snappy = 3},
+
+		on_rightclick = function(_,_, clicker)
+			local formspec = [[
+				size[8,8]
+				tabheader[0,0;tabs;Onglet 1,Onglet 2,Onglet 3;Onglet 1;2;true]
+			]]
+
+			local player_name = clicker:get_player_name()
+			minetest.show_formspec(player_name, "test_tabheader", formspec)
+		end,
+	})
+
+
+## Arguments
+
+The argument separator is the semicolon.
+
+The value separator in an argument is the comma.
+
+Up to 6 arguments can be provided.
+
+1. X position, Y position
+2. name
+3. first tab name, second tab name, ...
+4. active tab index
+5. show background (true/false)
+6. show border (true/false)
+
+Only the first 4 arguments are mandatory.

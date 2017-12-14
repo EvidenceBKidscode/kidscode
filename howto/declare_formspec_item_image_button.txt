@@ -1,0 +1,22 @@
+# Declare a formspec item image button
+
+## Sample
+
+	item_image_button[4,1.75;1,1;item;name;label;#A00000FF]
+
+## Arguments
+
+The argument separator is the semicolon.
+
+The value separator in an argument is the comma.
+
+Up to 6 arguments can be provided.
+
+1. X position (float), Y position (float)
+2. X size (float), Y size (float)
+3. item name
+4. name
+5. label
+6. color (#RRGGBBAA or color name)
+
+Only the first 5 arguments are mandatory.

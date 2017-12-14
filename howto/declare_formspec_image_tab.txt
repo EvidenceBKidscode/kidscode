@@ -1,0 +1,104 @@
+# Declare a formspec image tab
+
+## Sample
+
+	minetest.register_node(":default:test_imagetab", {
+		description = "test imagetab",
+		tiles = {"aaa.png"},
+		groups = {snappy = 3},
+
+		on_rightclick = function(_,_, clicker)
+			local formspec = [[
+				size[8,8]
+				image_tab[0,0;tabs;heart.png@0.8:top,logo.png,object_marker_red.png:bottom,some text,some other text:left,more text,still more text:right,just another text;2;64,160,20,4,4;16,24,4,4,4;tab_,16,16,11]
+			]]
+
+			local player_name = clicker:get_player_name()
+			minetest.show_formspec(player_name, "test_imagetab", formspec)
+		end,
+	})
+
+## Arguments
+
+The argument separator is the semicolon.
+
+The value separator in an argument is the comma.
+
+Up to 7 arguments can be provided.
+
+1. X position, Y position
+2. name
+3. first tab name:tab side, second tab name:tab side, ...
+4. active tab index
+5. tab height (pixels), width (pixels), padding (pixels), spacing (pixels), offset (pixels), content area padding (pixels)
+6. scroll button width (pixels), height (pixels), spacing (pixels), offset (pixels), distance (pixels)
+7. texture prefix, border width (pixels), border height (pixels), border offset (pixels)
+
+Only the first 4 arguments are mandatory.
+
+Within an optional argument, all values are optional too.
+
+## Values
+
+- tab name : sets the text or image to put on the tab
+- tab side : tells on which side the tabs is put (top/bottom/left/right)
+- active tab index : gives the index of the active tab (starting at 1)
+- tab height : sets a fixed height for the tabs
+- tab width : sets a fixed width for the tabs
+- tab padding : adds padding to the sides of the tab text/image
+- tab spacing : adds space between the tabs
+- content area padding : grows the content area from a few pixels
+- scroll button width : sets the width of the scroll buttons
+- scroll button height : sets the height of the scroll buttons 
+- scroll button spacing : adds space between the scroll buttons
+- scroll button offset : adds space from the tab area end
+- scroll button distance : adds space from the content area edge
+- texture prefix : sets the prefix for the tab texture names ("tab_" by default)
+- texture border width : sets the left/right border width for the textures
+- texture border height : sets the top/bottom border height for the textures
+- texture border offset : sets the border offset of the tab textures over the content area
+
+If the tab name is actually an image file name ending by ".bmp", ".jpg", ".png" or ".tga", then this image will used instead of the text.
+If the image file extension is immediately following by "@" and a real value between 0 and 1, the image will be scaled down using this ratio.
+If no tab side is provided, the side of the previous tab is used.
+
+## Textures
+
+The tabs are drawn using stretchable textures.
+
+They are divided in a matrix of 3x3 blocks :
+
+- 4 corner areas, which are not stretched.
+- 4 side areas, which are stretched along the side axis.
+- 1 middle area, which is stretched along both axes.
+
+By default, all side areas are 16 pixels wide, with a 11 pixels overlap over the content area.
+
+The default tab textures use the "tab_" prefix, and can be found in the "adel/textures/base/pack/" folder :
+
+- Content :
+
+	tab_content.png
+
+- Tabs :
+
+	tab_top.png
+	tab_top_active.png
+	tab_bottom.png
+	tab_bottom_active.png
+	tab_left.png
+	tab_left_active.png
+	tab_right.png
+	tab_right_active.png
+
+- Arrow buttons :
+
+	tab_arrow_up.png
+	tab_arrow_up_pressed.png
+	tab_arrow_down.png
+	tab_arrow_down_pressed.png
+	tab_arrow_left.png
+	tab_arrow_left_pressed.png
+	tab_arrow_right.png
+	tab_arrow_right_pressed.png
+

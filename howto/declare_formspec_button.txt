@@ -1,0 +1,35 @@
+# Declare a formspec button
+
+## Sample
+
+	minetest.register_node(":default:test_button", {
+		description = "test button",
+		tiles = {"aaa.png"},
+		groups = {snappy = 3},
+
+		on_rightclick = function(_,_, clicker)
+			local formspec = [[
+				size[6,6]
+				button[0,1.75;4,1;btn;Press me;#A00000FF]
+			]]
+
+			local player_name = clicker:get_player_name()
+			minetest.show_formspec(player_name, "test_button", formspec)
+		end,
+	})
+
+## Arguments
+
+The argument separator is the semicolon.
+
+The value separator in an argument is the comma.
+
+Up to 5 arguments can be provided.
+
+1. X position (float), Y position (float)
+2. X size (float), Y size (float)
+3. name
+4. label
+5. color (#RRGGBBAA or color name)
+
+Only the first 4 arguments are mandatory.

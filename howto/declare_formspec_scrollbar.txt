@@ -1,0 +1,48 @@
+# Declare a formspec scrollbar
+
+## Sample
+
+	minetest.register_node(":default:test_scrollbar", {
+		description = "test scrollbar",
+		tiles = {"aaa.png"},
+		groups = {snappy = 3},
+
+		on_rightclick = function(_,_, clicker)
+			local formspec = [[
+				size[6,6]
+				scrollbar[5.5,-0.2;0.5,6;vertical;sb_v;512,0,1024,8,16,64;#000040FF;#0000FFFF;#FFFFFFFF;#808080FF]
+				scrollbar[-0.2,5.8;5.7,0.5;horizontal;sb_h;0;#400020FF;#FF0080FF]
+			]]
+
+			local player_name = clicker:get_player_name()
+			minetest.show_formspec(player_name, "test_scrollbar", formspec)
+		end,
+	})
+
+## Arguments
+
+The argument separator is the semicolon.
+
+The value separator in an argument is the comma.
+
+Up to 9 arguments can be provided.
+
+1. X position (float), Y position (float)
+2. X size (float), Y size (float)
+3. orientation (horizontal/vertical)
+4. name
+5. value (integer), minimum value (integer), maximum value (integer), base step (integer), small step (integer), large step (integer)
+6. background color (#RRGGBBAA or color name)
+7. button color (#RRGGBBAA or color name)
+8. icon color (#RRGGBBAA or color name)
+9. disabled icon color (#RRGGBBAA or color name)
+
+Only the first 4 arguments are mandatory.
+
+Within the 5th argument, all values are optional.
+
+The scrollbar value is clamped between the minimum and maximum values, and is rounded to a multiple of the base step.
+
+The small step is used when pressing the cursor keys or the scrollbar buttons.
+
+The large step is used when pressing the page up/down keys.
