@@ -55,6 +55,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "guiscalingfilter.h"
 #include "guiEditBoxWithScrollbar.h"
 #include "guiComboBox.h"
+#include "guiScrollBar.h"
 
 #if USE_FREETYPE && IRRLICHT_VERSION_MAJOR == 1 && IRRLICHT_VERSION_MINOR < 9
 #include "intlGUIEditBox.h"
@@ -537,8 +538,8 @@ void GUIFormSpecMenu::parseScrollBar(parserData* data, const std::string &elemen
 
 		spec.ftype = f_ScrollBar;
 		spec.send  = true;
-		gui::IGUIScrollBar* e =
-				Environment->addScrollBar(is_horizontal,rect,this,spec.fid);
+		gui::GUIScrollBar* e =
+				GUIScrollBar::addScrollBar(Environment, is_horizontal,rect,this,spec.fid);
 
 		e->setMin(min);
 		e->setMax(max);
@@ -689,7 +690,7 @@ void GUIFormSpecMenu::parseButton(parserData* data, const std::string &element,
 		spec.ftype = f_Button;
 		if(type == "button_exit")
 			spec.is_exit = true;
-		gui::IGUIButton* e = Environment->addButton(rect, this, spec.fid,
+		gui::GUIButton* e = GUIButton::addButton(Environment, rect, this, spec.fid,
 				spec.flabel.c_str());
 
         if (has_color) {
@@ -1520,7 +1521,7 @@ void GUIFormSpecMenu::parseImageButton(parserData* data, const std::string &elem
 		else
 			pressed_texture = texture;
 
-		gui::IGUIButton *e = Environment->addButton(rect, this, spec.fid, spec.flabel.c_str());
+		gui::GUIButton *e = GUIButton::addButton(Environment, rect, this, spec.fid, spec.flabel.c_str());
 
         if (has_color) {
 			set3DSkinColors(e, color);
@@ -1602,7 +1603,7 @@ void GUIFormSpecMenu::parseItemImageButton(parserData* data, const std::string &
 			258 + m_fields.size()
 		);
 
-		gui::IGUIButton *e = Environment->addButton(rect, this, spec.fid, L"");
+		gui::GUIButton *e = GUIButton::addButton(Environment, rect, this, spec.fid, L"");
 
         if (has_color) {
 			set3DSkinColors(e, color);

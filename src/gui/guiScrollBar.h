@@ -10,6 +10,8 @@
 
 #include "IGUIScrollBar.h"
 #include "IGUIButton.h"
+#include "guiSkin.h"
+#include "guiButton.h"
 
 namespace irr
 {
@@ -21,7 +23,7 @@ namespace gui
 	public:
 
 		//! constructor
-		GUIScrollBar(bool horizontal, IGUIEnvironment* environment,
+		GUIScrollBar(IGUIEnvironment* environment, bool horizontal, 
 			IGUIElement* parent, s32 id, core::rect<s32> rectangle,
 			bool noclip=false);
 
@@ -89,13 +91,17 @@ namespace gui
 		//! Reads attributes of the element
 		virtual void deserializeAttributes(io::IAttributes* in, io::SAttributeReadWriteOptions* options);
 
+		//! adds a scrollbar. The returned pointer must not be dropped.
+		static GUIScrollBar* addScrollBar(IGUIEnvironment *environment, 
+			bool horizontal, const core::rect<s32>& rectangle, IGUIElement* parent=0, s32 id=-1);
+			
 	private:
 
 		void refreshControls();
 		s32 getPosFromMousePos(const core::position2di &p) const;
 
-		IGUIButton* UpButton;
-		IGUIButton* DownButton;
+		gui::GUIButton* UpButton;
+		gui::GUIButton* DownButton;
 
 		core::rect<s32> SliderRect;
 

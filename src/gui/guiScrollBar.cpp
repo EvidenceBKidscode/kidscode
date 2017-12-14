@@ -2,16 +2,15 @@
 // This file is part of the "Irrlicht Engine".
 // For conditions of distribution and use, see copyright notice in irrlicht.h
 
-#include "GUIScrollBar.h"
+#include "guiScrollBar.h"
 #ifdef _IRR_COMPILE_WITH_GUI_
 
 #include "IGUISkin.h"
 #include "IGUIEnvironment.h"
 #include "IVideoDriver.h"
-#include "CGUIButton.h"
+#include "guiButton.h"
 #include "IGUIFont.h"
 #include "IGUIFontBitmap.h"
-#include "os.h"
 
 namespace irr
 {
@@ -20,7 +19,7 @@ namespace gui
 
 
 //! constructor
-GUIScrollBar::GUIScrollBar(bool horizontal, IGUIEnvironment* environment,
+GUIScrollBar::GUIScrollBar(IGUIEnvironment* environment, bool horizontal, 
 				IGUIElement* parent, s32 id,
 				core::rect<s32> rectangle, bool noclip)
 	: IGUIScrollBar(environment, parent, id, rectangle), UpButton(0),
@@ -284,7 +283,7 @@ void GUIScrollBar::draw()
 	if (!IsVisible)
 		return;
 
-	IGUISkin* skin = Environment->getSkin();
+	GUISkin* skin = (GUISkin *)Environment->getSkin();
 	if (!skin)
 		return;
 
@@ -315,7 +314,7 @@ void GUIScrollBar::draw()
 			SliderRect.LowerRightCorner.Y = SliderRect.UpperLeftCorner.Y + DrawHeight;
 		}
 
-		skin->draw3DButtonPaneStandard(this, SliderRect, &AbsoluteClippingRect, Colors);
+		skin->drawColored3DButtonPaneStandard(this, SliderRect, &AbsoluteClippingRect, Colors);
 	}
 
 	// draw buttons
@@ -504,7 +503,7 @@ void GUIScrollBar::refreshControls()
 		s32 h = RelativeRect.getHeight();
 		if (!UpButton)
 		{
-			UpButton = new CGUIButton(Environment, this, -1, core::rect<s32>(0,0, h, h), NoClip);
+			UpButton = new GUIButton(Environment, this, -1, core::rect<s32>(0,0, h, h), NoClip);
 			UpButton->setSubElement(true);
 			UpButton->setTabStop(false);
 		}
@@ -518,7 +517,7 @@ void GUIScrollBar::refreshControls()
 		UpButton->setAlignment(EGUIA_UPPERLEFT, EGUIA_UPPERLEFT, EGUIA_UPPERLEFT, EGUIA_LOWERRIGHT);
 		if (!DownButton)
 		{
-			DownButton = new CGUIButton(Environment, this, -1, core::rect<s32>(RelativeRect.getWidth()-h, 0, RelativeRect.getWidth(), h), NoClip);
+			DownButton = new GUIButton(Environment, this, -1, core::rect<s32>(RelativeRect.getWidth()-h, 0, RelativeRect.getWidth(), h), NoClip);
 			DownButton->setSubElement(true);
 			DownButton->setTabStop(false);
 		}
@@ -536,7 +535,7 @@ void GUIScrollBar::refreshControls()
 		s32 w = RelativeRect.getWidth();
 		if (!UpButton)
 		{
-			UpButton = new CGUIButton(Environment, this, -1, core::rect<s32>(0,0, w, w), NoClip);
+			UpButton = new GUIButton(Environment, this, -1, core::rect<s32>(0,0, w, w), NoClip);
 			UpButton->setSubElement(true);
 			UpButton->setTabStop(false);
 		}
@@ -550,7 +549,7 @@ void GUIScrollBar::refreshControls()
 		UpButton->setAlignment(EGUIA_UPPERLEFT, EGUIA_LOWERRIGHT, EGUIA_UPPERLEFT, EGUIA_UPPERLEFT);
 		if (!DownButton)
 		{
-			DownButton = new CGUIButton(Environment, this, -1, core::rect<s32>(0,RelativeRect.getHeight()-w, w, RelativeRect.getHeight()), NoClip);
+			DownButton = new GUIButton(Environment, this, -1, core::rect<s32>(0,RelativeRect.getHeight()-w, w, RelativeRect.getHeight()), NoClip);
 			DownButton->setSubElement(true);
 			DownButton->setTabStop(false);
 		}
@@ -613,6 +612,15 @@ void GUIScrollBar::deserializeAttributes(io::IAttributes* in, io::SAttributeRead
 }
 
 
+//! adds a scrollbar. The returned pointer must not be dropped.
+GUIScrollBar* GUIScrollBar::addScrollBar(IGUIEnvironment *environment,
+	bool horizontal, const core::rect<s32>& rectangle, IGUIElement* parent, s32 id)
+{
+	GUIScrollBar* bar = new GUIScrollBar(environment, 
+		horizontal, parent ? parent : environment->getRootGUIElement(), id, rectangle);
+	bar->drop();
+	return bar;
+}
 } // end namespace gui
 } // end namespace irr
 

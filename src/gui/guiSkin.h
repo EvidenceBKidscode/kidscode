@@ -11,6 +11,7 @@
 #include "IGUISkin.h"
 #include "irrString.h"
 #include <string>
+#include "ITexture.h"
 
 namespace irr
 {

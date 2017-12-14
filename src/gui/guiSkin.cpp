@@ -2,7 +2,7 @@
 // This file is part of the "Irrlicht Engine".
 // For conditions of distribution and use, see copyright notice in irrlicht.h
 
-#include "GUISkin.h"
+#include "guiSkin.h"
 #ifdef _IRR_COMPILE_WITH_GUI_
 
 #include "IGUIFont.h"
