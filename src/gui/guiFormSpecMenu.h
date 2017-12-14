@@ -224,7 +224,8 @@ class GUIFormSpecMenu : public GUIModalMenu
 			fid(id),
 			send(false),
 			ftype(f_Unknown),
-			is_exit(false)
+			is_exit(false),
+			is_dynamic(false)
 		{
 		}
 
@@ -235,6 +236,7 @@ class GUIFormSpecMenu : public GUIModalMenu
 		bool send;
 		FormspecFieldType ftype;
 		bool is_exit;
+		bool is_dynamic;
 		core::rect<s32> rect;
 	};
 

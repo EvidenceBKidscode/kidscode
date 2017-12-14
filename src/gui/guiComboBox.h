@@ -9,6 +9,7 @@
 #include <IGUIComboBox.h>
 #include <IGUIStaticText.h>
 #include "guiListBox.h"
+#include "guiButton.h"
 #include <irrString.h>
 #include <irrArray.h>
 
@@ -26,6 +27,9 @@ public:
 	//! constructor
 	GUIComboBox(IGUIEnvironment *environment, IGUIElement *parent,
 		s32 id, core::rect<s32> rectangle);
+
+	//! destructor
+	virtual ~GUIComboBox();
 
 	//! Returns amount of items in box
 	virtual u32 getItemCount() const;
@@ -78,6 +82,16 @@ public:
 	//! Change the background color
 	virtual void setBackgroundColor(const video::SColor &color);
 
+	//! Change the button color
+	virtual void setButtonColor(const video::SColor &color); // :PATCH:
+	
+	//! returns a color
+	virtual video::SColor getColor(EGUI_DEFAULT_COLOR color) const; // :PATCH:
+
+	//! sets a color
+	virtual void setColor(EGUI_DEFAULT_COLOR which, video::SColor newColor,
+			f32 shading=1.0f); // :PATCH:
+
 	//! Writes attributes of the element.
 	virtual void serializeAttributes(io::IAttributes *out, io::SAttributeReadWriteOptions *options) const;
 
@@ -89,7 +103,7 @@ private:
 	void openCloseMenu();
 	void sendSelectionChangedEvent();
 
-	irr::gui::IGUIButton *m_list_button;
+	irr::gui::GUIButton *m_list_button;
 	irr::gui::IGUIStaticText *m_selected_text;
 	GUIListBox *m_listbox;
 	irr::gui::IGUIElement *m_last_focus;
@@ -115,6 +129,8 @@ private:
 
 	bool m_selected_item_color_used;
 	video::SColor m_selected_item_color;
+	
+	video::SColor* Colors; // :PATCH:
 };
 
 

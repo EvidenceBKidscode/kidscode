@@ -458,15 +458,51 @@ void GUIFormSpecMenu::parseCheckbox(parserData* data, const std::string &element
 	errorstream<< "Invalid checkbox element(" << parts.size() << "): '" << element << "'"  << std::endl;
 }
 
-void GUIFormSpecMenu::parseScrollBar(parserData* data, const std::string &element)
+void GUIFormSpecMenu::parseScrollBar(parserData* data, const std::string &element) // :PATCH:
 {
 	std::vector<std::string> parts = split(element,';');
 
-	if (parts.size() >= 5) {
+	if (parts.size() >= 4) {
 		std::vector<std::string> v_pos = split(parts[0],',');
 		std::vector<std::string> v_dim = split(parts[1],',');
 		std::string name = parts[3];
-		std::string value = parts[4];
+		s32 value = 0;
+		s32 min = 0;
+		s32 max = 1000;
+		s32 base_step = 1;
+		s32 small_step = 10;
+		s32 large_step = 100;
+
+        if (parts.size() > 4 && parts[4].length() > 0) {
+			std::vector<std::string> values = split(parts[4],',');
+
+			if (values.size() > 0 && values[0].length() > 0)
+				value = stoi(values[0]);
+
+			if (values.size() > 1 && values[1].length() > 0)
+				min = stoi(values[1]);
+
+			if (values.size() > 2 && values[2].length() > 0)
+				max = stoi(values[2]);
+
+			if (values.size() > 3 && values[3].length() > 0)
+				base_step = stoi(values[3]);
+
+			if (values.size() > 4 && values[4].length() > 0)
+				small_step = stoi(values[4]);
+
+			if (values.size() > 5 && values[5].length() > 0)
+				large_step = stoi(values[5]);
+		}
+
+		video::SColor bg_color;
+		bool has_bg_color = parts.size() > 5 && parseColorString(parts[5], bg_color, false);
+		video::SColor button_color;
+		bool has_button_color = parts.size() > 6 && parseColorString(parts[6], button_color, false);
+		video::SColor icon_color;
+		bool has_icon_color = parts.size() > 7 && parseColorString(parts[7], icon_color, false);
+		video::SColor disabled_icon_color;
+		bool has_disabled_icon_color = parts.size() > 8 && parseColorString(parts[8], disabled_icon_color, false);
 
 		MY_CHECKPOS("scrollbar",0);
 
@@ -504,11 +540,29 @@ void GUIFormSpecMenu::parseScrollBar(parserData* data, const std::string &elemen
 		gui::IGUIScrollBar* e =
 				Environment->addScrollBar(is_horizontal,rect,this,spec.fid);
 
-		e->setMax(1000);
-		e->setMin(0);
-		e->setPos(stoi(parts[4]));
-		e->setSmallStep(10);
-		e->setLargeStep(100);
+		e->setMin(min);
+		e->setMax(max);
+		e->setBaseStep(base_step);
+		e->setSmallStep(small_step);
+		e->setLargeStep(large_step);
+
+		e->setPos(value);
+
+        if (has_bg_color)
+			e->setColor(EGDC_SCROLLBAR, bg_color);
+
+        if (has_button_color) {
+			set3DSkinColors(e, button_color);
+			e->setColor(EGDC_WINDOW_SYMBOL, button_color, 1.75f);
+		}
+
+        if (has_icon_color) {
+			e->setColor(EGDC_WINDOW_SYMBOL, icon_color);
+			e->setColor(EGDC_GRAY_WINDOW_SYMBOL, icon_color, 0.5f);
+		}
+
+        if (has_disabled_icon_color)
+			e->setColor(EGDC_GRAY_WINDOW_SYMBOL, disabled_icon_color);
 
 		m_scrollbars.emplace_back(spec,e);
 		m_fields.push_back(spec);
@@ -594,17 +648,17 @@ void GUIFormSpecMenu::parseItemImage(parserData* data, const std::string &elemen
 }
 
 void GUIFormSpecMenu::parseButton(parserData* data, const std::string &element,
-		const std::string &type)
+		const std::string &type) // :PATCH:
 {
 	std::vector<std::string> parts = split(element,';');
 
-	if ((parts.size() == 4) ||
-		((parts.size() > 4) && (m_formspec_version > FORMSPEC_API_VERSION)))
-	{
+	if (parts.size() >= 4) {
 		std::vector<std::string> v_pos = split(parts[0],',');
 		std::vector<std::string> v_geom = split(parts[1],',');
 		std::string name = parts[2];
 		std::string label = parts[3];
+		video::SColor color;
+		bool has_color = parts.size() > 4 && parseColorString(parts[4], color, false);
 
 		MY_CHECKPOS("button",0);
 		MY_CHECKGEOM("button",1);
@@ -637,6 +691,11 @@ void GUIFormSpecMenu::parseButton(parserData* data, const std::string &element,
 			spec.is_exit = true;
 		gui::IGUIButton* e = Environment->addButton(rect, this, spec.fid,
 				spec.flabel.c_str());
+
+        if (has_color) {
+			set3DSkinColors(e, color);
+			e->setColor(EGDC_WINDOW_SYMBOL, color, 1.75f);
+		}
 
 		if (spec.fname == data->focused_fieldname) {
 			Environment->setFocus(e);
@@ -857,12 +916,11 @@ void GUIFormSpecMenu::parseTextList(parserData* data, const std::string &element
 }
 
 
-void GUIFormSpecMenu::parseDropDown(parserData* data, const std::string &element)
+void GUIFormSpecMenu::parseDropDown(parserData* data, const std::string &element) // :PATCH:
 {
 	std::vector<std::string> parts = split(element,';');
 
-	if ((parts.size() >= 5 && parts.size() <= 7) ||
-		((parts.size() > 7) && (m_formspec_version > FORMSPEC_API_VERSION)))
+	if (parts.size() >= 5)
 	{
 		std::vector<std::string> v_pos = split(parts[0],',');
 		std::string name = parts[2];
@@ -873,7 +931,8 @@ void GUIFormSpecMenu::parseDropDown(parserData* data, const std::string &element
 		bool has_bg_color = parts.size() > 5 && parseColorString(parts[5], bg_color, false);
 		video::SColor selected_item_color;
 		bool has_selected_item_color = parts.size() > 6 && parseColorString(parts[6], selected_item_color, false);
-
+		video::SColor button_color;
+		bool has_button_color = parts.size() > 7 && parseColorString(parts[7], button_color, false);
 
 		MY_CHECKPOS("dropdown",0);
 
@@ -899,13 +958,14 @@ void GUIFormSpecMenu::parseDropDown(parserData* data, const std::string &element
 		//now really show list
 		GUIComboBox* e = new GUIComboBox(Environment, this, spec.fid, rect);
 
-		if (has_bg_color) {
+		if (has_bg_color)
 			e->setBackgroundColor(bg_color);
-		}
 
-		if (has_selected_item_color) {
+		if (has_selected_item_color)
 			e->setSelectedItemColor(selected_item_color);
-		}
+
+		if (has_button_color)
+			e->setButtonColor(button_color);
 
 		if (spec.fname == data->focused_fieldname) {
 			Environment->setFocus(e);
@@ -1026,13 +1086,17 @@ void GUIFormSpecMenu::parsePwdField(parserData* data, const std::string &element
 }
 
 void GUIFormSpecMenu::parseSimpleField(parserData* data,
-		std::vector<std::string> &parts)
+		std::vector<std::string> &parts) // :PATCH:
 {
 	std::string name = parts[0];
 	std::string label = parts[1];
 	std::string default_val = parts[2];
 	video::SColor bg_color;
 	bool has_bg_color = parts.size() > 3 && parseColorString(parts[3], bg_color, true);
+
+	bool is_dynamic = (name.length() > 0 && name[0] == '!'); // :PATCH:
+	if (is_dynamic)
+		name = name.substr(1);
 
 	core::rect<s32> rect;
 
@@ -1059,6 +1123,8 @@ void GUIFormSpecMenu::parseSimpleField(parserData* data,
 		utf8_to_wide(unescape_string(default_val)),
 		258+m_fields.size()
 	);
+
+	spec.is_dynamic = is_dynamic; // :PATCH:
 
 	if (name.empty()) {
 		// spec field id to 0, this stops submit searching for a value that isn't there
@@ -1132,9 +1198,8 @@ void GUIFormSpecMenu::parseSimpleField(parserData* data,
 }
 
 void GUIFormSpecMenu::parseTextArea(parserData* data, std::vector<std::string>& parts,
-		const std::string &type)
+		const std::string &type) // :PATCH:
 {
-
 	std::vector<std::string> v_pos = split(parts[0],',');
 	std::vector<std::string> v_geom = split(parts[1],',');
 	std::string name = parts[2];
@@ -1144,6 +1209,10 @@ void GUIFormSpecMenu::parseTextArea(parserData* data, std::vector<std::string>& 
 	bool has_bg_color = parts.size() > 5 && parseColorString(parts[5], bg_color, false);
 	bool has_vscrollbar = parts.size() > 6 ? is_yes(parts[6]) : false;
 
+
+	bool is_dynamic = (name.length() > 0 && name[0] == '!'); // :PATCH:
+	if (is_dynamic)
+		name = name.substr(1);
 
 	MY_CHECKPOS(type,0);
 	MY_CHECKGEOM(type,1);
@@ -1186,6 +1255,8 @@ void GUIFormSpecMenu::parseTextArea(parserData* data, std::vector<std::string>& 
 		258+m_fields.size()
 	);
 
+	spec.is_dynamic = is_dynamic; // :PATCH:
+
 	bool is_editable = !name.empty();
 	const wchar_t *text = is_editable ? spec.fdefault.c_str() : spec.flabel.c_str();
 
@@ -1223,28 +1294,26 @@ void GUIFormSpecMenu::parseTextArea(parserData* data, std::vector<std::string>& 
 			e->drop();
 		}
 
-		if (is_editable && spec.fname == data->focused_fieldname)
+		if (spec.fname == data->focused_fieldname) {
 			Environment->setFocus(e);
+		}
 
-		if (e) {
-			if (type == "textarea")
-			{
-				e->setMultiLine(true);
-				e->setWordWrap(true);
-				e->setTextAlignment(gui::EGUIA_UPPERLEFT, gui::EGUIA_UPPERLEFT);
-			} else {
-				irr::SEvent evt;
-				evt.EventType            = EET_KEY_INPUT_EVENT;
-				evt.KeyInput.Key         = KEY_END;
-				evt.KeyInput.Char        = 0;
-				evt.KeyInput.Control     = 0;
-				evt.KeyInput.Shift       = 0;
-				evt.KeyInput.PressedDown = true;
-				e->OnEvent(evt);
-			}
+		if (type == "textarea")
+		{
+			e->setMultiLine(true);
+			e->setWordWrap(true);
+			e->setTextAlignment(gui::EGUIA_UPPERLEFT, gui::EGUIA_UPPERLEFT);
+		} else {
+			irr::SEvent evt;
+			evt.EventType            = EET_KEY_INPUT_EVENT;
+			evt.KeyInput.Key         = KEY_END;
+			evt.KeyInput.Char        = 0;
+			evt.KeyInput.Control     = 0;
+			evt.KeyInput.Shift       = 0;
+			evt.KeyInput.PressedDown = true;
+			e->OnEvent(evt);
 		}
 	}
-
 	if (is_editable) {
 		if (label.length() >= 1) {
 			int font_height = g_fontengine->getTextHeight();
@@ -1383,12 +1452,11 @@ void GUIFormSpecMenu::parseVertLabel(parserData* data, const std::string &elemen
 }
 
 void GUIFormSpecMenu::parseImageButton(parserData* data, const std::string &element,
-		const std::string &type)
+		const std::string &type) // :PATCH:
 {
 	std::vector<std::string> parts = split(element,';');
 
-	if ((((parts.size() >= 5) && (parts.size() <= 8)) && (parts.size() != 6)) ||
-		((parts.size() > 8) && (m_formspec_version > FORMSPEC_API_VERSION)))
+	if (parts.size() >= 5)
 	{
 		std::vector<std::string> v_pos = split(parts[0],',');
 		std::vector<std::string> v_geom = split(parts[1],',');
@@ -1421,6 +1489,9 @@ void GUIFormSpecMenu::parseImageButton(parserData* data, const std::string &elem
 			pressed_image_name = parts[7];
 		}
 
+		video::SColor color;
+		bool has_color = parts.size() > 8 && parseColorString(parts[8], color, false);
+
 		core::rect<s32> rect = core::rect<s32>(pos.X, pos.Y, pos.X+geom.X, pos.Y+geom.Y);
 
 		if(!data->explicit_size)
@@ -1451,6 +1522,11 @@ void GUIFormSpecMenu::parseImageButton(parserData* data, const std::string &elem
 
 		gui::IGUIButton *e = Environment->addButton(rect, this, spec.fid, spec.flabel.c_str());
 
+        if (has_color) {
+			set3DSkinColors(e, color);
+			e->setColor(EGDC_WINDOW_SYMBOL, color, 1.75f);
+		}
+
 		if (spec.fname == data->focused_fieldname) {
 			Environment->setFocus(e);
 		}
@@ -1471,12 +1547,91 @@ void GUIFormSpecMenu::parseImageButton(parserData* data, const std::string &elem
 	errorstream<< "Invalid imagebutton element(" << parts.size() << "): '" << element << "'"  << std::endl;
 }
 
+void GUIFormSpecMenu::parseItemImageButton(parserData* data, const std::string &element) // :PATCH:
+{
+
+	if (m_client == 0) {
+		warningstream << "invalid use of item_image_button with m_client==0"
+			<< std::endl;
+		return;
+	}
+
+	std::vector<std::string> parts = split(element,';');
+
+	if (parts.size() >= 5)
+	{
+		std::vector<std::string> v_pos = split(parts[0],',');
+		std::vector<std::string> v_geom = split(parts[1],',');
+		std::string item_name = parts[2];
+		std::string name = parts[3];
+		std::string label = parts[4];
+		video::SColor color;
+		bool has_color = parts.size() > 5 && parseColorString(parts[5], color, false);
+
+		label = unescape_string(label);
+		item_name = unescape_string(item_name);
+
+		MY_CHECKPOS("itemimagebutton",0);
+		MY_CHECKGEOM("itemimagebutton",1);
+
+		v2s32 pos = padding + pos_offset * spacing;
+		pos.X += stof(v_pos[0]) * (float)spacing.X;
+		pos.Y += stof(v_pos[1]) * (float)spacing.Y;
+		v2s32 geom;
+		geom.X = (stof(v_geom[0]) * (float)spacing.X)-(spacing.X-imgsize.X);
+		geom.Y = (stof(v_geom[1]) * (float)spacing.Y)-(spacing.Y-imgsize.Y);
+
+		core::rect<s32> rect = core::rect<s32>(pos.X, pos.Y, pos.X+geom.X, pos.Y+geom.Y);
+
+		if(!data->explicit_size)
+			warningstream<<"invalid use of item_image_button without a size[] element"<<std::endl;
+
+		IItemDefManager *idef = m_client->idef();
+		ItemStack item;
+		item.deSerialize(item_name, idef);
+
+		m_tooltips[name] =
+			TooltipSpec(utf8_to_wide(item.getDefinition(idef).description),
+						m_default_tooltip_bgcolor,
+						m_default_tooltip_color);
+
+		FieldSpec spec(
+			name,
+			utf8_to_wide(label),
+			utf8_to_wide(item_name),
+			258 + m_fields.size()
+		);
+
+		gui::IGUIButton *e = Environment->addButton(rect, this, spec.fid, L"");
+
+        if (has_color) {
+			set3DSkinColors(e, color);
+			e->setColor(EGDC_WINDOW_SYMBOL, color, 1.75f);
+		}
+
+		if (spec.fname == data->focused_fieldname) {
+			Environment->setFocus(e);
+		}
+
+		spec.ftype = f_Button;
+		rect+=data->basepos-padding;
+		spec.rect=rect;
+		m_fields.push_back(spec);
+		pos = padding + AbsoluteRect.UpperLeftCorner + pos_offset * spacing;
+		pos.X += stof(v_pos[0]) * (float) spacing.X;
+		pos.Y += stof(v_pos[1]) * (float) spacing.Y;
+		m_itemimages.emplace_back("", item_name, e, pos, geom);
+		m_static_texts.emplace_back(utf8_to_wide(label), rect, e);
+		return;
+	}
+	errorstream<< "Invalid ItemImagebutton element(" << parts.size() << "): '" << element << "'"  << std::endl;
+}
+
 void GUIFormSpecMenu::parseTabHeader(parserData* data, const std::string &element)
 {
 	std::vector<std::string> parts = split(element,';');
 
-	if (((parts.size() == 4) || (parts.size() == 6)) ||
-		((parts.size() > 6) && (m_formspec_version > FORMSPEC_API_VERSION)))
+	if (parts.size() >= 4)
 	{
 		std::vector<std::string> v_pos = split(parts[0],',');
 		std::string name = parts[1];
@@ -1541,80 +1696,6 @@ void GUIFormSpecMenu::parseTabHeader(parserData* data, const std::string &elemen
 	}
 	errorstream << "Invalid TabHeader element(" << parts.size() << "): '"
 			<< element << "'"  << std::endl;
-}
-
-void GUIFormSpecMenu::parseItemImageButton(parserData* data, const std::string &element)
-{
-
-	if (m_client == 0) {
-		warningstream << "invalid use of item_image_button with m_client==0"
-			<< std::endl;
-		return;
-	}
-
-	std::vector<std::string> parts = split(element,';');
-
-	if ((parts.size() == 5) ||
-		((parts.size() > 5) && (m_formspec_version > FORMSPEC_API_VERSION)))
-	{
-		std::vector<std::string> v_pos = split(parts[0],',');
-		std::vector<std::string> v_geom = split(parts[1],',');
-		std::string item_name = parts[2];
-		std::string name = parts[3];
-		std::string label = parts[4];
-
-		label = unescape_string(label);
-		item_name = unescape_string(item_name);
-
-		MY_CHECKPOS("itemimagebutton",0);
-		MY_CHECKGEOM("itemimagebutton",1);
-
-		v2s32 pos = padding + pos_offset * spacing;
-		pos.X += stof(v_pos[0]) * (float)spacing.X;
-		pos.Y += stof(v_pos[1]) * (float)spacing.Y;
-		v2s32 geom;
-		geom.X = (stof(v_geom[0]) * (float)spacing.X)-(spacing.X-imgsize.X);
-		geom.Y = (stof(v_geom[1]) * (float)spacing.Y)-(spacing.Y-imgsize.Y);
-
-		core::rect<s32> rect = core::rect<s32>(pos.X, pos.Y, pos.X+geom.X, pos.Y+geom.Y);
-
-		if(!data->explicit_size)
-			warningstream<<"invalid use of item_image_button without a size[] element"<<std::endl;
-
-		IItemDefManager *idef = m_client->idef();
-		ItemStack item;
-		item.deSerialize(item_name, idef);
-
-		m_tooltips[name] =
-			TooltipSpec(utf8_to_wide(item.getDefinition(idef).description),
-						m_default_tooltip_bgcolor,
-						m_default_tooltip_color);
-
-		FieldSpec spec(
-			name,
-			utf8_to_wide(label),
-			utf8_to_wide(item_name),
-			258 + m_fields.size()
-		);
-
-		gui::IGUIButton *e = Environment->addButton(rect, this, spec.fid, L"");
-
-		if (spec.fname == data->focused_fieldname) {
-			Environment->setFocus(e);
-		}
-
-		spec.ftype = f_Button;
-		rect+=data->basepos-padding;
-		spec.rect=rect;
-		m_fields.push_back(spec);
-		pos = padding + AbsoluteRect.UpperLeftCorner + pos_offset * spacing;
-		pos.X += stof(v_pos[0]) * (float) spacing.X;
-		pos.Y += stof(v_pos[1]) * (float) spacing.Y;
-		m_itemimages.emplace_back("", item_name, e, pos, geom);
-		m_static_texts.emplace_back(utf8_to_wide(label), rect, e);
-		return;
-	}
-	errorstream<< "Invalid ItemImagebutton element(" << parts.size() << "): '" << element << "'"  << std::endl;
 }
 
 void GUIFormSpecMenu::parseBox(parserData* data, const std::string &element)
@@ -3870,6 +3951,23 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 					acceptInput(quit_mode_no);
 					s.fdefault = L"";
 				}
+			}
+		}
+
+		if (event.GUIEvent.EventType == gui::EGET_EDITBOX_CHANGED) { // :PATCH:
+			if (event.GUIEvent.Caller->getID() > 257) {
+				// find the element that was clicked
+				for (GUIFormSpecMenu::FieldSpec &s : m_fields) {
+					// if it's a table, set the send field
+					// so lua knows which table was changed
+					if (s.ftype == f_Unknown && s.is_dynamic &&
+							s.fid == event.GUIEvent.Caller->getID()) {
+						s.send = true;
+						acceptInput();
+						s.send=false;
+					}
+				}
+				return true;
 			}
 		}
 

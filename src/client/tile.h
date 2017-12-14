@@ -27,6 +27,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <SMaterial.h>
 #include <memory>
 #include "util/numeric.h"
+#include "gui/guiSkin.h"
 
 class IGameDef;
 struct TileSpec;
@@ -86,7 +87,7 @@ struct TextureFromMeshParams
 	TextureSource creates and caches textures.
 */
 
-class ISimpleTextureSource
+class ISimpleTextureSource : public video::ITextureLoader // :PATCH:
 {
 public:
 	ISimpleTextureSource() = default;

@@ -35,6 +35,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "render/factory.h"
 #include "inputhandler.h"
 #include "gettext.h"
+#include "gui/guiSkin.h" // :PATCH:
 
 #if !defined(_WIN32) && !defined(__APPLE__) && !defined(__ANDROID__) && \
 		!defined(SERVER) && !defined(__HAIKU__)
@@ -107,6 +108,8 @@ RenderingEngine::RenderingEngine(IEventReceiver *receiver)
 	driver = m_device->getVideoDriver();
 
 	s_singleton = this;
+	
+	m_device->getGUIEnvironment()->setSkin(new gui::GUISkin(gui::EGST_WINDOWS_METALLIC, driver)); // :PATCH:
 }
 
 RenderingEngine::~RenderingEngine()
