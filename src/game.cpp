@@ -979,7 +979,7 @@ static inline void create_formspec_menu(GUIFormSpecMenu **cur_formspec,
 #ifdef __ANDROID__
 #define SIZE_TAG "size[11,5.5]"
 #else
-#define SIZE_TAG "size[3.6,9.5,true]" // Fixed size on desktop
+#define SIZE_TAG "size[4.5,9.5,true]" // Fixed size on desktop
 #endif
 
 /******************************************************************************/
@@ -4757,55 +4757,6 @@ void Game::extendedResourceCleanup()
 #define GET_KEY_NAME(KEY) gettext(getKeySetting(#KEY).name())
 void Game::showPauseMenu()
 {
-#ifdef __ANDROID__
-	static const std::string control_text = strgettext("Default Controls:\n"
-		"No menu visible:\n"
-		"- single tap: button activate\n"
-		"- double tap: place/use\n"
-		"- slide finger: look around\n"
-		"Menu/Inventory visible:\n"
-		"- double tap (outside):\n"
-		" -->close\n"
-		"- touch stack, touch slot:\n"
-		" --> move stack\n"
-		"- touch&drag, tap 2nd finger\n"
-		" --> place single item to slot\n"
-		);
-#else
-	static const std::string control_text_template = strgettext("Controls:\n"
-		"- %s: move forwards\n"
-		"- %s: move backwards\n"
-		"- %s: move left\n"
-		"- %s: move right\n"
-		"- %s: jump/climb\n"
-		"- %s: sneak/go down\n"
-		"- %s: drop item\n"
-		"- %s: inventory\n"
-		"- Mouse: turn/look\n"
-		"- Mouse left: dig/punch\n"
-		"- Mouse right: place/use\n"
-		"- Mouse wheel: select item\n"
-		"- %s: chat\n"
-	);
-
-	 char control_text_buf[600];
-
-	 snprintf(control_text_buf, ARRLEN(control_text_buf), control_text_template.c_str(),
-			GET_KEY_NAME(keymap_forward),
-			GET_KEY_NAME(keymap_backward),
-			GET_KEY_NAME(keymap_left),
-			GET_KEY_NAME(keymap_right),
-			GET_KEY_NAME(keymap_jump),
-			GET_KEY_NAME(keymap_sneak),
-			GET_KEY_NAME(keymap_drop),
-			GET_KEY_NAME(keymap_inventory),
-			GET_KEY_NAME(keymap_chat)
-			);
-
-	std::string control_text = std::string(control_text_buf);
-	str_formspec_escape(control_text);
-#endif
-
 	float ypos = 0.8f;
 	std::ostringstream os;
 
@@ -4813,35 +4764,35 @@ void Game::showPauseMenu()
 
 	ypos += 0.2f;
 
-	os << "button_exit[0.3," << (ypos++) << ";3,0.5;btn_continue;"
+	os << "button_exit[0.3," << (ypos++) << ";4,0.5;btn_continue;"
 	   << strgettext("Continue") << "]";
 
 	os << "label[0.3," << ypos << ";" << strgettext("Mouse sensitivity") << "]";
 	ypos += 0.5f;
 	std::string mouse_sensitivity = std::to_string(g_settings->getFloat("mouse_sensitivity") * 500.0f);
-	os << "scrollbar[0.3," << (ypos++) << ";2.8,0.6;horizontal;sbr_mouse_sensitivity;" << mouse_sensitivity << "]";
+	os << "scrollbar[0.3," << (ypos++) << ";3.8,0.6;horizontal;sbr_mouse_sensitivity;" << mouse_sensitivity << "]";
 
 	os << "label[0.3," << (ypos -= 0.2f) << ";" << strgettext("Viewing range") << "]";
 	ypos += 0.5f;
 	std::string viewing_range = std::to_string((g_settings->getFloat("viewing_range") / 100.0f) * 250.0f);
-	os << "scrollbar[0.3," << (ypos++) << ";2.8,0.6;horizontal;sbr_viewing_range;" << viewing_range << "]";
+	os << "scrollbar[0.3," << (ypos++) << ";3.8,0.6;horizontal;sbr_viewing_range;" << viewing_range << "]";
 
 	os << "label[0.3," << (ypos -= 0.2f) << ";" << strgettext("GUI scaling") << "]";
 	ypos += 0.5f;
 	std::string gui_scaling = std::to_string(g_settings->getFloat("gui_scaling") * 500.0f);
-	os << "scrollbar[0.3," << (ypos++) << ";2.8,0.6;horizontal;sbr_gui_scaling;" << gui_scaling << "]";
+	os << "scrollbar[0.3," << (ypos++) << ";3.8,0.6;horizontal;sbr_gui_scaling;" << gui_scaling << "]";
 
-	os << "field[0.8,0;5,1.5;;" << strgettext("Game paused") << ";]";
+	os << "field[1.2,0;5,1.5;;" << strgettext("Game paused") << ";]";
 
 #ifndef __ANDROID__
-	os		<< "button_exit[0.3," << (ypos++) << ";3,0.5;btn_sound;"
+	os		<< "button_exit[0.3," << (ypos++) << ";4,0.5;btn_sound;"
 		<< strgettext("Sound Volume") << "]";
-	os		<< "button_exit[0.3," << (ypos++) << ";3,0.5;btn_key_config;"
+	os		<< "button_exit[0.3," << (ypos++) << ";4,0.5;btn_key_config;"
 		<< strgettext("Change Keys")  << "]";
 #endif
-	      os << "button_exit[0.3," << (ypos++) << ";3,0.5;btn_exit_menu;"
+	      os << "button_exit[0.3," << (ypos++) << ";4,0.5;btn_exit_menu;"
 		 << strgettext("Exit to Menu") << "]";
-	      os << "button_exit[0.3," << (ypos++) << ";3,0.5;btn_exit_os;"
+	      os << "button_exit[0.3," << (ypos++) << ";4,0.5;btn_exit_os;"
 		 << strgettext("Exit to OS")   << "];";
 
 	/* Create menu */

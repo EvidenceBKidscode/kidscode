@@ -34,8 +34,6 @@
 
 #include "mainmenumanager.h"  // for g_gamecallback
 
-static u16 KMaxButtonPerColumns = 7;
-
 extern MainGameCallback *g_gamecallback;
 
 enum
@@ -118,7 +116,8 @@ void GUIKeyChangeMenu::removeChildren()
 void GUIKeyChangeMenu::regenerateGui(v2u32 screensize)
 {
 	removeChildren();
-	v2s32 size(show_advanced_buttons ? 750 : 530,
+
+	v2s32 size(show_advanced_buttons ? 1300 : 680,
 		   show_advanced_buttons ? 580 : 430);
 
 	core::rect <s32> rect(screensize.X / 2 - size.X / 2,
@@ -132,7 +131,7 @@ void GUIKeyChangeMenu::regenerateGui(v2u32 screensize)
 	v2s32 topleft(0, 0);
 
 	{
-		core::rect < s32 > rect(size.X / 3, 0, 600, 40);
+		core::rect < s32 > rect(size.X / (show_advanced_buttons ? 3 : 4), 0, 1300, 40);
 		rect += topleft + v2s32(25, 3);
 		//gui::IGUIStaticText *t =
 		const wchar_t *text = wgettext("Keybindings");
@@ -153,21 +152,21 @@ void GUIKeyChangeMenu::regenerateGui(v2u32 screensize)
 		    (!show_advanced_buttons && !k->advanced)) {
 		    	j++;
 			{
-				core::rect < s32 > rect(0, 0, 150, 20);
+				core::rect < s32 > rect(0, 0, show_advanced_buttons ? 250 : 150, 25);
 				rect += topleft + v2s32(offset.X, offset.Y);
 				Environment->addStaticText(k->button_name, rect, false, true, this, -1);
 			}
 
 			{
-				core::rect < s32 > rect(0, 0, 100, 40);
-				rect += topleft + v2s32(offset.X + 130, offset.Y - 5);
+				core::rect < s32 > rect(0, 0, 150, 40);
+				rect += topleft + v2s32(offset.X + (show_advanced_buttons ? 250 : 150), offset.Y - 5);
 				const wchar_t *text = wgettext(k->key.name());
 				k->button = Environment->addButton(rect, this, k->id, text);
 				delete[] text;
 			}
 
 			if ((j % KMaxButtonPerColumns) == 0) {
-				offset.X += 240;
+				offset.X += show_advanced_buttons ? 420 : 320;
 				offset.Y = 60;
 			} else {
 				offset += v2s32(0, 45);
@@ -189,39 +188,41 @@ void GUIKeyChangeMenu::regenerateGui(v2u32 screensize)
 		}
 		offset += v2s32(0, 25);
 	}
+*/
+	if (show_advanced_buttons) {
+		{
+			s32 option_x = offset.X;
+			s32 option_y = offset.Y + 5;
+			u32 option_w = 280;
+			{
+				core::rect<s32> rect(0, 0, option_w, 30);
+				rect += topleft + v2s32(option_x, option_y);
+				const wchar_t *text = wgettext("Double tap \"jump\" to toggle fly");
+				Environment->addCheckBox(g_settings->getBool("doubletap_jump"), rect, this,
+						GUI_ID_CB_DOUBLETAP_JUMP, text);
+				delete[] text;
+			}
+			offset += v2s32(0, 25);
+		}
+	}
 
 	{
-		s32 option_x = offset.X;
-		s32 option_y = offset.Y + 5;
-		u32 option_w = 280;
-		{
-			core::rect<s32> rect(0, 0, option_w, 30);
-			rect += topleft + v2s32(option_x, option_y);
-			const wchar_t *text = wgettext("Double tap \"jump\" to toggle fly");
-			Environment->addCheckBox(g_settings->getBool("doubletap_jump"), rect, this,
-					GUI_ID_CB_DOUBLETAP_JUMP, text);
-			delete[] text;
-		}
-		offset += v2s32(0, 25);
-	}
-*/
-	{
-		core::rect < s32 > rect(0, 0, 150, 40);
+		core::rect < s32 > rect(0, 0, 200, 40);
 		rect += topleft + v2s32(20, size.Y - 50);
-		const wchar_t *text =  wgettext("Advanced");
+		const wchar_t *text = show_advanced_buttons ? wgettext("Base keys") : wgettext("Advanced");
 		Environment->addButton(rect, this, GUI_ID_ADVC_BUTTON, text);
 		delete[] text;
 	}
 	{
-		core::rect < s32 > rect(0, 0, 100, 40);
-		rect += topleft + v2s32(size.X / 2 + (show_advanced_buttons ? 140 : 40), size.Y - 50);
+		core::rect < s32 > rect(0, 0, 150, 40);
+		rect += topleft + v2s32(size.X / 2 + (show_advanced_buttons ? 370 : 40), size.Y - 50);
 		const wchar_t *text =  wgettext("Save");
 		Environment->addButton(rect, this, GUI_ID_BACK_BUTTON, text);
 		delete[] text;
 	}
 	{
 		core::rect < s32 > rect(0, 0, 100, 40);
-		rect += topleft + v2s32(size.X / 2 + (show_advanced_buttons ? 250 : 150), size.Y - 50);
+		rect += topleft + v2s32(size.X / 2 + (show_advanced_buttons ? 530 : 205), size.Y - 50);
 		const wchar_t *text = wgettext("Cancel");
 		Environment->addButton(rect, this, GUI_ID_ABORT_BUTTON, text);
 		delete[] text;
@@ -238,7 +239,7 @@ void GUIKeyChangeMenu::drawMenu()
 	video::SColor bgcolor(140, 0, 0, 0);
 
 	{
-		core::rect < s32 > rect(0, 0, 750, 620);
+		core::rect < s32 > rect(0, 0, 1300, 620);
 		rect += AbsoluteRect.UpperLeftCorner;
 		driver->draw2DRectangle(bgcolor, rect, &AbsoluteClippingRect);
 	}

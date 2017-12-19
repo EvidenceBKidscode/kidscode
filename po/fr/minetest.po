@@ -954,11 +954,6 @@ msgid "\"Special\" = climb down"
 msgstr "\"Use\" = descendre"
 
 #: src/guiKeyChangeMenu.cpp
-#, fuzzy
-msgid "Autoforward"
-msgstr "Avancer"
-
-#: src/guiKeyChangeMenu.cpp
 msgid "Backward"
 msgstr "Reculer"
 
@@ -972,6 +967,30 @@ msgid "Chat"
 msgstr "Chatter"
 
 #: src/guiKeyChangeMenu.cpp
+msgid "Climb"
+msgstr "S'élever"
+
+#: src/guiKeyChangeMenu.cpp
+msgid "Base keys"
+msgstr "Comm. de base"
+
+#: src/guiKeyChangeMenu.cpp
+msgid "Autoforward"
+msgstr "Avance automatique"
+
+#: src/guiKeyChangeMenu.cpp
+msgid "Toggle chat"
+msgstr "Afficher le chat"
+
+#: src/guiKeyChangeMenu.cpp
+msgid "Toggle fog"
+msgstr "Afficher le brouillard"
+
+#: src/guiKeyChangeMenu.cpp
+msgid "Go down"
+msgstr "Descendre"
+
+#: src/guiKeyChangeMenu.cpp
 msgid "Command"
 msgstr "Commande"
 
@@ -980,9 +999,8 @@ msgid "Console"
 msgstr "Console"
 
 #: src/guiKeyChangeMenu.cpp
-#, fuzzy
 msgid "Dec. range"
-msgstr "Plage de visualisation"
+msgstr "Diminuer dist. de vue"
 
 #: src/guiKeyChangeMenu.cpp
 msgid "Dec. volume"
@@ -990,7 +1008,7 @@ msgstr "Réduire le volume"
 
 #: src/guiKeyChangeMenu.cpp
 msgid "Double tap \"jump\" to toggle fly"
-msgstr "Double-appui sur \"saut\" pour voler"
+msgstr "Double-saut pour voler"
 
 #: src/guiKeyChangeMenu.cpp
 msgid "Drop"
@@ -1001,9 +1019,8 @@ msgid "Forward"
 msgstr "Avancer"
 
 #: src/guiKeyChangeMenu.cpp
-#, fuzzy
 msgid "Inc. range"
-msgstr "Plage de visualisation"
+msgstr "Augmenter dist. de vue"
 
 #: src/guiKeyChangeMenu.cpp
 msgid "Inc. volume"
@@ -1051,7 +1068,7 @@ msgstr "Afficher les stacks"
 
 #: src/guiKeyChangeMenu.cpp
 msgid "Range select"
-msgstr "Distance de vue"
+msgstr "Dist. de vue complète"
 
 #: src/guiKeyChangeMenu.cpp src/keycode.cpp
 msgid "Right"
@@ -1074,14 +1091,12 @@ msgid "Toggle Cinematic"
 msgstr "Mode cinématique"
 
 #: src/guiKeyChangeMenu.cpp
-#, fuzzy
 msgid "Toggle HUD"
-msgstr "Voler"
+msgstr "Afficher le HUD"
 
 #: src/guiKeyChangeMenu.cpp
-#, fuzzy
 msgid "Toggle chat log"
-msgstr "Mode rapide"
+msgstr "Afficher hist. du chat"
 
 #: src/guiKeyChangeMenu.cpp
 msgid "Toggle fast"
@@ -1092,18 +1107,16 @@ msgid "Toggle fly"
 msgstr "Voler"
 
 #: src/guiKeyChangeMenu.cpp
-#, fuzzy
-msgid "Toggle fog"
-msgstr "Voler"
-
-#: src/guiKeyChangeMenu.cpp
-#, fuzzy
 msgid "Toggle minimap"
-msgstr "Mode sans collision"
+msgstr "Afficher minimap"
 
 #: src/guiKeyChangeMenu.cpp
 msgid "Toggle noclip"
 msgstr "Mode sans collision"
+
+#: src/guiKeyChangeMenu.cpp
+msgid "Keybindings"
+msgstr "Configuration des touches"
 
 #: src/guiKeyChangeMenu.cpp src/keycode.cpp
 msgid "Zoom"
@@ -1111,7 +1124,7 @@ msgstr "Zoomer"
 
 #: src/guiKeyChangeMenu.cpp
 msgid "press key"
-msgstr "appuyez sur une touche"
+msgstr "Pressez une touche"
 
 #: src/guiPasswordChange.cpp
 msgid "Change"
@@ -2593,7 +2606,7 @@ msgstr "Mode plein écran."
 
 #: src/settings_translation_file.cpp
 msgid "GUI scaling"
-msgstr "Taille du GUI"
+msgstr "Echelle du GUI"
 
 #: src/settings_translation_file.cpp
 msgid "GUI scaling filter"
@@ -5061,7 +5074,7 @@ msgstr "Touche de vue du zoom"
 
 #: src/settings_translation_file.cpp
 msgid "Viewing range"
-msgstr "Plage de visualisation"
+msgstr "Distance de vue"
 
 #: src/settings_translation_file.cpp
 msgid "Volume"
