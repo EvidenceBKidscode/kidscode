@@ -614,7 +614,7 @@ public:
 #ifdef __ANDROID__
 #define SIZE_TAG "size[11,5.5]"
 #else
-#define SIZE_TAG "size[3.6,9.5,true]" // Fixed size on desktop
+#define SIZE_TAG "size[4.5,9.5,true]" // Fixed size on desktop
 #endif
 
 /****************************************************************************
@@ -4085,6 +4085,8 @@ void Game::showDeathFormspec()
 #define GET_KEY_NAME(KEY) gettext(getKeySetting(#KEY).name())
 void Game::showPauseMenu()
 {
+// >> KIDSCODE
+/*
 #ifdef __ANDROID__
 	static const std::string control_text = strgettext("Default Controls:\n"
 		"No menu visible:\n"
@@ -4133,6 +4135,8 @@ void Game::showPauseMenu()
 	std::string control_text = std::string(control_text_buf);
 	str_formspec_escape(control_text);
 #endif
+*/
+// << KISCODE
 
 	float ypos = 0.8f;
 	std::ostringstream os;
@@ -4141,35 +4145,35 @@ void Game::showPauseMenu()
 
 	ypos += 0.2f;
 
-	os << "button_exit[0.3," << (ypos++) << ";3,0.5;btn_continue;"
+	os << "button_exit[0.3," << (ypos++) << ";4,0.5;btn_continue;"
 	   << strgettext("Continue") << "]";
 
 	os << "label[0.3," << ypos << ";" << strgettext("Mouse sensitivity") << "]";
 	ypos += 0.5f;
 	std::string mouse_sensitivity = std::to_string(g_settings->getFloat("mouse_sensitivity") * 500.0f);
-	os << "scrollbar[0.3," << (ypos++) << ";2.8,0.6;horizontal;sbr_mouse_sensitivity;" << mouse_sensitivity << "]";
+	os << "scrollbar[0.3," << (ypos++) << ";3.8,0.6;horizontal;sbr_mouse_sensitivity;" << mouse_sensitivity << "]";
 
 	os << "label[0.3," << (ypos -= 0.2f) << ";" << strgettext("Viewing range") << "]";
 	ypos += 0.5f;
 	std::string viewing_range = std::to_string((g_settings->getFloat("viewing_range") / 100.0f) * 250.0f);
-	os << "scrollbar[0.3," << (ypos++) << ";2.8,0.6;horizontal;sbr_viewing_range;" << viewing_range << "]";
+	os << "scrollbar[0.3," << (ypos++) << ";3.8,0.6;horizontal;sbr_viewing_range;" << viewing_range << "]";
 
 	os << "label[0.3," << (ypos -= 0.2f) << ";" << strgettext("GUI scaling") << "]";
 	ypos += 0.5f;
 	std::string gui_scaling = std::to_string(g_settings->getFloat("gui_scaling") * 500.0f);
-	os << "scrollbar[0.3," << (ypos++) << ";2.8,0.6;horizontal;sbr_gui_scaling;" << gui_scaling << "]";
+	os << "scrollbar[0.3," << (ypos++) << ";3.8,0.6;horizontal;sbr_gui_scaling;" << gui_scaling << "]";
 
-	os << "field[0.8,0;5,1.5;;" << strgettext("Game paused") << ";]";
+	os << "field[1.2,0;5,1.5;;" << strgettext("Game paused") << ";]";
 
 #ifndef __ANDROID__
-	os		<< "button_exit[0.3," << (ypos++) << ";3,0.5;btn_sound;"
+	os		<< "button_exit[0.3," << (ypos++) << ";4,0.5;btn_sound;"
 		<< strgettext("Sound Volume") << "]";
-	os		<< "button_exit[0.3," << (ypos++) << ";3,0.5;btn_key_config;"
+	os		<< "button_exit[0.3," << (ypos++) << ";4,0.5;btn_key_config;"
 		<< strgettext("Change Keys")  << "]";
 #endif
-	      os << "button_exit[0.3," << (ypos++) << ";3,0.5;btn_exit_menu;"
+	      os << "button_exit[0.3," << (ypos++) << ";4,0.5;btn_exit_menu;"
 		 << strgettext("Exit to Menu") << "]";
-	      os << "button_exit[0.3," << (ypos++) << ";3,0.5;btn_exit_os;"
+	      os << "button_exit[0.3," << (ypos++) << ";4,0.5;btn_exit_os;"
 		 << strgettext("Exit to OS")   << "];";
 
 	/* Create menu */

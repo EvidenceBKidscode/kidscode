@@ -35,8 +35,6 @@
 
 #include "mainmenumanager.h"  // for g_gamecallback
 
-static u16 KMaxButtonPerColumns = 7;
-
 extern MainGameCallback *g_gamecallback;
 
 enum
@@ -120,25 +118,19 @@ void GUIKeyChangeMenu::regenerateGui(v2u32 screensize)
 	removeChildren();
 
 	const float s = m_gui_scale;
-	DesiredRect = core::rect<s32>(
-		screensize.X / 2 - 835 * s / 2,
-		screensize.Y / 2 - 430 * s / 2,
-		screensize.X / 2 + 835 * s / 2,
-		screensize.Y / 2 + 430 * s / 2
-	);
 
-	if (show_advanced_buttons) // 750x580
+	if (show_advanced_buttons)
 		DesiredRect = core::rect<s32>(
-			screensize.X / 2 - 750 * s / 2,
+			screensize.X / 2 - 1300 * s / 2,
 			screensize.Y / 2 - 580 * s / 2,
-			screensize.X / 2 + 750 * s / 2,
+			screensize.X / 2 + 1300 * s / 2,
 			screensize.Y / 2 + 580 * s / 2
 		);
-	else // 530x430
+	else
 		DesiredRect = core::rect<s32>(
-			screensize.X / 2 - 530 * s / 2,
+			screensize.X / 2 - 680 * s / 2,
 			screensize.Y / 2 - 430 * s / 2,
-			screensize.X / 2 + 530 * s / 2,
+			screensize.X / 2 + 680 * s / 2,
 			screensize.Y / 2 + 430 * s / 2
 		);
 
@@ -148,7 +140,7 @@ void GUIKeyChangeMenu::regenerateGui(v2u32 screensize)
 	v2s32 topleft(0, 0);
 
 	{
-		core::rect<s32> rect(0, 0, 600 * s, 40 * s);
+		core::rect < s32 > rect(size.X / (show_advanced_buttons ? 3 : 4), 0, 1300 * s, 40 * s);
 		rect += topleft + v2s32(25 * s, 3 * s);
 		//gui::IGUIStaticText *t =
 		const wchar_t *text = wgettext("Keybindings. (If this menu screws up, remove stuff from minetest.conf)");
@@ -168,14 +160,14 @@ void GUIKeyChangeMenu::regenerateGui(v2u32 screensize)
 		if ((show_advanced_buttons && k->advanced) ||
 				(!show_advanced_buttons && !k->advanced)) {
 			{
-				core::rect<s32> rect(0, 0, 150 * s, 20 * s);
+				core::rect < s32 > rect(0, 0, (show_advanced_buttons ? 250 : 150) * s, 25 * s);
 				rect += topleft + v2s32(offset.X, offset.Y);
 				Environment->addStaticText(k->button_name, rect, false, true, this, -1);
 			}
 
 			{
-				core::rect<s32> rect(0, 0, 100 * s, 40 * s);
-				rect += topleft + v2s32(offset.X + 130 * s, offset.Y - 5 * s);
+				core::rect<s32> rect(0, 0, 150 * s, 40 * s);
+				rect += topleft + v2s32(offset.X + (show_advanced_buttons ? 250 : 150) * s, offset.Y - 5 * s);
 				const wchar_t *text = wgettext(k->key.name());
 				k->button = GUIButton::addButton(Environment, rect, this, k->id, text);
 				delete[] text;
@@ -183,7 +175,7 @@ void GUIKeyChangeMenu::regenerateGui(v2u32 screensize)
 
 			j++;
 			if ((j % KMaxButtonPerColumns) == 0) {
-				offset.X += 240 * s;
+				offset.X += (show_advanced_buttons ? 420 : 320) * s;
 				offset.Y = 60 * s;
 			} else {
 				offset += v2s32(0, 45 * s);
@@ -235,27 +227,26 @@ void GUIKeyChangeMenu::regenerateGui(v2u32 screensize)
 					GUI_ID_CB_AUTOJUMP, text);
 			delete[] text;
 		}
-		offset += v2s32(0, 25);
 	}
 */
 
 	{
-		core::rect < s32 > rect(0, 0, 150 * s, 40 * s);
+		core::rect < s32 > rect(0, 0, 200 * s, 40 * s);
 		rect += topleft + v2s32(20 * s, size.Y - 50 * s);
-		const wchar_t *text =  wgettext("Advanced");
+		const wchar_t *text = show_advanced_buttons ? wgettext("Base keys") : wgettext("Advanced");
 		GUIButton::addButton(Environment, rect, this, GUI_ID_ADVC_BUTTON, text);
 		delete[] text;
 	}
 	{
-		core::rect < s32 > rect(0, 0, 100 * s, 40 * s);
-		rect += topleft + v2s32(size.X / 2 + (show_advanced_buttons ? 140 : 40) * s, size.Y - 50 * s);
+		core::rect < s32 > rect(0, 0, 150 * s, 40 * s);
+		rect += topleft + v2s32(size.X / 2 + (show_advanced_buttons ? 370 : 40) * s, size.Y - 50 * s);
 		const wchar_t *text =  wgettext("Save");
 		GUIButton::addButton(Environment, rect, this, GUI_ID_BACK_BUTTON, text);
 		delete[] text;
 	}
 	{
 		core::rect < s32 > rect(0, 0, 100 * s, 40 * s);
-		rect += topleft + v2s32(size.X / 2 + (show_advanced_buttons ? 250 : 150) * s, size.Y - 50 * s);
+		rect += topleft + v2s32(size.X / 2 + (show_advanced_buttons ? 530 : 205) * s, size.Y - 50 * s);
 		const wchar_t *text = wgettext("Cancel");
 		GUIButton::addButton(Environment, rect, this, GUI_ID_ABORT_BUTTON, text);
 		delete[] text;
@@ -270,7 +261,16 @@ void GUIKeyChangeMenu::drawMenu()
 	video::IVideoDriver* driver = Environment->getVideoDriver();
 
 	video::SColor bgcolor(140, 0, 0, 0);
+
 	driver->draw2DRectangle(bgcolor, AbsoluteRect, &AbsoluteClippingRect);
+
+/*
+	{
+		core::rect < s32 > rect(0, 0, 1300, 620);
+		rect += AbsoluteRect.UpperLeftCorner;
+		driver->draw2DRectangle(bgcolor, rect, &AbsoluteClippingRect);
+	}
+*/
 
 	gui::IGUIElement::draw();
 }

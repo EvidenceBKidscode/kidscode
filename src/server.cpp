@@ -433,6 +433,8 @@ void Server::start()
 	// Start thread
 	m_thread->start();
 
+// >> KIDSCODE
+/*
 	// ASCII art for the win!
 	std::cerr
 		<< "        .__               __                   __   " << std::endl
@@ -441,6 +443,8 @@ void Server::start()
 		<< "|  Y Y  \\  |   |  \\  ___/|  | \\  ___/ \\___ \\  |  |  " << std::endl
 		<< "|__|_|  /__|___|  /\\___  >__|  \\___  >____  > |__|  " << std::endl
 		<< "      \\/        \\/     \\/          \\/     \\/        " << std::endl;
+*/
+// << KIDSCODE
 	actionstream << "World at [" << m_path_world << "]" << std::endl;
 	actionstream << "Server for gameid=\"" << m_gamespec.id
 			<< "\" listening on " << m_bind_addr.serializeString() << ":"

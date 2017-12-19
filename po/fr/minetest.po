@@ -1272,9 +1272,41 @@ msgstr "Applications"
 msgid "Backspace"
 msgstr "Retour"
 
+#: src/gui/guiKeyChangeMenu.cpp
+msgid "Climb"
+msgstr "S'élever"
+
+#: src/gui/guiKeyChangeMenu.cpp
+msgid "Base keys"
+msgstr "Comm. de base"
+
+#: src/gui/guiKeyChangeMenu.cpp
+msgid "Toggle chat"
+msgstr "Afficher le chat"
+
+#: src/gui/guiKeyChangeMenu.cpp
+msgid "Go down"
+msgstr "Descendre"
+
+#: src/gui/guiKeyChangeMenu.cpp
+msgid "Command"
+msgstr "Commande"
+
 #: src/client/keycode.cpp
 msgid "Caps Lock"
 msgstr "Verr. Maj"
+
+#: src/gui/guiKeyChangeMenu.cpp src/settings_translation_file.cpp
+msgid "Print stacks"
+msgstr "Afficher les stacks"
+
+#: src/gui/guiKeyChangeMenu.cpp
+msgid "Toggle Cinematic"
+msgstr "Mode cinématique"
+
+#: src/guiKeyChangeMenu.cpp
+msgid "Keybindings"
+msgstr "Configuration des touches"
 
 #: src/client/keycode.cpp
 msgid "Clear"
@@ -1575,10 +1607,6 @@ msgstr "Changer la caméra"
 #: src/gui/guiKeyChangeMenu.cpp
 msgid "Chat"
 msgstr "Chatter"
-
-#: src/gui/guiKeyChangeMenu.cpp
-msgid "Command"
-msgstr "Commande"
 
 #: src/gui/guiKeyChangeMenu.cpp
 msgid "Console"
@@ -3206,7 +3234,7 @@ msgstr "Mode plein écran."
 
 #: src/settings_translation_file.cpp
 msgid "GUI scaling"
-msgstr "Taille du GUI"
+msgstr "Echelle du GUI"
 
 #: src/settings_translation_file.cpp
 msgid "GUI scaling filter"
@@ -6524,7 +6552,7 @@ msgstr "Touche de vue du zoom"
 
 #: src/settings_translation_file.cpp
 msgid "Viewing range"
-msgstr "Plage de visualisation"
+msgstr "Distance de vue"
 
 #: src/settings_translation_file.cpp
 msgid "Virtual joystick triggers aux button"
@@ -6823,6 +6851,3 @@ msgstr "Délais d'interruption de cURL"
 
 #~ msgid "Select Package File:"
 #~ msgstr "Sélectionner le fichier du mod :"
-
-#~ msgid "Toggle Cinematic"
-#~ msgstr "Mode cinématique"

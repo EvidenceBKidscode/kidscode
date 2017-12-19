@@ -73,6 +73,7 @@ private:
 	bool shift_down = false;
 	bool show_advanced_buttons = false;
 	s32 activeKey = -1;
+	u16 KMaxButtonPerColumns = 7;
 
 	std::vector<KeyPress> key_used;
 	gui::IGUIStaticText *key_used_text = nullptr;
