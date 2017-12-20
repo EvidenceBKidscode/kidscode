@@ -128,12 +128,15 @@ public:
 		keyWasDown.clear();
 
 		leftclicked = false;
+		middleclicked = false; // :PATCH:
 		rightclicked = false;
+		
 		leftreleased = false;
+		middlereleased = false; // :PATCH:
 		rightreleased = false;
 
 		left_active = false;
-		middle_active = false;
+		middle_active = false; // :PATCH:
 		right_active = false;
 
 		mouse_wheel = 0;
@@ -147,12 +150,15 @@ public:
 	}
 
 	bool leftclicked = false;
+	bool middleclicked = false; // :PATCH:
 	bool rightclicked = false;
+	
 	bool leftreleased = false;
+	bool middlereleased = false; // :PATCH:
 	bool rightreleased = false;
 
 	bool left_active = false;
-	bool middle_active = false;
+	bool middle_active = false; // :PATCH:
 	bool right_active = false;
 
 	s32 mouse_wheel = 0;
@@ -193,16 +199,23 @@ public:
 	virtual void setMousePos(s32 x, s32 y) = 0;
 
 	virtual bool getLeftState() = 0;
+	virtual bool getMiddleState() = 0; // :PATCH:
 	virtual bool getRightState() = 0;
 
 	virtual bool getLeftClicked() = 0;
+	virtual bool getMiddleClicked() = 0; // :PATCH:
 	virtual bool getRightClicked() = 0;
+
 	virtual void resetLeftClicked() = 0;
+	virtual void resetMiddleClicked() = 0; // :PATCH:
 	virtual void resetRightClicked() = 0;
 
 	virtual bool getLeftReleased() = 0;
+	virtual bool getMiddleReleased() = 0; // :PATCH:
 	virtual bool getRightReleased() = 0;
+	
 	virtual void resetLeftReleased() = 0;
+	virtual void resetMiddleReleased() = 0; // :PATCH:
 	virtual void resetRightReleased() = 0;
 
 	virtual s32 getMouseWheel() = 0;
@@ -260,16 +273,23 @@ public:
 	}
 
 	virtual bool getLeftState() { return m_receiver->left_active; }
+	virtual bool getMiddleState() { return m_receiver->middle_active; } // :PATCH:
 	virtual bool getRightState() { return m_receiver->right_active; }
 
 	virtual bool getLeftClicked() { return m_receiver->leftclicked; }
+	virtual bool getMiddleClicked() { return m_receiver->middleclicked; } // :PATCH:
 	virtual bool getRightClicked() { return m_receiver->rightclicked; }
+	
 	virtual void resetLeftClicked() { m_receiver->leftclicked = false; }
+	virtual void resetMiddleClicked() { m_receiver->middleclicked = false; } // :PATCH:
 	virtual void resetRightClicked() { m_receiver->rightclicked = false; }
 
 	virtual bool getLeftReleased() { return m_receiver->leftreleased; }
+	virtual bool getMiddleReleased() { return m_receiver->middlereleased; } // :PATCH:
 	virtual bool getRightReleased() { return m_receiver->rightreleased; }
+	
 	virtual void resetLeftReleased() { m_receiver->leftreleased = false; }
+	virtual void resetMiddleReleased() { m_receiver->middlereleased = false; } // :PATCH:
 	virtual void resetRightReleased() { m_receiver->rightreleased = false; }
 
 	virtual s32 getMouseWheel() { return m_receiver->getMouseWheel(); }
@@ -296,16 +316,23 @@ public:
 	virtual void setMousePos(s32 x, s32 y) { mousepos = v2s32(x, y); }
 
 	virtual bool getLeftState() { return leftdown; }
+	virtual bool getMiddleState() { return middledown; }
 	virtual bool getRightState() { return rightdown; }
 
 	virtual bool getLeftClicked() { return leftclicked; }
+	virtual bool getMiddleClicked() { return middleclicked; }
 	virtual bool getRightClicked() { return rightclicked; }
+
 	virtual void resetLeftClicked() { leftclicked = false; }
+	virtual void resetMiddleClicked() { middleclicked = false; }
 	virtual void resetRightClicked() { rightclicked = false; }
 
 	virtual bool getLeftReleased() { return leftreleased; }
+	virtual bool getMiddleReleased() { return middlereleased; }
 	virtual bool getRightReleased() { return rightreleased; }
+
 	virtual void resetLeftReleased() { leftreleased = false; }
+	virtual void resetMiddleReleased() { middlereleased = false; }
 	virtual void resetRightReleased() { rightreleased = false; }
 
 	virtual s32 getMouseWheel() { return 0; }
@@ -386,9 +413,12 @@ private:
 	v2s32 mousepos;
 	v2s32 mousespeed;
 	bool leftdown = false;
+	bool middledown = false;
 	bool rightdown = false;
 	bool leftclicked = false;
+	bool middleclicked = false;
 	bool rightclicked = false;
 	bool leftreleased = false;
+	bool middlereleased = false;
 	bool rightreleased = false;
 };

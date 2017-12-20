@@ -46,6 +46,7 @@ struct PlayerControl
 		bool a_sneak,
 		bool a_zoom,
 		bool a_LMB,
+		bool a_MMB,
 		bool a_RMB,
 		float a_pitch,
 		float a_yaw,
@@ -62,6 +63,7 @@ struct PlayerControl
 		sneak = a_sneak;
 		zoom = a_zoom;
 		LMB = a_LMB;
+		MMB = a_MMB;
 		RMB = a_RMB;
 		pitch = a_pitch;
 		yaw = a_yaw;
@@ -77,6 +79,7 @@ struct PlayerControl
 	bool sneak = false;
 	bool zoom = false;
 	bool LMB = false;
+	bool MMB = false;
 	bool RMB = false;
 	float pitch = 0.0f;
 	float yaw = 0.0f;
