@@ -377,6 +377,11 @@ scene::ISceneNode* GenericCAO::getSceneNode()
 	if (m_spritenode) {
 		return m_spritenode;
 	}
+	
+	if (m_textspritenode) {
+		return m_textspritenode;
+	}
+	
 	return NULL;
 }
 
@@ -449,6 +454,10 @@ void GenericCAO::removeFromScene(bool permanent)
 		m_spritenode->remove();
 		m_spritenode->drop();
 		m_spritenode = NULL;
+	} else if (m_textspritenode) {
+		m_textspritenode->remove();
+		m_textspritenode->drop();
+		m_textspritenode = NULL;
 	}
 
 	if (m_nametag) {
@@ -489,6 +498,82 @@ void GenericCAO::addToScene(ITextureSource *tsrc)
 			const float txs = 1.0 / 1;
 			const float tys = 1.0 / 1;
 			setBillboardTextureMatrix(m_spritenode,
+					txs, tys, 0, 0);
+		}
+	} else if (m_prop.visual == "text_sprite") { // :PATCH:
+		infostream<<"GenericCAO::addToScene(): text"<<std::endl;
+		std::string text;
+		std::string params;
+		parseTextString(m_prop.mesh, text, params, '^');
+		std::wstring wtext = utf8_to_wide(text);
+		
+		std::vector<std::string> values = split(params,';');
+
+		float border = 0.1f;
+		float x_padding = 0.2f;
+		float y_padding = 0.1f;
+		float x_offset = 0.15f;
+		float y_offset = 0.0f;
+		float spacing = 1.0f;
+		float base_offset = 0.22f;
+		
+		if (values.size() > 0 && values[0].size() > 0)
+			border = stof(values[0]);
+			
+		if (values.size() > 1 && values[1].size() > 0)
+			x_padding = stof(values[1]);
+			
+		if (values.size() > 2 && values[2].size() > 0)
+			y_padding = stof(values[2]);
+			
+		if (values.size() > 3 && values[3].size() > 0)
+			x_offset = stof(values[3]);
+			
+		if (values.size() > 4 && values[4].size() > 0)
+			y_offset = stof(values[4]);
+			
+		if (values.size() > 5 && values[5].size() > 0)
+			spacing = stof(values[5]);
+			
+		if (values.size() > 6 && values[6].size() > 0)
+			base_offset = stof(values[6]);
+
+		video::SColor top_color(255,255,255,255);
+		video::SColor bottom_color(255,255,255,255);
+		video::SColor background_color(128,128,128,128);
+		video::SColor border_color(128,64,64,64);
+		
+		if (m_prop.colors.size() > 1) 
+			top_color = m_prop.colors[1];
+			
+		if (m_prop.colors.size() > 2) 
+			bottom_color = m_prop.colors[2];
+
+		if (m_prop.colors.size() > 3) 
+			background_color = m_prop.colors[3];
+			
+		if (m_prop.colors.size() > 4) 
+			border_color = m_prop.colors[4];
+			
+		core::dimension2d<f32> text_size = m_prop.visual_size*BS;
+		
+		gui::IGUIFont* font = m_smgr->getGUIEnvironment()->getFont("fonts/mono_dejavu_sans_28.xml");
+		core::dimension2d<u32> font_size = font->getDimension(wtext.c_str());
+		
+		text_size.Width *= (f32)font_size.Width / font_size.Height;
+		
+		m_textspritenode = scene::CTextSpriteSceneNode::addBillboardTextSceneNode(
+				font, wtext.c_str(), 
+				m_smgr->getGUIEnvironment(), m_smgr, NULL, 
+				text_size, v3f(0,0,0), -1,
+				top_color, bottom_color, true, background_color, border_color, border, 
+				x_padding, y_padding, x_offset, y_offset, spacing, base_offset);
+						
+		m_textspritenode->grab();
+		{
+			const float txs = 1.0 / 1;
+			const float tys = 1.0 / 1;
+			setBillboardTextureMatrix(m_textspritenode,
 					txs, tys, 0, 0);
 		}
 	} else if (m_prop.visual == "upright_sprite") {
@@ -542,8 +627,7 @@ void GenericCAO::addToScene(ITextureSource *tsrc)
 		// Set it to use the materials of the meshbuffers directly.
 		// This is needed for changing the texture in the future
 		m_meshnode->setReadOnlyMaterials(true);
-	}
-	else if(m_prop.visual == "cube") {
+	} else if(m_prop.visual == "cube") {
 		infostream<<"GenericCAO::addToScene(): cube"<<std::endl;
 		scene::IMesh *mesh = createCubeMesh(v3f(BS,BS,BS));
 		m_meshnode = RenderingEngine::get_scene_manager()->addMeshSceneNode(mesh, NULL);
@@ -560,8 +644,7 @@ void GenericCAO::addToScene(ITextureSource *tsrc)
 		m_meshnode->setMaterialFlag(video::EMF_BILINEAR_FILTER, false);
 		m_meshnode->setMaterialType(video::EMT_TRANSPARENT_ALPHA_CHANNEL_REF);
 		m_meshnode->setMaterialFlag(video::EMF_FOG_ENABLE, true);
-	}
-	else if(m_prop.visual == "mesh") {
+	} else if(m_prop.visual == "mesh") {
 		infostream<<"GenericCAO::addToScene(): mesh"<<std::endl;
 		scene::IAnimatedMesh *mesh = m_client->getMesh(m_prop.mesh);
 		if(mesh)
@@ -674,6 +757,8 @@ void GenericCAO::updateLightNoCheck(u8 light_at_pos)
 			m_wield_meshnode->setColor(color);
 		} else if (m_spritenode) {
 			m_spritenode->setColor(color);
+		} else if (m_textspritenode) {
+			m_textspritenode->setColor(color);
 		}
 	}
 }
@@ -696,7 +781,7 @@ void GenericCAO::updateNodePos()
 	if (node) {
 		v3s16 camera_offset = m_env->getCameraOffset();
 		node->setPosition(pos_translator.vect_show - intToFloat(camera_offset, BS));
-		if (node != m_spritenode) { // rotate if not a sprite
+		if (node != m_spritenode && node != m_textspritenode) { // rotate if not a sprite
 			v3f rot = node->getRotation();
 			rot.Y = -m_yaw;
 			node->setRotation(rot);
@@ -924,14 +1009,26 @@ void GenericCAO::step(float dtime, ClientEnvironment *env)
 
 void GenericCAO::updateTexturePos()
 {
-	if(m_spritenode)
+	if(m_spritenode || m_textspritenode)
 	{
-		scene::ICameraSceneNode* camera =
-				m_spritenode->getSceneManager()->getActiveCamera();
+		scene::ICameraSceneNode* camera;
+		
+		if (m_spritenode)
+				camera = m_spritenode->getSceneManager()->getActiveCamera();
+				
+		if (m_textspritenode)
+				camera = m_textspritenode->getSceneManager()->getActiveCamera();
+				
 		if(!camera)
 			return;
-		v3f cam_to_entity = m_spritenode->getAbsolutePosition()
-				- camera->getAbsolutePosition();
+		v3f cam_to_entity;
+		
+		if (m_spritenode)
+			cam_to_entity = m_spritenode->getAbsolutePosition()	- camera->getAbsolutePosition();
+			
+		if (m_textspritenode)
+			cam_to_entity = m_textspritenode->getAbsolutePosition()	- camera->getAbsolutePosition();
+			
 		cam_to_entity.normalize();
 
 		int row = m_tx_basepos.Y;
@@ -967,8 +1064,12 @@ void GenericCAO::updateTexturePos()
 
 		float txs = m_tx_size.X;
 		float tys = m_tx_size.Y;
-		setBillboardTextureMatrix(m_spritenode,
-				txs, tys, col, row);
+		
+		if (m_spritenode)
+				setBillboardTextureMatrix(m_spritenode,	txs, tys, col, row);
+				
+		if (m_textspritenode)
+				setBillboardTextureMatrix(m_textspritenode,	txs, tys, col, row);
 	}
 }
 
