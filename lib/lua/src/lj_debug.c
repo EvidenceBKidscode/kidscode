@@ -343,13 +343,14 @@ void lj_debug_shortname(char *out, GCstr *str)
     }
     strcpy(out, src);
   } else {  /* Output [string "string"]. */
+	size_t srclen = strlen(src);
     size_t len;  /* Length, up to first control char. */
     for (len = 0; len < LUA_IDSIZE-12; len++)
       if (((const unsigned char *)src)[len] < ' ') break;
     strcpy(out, "[string \""); out += 9;
     if (src[len] != '\0') {  /* Must truncate? */
       if (len > LUA_IDSIZE-15) {
-		src += len - (LUA_IDSIZE-15);
+		src += srclen - (LUA_IDSIZE-15);
 		len = LUA_IDSIZE-15;
 	  }
       strcpy(out, "..."); out += 3;
