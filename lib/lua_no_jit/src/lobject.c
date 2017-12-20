@@ -199,11 +199,12 @@ void luaO_chunkid (char *out, const char *source, size_t bufflen) {
     }
     else {  /* out = [string "string"] */
       size_t len = strcspn(source, "\n\r");  /* stop at first newline */
+      size_t srclen = len;
       bufflen -= sizeof(" [string \"...\"] ");
       if (len > bufflen) len = bufflen;
       strcpy(out, "[string \"");
       if (source[len] != '\0') {  /* must truncate? */
-        source += (len-bufflen);
+        source += (srclen-len);
         strcat(out, "...");
         strncat(out, source, len);
       }
