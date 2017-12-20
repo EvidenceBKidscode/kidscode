@@ -10,3 +10,5 @@ _*
 *.dmp
 *.swp
 .tags
+buildvm
+minilua
