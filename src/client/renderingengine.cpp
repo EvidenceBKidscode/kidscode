@@ -35,6 +35,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "render/factory.h"
 #include "inputhandler.h"
 #include "gettext.h"
+#include "gui/guiSkin.h" // :PATCH:
 
 #if !defined(_WIN32) && !defined(__APPLE__) && !defined(__ANDROID__) && \
 		!defined(SERVER) && !defined(__HAIKU__)
@@ -44,6 +45,27 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #endif
+
+static gui::GUISkin* createSkin(gui::IGUIEnvironment *environment, 
+	gui::EGUI_SKIN_TYPE type, video::IVideoDriver *driver) // :PATCH:
+{
+	gui::GUISkin* skin = new gui::GUISkin(type, driver);
+
+	gui::IGUIFont* builtinfont = environment->getBuiltInFont();
+	gui::IGUIFontBitmap* bitfont = 0;
+	if (builtinfont && builtinfont->getType() == gui::EGFT_BITMAP)
+		bitfont = (gui::IGUIFontBitmap*)builtinfont;
+
+	gui::IGUISpriteBank* bank = 0;
+	skin->setFont(builtinfont);
+
+	if (bitfont)
+		bank = bitfont->getSpriteBank();
+
+	skin->setSpriteBank(bank);
+
+	return skin;
+}
 
 RenderingEngine *RenderingEngine::s_singleton = nullptr;
 
@@ -107,6 +129,9 @@ RenderingEngine::RenderingEngine(IEventReceiver *receiver)
 	driver = m_device->getVideoDriver();
 
 	s_singleton = this;
+	
+	gui::GUISkin *skin = createSkin(m_device->getGUIEnvironment(), gui::EGST_WINDOWS_METALLIC, driver); // :PATCH:
+	m_device->getGUIEnvironment()->setSkin(skin);
 }
 
 RenderingEngine::~RenderingEngine()
