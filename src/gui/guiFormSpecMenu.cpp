@@ -55,6 +55,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "guiscalingfilter.h"
 #include "guiEditBoxWithScrollbar.h"
 #include "guiComboBox.h"
+#include "guiScrollBar.h"
 #include "guiImageTabControl.h"
 
 #if USE_FREETYPE && IRRLICHT_VERSION_MAJOR == 1 && IRRLICHT_VERSION_MINOR < 9
@@ -1937,6 +1938,7 @@ void GUIFormSpecMenu::parseItemImageButton(parserData* data, const std::string &
 	errorstream<< "Invalid ItemImagebutton element(" << parts.size() << "): '" << element << "'"  << std::endl;
 }
 
+/*
 void GUIFormSpecMenu::parseTabHeader(parserData* data, const std::string &element)
 {
 	std::vector<std::string> parts = split(element,';');
@@ -2007,6 +2009,7 @@ void GUIFormSpecMenu::parseTabHeader(parserData* data, const std::string &elemen
 	errorstream << "Invalid TabHeader element(" << parts.size() << "): '"
 			<< element << "'"  << std::endl;
 }
+*/
 
 void GUIFormSpecMenu::parseBox(parserData* data, const std::string &element)
 {
