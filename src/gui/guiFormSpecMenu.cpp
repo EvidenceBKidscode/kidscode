@@ -475,7 +475,7 @@ void GUIFormSpecMenu::parseScrollBar(parserData* data, const std::string &elemen
 		s32 small_step = 10;
 		s32 large_step = 100;
 
-        if (parts.size() > 4 && parts[4].length() > 0) {
+		if (parts.size() > 4 && parts[4].length() > 0) {
 			std::vector<std::string> values = split(parts[4],',');
 
 			if (values.size() > 0 && values[0].length() > 0)
@@ -540,7 +540,7 @@ void GUIFormSpecMenu::parseScrollBar(parserData* data, const std::string &elemen
 		spec.ftype = f_ScrollBar;
 		spec.send  = true;
 		gui::GUIScrollBar* e =
-				GUIScrollBar::addScrollBar(Environment, is_horizontal,rect,this,spec.fid);
+			GUIScrollBar::addScrollBar(Environment, is_horizontal,rect,this,spec.fid);
 
 		e->setMin(min);
 		e->setMax(max);
@@ -550,18 +550,26 @@ void GUIFormSpecMenu::parseScrollBar(parserData* data, const std::string &elemen
 
 		e->setPos(value);
 
-        if (has_bg_color)
-			e->setColor(EGDC_SCROLLBAR, bg_color);
+        if (has_bg_color) {
+		e->setColor(EGDC_SCROLLBAR, bg_color);
+	} else {
+		video::SColor c = video::SColor(255, 136, 172, 197);
+		e->setColor(EGDC_SCROLLBAR, c, 1.75f);
+        }
 
         if (has_button_color) {
-			set3DSkinColors(e, button_color);
-			e->setColor(EGDC_WINDOW_SYMBOL, button_color, 1.75f);
-		}
+		set3DSkinColors(e, button_color);
+		e->setColor(EGDC_WINDOW_SYMBOL, button_color, 1.75f);
+	} else {
+		video::SColor c = video::SColor(255, 136, 172, 197);
+		set3DSkinColors(e, c);
+		e->setColor(EGDC_WINDOW_SYMBOL, c, 1.75f);
+	}
 
         if (has_icon_color) {
-			e->setColor(EGDC_WINDOW_SYMBOL, icon_color);
-			e->setColor(EGDC_GRAY_WINDOW_SYMBOL, icon_color, 0.5f);
-		}
+		e->setColor(EGDC_WINDOW_SYMBOL, icon_color);
+		e->setColor(EGDC_GRAY_WINDOW_SYMBOL, icon_color, 0.5f);
+	}
 
         if (has_disabled_icon_color)
 			e->setColor(EGDC_GRAY_WINDOW_SYMBOL, disabled_icon_color);
@@ -570,6 +578,7 @@ void GUIFormSpecMenu::parseScrollBar(parserData* data, const std::string &elemen
 		m_fields.push_back(spec);
 		return;
 	}
+
 	errorstream<< "Invalid scrollbar element(" << parts.size() << "): '" << element << "'"  << std::endl;
 }
 
@@ -694,9 +703,13 @@ void GUIFormSpecMenu::parseButton(parserData* data, const std::string &element,
 		gui::GUIButton* e = GUIButton::addButton(Environment, rect, this, spec.fid,
 				spec.flabel.c_str());
 
-        if (has_color) {
+		if (has_color) {
 			set3DSkinColors(e, color);
 			e->setColor(EGDC_WINDOW_SYMBOL, color, 1.75f);
+		} else {
+			video::SColor c = video::SColor(255, 136, 172, 197);
+			set3DSkinColors(e, c);
+			e->setColor(EGDC_WINDOW_SYMBOL, c, 1.75f);
 		}
 
 		if (spec.fname == data->focused_fieldname) {
@@ -960,8 +973,12 @@ void GUIFormSpecMenu::parseDropDown(parserData* data, const std::string &element
 		//now really show list
 		GUIComboBox* e = new GUIComboBox(Environment, this, spec.fid, rect);
 
-		if (has_bg_color)
+		if (has_bg_color) {
 			e->setBackgroundColor(bg_color);
+		} else {
+			video::SColor c = video::SColor(255, 40, 65, 83);
+			e->setBackgroundColor(c);
+		}
 
 		if (has_selected_item_color)
 			e->setSelectedItemColor(selected_item_color);
@@ -1135,6 +1152,9 @@ void GUIFormSpecMenu::parseSimpleField(parserData* data,
 
 		if (has_bg_color) {
 			static_text->setBackgroundColor(bg_color);
+		} else {
+			video::SColor c = video::SColor(255, 70, 115, 147);
+			static_text->setBackgroundColor(c);
 		}
 	}
 	else
@@ -1149,6 +1169,9 @@ void GUIFormSpecMenu::parseSimpleField(parserData* data,
 
 			if (has_bg_color) {
 				intl_gui_editbox->setBackgroundColor(bg_color);
+			} else {
+				video::SColor c = video::SColor(255, 70, 115, 147);
+				intl_gui_editbox->setBackgroundColor(c);
 			}
 
 			e = (gui::IGUIElement *)intl_gui_editbox;
@@ -1163,6 +1186,9 @@ void GUIFormSpecMenu::parseSimpleField(parserData* data,
 
 			if (has_bg_color) {
 				editbox_with_scrollbar->setBackgroundColor(bg_color);
+			} else {
+				video::SColor c = video::SColor(255, 70, 115, 147);
+				editbox_with_scrollbar->setBackgroundColor(c);
 			}
 
 			e = (gui::IGUIElement *) editbox_with_scrollbar;
@@ -1276,6 +1302,9 @@ void GUIFormSpecMenu::parseTextArea(parserData* data, std::vector<std::string>& 
 
 			if (has_bg_color) {
 				intl_gui_editbox->setBackgroundColor(bg_color);
+			} else {
+				video::SColor c = video::SColor(200, 70, 115, 147);
+				intl_gui_editbox->setBackgroundColor(c);
 			}
 
 			e = (gui::IGUIEditBox *) intl_gui_editbox;
@@ -1290,6 +1319,9 @@ void GUIFormSpecMenu::parseTextArea(parserData* data, std::vector<std::string>& 
 
 			if (has_bg_color) {
 				gui_editbox_with_scrollbar->setBackgroundColor(bg_color);
+			} else {
+				video::SColor c = video::SColor(200, 70, 115, 147);
+				gui_editbox_with_scrollbar->setBackgroundColor(c);
 			}
 
 			e = (gui::IGUIEditBox *) gui_editbox_with_scrollbar;
@@ -1524,9 +1556,13 @@ void GUIFormSpecMenu::parseImageButton(parserData* data, const std::string &elem
 
 		gui::GUIButton *e = GUIButton::addButton(Environment, rect, this, spec.fid, spec.flabel.c_str());
 
-        if (has_color) {
+		if (has_color) {
 			set3DSkinColors(e, color);
 			e->setColor(EGDC_WINDOW_SYMBOL, color, 1.75f);
+		} else {
+			video::SColor c = video::SColor(255, 136, 172, 197);
+			set3DSkinColors(e, c);
+			e->setColor(EGDC_WINDOW_SYMBOL, c, 1.75f);
 		}
 
 		if (spec.fname == data->focused_fieldname) {
@@ -1562,10 +1598,10 @@ void GUIFormSpecMenu::parseImageTab(parserData* data, const std::string &element
 		std::string str_index = parts[3];
 		int tab_index = stoi(str_index) -1;
 		s32 padding = 0;
-        s32 tab_height = m_btn_height*2;
-        s32 tab_width = 0;
-        s32 tab_padding = 20;
-        s32 tab_spacing = 4;
+		s32 tab_height = m_btn_height*2;
+		s32 tab_width = 0;
+		s32 tab_padding = 20;
+		s32 tab_spacing = 4;
 		s32 border_width = 16;
 		s32 border_height = 16;
 		s32 border_offset = 11;
@@ -1595,7 +1631,7 @@ void GUIFormSpecMenu::parseImageTab(parserData* data, const std::string &element
 
 		MY_CHECKPOS("image_tab",0);
 
-        if (parts.size() > 4 && parts[4].length() > 0) {
+		if (parts.size() > 4 && parts[4].length() > 0) {
 			std::vector<std::string> values = split(parts[4],',');
 
 			if (values.size() > 0 && values[0].length() > 0)
@@ -1614,7 +1650,7 @@ void GUIFormSpecMenu::parseImageTab(parserData* data, const std::string &element
 				padding = stoi(values[5]);
 		}
 
-        if (parts.size() > 5 && parts[5].length() > 0) {
+		if (parts.size() > 5 && parts[5].length() > 0) {
 			std::vector<std::string> values = split(parts[5],',');
 
 			if (values.size() > 0 && values[0].length() > 0)
@@ -1633,7 +1669,7 @@ void GUIFormSpecMenu::parseImageTab(parserData* data, const std::string &element
 				button_distance = stoi(values[4]);
 		}
 
-        if (parts.size() > 6 && parts[6].length() > 0) {
+		if (parts.size() > 6 && parts[6].length() > 0) {
 			std::vector<std::string> values = split(parts[6],',');
 
 			if (values.size() > 0 && values[0].length() > 0)
@@ -1713,7 +1749,7 @@ void GUIFormSpecMenu::parseImageTab(parserData* data, const std::string &element
 		e->drop();
 		e->setAlignment(EGUIA_UPPERLEFT, EGUIA_UPPERLEFT,
 				EGUIA_UPPERLEFT, EGUIA_LOWERRIGHT);
-        e->setTabHeight(tab_height);
+		e->setTabHeight(tab_height);
 
 		if (spec.fname == data->focused_fieldname) {
 			Environment->setFocus(e);
@@ -1725,7 +1761,7 @@ void GUIFormSpecMenu::parseImageTab(parserData* data, const std::string &element
 		std::string previous_side_name = "top";
 		
 		for (std::string &button : buttons) {
-            std::string side_name;            
+			std::string side_name;            
 			parseTextString(button, button, side_name, ':');
 			
 			if (side_name.length() > 0)
@@ -1733,23 +1769,22 @@ void GUIFormSpecMenu::parseImageTab(parserData* data, const std::string &element
 			else
 				side_name = previous_side_name;
 			
-            f32 scaling = 1.0f;
+			f32 scaling = 1.0f;
 			video::ITexture *texture = 0;
 
-			if (button.find(".bmp", 0) != std::string::npos
-                || button.find(".jpg", 0) != std::string::npos
-                || button.find(".png", 0) != std::string::npos
-                || button.find(".tga", 0) != std::string::npos) {
+			if (button.find(".bmp", 0) != std::string::npos ||
+			    button.find(".jpg", 0) != std::string::npos ||
+			    button.find(".png", 0) != std::string::npos ||
+			    button.find(".tga", 0) != std::string::npos) {
 				std::string scaling_value;	
 				parseTextString(button, button, scaling_value, '@');
 
-                if (scaling_value.length() > 0) {
-                    scaling = stof(scaling_value);
+				if (scaling_value.length() > 0) {
+					scaling = stof(scaling_value);
 
-                    if (scaling > 1.0f) {
-                        scaling = 1.0f;
-                    }
-                }
+					if (scaling > 1.0f)
+						scaling = 1.0f;
+				}
 
 				texture = m_tsrc->getTexture(button);
 
@@ -1758,13 +1793,13 @@ void GUIFormSpecMenu::parseImageTab(parserData* data, const std::string &element
 			}
 
 			u32 side = 0;
-            if (side_name == "top")
+			if (side_name == "top")
 				side = 0;
-            if (side_name == "bottom")
+			if (side_name == "bottom")
 				side = 1;
-            if (side_name == "left")
+			if (side_name == "left")
 				side = 2;
-            if (side_name == "right")
+			if (side_name == "right")
 				side = 3;
 
 			e->addImageTab(unescape_translate(unescape_string(utf8_to_wide(button))).c_str(),
@@ -1915,9 +1950,13 @@ void GUIFormSpecMenu::parseItemImageButton(parserData* data, const std::string &
 
 		gui::GUIButton *e = GUIButton::addButton(Environment, rect, this, spec.fid, L"");
 
-        if (has_color) {
+		if (has_color) {
 			set3DSkinColors(e, color);
 			e->setColor(EGDC_WINDOW_SYMBOL, color, 1.75f);
+		} else {
+			video::SColor c = video::SColor(255, 192, 211, 225);
+			set3DSkinColors(e, c);
+			e->setColor(EGDC_WINDOW_SYMBOL, c, 1.75f);
 		}
 
 		if (spec.fname == data->focused_fieldname) {
@@ -2495,7 +2534,7 @@ void GUIFormSpecMenu::regenerateGui(v2u32 screensize)
 	m_slotbg_n = video::SColor(255,128,128,128);
 	m_slotbg_h = video::SColor(255,192,192,192);
 
-	m_default_tooltip_bgcolor = video::SColor(255,110,130,60);
+	m_default_tooltip_bgcolor = video::SColor(255,40,65,83);
 	m_default_tooltip_color = video::SColor(255,255,255,255);
 
 	m_slotbordercolor = video::SColor(200,0,0,0);

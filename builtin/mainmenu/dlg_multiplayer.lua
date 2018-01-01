@@ -60,22 +60,16 @@ local function get_formspec(tabview, name, tabdata)
 			core.formspec_escape(core.settings:get("name")) .. ";" .. field_color .. "99]" ..
 		"pwdfield[10.73,1.85;1.77,0.5;te_pwd;;" .. field_color .. "99]" ..
 
-		-- Description Background
-		"box[7.73,2.25;4.25,2.6;" .. field_color .. "]" ..
-
 		-- Connect
-		"image_button[10.1,5;2,0.8;" .. defaulttexturedir .. "mainmenu_button.png;btn_mp_connect;" ..
+		"image_button[10.1,2.5;2,0.8;" .. defaulttexturedir .. "mainmenu_button.png;btn_mp_connect;" ..
 			minetest.colorize("#333333", fgettext("Connect")) .. ";;false]"
 
 	if gamedata.fav then
 		retval = retval ..
-			"image_button[7.75,5;2.3,0.8;" .. defaulttexturedir ..
+			"image_button[7.75,2.5;2.3,0.8;" .. defaulttexturedir ..
 				"mainmenu_button.png;btn_delete_favorite;" ..
 				minetest.colorize("#333333", fgettext("Del. Favorite")) .. ";;false]"
 	end
-
-	retval = retval .. "textarea[8.1,2.3;4.23,2.9;;" ..
-		core.formspec_escape((gamedata.serverdescription or ""), true) .. ";]"
 
 	--favourites
 	retval = retval ..
