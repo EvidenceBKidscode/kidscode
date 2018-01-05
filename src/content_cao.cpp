@@ -557,7 +557,7 @@ void GenericCAO::addToScene(ITextureSource *tsrc)
 			
 		core::dimension2d<f32> text_size = m_prop.visual_size*BS;
 		
-		gui::IGUIFont* font = m_smgr->getGUIEnvironment()->getFont("fonts/mono_dejavu_sans_28.xml");
+		gui::IGUIFont* font = m_smgr->getGUIEnvironment()->getFont(porting::getDataPath("fonts/mono_dejavu_sans_28.xml").c_str());
 		core::dimension2d<u32> font_size = font->getDimension(wtext.c_str());
 		
 		text_size.Width *= (f32)font_size.Width / font_size.Height;

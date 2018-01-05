@@ -1772,10 +1772,10 @@ void GUIFormSpecMenu::parseImageTab(parserData* data, const std::string &element
 			f32 scaling = 1.0f;
 			video::ITexture *texture = 0;
 
-			if (button.find(".bmp", 0) != std::string::npos ||
-			    button.find(".jpg", 0) != std::string::npos ||
-			    button.find(".png", 0) != std::string::npos ||
-			    button.find(".tga", 0) != std::string::npos) {
+			if (button.find(".bmp", 0) != std::string::npos
+					|| button.find(".jpg", 0) != std::string::npos
+					|| button.find(".png", 0) != std::string::npos
+					|| button.find(".tga", 0) != std::string::npos) {
 				std::string scaling_value;	
 				parseTextString(button, button, scaling_value, '@');
 
@@ -1976,79 +1976,6 @@ void GUIFormSpecMenu::parseItemImageButton(parserData* data, const std::string &
 	}
 	errorstream<< "Invalid ItemImagebutton element(" << parts.size() << "): '" << element << "'"  << std::endl;
 }
-
-/*
-void GUIFormSpecMenu::parseTabHeader(parserData* data, const std::string &element)
-{
-	std::vector<std::string> parts = split(element,';');
-
-	if (parts.size() >= 4)
-	{
-		std::vector<std::string> v_pos = split(parts[0],',');
-		std::string name = parts[1];
-		std::vector<std::string> buttons = split(parts[2],',');
-		std::string str_index = parts[3];
-		bool show_background = true;
-		bool show_border = true;
-		int tab_index = stoi(str_index) -1;
-
-		MY_CHECKPOS("tabheader",0);
-
-		if (parts.size() == 6) {
-			if (parts[4] == "true")
-				show_background = false;
-			if (parts[5] == "false")
-				show_border = false;
-		}
-
-		FieldSpec spec(
-			name,
-			L"",
-			L"",
-			258+m_fields.size()
-		);
-
-		spec.ftype = f_TabHeader;
-
-		v2s32 pos = pos_offset * spacing;
-		pos.X += stof(v_pos[0]) * (float)spacing.X;
-		pos.Y += stof(v_pos[1]) * (float)spacing.Y - m_btn_height * 2;
-		v2s32 geom;
-		geom.X = DesiredRect.getWidth();
-		geom.Y = m_btn_height*2;
-
-		core::rect<s32> rect = core::rect<s32>(pos.X, pos.Y, pos.X+geom.X,
-				pos.Y+geom.Y);
-
-		gui::IGUITabControl *e = Environment->addTabControl(rect, this,
-				show_background, show_border, spec.fid);
-		e->setAlignment(irr::gui::EGUIA_UPPERLEFT, irr::gui::EGUIA_UPPERLEFT,
-				irr::gui::EGUIA_UPPERLEFT, irr::gui::EGUIA_LOWERRIGHT);
-		e->setTabHeight(m_btn_height*2);
-
-		if (spec.fname == data->focused_fieldname) {
-			Environment->setFocus(e);
-		}
-
-		e->setNotClipped(true);
-
-		for (const std::string &button : buttons) {
-			e->addTab(unescape_translate(unescape_string(
-				utf8_to_wide(button))).c_str(), -1);
-		}
-
-		if ((tab_index >= 0) &&
-				(buttons.size() < INT_MAX) &&
-				(tab_index < (int) buttons.size()))
-			e->setActiveTab(tab_index);
-
-		m_fields.push_back(spec);
-		return;
-	}
-	errorstream << "Invalid TabHeader element(" << parts.size() << "): '"
-			<< element << "'"  << std::endl;
-}
-*/
 
 void GUIFormSpecMenu::parseBox(parserData* data, const std::string &element)
 {
