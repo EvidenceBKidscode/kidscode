@@ -132,6 +132,7 @@ RenderingEngine::RenderingEngine(IEventReceiver *receiver)
 	
 	gui::GUISkin *skin = createSkin(m_device->getGUIEnvironment(), gui::EGST_WINDOWS_METALLIC, driver); // :PATCH:
 	m_device->getGUIEnvironment()->setSkin(skin);
+	skin->drop();
 }
 
 RenderingEngine::~RenderingEngine()

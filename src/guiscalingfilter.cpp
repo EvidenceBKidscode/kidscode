@@ -42,6 +42,13 @@ void guiScalingCache(io::path key, video::IVideoDriver *driver, video::IImage *v
 {
 	if (!g_settings->getBool("gui_scaling_filter"))
 		return;
+
+	if (g_imgCache.count(key)) {
+		video::IImage *img = g_imgCache[key];
+		if (img)
+			img->drop();
+	}
+
 	video::IImage *copied = driver->createImage(value->getColorFormat(),
 			value->getDimension());
 	value->copyTo(copied);
