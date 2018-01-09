@@ -2223,7 +2223,7 @@ void GUIFormSpecMenu::parseElement(parserData* data, const std::string &element)
 	}
 
 	std::string type = trim(parts[0]);
-	std::string description = trim(parts[1]);
+	std::string description = parts[1];
 
 	if (type == "container") {
 		parseContainer(data, description);
