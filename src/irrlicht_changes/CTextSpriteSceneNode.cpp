@@ -102,12 +102,14 @@ void CTextSpriteSceneNode::setText(const wchar_t* text)
 	Text = "";
 	Width = 0.0f;
 	Height = 0.0f;
-	core::array<s32> charLineBreaks;
+	core::array<f32> charLineSpacings;
+	core::array<f32> charLineScalings;
 	core::array<video::SColor> charTopColors;
 	core::array<video::SColor> charBottomColors;
 	core::array<f32> charScales;
 	LineCount = 0.0f;
-	f32 lineBreaks = 0.0f;
+	f32 lineSpacing = 0.0f;
+	f32 lineScaling = 1.0f;
 	video::SColor topColor = TopColor;
 	video::SColor bottomColor = BottomColor;
 	f32 scale = 1.0f;
@@ -117,19 +119,20 @@ void CTextSpriteSceneNode::setText(const wchar_t* text)
 	{
 		if (*c == L'\n')
 		{
-			LineCount += lineScale;
+			LineCount += lineScale * lineScaling;
 			
-			if (lineBreaks > 0.0)
+			if (lineSpacing > 0.0)
 			{
 				Text += L' ';
-				charLineBreaks.push_back(lineBreaks);
+				charLineSpacings.push_back(lineSpacing);
+				charLineScalings.push_back(lineScaling);
 				charTopColors.push_back(topColor);
 				charBottomColors.push_back(bottomColor);
 				charScales.push_back(scale);
 				lineScale = scale;
 			}
 			
-			lineBreaks = 1.0;
+			lineSpacing = 1.0f;
 		}
 		else
 		{
@@ -147,13 +150,13 @@ void CTextSpriteSceneNode::setText(const wchar_t* text)
 				std::size_t slash = color_string.find('/');
 				if (slash == std::string::npos)
 				{
-					parseColor(color_string, topColor, scale);
-					parseColor(color_string, bottomColor, scale);
+					parseColor(color_string, topColor, scale, lineScaling);
+					parseColor(color_string, bottomColor, scale, lineScaling);
 				}
 				else
 				{
-					parseColor(color_string.substr(0,slash), topColor, scale);
-					parseColor(color_string.substr(slash + 1), bottomColor, scale);
+					parseColor(color_string.substr(0,slash), topColor, scale, lineScaling);
+					parseColor(color_string.substr(slash + 1), bottomColor, scale, lineScaling);
 				}
 				
 				if (scale > lineScale)
@@ -167,15 +170,16 @@ void CTextSpriteSceneNode::setText(const wchar_t* text)
 			}
 			
 			Text += *c;
-			charLineBreaks.push_back(lineBreaks);
+			charLineSpacings.push_back(lineSpacing);
+			charLineScalings.push_back(lineScaling);
 			charTopColors.push_back(topColor);
 			charBottomColors.push_back(bottomColor);
 			charScales.push_back(scale);
 			
-			if (lineBreaks > 0.0f)
+			if (lineSpacing > 0.0f)
 				lineScale = scale;
 			
-			lineBreaks = 0.0f;
+			lineSpacing = 0.0f;
 		}
 	}
 	
@@ -254,14 +258,15 @@ void CTextSpriteSceneNode::setText(const wchar_t* text)
 		info.bufNo = texno;
 		info.firstInd = firstInd;
 		info.firstVert = firstVert;
-		info.LineBreaks = charLineBreaks[i];
+		info.LineSpacing = charLineSpacings[i];
+		info.LineScaling = charLineScalings[i];
 		info.TopColor = charTopColors[i];
 		info.BottomColor = charBottomColors[i];
 			
-		if (info.LineBreaks > 0.0f)
+		if (info.LineSpacing > 0.0f)
 		{			
 			xPosition = 0.0f;
-			yPosition += lineHeight * info.LineBreaks;
+			yPosition += lineHeight * info.LineSpacing * info.LineScaling;
 			lineHeight = info.Height;
 			lineBaseHeight = info.BaseHeight;
 		}
@@ -325,7 +330,7 @@ void CTextSpriteSceneNode::setText(const wchar_t* text)
 			info.LineBaseHeight = lineBaseHeight;
 		}
 		
-		if (info.LineBreaks > 0.0f)
+		if (info.LineSpacing > 0.0f)
 		{
 			lineHeight = 0.0f;
 			lineBaseHeight = 0.0f;
@@ -690,7 +695,7 @@ void CTextSpriteSceneNode::getColor(video::SColor & topColor, video::SColor & bo
 
 //! Parses an hexadecimal color
 void CTextSpriteSceneNode::parseColor(const std::string& color_string,
-	video::SColor& color, f32& scale) // :PATCH:
+	video::SColor& color, f32& scale, f32& line_scaling) // :PATCH:
 {
 	static std::map<std::string, u32> colors;
 	
@@ -854,6 +859,11 @@ void CTextSpriteSceneNode::parseColor(const std::string& color_string,
 		if (*c >= '0' && *c <= '9')
 		{
 			scale = atof(c);
+			return;
+		}
+		else if (*c == '@')
+		{
+			line_scaling = atof(c + 1);
 			return;
 		}
 		else if (*c == '#')

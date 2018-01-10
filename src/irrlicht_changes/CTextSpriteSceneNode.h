@@ -116,8 +116,8 @@ namespace scene
 	private:
 		
 		//! Parses an hexadecimal color
-		void parseColor(const std::string& color_string,
-						video::SColor& color, f32& scale); // :PATCH:
+		void parseColor(const std::string& color_string, video::SColor& color, 
+				f32& scale, f32& line_scaling); // :PATCH:
 		
 		core::stringw OldText; // :PATCH:
 		core::stringw Text;
@@ -146,7 +146,8 @@ namespace scene
 		struct SSymbolInfo
 		{
 			u32 bufNo;
-			f32 LineBreaks; // :PATCH:
+			f32 LineSpacing; // :PATCH:
+			f32 LineScaling; // :PATCH:
 			f32 Scale; // :PATCH:
 			f32 XPosition; // :PATCH:
 			f32 YPosition; // :PATCH:
