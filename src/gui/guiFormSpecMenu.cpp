@@ -1747,8 +1747,6 @@ void GUIFormSpecMenu::parseImageTab(parserData* data, const std::string &element
 		right_arrow_texture = m_tsrc->getTexture(tab_prefix + "arrow_right.png");
 		right_arrow_pressed_texture = m_tsrc->getTexture(tab_prefix + "arrow_right_pressed.png");
 		
-		tab_height = height / 10;
-		
 		guiImageTabControl* e = new guiImageTabControl(Environment,
 			this, rect, spec.fid,
 			tab_height, tab_width, tab_padding, tab_spacing,
