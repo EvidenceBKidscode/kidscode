@@ -1585,6 +1585,22 @@ void GUIFormSpecMenu::parseImageButton(parserData* data, const std::string &elem
 	errorstream<< "Invalid imagebutton element(" << parts.size() << "): '" << element << "'"  << std::endl;
 }
 
+s32 parseDimension(std::string &value, s32 width, s32 height)
+{
+	if (value[value.length()-1] == 'W')
+	{
+		return s32(stof(value.substr(0, value.length()-1)) * width);
+	}
+	else if (value[value.length()-1] == 'H')
+	{
+		return s32(stof(value.substr(0, value.length()-1)) * height);
+	}
+	else
+	{
+		return stoi(value);
+	}
+}
+
 void GUIFormSpecMenu::parseImageTab(parserData* data, const std::string &element)
 {
 	// :PATCH::
@@ -1629,44 +1645,47 @@ void GUIFormSpecMenu::parseImageTab(parserData* data, const std::string &element
 		video::ITexture* right_arrow_pressed_texture = 0;
 		std::string tab_prefix = "tab_";
 
+		s32 width = DesiredRect.getWidth();
+		s32 height = DesiredRect.getHeight();
+		
 		MY_CHECKPOS("image_tab",0);
 
 		if (parts.size() > 4 && parts[4].length() > 0) {
 			std::vector<std::string> values = split(parts[4],',');
 
 			if (values.size() > 0 && values[0].length() > 0)
-				tab_height = stoi(values[0]);
+				tab_height = parseDimension(values[0], width, height);
 
 			if (values.size() > 1 && values[1].length() > 0)
-				tab_width = stoi(values[1]);
+				tab_width = parseDimension(values[1], width, height);
 
 			if (values.size() > 2 && values[2].length() > 0)
-				tab_padding = stoi(values[2]);
+				tab_padding = parseDimension(values[2], width, height);
 
 			if (values.size() > 3 && values[3].length() > 0)
-				tab_spacing = stoi(values[3]);
+				tab_spacing = parseDimension(values[3], width, height);
 			
 			if (values.size() > 5 && values[5].length() > 0)
-				padding = stoi(values[5]);
+				padding = parseDimension(values[5], width, height);
 		}
 
 		if (parts.size() > 5 && parts[5].length() > 0) {
 			std::vector<std::string> values = split(parts[5],',');
 
 			if (values.size() > 0 && values[0].length() > 0)
-				button_width = stoi(values[0]);
+				button_width = parseDimension(values[0], width, height);
 
 			if (values.size() > 1 && values[1].length() > 0)
-				button_height = stoi(values[1]);
+				button_height = parseDimension(values[1], width, height);
 
 			if (values.size() > 2 && values[2].length() > 0)
-				button_spacing = stoi(values[2]);
+				button_spacing = parseDimension(values[2], width, height);
 
 			if (values.size() > 3 && values[3].length() > 0)
-				button_offset = stoi(values[3]);
+				button_offset = parseDimension(values[3], width, height);
 
 			if (values.size() > 4 && values[4].length() > 0)
-				button_distance = stoi(values[4]);
+				button_distance = parseDimension(values[4], width, height);
 		}
 
 		if (parts.size() > 6 && parts[6].length() > 0) {
@@ -1693,9 +1712,6 @@ void GUIFormSpecMenu::parseImageTab(parserData* data, const std::string &element
 		);
 
 		spec.ftype = f_TabHeader;
-
-		s32 width = DesiredRect.getWidth();
-		s32 height = DesiredRect.getHeight();
 
 		v2s32 pos = pos_offset * spacing;
 		pos.X += stof(v_pos[0]) * (float)spacing.X;
@@ -1730,7 +1746,9 @@ void GUIFormSpecMenu::parseImageTab(parserData* data, const std::string &element
 		left_arrow_pressed_texture = m_tsrc->getTexture(tab_prefix + "arrow_left_pressed.png");
 		right_arrow_texture = m_tsrc->getTexture(tab_prefix + "arrow_right.png");
 		right_arrow_pressed_texture = m_tsrc->getTexture(tab_prefix + "arrow_right_pressed.png");
-
+		
+		tab_height = height / 10;
+		
 		guiImageTabControl* e = new guiImageTabControl(Environment,
 			this, rect, spec.fid,
 			tab_height, tab_width, tab_padding, tab_spacing,
