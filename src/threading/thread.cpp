@@ -58,7 +58,7 @@ DEALINGS IN THE SOFTWARE.
 #endif
 
 // :PATCH::
-#if defined(_WIN32) 
+#if defined(_WIN32) && 0
 	std_mutex::std_mutex() :
 		locked(false)
 	{
