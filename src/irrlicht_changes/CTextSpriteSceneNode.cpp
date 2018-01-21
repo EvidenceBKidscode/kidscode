@@ -898,10 +898,9 @@ void CTextSpriteSceneNode::parseColor(const std::string& color_string,
 					rgbcolor |= 0xFF000000;
 		}
 		else
-		{	
-			std::map<std::string, u32>::const_iterator found_color;
-			found_color = colors.find(color_string);
-			
+		{
+			auto found_color = colors.find(color_string);
+
 			if (found_color != colors.end())
 				rgbcolor = 0xFF000000 | found_color->second;
 		}
