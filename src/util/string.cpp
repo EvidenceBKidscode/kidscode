@@ -964,14 +964,29 @@ std::wstring translate_string(const std::wstring &s) {
 	return res;
 }
 
+std::string dumpString(const std::wstring &s) {
+	std::string dump;
+	char buf[128];
+	snprintf(buf, sizeof(buf), "%lu ", s.size());
+	dump += buf;
+	for (u32 i = 0; i < s.size(); ++i)
+		dump += ((s[i]<128)?((char)s[i]):'?');
+	dump += ' ';
+	for (u32 i = 0; i < s.size(); ++i) {
+		snprintf(buf, sizeof(buf), " %x(%c)", s[i], ((s[i]<128)?((char)s[i]):'?'));
+		dump += buf;
+	}
+	return dump;
+}
+
 void fix_accented_characters(std::wstring &s,
 	std::vector<irr::video::SColor> *colors) { // :PATCH:
+	#if !(defined(__MACH__) && defined(__APPLE__))
 	int l = s.size();
 	int nl = 0;
 	for (int i = 0; i < l; ++i, ++nl) {
 		if (colors)
 			(*colors)[nl] = (*colors)[i];
-			
 		unsigned c = s[i];
 		if (c >= 0xc3 && i+1 < l) {
 			unsigned nc = 0;
@@ -1018,11 +1033,10 @@ void fix_accented_characters(std::wstring &s,
 			s[nl]=c;
 		}
 	}
-
 	s.resize(nl);
-	
 	if (colors)
 		colors->resize(nl);
+	#endif
 }
 
 std::wstring fix_string(const std::wstring &s) { // :PATCH:
