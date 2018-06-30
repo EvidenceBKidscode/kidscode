@@ -21,6 +21,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #include "common/c_types.h"
 #include "common/c_internal.h"
+#include "common/helper.h"
 #include "gamedef.h"
 
 extern "C" {
@@ -37,7 +38,7 @@ class Server;
 class Environment;
 class GUIEngine;
 
-class ModApiBase {
+class ModApiBase : protected LuaHelper {
 
 public:
 	static ScriptApiBase*   getScriptApiBase(lua_State *L);

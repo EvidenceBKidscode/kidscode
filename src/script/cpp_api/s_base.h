@@ -28,10 +28,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #endif
 
 #include <mutex>
-#if defined(_WIN32)
-	#include "../threading/mingw.mutex.h"
-#endif
-
+#include <unordered_map>
+#include "common/helper.h"
 #include "util/basic_macros.h"
 
 extern "C" {
@@ -77,7 +75,7 @@ class Environment;
 class GUIEngine;
 class ServerActiveObject;
 
-class ScriptApiBase {
+class ScriptApiBase : protected LuaHelper {
 public:
 	ScriptApiBase();
 	virtual ~ScriptApiBase();
