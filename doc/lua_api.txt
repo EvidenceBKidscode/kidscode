@@ -7437,8 +7437,17 @@ Used by `minetest.add_particle`.
         -- `physical = true,` and `collide_with_objects = true,`.
         -- Requires collisiondetection = true to have any effect.
 
-        vertical = false,
-        -- If true faces player using y axis only
+        -- deprecated: `vertical = false`
+        -- Particles now always face player.
+
+        bounce_fraction = 1,
+        -- Fraction of the velocity component that is kept after bouncing
+        -- in the corresponding direction.
+
+        bounce_threshold = 0,
+        -- If the absolute value of the velocity component in the direction
+        -- of a bounce is smaller than bounce_threshold * speed,
+        -- the velocity is set to, i.e. prevents "gliding".
 
         texture = "image.png",
 
@@ -7474,6 +7483,7 @@ Used by `minetest.add_particlespawner`.
         maxvel = {x=0, y=0, z=0},
         minacc = {x=0, y=0, z=0},
         maxacc = {x=0, y=0, z=0},
+        -- ^ Is cut off to 0 if the lengths of both minacc and maxacc are smaller than 0.001
         minexptime = 1,
         maxexptime = 1,
         minsize = 1,
@@ -7495,12 +7505,21 @@ Used by `minetest.add_particlespawner`.
         -- `physical = true,` and `collide_with_objects = true,`.
         -- Requires collisiondetection = true to have any effect.
 
+        bounce_fraction = 1,
+        -- Fraction of the velocity component that is kept after bouncing
+        -- in the corresponding direction.
+
+        bounce_threshold = 0,
+        -- If the absolute value of the velocity component in the direction
+        -- of a bounce is smaller than bounce_threshold * speed,
+        -- the velocity is set to, i.e. prevents "gliding".
+
         attached = ObjectRef,
         -- If defined, particle positions, velocities and accelerations are
         -- relative to this object's position and yaw
 
-        vertical = false,
-        -- If true face player using y axis only
+        -- deprecated: `vertical = false`
+        -- Particles now always face player.
 
         texture = "image.png",
 

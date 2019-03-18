@@ -513,11 +513,13 @@ enum ToClientCommand
 		u8 bool collisiondetection
 		u32 len
 		u8[len] texture
-		u8 bool vertical
+		u8 bool vertical_dummy
 		u8 collision_removal
 		TileAnimation animation
 		u8 glow
 		u8 object_collision
+		f32 bounce_fraction
+		f32 bounce_threshold
 	*/
 
 	TOCLIENT_ADD_PARTICLESPAWNER = 0x47,
@@ -537,12 +539,14 @@ enum ToClientCommand
 		u8 bool collisiondetection
 		u32 len
 		u8[len] texture
-		u8 bool vertical
+		u8 bool vertical_dummy
 		u8 collision_removal
 		u32 id
 		TileAnimation animation
 		u8 glow
 		u8 object_collision
+		f32 bounce_fraction
+		f32 bounce_threshold
 	*/
 
 	TOCLIENT_DELETE_PARTICLESPAWNER_LEGACY = 0x48, // Obsolete

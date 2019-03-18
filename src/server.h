@@ -237,7 +237,7 @@ public:
 		v3f pos, v3f velocity, v3f acceleration,
 		float expirationtime, float size,
 		bool collisiondetection, bool collision_removal, bool object_collision,
-		bool vertical, const std::string &texture,
+		f32 bounce_fraction, f32 bounce_threshold, const std::string &texture,
 		const struct TileAnimationParams &animation, u8 glow);
 
 	u32 addParticleSpawner(u16 amount, float spawntime,
@@ -247,9 +247,9 @@ public:
 		float minexptime, float maxexptime,
 		float minsize, float maxsize,
 		bool collisiondetection, bool collision_removal, bool object_collision,
-		ServerActiveObject *attached,
-		bool vertical, const std::string &texture,
-		const std::string &playername, const struct TileAnimationParams &animation,
+		f32 bounce_fraction, f32 bounce_threshold, ServerActiveObject *attached,
+		const std::string &texture, const std::string &playername,
+		const struct TileAnimationParams &animation,
 		u8 glow);
 
 	void deleteParticleSpawner(const std::string &playername, u32 id);
@@ -466,8 +466,8 @@ private:
 		float minexptime, float maxexptime,
 		float minsize, float maxsize,
 		bool collisiondetection, bool collision_removal, bool object_collision,
-		u16 attached_id,
-		bool vertical, const std::string &texture, u32 id,
+		f32 bounce_fraction, f32 bounce_threshold, u16 attached_id,
+		const std::string &texture, u32 id,
 		const struct TileAnimationParams &animation, u8 glow);
 
 	void SendDeleteParticleSpawner(session_t peer_id, u32 id);
@@ -477,7 +477,7 @@ private:
 		v3f pos, v3f velocity, v3f acceleration,
 		float expirationtime, float size,
 		bool collisiondetection, bool collision_removal, bool object_collision,
-		bool vertical, const std::string &texture,
+		f32 bounce_fraction, f32 bounce_threshold, const std::string &texture,
 		const struct TileAnimationParams &animation, u8 glow);
 
 	void SendActiveObjectRemoveAdd(RemoteClient *client, PlayerSAO *playersao);
