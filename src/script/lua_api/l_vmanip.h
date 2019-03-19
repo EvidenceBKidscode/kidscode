@@ -43,6 +43,7 @@ private:
 
 	static int l_read_from_map(lua_State *L);
 	static int l_get_data(lua_State *L);
+	static int l_get_data_ptr(lua_State *L);
 	static int l_set_data(lua_State *L);
 	static int l_write_to_map(lua_State *L);
 

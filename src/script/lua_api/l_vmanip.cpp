@@ -83,6 +83,15 @@ int LuaVoxelManip::l_get_data(lua_State *L)
 	return 1;
 }
 
+int LuaVoxelManip::l_get_data_ptr(lua_State *L)
+{
+	NO_MAP_LOCK_REQUIRED;
+	LuaVoxelManip *o = checkobject(L, 1);
+	MMVManip *vm = o->vm;
+	lua_pushinteger(L, (long int)vm->m_data);
+	return 1;
+}
+
 int LuaVoxelManip::l_set_data(lua_State *L)
 {
 	NO_MAP_LOCK_REQUIRED;
@@ -453,6 +462,7 @@ const char LuaVoxelManip::className[] = "VoxelManip";
 const luaL_Reg LuaVoxelManip::methods[] = {
 	luamethod(LuaVoxelManip, read_from_map),
 	luamethod(LuaVoxelManip, get_data),
+	luamethod(LuaVoxelManip, get_data_ptr),
 	luamethod(LuaVoxelManip, set_data),
 	luamethod(LuaVoxelManip, get_node_at),
 	luamethod(LuaVoxelManip, set_node_at),
