@@ -1288,9 +1288,7 @@ int ModApiEnvMod::l_backup_map(lua_State *L)
 	GET_ENV_PTR;
 	ServerMap &map = env->getServerMap();
 //	ServerMap *map = &(env->getServerMap());
-printf("before backupmap\n");
 	map.backupMap();
-printf("after backupmap\n");
 	return 0;
 }
 

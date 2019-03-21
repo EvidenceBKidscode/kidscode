@@ -125,6 +125,8 @@ private:
 	sqlite3_stmt *m_stmt_begin = nullptr;
 	sqlite3_stmt *m_stmt_end = nullptr;
 
+	sqlite3_stmt *m_stmt_table_exists = nullptr;
+
 	s64 m_busy_handler_data[2];
 
 	static int busyHandler(void *data, int count);
@@ -146,6 +148,7 @@ public:
 
 	void backupMap();
 	void restoreMap();
+	void preRestoreMap();
 
 protected:
 	virtual void createDatabase();

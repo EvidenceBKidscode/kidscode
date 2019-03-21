@@ -37,6 +37,7 @@ SQLite format specification:
 #include "remoteplayer.h"
 
 #include <cassert>
+#include <thread>
 
 // When to print messages when the database is being held locked by another process
 // Note: I've seen occasional delays of over 250ms while running minetestmapper.
@@ -236,6 +237,8 @@ void MapDatabaseSQLite3::initStatements()
 	PREPARE_STATEMENT(delete, "DELETE FROM `blocks` WHERE `pos` = ?");
 	PREPARE_STATEMENT(list, "SELECT `pos` FROM `blocks`");
 
+//	PREPARE_STATEMENT(table_exists, "SELECT 1 FROM `sqlite_master` WHERE `name` = ? AND `type` = 'TABLE'")
+
 	verbosestream << "ServerMap: SQLite3 database opened." << std::endl;
 }
 
@@ -319,6 +322,39 @@ void MapDatabaseSQLite3::listAllLoadableBlocks(std::vector<v3s16> &dst)
 	sqlite3_reset(m_stmt_list);
 }
 
+// VERSION SANS VERIF
+void preRestoreMapLaunch(MapDatabaseSQLite3 *map)
+{
+	printf("** in thread\n");
+	sleep(1); // Let data be sent to clients meanwhile (seems database kept lock else)
+	map->preRestoreMap();
+}
+
+void MapDatabaseSQLite3::preRestoreMap()
+{
+	assert(m_database); // Pre-condition
+	printf("** pre restore map\n");
+
+	SQLOK(sqlite3_exec(m_database,
+		"DROP TABLE IF EXISTS `blocks_old`;",
+		NULL, NULL, NULL),
+		"Failed to drop map table");
+
+	SQLOK(sqlite3_exec(m_database,
+		"CREATE TABLE `blocks_new` (\n"
+			"	`pos` INT PRIMARY KEY,\n"
+			"	`data` BLOB\n"
+			");\n",
+		NULL, NULL, NULL),
+		"Failed to create new map table");
+
+	SQLOK(sqlite3_exec(m_database,
+		"INSERT INTO `blocks_new` SELECT * FROM `blocks_backup`;",
+		NULL, NULL, NULL),
+		"Failed to copy map table");
+
+	printf("** pre restore map done\n");
+}
 
 void MapDatabaseSQLite3::backupMap()
 {
@@ -328,6 +364,11 @@ void MapDatabaseSQLite3::backupMap()
 		"CREATE TABLE IF NOT EXISTS `blocks_backup` AS SELECT * FROM `blocks`;",
 		NULL, NULL, NULL),
 		"Failed to backup map table");
+
+	printf("** Launching thread\n");
+			std::thread (preRestoreMapLaunch, this).detach();
+	printf("** End\n");
+
 }
 
 void MapDatabaseSQLite3::restoreMap()
@@ -335,22 +376,18 @@ void MapDatabaseSQLite3::restoreMap()
 	assert(m_database); // Pre-condition
 
 	SQLOK(sqlite3_exec(m_database,
-		"DROP TABLE `blocks`;",
+		"ALTER TABLE `blocks` RENAME TO `blocks_old`;",
 		NULL, NULL, NULL),
-		"Failed to drop map table");
+		"Failed to rename old map table");
 
 	SQLOK(sqlite3_exec(m_database,
-		"CREATE TABLE `blocks` (\n"
-			"	`pos` INT PRIMARY KEY,\n"
-			"	`data` BLOB\n"
-			");\n",
+		"ALTER TABLE `blocks_new` RENAME TO `blocks`;",
 		NULL, NULL, NULL),
-		"Failed to create map table");
+		"Failed to rename new map table");
+printf("** Launching thread\n");
+		std::thread (preRestoreMapLaunch, this).detach();
+printf("** End\n");
 
-	SQLOK(sqlite3_exec(m_database,
-		"INSERT INTO `blocks` SELECT * FROM `blocks_backup`;",
-		NULL, NULL, NULL),
-		"Failed to restore map table");
 }
 
 /*

@@ -2203,9 +2203,7 @@ bool ServerMap::repairBlockLight(v3s16 blockpos,
 
 void ServerMap::backupMap()
 {
-	printf("before backupmap2\n");
 	((MapDatabaseSQLite3 *)dbase)->backupMap();
-	printf("before backupmap2\n");
 }
 
 void ServerMap::restoreMap()
