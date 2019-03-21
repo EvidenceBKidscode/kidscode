@@ -143,6 +143,10 @@ public:
 
 	void beginSave() { Database_SQLite3::beginSave(); }
 	void endSave() { Database_SQLite3::endSave(); }
+
+	void backupMap();
+	void restoreMap();
+
 protected:
 	virtual void createDatabase();
 	virtual void initStatements();

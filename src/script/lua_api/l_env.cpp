@@ -39,6 +39,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "pathfinder.h"
 #include "face_position_cache.h"
 #include "remoteplayer.h"
+#include "map.h"
 #ifndef SERVER
 #include "client.h"
 #endif
@@ -1282,6 +1283,26 @@ int ModApiEnvMod::l_forceload_free_block(lua_State *L)
 	return 0;
 }
 
+int ModApiEnvMod::l_backup_map(lua_State *L)
+{
+	GET_ENV_PTR;
+	ServerMap &map = env->getServerMap();
+//	ServerMap *map = &(env->getServerMap());
+printf("before backupmap\n");
+	map.backupMap();
+printf("after backupmap\n");
+	return 0;
+}
+
+int ModApiEnvMod::l_restore_map(lua_State *L)
+{
+	GET_ENV_PTR;
+	ServerMap &map = env->getServerMap();
+	//	ServerMap *map = &(env->getServerMap());
+	map.restoreMap();
+	return 0;
+}
+
 void ModApiEnvMod::Initialize(lua_State *L, int top)
 {
 	API_FCT(set_node);
@@ -1327,6 +1348,8 @@ void ModApiEnvMod::Initialize(lua_State *L, int top)
 	API_FCT(transforming_liquid_add);
 	API_FCT(forceload_block);
 	API_FCT(forceload_free_block);
+	API_FCT(backup_map);
+	API_FCT(restore_map);
 }
 
 void ModApiEnvMod::InitializeClient(lua_State *L, int top)

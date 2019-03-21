@@ -449,6 +449,9 @@ public:
 	bool repairBlockLight(v3s16 blockpos,
 		std::map<v3s16, MapBlock *> *modified_blocks);
 
+	void backupMap();
+	void restoreMap();
+
 	MapSettingsManager settings_mgr;
 
 private:

@@ -180,6 +180,9 @@ private:
 	// stops forceloading a position
 	static int l_forceload_free_block(lua_State *L);
 
+	static int l_backup_map(lua_State *L);
+	static int l_restore_map(lua_State *L);
+
 public:
 	static void Initialize(lua_State *L, int top);
 	static void InitializeClient(lua_State *L, int top);
