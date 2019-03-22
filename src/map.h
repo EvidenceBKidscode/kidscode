@@ -450,6 +450,7 @@ public:
 		std::map<v3s16, MapBlock *> *modified_blocks);
 
 	void backupMap();
+	bool restoreMapReady();
 	void restoreMap();
 
 	MapSettingsManager settings_mgr;

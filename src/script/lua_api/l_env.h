@@ -181,6 +181,7 @@ private:
 	static int l_forceload_free_block(lua_State *L);
 
 	static int l_backup_map(lua_State *L);
+	static int l_is_restore_map_ready(lua_State *L);
 	static int l_restore_map(lua_State *L);
 
 public:

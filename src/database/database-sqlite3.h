@@ -147,8 +147,9 @@ public:
 	void endSave() { Database_SQLite3::endSave(); }
 
 	void backupMap();
+	bool restoreMapReady();
 	void restoreMap();
-	void preRestoreMap();
+//	void preRestoreMap();
 
 protected:
 	virtual void createDatabase();

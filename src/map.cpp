@@ -2206,6 +2206,11 @@ void ServerMap::backupMap()
 	((MapDatabaseSQLite3 *)dbase)->backupMap();
 }
 
+bool ServerMap::restoreMapReady()
+{
+	return ((MapDatabaseSQLite3 *)dbase)->restoreMapReady();
+}
+
 void ServerMap::restoreMap()
 {
 	std::vector<v3s16> unloaded_blocks;

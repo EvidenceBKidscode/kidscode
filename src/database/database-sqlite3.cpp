@@ -323,37 +323,60 @@ void MapDatabaseSQLite3::listAllLoadableBlocks(std::vector<v3s16> &dst)
 }
 
 // VERSION SANS VERIF
-void preRestoreMapLaunch(MapDatabaseSQLite3 *map)
+void preRestoreMapLaunch(sqlite3 *m_database)
 {
-	printf("** in thread\n");
-	sleep(1); // Let data be sent to clients meanwhile (seems database kept lock else)
-	map->preRestoreMap();
-}
+	#define BACKUP_CHUNK 40000
+	sqlite3_stmt * m_stmt;
 
-void MapDatabaseSQLite3::preRestoreMap()
-{
-	assert(m_database); // Pre-condition
-	printf("** pre restore map\n");
+	sleep(1);
+	SQLOK(sqlite3_exec(m_database,
+		"DROP TABLE IF EXISTS `blocks_old`;", NULL, NULL, NULL),
+		"MapBackup: Failed to drop old table");
+
+	sleep(1);
+	SQLOK(sqlite3_exec(m_database,
+		"CREATE TABLE `blocks_new_t` (`pos` INT PRIMARY KEY, `data` BLOB);",
+		NULL, NULL, NULL), "MapBackup: Failed to create new table");
+
+	// Find out the number of records to be copied
+	SQLOK(sqlite3_prepare_v2(m_database, "SELECT COUNT(*) FROM `blocks_backup`;",
+		-1, &m_stmt, NULL), "MapBackup: Failed to count backup blocks (prepare)");
+
+	SQLRES(sqlite3_step(m_stmt), SQLITE_ROW,
+		"MapBackup: Failed to count backup blocks (step)");
+
+	s32 count = sqlite3_column_int(m_stmt, 0);
+	SQLOK(sqlite3_finalize(m_stmt),
+		"MapBackup: Failed to count backup blocks (finalize)");
+
+	printf("Number of blocks: %d\n", count);
+
+	SQLOK(sqlite3_prepare_v2(m_database,
+			"INSERT INTO blocks_new_t SELECT pos, data FROM "
+			"(SELECT *, ROW_NUMBER() OVER () rownum FROM `blocks_backup`)"
+			" WHERE rownum BETWEEN ? AND ?;", -1, &m_stmt, NULL),
+		"MapBackup: Failed to copy backup table to new table (prepare)");
+
+	for (s32 index = 1; index < count; index = index + BACKUP_CHUNK ) {
+		printf("Waiting\n");
+		sleep (1); // give some database time to players
+		printf("Copying blocks from %d to %d.\n", index, index + BACKUP_CHUNK - 1 );
+		SQLOK(sqlite3_bind_int(m_stmt, 1, index),
+			"MapBackup: Failed to copy backup table to new table (bind 1)");
+		SQLOK(sqlite3_bind_int(m_stmt, 2, index + BACKUP_CHUNK - 1),
+			"MapBackup: Failed to copy backup table to new table (bind 2)");
+		//TODO: Beware, database could be locked, what to do in that case ?
+		SQLRES(sqlite3_step(m_stmt), SQLITE_DONE,
+			"MapBackup: Failed to copy backup table to new table (step)");
+		SQLOK(sqlite3_reset(m_stmt),
+			"MapBackup: Failed to copy backup table to new table (reset)");
+	}
 
 	SQLOK(sqlite3_exec(m_database,
-		"DROP TABLE IF EXISTS `blocks_old`;",
-		NULL, NULL, NULL),
-		"Failed to drop map table");
+		"ALTER TABLE `blocks_new_t` RENAME TO `blocks_new`;", NULL, NULL, NULL),
+		"MapBackup: Failed to rename new_t table to new table");
 
-	SQLOK(sqlite3_exec(m_database,
-		"CREATE TABLE `blocks_new` (\n"
-			"	`pos` INT PRIMARY KEY,\n"
-			"	`data` BLOB\n"
-			");\n",
-		NULL, NULL, NULL),
-		"Failed to create new map table");
-
-	SQLOK(sqlite3_exec(m_database,
-		"INSERT INTO `blocks_new` SELECT * FROM `blocks_backup`;",
-		NULL, NULL, NULL),
-		"Failed to copy map table");
-
-	printf("** pre restore map done\n");
+	printf("Map reset ready\n");
 }
 
 void MapDatabaseSQLite3::backupMap()
@@ -363,31 +386,55 @@ void MapDatabaseSQLite3::backupMap()
 	SQLOK(sqlite3_exec(m_database,
 		"CREATE TABLE IF NOT EXISTS `blocks_backup` AS SELECT * FROM `blocks`;",
 		NULL, NULL, NULL),
-		"Failed to backup map table");
+		"MapBackup: Failed to backup map table");
 
-	printf("** Launching thread\n");
-			std::thread (preRestoreMapLaunch, this).detach();
-	printf("** End\n");
+	// Lauch a separate thread for preparing and populating blocks_new table
+	std::thread (preRestoreMapLaunch, m_database).detach();
+}
 
+bool MapDatabaseSQLite3::restoreMapReady()
+{
+	sqlite3_stmt * m_stmt;
+
+	assert(m_database); // Pre-condition
+
+	SQLOK(sqlite3_prepare_v2(m_database,
+		"SELECT * FROM `sqlite_master` where type='table' and name='blocks_new';",
+		-1, &m_stmt, NULL), "MapBackup: Failed to verify presence of new table (prepare)");
+
+	if (sqlite3_step(m_stmt) == SQLITE_ROW)
+	{
+		sqlite3_finalize(m_stmt);
+		return true;
+	}
+	if (sqlite3_step(m_stmt) == SQLITE_DONE)
+	{
+		sqlite3_finalize(m_stmt);
+		return false;
+	}
+	throw DatabaseException(
+		"MapBackup: Failed to verify presence of new table (step): " +
+		std::string(sqlite3_errmsg(m_database)));
 }
 
 void MapDatabaseSQLite3::restoreMap()
 {
+	// Should be called only when restoreMapReady is true
+
 	assert(m_database); // Pre-condition
 
 	SQLOK(sqlite3_exec(m_database,
 		"ALTER TABLE `blocks` RENAME TO `blocks_old`;",
 		NULL, NULL, NULL),
-		"Failed to rename old map table");
+		"MapBackup: Failed to rename old map table");
 
 	SQLOK(sqlite3_exec(m_database,
 		"ALTER TABLE `blocks_new` RENAME TO `blocks`;",
 		NULL, NULL, NULL),
-		"Failed to rename new map table");
-printf("** Launching thread\n");
-		std::thread (preRestoreMapLaunch, this).detach();
-printf("** End\n");
+		"MapBackup: Failed to rename new map table");
 
+		// Lauch a separate thread for preparing and populating blocks_new table
+		std::thread (preRestoreMapLaunch, m_database).detach();
 }
 
 /*

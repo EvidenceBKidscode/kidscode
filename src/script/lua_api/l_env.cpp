@@ -1287,16 +1287,22 @@ int ModApiEnvMod::l_backup_map(lua_State *L)
 {
 	GET_ENV_PTR;
 	ServerMap &map = env->getServerMap();
-//	ServerMap *map = &(env->getServerMap());
 	map.backupMap();
 	return 0;
+}
+
+int ModApiEnvMod::l_is_restore_map_ready(lua_State *L)
+{
+	GET_ENV_PTR;
+	ServerMap &map = env->getServerMap();
+	lua_pushboolean (L, map.restoreMapReady());
+	return 1;
 }
 
 int ModApiEnvMod::l_restore_map(lua_State *L)
 {
 	GET_ENV_PTR;
 	ServerMap &map = env->getServerMap();
-	//	ServerMap *map = &(env->getServerMap());
 	map.restoreMap();
 	return 0;
 }
@@ -1347,6 +1353,7 @@ void ModApiEnvMod::Initialize(lua_State *L, int top)
 	API_FCT(forceload_block);
 	API_FCT(forceload_free_block);
 	API_FCT(backup_map);
+	API_FCT(is_restore_map_ready);
 	API_FCT(restore_map);
 }
 
