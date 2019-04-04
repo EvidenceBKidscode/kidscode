@@ -386,6 +386,9 @@ set(common_SRCS
 	itemdef.cpp
 	itemstackmetadata.cpp
 	light.cpp
+	liquidlogic.cpp
+	liquidlogicpreserve.cpp
+	liquidlogicclassic.cpp
 	log.cpp
 	main.cpp
 	map.cpp
