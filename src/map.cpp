@@ -572,7 +572,7 @@ void Map::transformLiquids(std::map<v3s16, MapBlock*> &modified_blocks,
 {
 	u32 loopcount = 0;
 	u32 initial_size = m_transforming_liquid.size();
-
+printf("=======NEW TURN=======\n");
 	/*if(initial_size != 0)
 		infostream<<"transformLiquids(): initial_size="<<initial_size<<std::endl;*/
 
@@ -733,12 +733,12 @@ printf("  source level %d\n", source_level);
 		NodeNeighbor nbs0[4];
 
 		//TODO: ADD RANDOM START
+		printf("Neighbors:");
+
 		for (u16 i = 0; i < 4; i++) {
 			v3s16 npos = p0 + side_4dirs[i];
 
 			NodeNeighbor nb(getNodeNoEx(npos), NEIGHBOR_SAME_LEVEL, npos);
-			nbs[i] = nb;
-			nbs0[i] = nb;
 
 			const ContentFeatures &cfnb = m_nodedef->get(nb.n);
 			nb.level = -1;
@@ -753,19 +753,23 @@ printf("  source level %d\n", source_level);
 					if (cfnb.floodable) nb.level = 0;
 					break;
 			}
-
+			printf("%d:%d ", i, nb.level);
 			// eliminate target already filled or higher than source
 			if (nb.level >= source_level &&
 				nb.level >= LIQUID_LEVEL_SOURCE)
 				nb.level = -1;
+
+			nbs[i] = nb;
+			nbs0[i] = nb;
 		}
+		printf("\n");
 
 		u8 nbnb;
 		do {
 			nbnb = 0;
 			for (u16 i = 0; i < 4; i++) {
-				printf("  loop %d level %d\n", i, nbs[i].level);
 				if (nbs[i].level >= 0) {
+					printf("  neighbor %d, level %d, srclevel %d\n", i, nbs[i].level, source_level);
 					nbnb ++;
 					if (nbs[i].level >= LIQUID_LEVEL_SOURCE ||
 						nbs[i].level >= source_level ||
@@ -800,11 +804,13 @@ printf("  source level %d\n", source_level);
 						}
 
 						// Remove target
-						printf("    removed\n");
+						printf("    --> Done with this one\n");
 						nbs[i].level = -1;
 					}
 					else
 					{
+							printf("    --> Transfered 1 from source to nb\n");
+
 				//		if source_level > 1 then {
 							nbs[i].level++;
 							source_level--;
@@ -812,7 +818,7 @@ printf("  source level %d\n", source_level);
 					}
 				}
 			}
-			printf("  iteration remains %d\n", nbnb);
+			printf("  -----\n");
 		} while (nbnb);
 /*
 					if source_level > 1 then
