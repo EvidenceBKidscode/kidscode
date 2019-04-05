@@ -611,8 +611,6 @@ void Map::transformLiquids(std::map<v3s16, MapBlock*> &modified_blocks,
 
 	u16 start = rand()*4;
 
-printf("=======NEW TURN=======%d\n", start);
-
 	/*if(initial_size != 0)
 		infostream<<"transformLiquids(): initial_size="<<initial_size<<std::endl;*/
 
@@ -745,6 +743,7 @@ printf("=======NEW TURN=======%d\n", start);
 		// Side blocks
 		MapNode nbs[4];
 		MapNode nbs_old[4];
+		MapNode nbs_below[4];
 		v3s16 nbs_pos[4];
 		s8 nbs_level[4];
 
@@ -753,7 +752,7 @@ printf("=======NEW TURN=======%d\n", start);
 			nbs_pos[i] = p0 + side_4dirs[i];
 			nbs[i] = getNodeNoEx(nbs_pos[i]);
 			nbs_old[i] = nbs[i];
-
+			nbs_below[i].setContent(CONTENT_IGNORE);
 			nbs_level[i] = get_level(nbs[i], m_nodedef, c_source);
 
 			// eliminate target already filled or higher than source
@@ -799,10 +798,48 @@ printf("=======NEW TURN=======%d\n", start);
 					}
 					else
 					{
-				//		if source_level > 1 then {
+						if (source_level > 1)
+						{
 							nbs_level[i]++;
 							source_level--;
-				//		}
+						}
+						else
+						{
+							// Move level 1 only if it can fall above target
+							// This is a atempt to avoid level 1 nodes moving around
+
+							if (nbs_below[i].getContent() == CONTENT_IGNORE)
+							 	nbs_below[i] = getNodeNoEx(nbs_pos[i] + down_dir);
+								get_level(nbs_below[i], m_nodedef, c_source));
+
+							if (get_level(nbs_below[i], m_nodedef, c_source) >= 0)
+							{
+								nbs_level[i]++;
+								source_level--;
+							}
+							else
+							{
+								set_level(nbs[i], nbs_level[i], c_source, c_flowing, c_empty);
+								if (nbs[i].getContent() != nbs_old[i].getContent() ||
+									nbs[i].param2 != nbs_old[i].param2) {
+
+									// MISSING Flowing_down flag
+									// MISSING on_flood trigger
+									// MISSING rollback
+									setNode(nbs_pos[i], nbs[i]);
+
+									must_reflow.push_back(nbs_pos[i]);
+
+									v3s16 blockpos = getNodeBlockPos(nbs_pos[i]);
+									MapBlock *block = getBlockNoCreateNoEx(blockpos);
+									if (block != NULL) {
+										modified_blocks[blockpos] =  block;
+										changed_nodes.emplace_back(nbs_pos[i], nbs_old[i]);
+									}
+								}
+								nbs_level[i] = -1;
+							}
+						}
 					}
 				}
 			}
