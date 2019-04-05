@@ -567,12 +567,52 @@ const v3s16 side_4dirs[4] =
 
 const v3s16 down_dir = v3s16( 0,-1, 0);
 
+// TOOD: should be inline
+void set_level(
+	MapNode &n, s8 l,
+	content_t c_source, content_t c_flowing, content_t c_empty)
+{
+	if (l >= LIQUID_LEVEL_SOURCE) {
+		n.setContent(c_source);
+		n.param2 = 0;
+	} else if (l <= 0) {
+		n.setContent(c_empty);
+		n.param2 = 0;
+	} else {
+		n.setContent(c_flowing);
+		n.param2 = l;
+	}
+}
+
+s8 get_level(MapNode &n, INodeDefManager *m_nodedef, content_t c_source) {
+	const ContentFeatures &cf = m_nodedef->get(n);
+	switch (cf.liquid_type) {
+		case LIQUID_SOURCE:
+			if (m_nodedef->getId(cf.liquid_alternative_source) == c_source)
+				return LIQUID_LEVEL_SOURCE;
+			break;
+		case LIQUID_FLOWING:
+			if (m_nodedef->getId(cf.liquid_alternative_source) == c_source)
+				return (n.param2 & LIQUID_LEVEL_MASK);
+			break;
+		case LIQUID_NONE:
+			if (cf.floodable)
+				return 0;
+			break;
+	}
+	return -1;
+}
+
 void Map::transformLiquids(std::map<v3s16, MapBlock*> &modified_blocks,
 		ServerEnvironment *env)
 {
 	u32 loopcount = 0;
 	u32 initial_size = m_transforming_liquid.size();
-printf("=======NEW TURN=======\n");
+
+	u16 start = rand()*4;
+
+printf("=======NEW TURN=======%d\n", start);
+
 	/*if(initial_size != 0)
 		infostream<<"transformLiquids(): initial_size="<<initial_size<<std::endl;*/
 
@@ -618,21 +658,18 @@ printf("=======NEW TURN=======\n");
 ////////////////////////////////////////////////////////////////////////////////
 // Pour couper c'est ici
 
-
 // ==========================
 // DEBUT NOUVELLE VERSION
 // ==========================
 
-printf("LIQUID %d, %d, %d\n", p0.X, p0.Y, p0.Z);
 		// Get source node information
 		MapNode n0 = getNodeNoEx(p0);
 		MapNode n00 = n0;
 
 		s8 source_level = -1;
-
 		const ContentFeatures &cf = m_nodedef->get(n0);
-		LiquidType liquid_type = cf.liquid_type;
-		switch (liquid_type) {
+
+		switch (cf.liquid_type) {
 			case LIQUID_SOURCE:
 				source_level = LIQUID_LEVEL_SOURCE;
 				break;
@@ -643,28 +680,14 @@ printf("LIQUID %d, %d, %d\n", p0.X, p0.Y, p0.Z);
 				continue;
 				break;
 		}
-printf("  source level %d\n", source_level);
-
-		content_t liquid_flowing = m_nodedef->getId(cf.liquid_alternative_flowing);
-		content_t liquid_source = m_nodedef->getId(cf.liquid_alternative_source);
-		content_t floodable_node = CONTENT_AIR;
+		content_t c_flowing = m_nodedef->getId(cf.liquid_alternative_flowing);
+		content_t c_source = m_nodedef->getId(cf.liquid_alternative_source);
+		content_t c_empty = CONTENT_AIR;
 
 		// Flow down
-		s8 nb_level = -1;
 		v3s16 npos = p0 + down_dir;
-		NodeNeighbor nb(getNodeNoEx(npos), NEIGHBOR_LOWER, npos);
-		const ContentFeatures &cfnb = m_nodedef->get(nb.n);
-		switch (m_nodedef->get(nb.n.getContent()).liquid_type) {
-			case LIQUID_SOURCE:
-				nb_level = LIQUID_LEVEL_SOURCE;
-				break;
-			case LIQUID_FLOWING:
-				nb_level = (nb.n.param2 & LIQUID_LEVEL_MASK);
-				break;
-			case LIQUID_NONE:
-				if (cfnb.floodable) nb_level = 0;
-				break;
-		}
+		MapNode nb = getNodeNoEx(npos);
+		s8 nb_level = get_level(nb, m_nodedef, c_source);
 
 		if (nb_level >= 0) {
 			s8 transfer = LIQUID_LEVEL_SOURCE - nb_level;
@@ -674,48 +697,40 @@ printf("  source level %d\n", source_level);
 				nb_level = nb_level + transfer;
 
 				// Update target node
-				MapNode nb0 = nb.n;
-
-				content_t new_node_content;
-				if (nb_level >= LIQUID_LEVEL_SOURCE) {
-					new_node_content = liquid_source;
-					nb.n.param2 = 0;
-				} else if (nb_level <= 0) {
-					new_node_content = floodable_node;
-					nb.n.param2 = 0;
-				} else {
-					new_node_content = liquid_flowing;
-					nb.n.param2 = nb_level;
-				}
-				nb.n.setContent(new_node_content);
+				MapNode nb0 = nb;
+				set_level(nb, nb_level, c_source, c_flowing, c_empty);
+				setNode(npos, nb);
+				must_reflow.push_back(npos);
 
 				// MISSING Flowing_down flag
 				// MISSING on_flood trigger
 				// MISSING rollback
 
-				setNode(nb.p, nb.n);
-				must_reflow.push_back(nb.p);
-
-				v3s16 blockpos = getNodeBlockPos(nb.p);
+				v3s16 blockpos = getNodeBlockPos(npos);
 				MapBlock *block = getBlockNoCreateNoEx(blockpos);
 				if (block != NULL) {
 					modified_blocks[blockpos] =  block;
-					changed_nodes.emplace_back(nb.p, nb0);
+					changed_nodes.emplace_back(npos, nb0);
 				}
 			}
 		}
 
 		// Check source not empty
 		if (source_level <= 0) {
-			printf("  source emptied\n");
+			set_level(n0, source_level, c_source, c_flowing, c_empty);
+			setNode(p0, n0);
 
-			n0.param2 = 0;
-			n0.setContent(floodable_node);
+			// Source emptied, surrounding nodes may reflow
+
+			must_reflow.push_back(p0 - down_dir);
+			must_reflow.push_back(p0 + side_4dirs[0]);
+			must_reflow.push_back(p0 + side_4dirs[1]);
+			must_reflow.push_back(p0 + side_4dirs[2]);
+			must_reflow.push_back(p0 + side_4dirs[3]);
 
 			// MISSING Flowing_down flag
 			// MISSING on_flood trigger
 			// MISSING rollback
-			setNode(p0, n0);
 
 			v3s16 blockpos = getNodeBlockPos(p0);
 			MapBlock *block = getBlockNoCreateNoEx(blockpos);
@@ -727,145 +742,87 @@ printf("  source level %d\n", source_level);
 			continue;
 		}
 
-
 		// Side blocks
-		NodeNeighbor nbs[4];
-		NodeNeighbor nbs0[4];
+		MapNode nbs[4];
+		MapNode nbs_old[4];
+		v3s16 nbs_pos[4];
+		s8 nbs_level[4];
 
 		//TODO: ADD RANDOM START
-		printf("Neighbors:");
-
 		for (u16 i = 0; i < 4; i++) {
-			v3s16 npos = p0 + side_4dirs[i];
+			nbs_pos[i] = p0 + side_4dirs[i];
+			nbs[i] = getNodeNoEx(nbs_pos[i]);
+			nbs_old[i] = nbs[i];
 
-			NodeNeighbor nb(getNodeNoEx(npos), NEIGHBOR_SAME_LEVEL, npos);
+			nbs_level[i] = get_level(nbs[i], m_nodedef, c_source);
 
-			const ContentFeatures &cfnb = m_nodedef->get(nb.n);
-			nb.level = -1;
-			switch (m_nodedef->get(nb.n.getContent()).liquid_type) {
-				case LIQUID_SOURCE:
-					nb.level = LIQUID_LEVEL_SOURCE;
-					break;
-				case LIQUID_FLOWING:
-					nb.level = (nb.n.param2 & LIQUID_LEVEL_MASK);
-					break;
-				case LIQUID_NONE:
-					if (cfnb.floodable) nb.level = 0;
-					break;
-			}
-			printf("%d:%d ", i, nb.level);
 			// eliminate target already filled or higher than source
-			if (nb.level >= source_level &&
-				nb.level >= LIQUID_LEVEL_SOURCE)
-				nb.level = -1;
-
-			nbs[i] = nb;
-			nbs0[i] = nb;
+			if (nbs_level[i] >= source_level &&
+				nbs_level[i] >= LIQUID_LEVEL_SOURCE)
+				nbs_level[i] = -1;
 		}
-		printf("\n");
 
-		u8 nbnb;
+		u8 remaining;
+		start++; start%=65000;
 		do {
-			nbnb = 0;
-			for (u16 i = 0; i < 4; i++) {
-				if (nbs[i].level >= 0) {
-					printf("  neighbor %d, level %d, srclevel %d\n", i, nbs[i].level, source_level);
-					nbnb ++;
-					if (nbs[i].level >= LIQUID_LEVEL_SOURCE ||
-						nbs[i].level >= source_level ||
+			remaining = 0;
+			for (u16 j = 0; j < 4; j++) {
+				u16 i = (start+j)%4;
+				if (nbs_level[i] >= 0) {
+					remaining ++;
+					if (nbs_level[i] >= LIQUID_LEVEL_SOURCE ||
+						nbs_level[i] >= source_level ||
 						source_level <= 0) {
 
-						// Set level
-						if (nbs[i].level >= LIQUID_LEVEL_SOURCE) {
-							nbs[i].n.setContent(liquid_source);
-							nbs[i].n.param2 = 0;
-						} else if (nbs[i].level <= 0) {
-							nbs[i].n.setContent(floodable_node);
-							nbs[i].n.param2 = 0;
-						} else {
-							nbs[i].n.setContent(liquid_flowing);
-							nbs[i].n.param2 = nbs[i].level;
-						}
+						set_level(nbs[i], nbs_level[i], c_source, c_flowing, c_empty);
 
-						if (nbs[i].n.getContent() != nbs0[i].n.getContent() ||
-							nbs[i].n.param2 != nbs0[i].n.param2) {
+						if (nbs[i].getContent() != nbs_old[i].getContent() ||
+							nbs[i].param2 != nbs_old[i].param2) {
 
 							// MISSING Flowing_down flag
 							// MISSING on_flood trigger
 							// MISSING rollback
-							setNode(nbs[i].p, nbs[i].n);
+							setNode(nbs_pos[i], nbs[i]);
 
-							v3s16 blockpos = getNodeBlockPos(nbs[i].p);
+							must_reflow.push_back(nbs_pos[i]);
+
+							v3s16 blockpos = getNodeBlockPos(nbs_pos[i]);
 							MapBlock *block = getBlockNoCreateNoEx(blockpos);
 							if (block != NULL) {
 								modified_blocks[blockpos] =  block;
-								changed_nodes.emplace_back(nbs[i].p, nbs0[i].n);
+								changed_nodes.emplace_back(nbs_pos[i], nbs_old[i]);
 							}
 						}
 
 						// Remove target
-						printf("    --> Done with this one\n");
-						nbs[i].level = -1;
+						nbs_level[i] = -1;
 					}
 					else
 					{
-							printf("    --> Transfered 1 from source to nb\n");
-
 				//		if source_level > 1 then {
-							nbs[i].level++;
+							nbs_level[i]++;
 							source_level--;
 				//		}
 					}
 				}
 			}
-			printf("  -----\n");
-		} while (nbnb);
-/*
-					if source_level > 1 then
-						target.level = target.level + 1
-						source_level = source_level - 1
-					else
-						-- Move level 1 only if it can fall above target
-						-- This is a atempt to avoid level 1 nodes moving around
-						target.above = target.above or minetest.get_node({
-							-- Actually only the fillable information is used
-							x = target.pos.x,
-							y = target.pos.y - 1,
-							z = target.pos.z
-						})
-						if get_level(target.above, source_name, flowing_name) then
-							target.level = 1
-							source_level = 0
-						else
-							table.remove(targets, index)
-							set_level(target.node, source_name, flowing_name, target.level)
-							minetest.set_node(target.pos, target.node)
-						end
-					end
-				end
-			end
-		end
-*/
-
+		} while (remaining);
 
 		// Finally update source
 		// Set level
-		if (source_level >= LIQUID_LEVEL_SOURCE) {
-			n0.setContent(liquid_source);
-			n0.param2 = 0;
-		} else if (source_level <= 0) {
-			n0.setContent(floodable_node);
-			n0.param2 = 0;
-		} else {
-			n0.setContent(liquid_flowing);
-			n0.param2 = source_level;
-		}
+		set_level(n0, source_level, c_source, c_flowing, c_empty);
 
 		if (n0.getContent() != n00.getContent() || n0.param2 != n00.param2) {
 			// MISSING Flowing_down flag
 			// MISSING on_flood trigger
 			// MISSING rollback
 			setNode(p0, n0);
+
+			must_reflow.push_back(p0 - down_dir);
+			must_reflow.push_back(p0 + side_4dirs[0]);
+			must_reflow.push_back(p0 + side_4dirs[1]);
+			must_reflow.push_back(p0 + side_4dirs[2]);
+			must_reflow.push_back(p0 + side_4dirs[3]);
 
 			v3s16 blockpos = getNodeBlockPos(p0);
 			MapBlock *block = getBlockNoCreateNoEx(blockpos);
