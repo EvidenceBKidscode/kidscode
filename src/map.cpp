@@ -810,7 +810,6 @@ void Map::transformLiquids(std::map<v3s16, MapBlock*> &modified_blocks,
 
 							if (nbs_below[i].getContent() == CONTENT_IGNORE)
 							 	nbs_below[i] = getNodeNoEx(nbs_pos[i] + down_dir);
-								get_level(nbs_below[i], m_nodedef, c_source));
 
 							if (get_level(nbs_below[i], m_nodedef, c_source) >= 0)
 							{
