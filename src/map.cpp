@@ -569,7 +569,7 @@ const v3s16 down_dir = v3s16( 0,-1, 0);
 
 // TOOD: should be inline
 void set_level(
-	MapNode &n, s8 l,
+	MapNode &n, s8 l, bool flowing_down,
 	content_t c_source, content_t c_flowing, content_t c_empty)
 {
 	if (l >= LIQUID_LEVEL_SOURCE) {
@@ -580,7 +580,7 @@ void set_level(
 		n.param2 = 0;
 	} else {
 		n.setContent(c_flowing);
-		n.param2 = l;
+		n.param2 = (flowing_down ? LIQUID_FLOW_DOWN_MASK : 0x00) | (l & LIQUID_LEVEL_MASK);
 	}
 }
 
@@ -751,14 +751,14 @@ void Map::transformLiquids(std::map<v3s16, MapBlock*> &modified_blocks,
 
 				// Update target node
 				MapNode nb0 = nb;
-				set_level(nb, nb_level, c_source, c_flowing, c_empty);
+				set_level(nb, nb_level, false, c_source, c_flowing, c_empty);
 				updateNodeIfChanged(npos, nb, nb0, modified_blocks, env, changed_nodes, must_reflow);
 			}
 		}
 
 		// Check source not empty
 		if (source_level <= 0) {
-			set_level(n0, source_level, c_source, c_flowing, c_empty);
+			set_level(n0, source_level, true, c_source, c_flowing, c_empty);
 			updateNodeIfChanged(p0, n0, n00, modified_blocks, env, changed_nodes, must_reflow);
 
 			// Source emptied, surrounding nodes may reflow
@@ -804,7 +804,7 @@ void Map::transformLiquids(std::map<v3s16, MapBlock*> &modified_blocks,
 					if (nbs_level[i] >= LIQUID_LEVEL_SOURCE ||
 						nbs_level[i] >= source_level ||
 						source_level <= 0) {
-						set_level(nbs[i], nbs_level[i], c_source, c_flowing, c_empty);
+						set_level(nbs[i], nbs_level[i], false, c_source, c_flowing, c_empty);
 						updateNodeIfChanged(nbs_pos[i], nbs[i], nbs_old[i], modified_blocks, env, changed_nodes, must_reflow);
 
 						nbs_level[i] = -1;
@@ -831,7 +831,7 @@ void Map::transformLiquids(std::map<v3s16, MapBlock*> &modified_blocks,
 							}
 							else
 							{
-								set_level(nbs[i], nbs_level[i], c_source, c_flowing, c_empty);
+								set_level(nbs[i], nbs_level[i], false, c_source, c_flowing, c_empty);
 								updateNodeIfChanged(nbs_pos[i], nbs[i], nbs_old[i], modified_blocks, env, changed_nodes, must_reflow);
 								nbs_level[i] = -1;
 							}
@@ -843,7 +843,7 @@ void Map::transformLiquids(std::map<v3s16, MapBlock*> &modified_blocks,
 
 		// Finally update source
 		// Set level
-		set_level(n0, source_level, c_source, c_flowing, c_empty);
+		set_level(n0, source_level, (nb_level >= 0), c_source, c_flowing, c_empty);
 		if (n0.getContent() != n00.getContent() || n0.param2 != n00.param2) {
 			updateNodeIfChanged(p0, n0, n00, modified_blocks, env, changed_nodes, must_reflow);
 			// Source emptied, surrounding nodes may reflow
