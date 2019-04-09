@@ -316,6 +316,12 @@ protected:
 	bool isOccluded(v3s16 p0, v3s16 p1, float step, float stepfac,
 			float start_off, float end_off, u32 needed_count);
 
+	void updateNodeIfChanged(v3s16 pos, MapNode nnew, MapNode nold,
+		std::map<v3s16, MapBlock*> &modified_blocks,
+		ServerEnvironment *env,
+		std::vector<std::pair<v3s16, MapNode> > &changed_nodes,
+		std::deque<v3s16> &must_reflow);
+
 private:
 	f32 m_transforming_liquid_loop_count_multiplier = 1.0f;
 	u32 m_unprocessed_count = 0;

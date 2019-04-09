@@ -603,6 +603,60 @@ s8 get_level(MapNode &n, INodeDefManager *m_nodedef, content_t c_source) {
 	return -1;
 }
 
+void Map::updateNodeIfChanged(v3s16 pos, MapNode nnew, MapNode nold,
+	std::map<v3s16, MapBlock*> &modified_blocks,
+	ServerEnvironment *env,
+	std::vector<std::pair<v3s16, MapNode> > &changed_nodes,
+	std::deque<v3s16> &must_reflow)
+{
+	if (nnew.getContent() == nold.getContent() && nnew.param2 == nold.param2)
+		return;
+
+	// on_flood() the node
+	const ContentFeatures &cf = m_nodedef->get(nold);
+	if (nold.getContent() != CONTENT_AIR && cf.liquid_type == LIQUID_NONE) {
+		if (env->getScriptIface()->node_on_flood(pos, nold, nnew))
+			return;
+	}
+
+	// Ignore light (because calling voxalgo::update_lighting_nodes)
+	nnew.setLight(LIGHTBANK_DAY, 0, m_nodedef);
+	nnew.setLight(LIGHTBANK_NIGHT, 0, m_nodedef);
+
+	// Find out whether there is a suspect for this action
+	std::string suspect;
+	if (m_gamedef->rollback())
+		suspect = m_gamedef->rollback()->getSuspect(pos, 83, 1);
+
+	if (m_gamedef->rollback() && !suspect.empty()) {
+		// Blame suspect
+		RollbackScopeActor rollback_scope(m_gamedef->rollback(), suspect, true);
+		// Get old node for rollback
+		RollbackNode rollback_oldnode(this, pos, m_gamedef);
+		// Set node
+		setNode(pos, nnew);
+		// Report
+		RollbackNode rollback_newnode(this, pos, m_gamedef);
+		RollbackAction action;
+		action.setSetNode(pos, rollback_oldnode, rollback_newnode);
+		m_gamedef->rollback()->reportAction(action);
+	} else {
+		// Set node
+		setNode(pos, nnew);
+	}
+
+	// MISSING Flowing_down flag
+
+	must_reflow.push_back(pos);
+
+	v3s16 blockpos = getNodeBlockPos(pos);
+	MapBlock *block = getBlockNoCreateNoEx(blockpos);
+	if (block != NULL) {
+		modified_blocks[blockpos] =  block;
+		changed_nodes.emplace_back(pos, nold);
+	}
+}
+
 void Map::transformLiquids(std::map<v3s16, MapBlock*> &modified_blocks,
 		ServerEnvironment *env)
 {
@@ -651,6 +705,10 @@ void Map::transformLiquids(std::map<v3s16, MapBlock*> &modified_blocks,
 		v3s16 p0 = m_transforming_liquid.front();
 		m_transforming_liquid.pop_front();
 
+		// Get source node information
+		MapNode n0 = getNodeNoEx(p0);
+		MapNode n00 = n0;
+
 ////////////////////////////////////////////////////////////////////////////////
 //
 ////////////////////////////////////////////////////////////////////////////////
@@ -659,10 +717,6 @@ void Map::transformLiquids(std::map<v3s16, MapBlock*> &modified_blocks,
 // ==========================
 // DEBUT NOUVELLE VERSION
 // ==========================
-
-		// Get source node information
-		MapNode n0 = getNodeNoEx(p0);
-		MapNode n00 = n0;
 
 		s8 source_level = -1;
 		const ContentFeatures &cf = m_nodedef->get(n0);
@@ -678,6 +732,7 @@ void Map::transformLiquids(std::map<v3s16, MapBlock*> &modified_blocks,
 				continue;
 				break;
 		}
+
 		content_t c_flowing = m_nodedef->getId(cf.liquid_alternative_flowing);
 		content_t c_source = m_nodedef->getId(cf.liquid_alternative_source);
 		content_t c_empty = CONTENT_AIR;
@@ -697,45 +752,22 @@ void Map::transformLiquids(std::map<v3s16, MapBlock*> &modified_blocks,
 				// Update target node
 				MapNode nb0 = nb;
 				set_level(nb, nb_level, c_source, c_flowing, c_empty);
-				setNode(npos, nb);
-				must_reflow.push_back(npos);
-
-				// MISSING Flowing_down flag
-				// MISSING on_flood trigger
-				// MISSING rollback
-
-				v3s16 blockpos = getNodeBlockPos(npos);
-				MapBlock *block = getBlockNoCreateNoEx(blockpos);
-				if (block != NULL) {
-					modified_blocks[blockpos] =  block;
-					changed_nodes.emplace_back(npos, nb0);
-				}
+				updateNodeIfChanged(npos, nb, nb0, modified_blocks, env, changed_nodes, must_reflow);
 			}
 		}
 
 		// Check source not empty
 		if (source_level <= 0) {
 			set_level(n0, source_level, c_source, c_flowing, c_empty);
-			setNode(p0, n0);
+			updateNodeIfChanged(p0, n0, n00, modified_blocks, env, changed_nodes, must_reflow);
 
 			// Source emptied, surrounding nodes may reflow
-
 			must_reflow.push_back(p0 - down_dir);
 			must_reflow.push_back(p0 + side_4dirs[0]);
 			must_reflow.push_back(p0 + side_4dirs[1]);
 			must_reflow.push_back(p0 + side_4dirs[2]);
 			must_reflow.push_back(p0 + side_4dirs[3]);
 
-			// MISSING Flowing_down flag
-			// MISSING on_flood trigger
-			// MISSING rollback
-
-			v3s16 blockpos = getNodeBlockPos(p0);
-			MapBlock *block = getBlockNoCreateNoEx(blockpos);
-			if (block != NULL) {
-				modified_blocks[blockpos] =  block;
-				changed_nodes.emplace_back(p0, n00);
-			}
 			// Done with this node
 			continue;
 		}
@@ -772,28 +804,9 @@ void Map::transformLiquids(std::map<v3s16, MapBlock*> &modified_blocks,
 					if (nbs_level[i] >= LIQUID_LEVEL_SOURCE ||
 						nbs_level[i] >= source_level ||
 						source_level <= 0) {
-
 						set_level(nbs[i], nbs_level[i], c_source, c_flowing, c_empty);
+						updateNodeIfChanged(nbs_pos[i], nbs[i], nbs_old[i], modified_blocks, env, changed_nodes, must_reflow);
 
-						if (nbs[i].getContent() != nbs_old[i].getContent() ||
-							nbs[i].param2 != nbs_old[i].param2) {
-
-							// MISSING Flowing_down flag
-							// MISSING on_flood trigger
-							// MISSING rollback
-							setNode(nbs_pos[i], nbs[i]);
-
-							must_reflow.push_back(nbs_pos[i]);
-
-							v3s16 blockpos = getNodeBlockPos(nbs_pos[i]);
-							MapBlock *block = getBlockNoCreateNoEx(blockpos);
-							if (block != NULL) {
-								modified_blocks[blockpos] =  block;
-								changed_nodes.emplace_back(nbs_pos[i], nbs_old[i]);
-							}
-						}
-
-						// Remove target
 						nbs_level[i] = -1;
 					}
 					else
@@ -819,23 +832,7 @@ void Map::transformLiquids(std::map<v3s16, MapBlock*> &modified_blocks,
 							else
 							{
 								set_level(nbs[i], nbs_level[i], c_source, c_flowing, c_empty);
-								if (nbs[i].getContent() != nbs_old[i].getContent() ||
-									nbs[i].param2 != nbs_old[i].param2) {
-
-									// MISSING Flowing_down flag
-									// MISSING on_flood trigger
-									// MISSING rollback
-									setNode(nbs_pos[i], nbs[i]);
-
-									must_reflow.push_back(nbs_pos[i]);
-
-									v3s16 blockpos = getNodeBlockPos(nbs_pos[i]);
-									MapBlock *block = getBlockNoCreateNoEx(blockpos);
-									if (block != NULL) {
-										modified_blocks[blockpos] =  block;
-										changed_nodes.emplace_back(nbs_pos[i], nbs_old[i]);
-									}
-								}
+								updateNodeIfChanged(nbs_pos[i], nbs[i], nbs_old[i], modified_blocks, env, changed_nodes, must_reflow);
 								nbs_level[i] = -1;
 							}
 						}
@@ -847,33 +844,21 @@ void Map::transformLiquids(std::map<v3s16, MapBlock*> &modified_blocks,
 		// Finally update source
 		// Set level
 		set_level(n0, source_level, c_source, c_flowing, c_empty);
-
 		if (n0.getContent() != n00.getContent() || n0.param2 != n00.param2) {
-			// MISSING Flowing_down flag
-			// MISSING on_flood trigger
-			// MISSING rollback
-			setNode(p0, n0);
-
+			updateNodeIfChanged(p0, n0, n00, modified_blocks, env, changed_nodes, must_reflow);
+			// Source emptied, surrounding nodes may reflow
 			must_reflow.push_back(p0 - down_dir);
 			must_reflow.push_back(p0 + side_4dirs[0]);
 			must_reflow.push_back(p0 + side_4dirs[1]);
 			must_reflow.push_back(p0 + side_4dirs[2]);
 			must_reflow.push_back(p0 + side_4dirs[3]);
-
-			v3s16 blockpos = getNodeBlockPos(p0);
-			MapBlock *block = getBlockNoCreateNoEx(blockpos);
-			if (block != NULL) {
-				modified_blocks[blockpos] =  block;
-				changed_nodes.emplace_back(p0, n00);
-			}
 		}
 
 // =============================
 // FIN NOUVELLE VERSION
 // =============================
 
-#if 0
-		MapNode n0 = getNodeNoEx(p0);
+		#if 0
 		/*
 			Collect information about current node
 		 */
@@ -1080,7 +1065,7 @@ void Map::transformLiquids(std::map<v3s16, MapBlock*> &modified_blocks,
 		/*
 			update the current node
 		 */
-		MapNode n00 = n0;
+
 		//bool flow_down_enabled = (flowing_down && ((n0.param2 & LIQUID_FLOW_DOWN_MASK) != LIQUID_FLOW_DOWN_MASK));
 		if (m_nodedef->get(new_node_content).liquid_type == LIQUID_FLOWING) {
 			// set level to last 3 bits, flowing down bit to 4th bit
