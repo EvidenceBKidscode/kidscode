@@ -46,6 +46,7 @@ class IGameDef;
 class IRollbackManager;
 class EmergeManager;
 class ServerEnvironment;
+class LiquidLogic;
 struct BlockMakeData;
 
 /*
@@ -289,9 +290,12 @@ public:
 	*/
 
 	void transforming_liquid_add(v3s16 p);
-	s32 transforming_liquid_size();
+//	s32 transforming_liquid_size();
 
 	bool isBlockOccluded(MapBlock *block, v3s16 cam_pos_nodes);
+
+	inline LiquidLogic * getLiquidLogic() { return m_liquid_logic; }
+
 protected:
 	friend class LuaVoxelManip;
 
@@ -308,7 +312,7 @@ protected:
 	v2s16 m_sector_cache_p;
 
 	// Queued transforming water nodes
-	UniqueQueue<v3s16> m_transforming_liquid;
+//	UniqueQueue<v3s16> m_transforming_liquid;
 
 	// This stores the properties of the nodes on the map.
 	INodeDefManager *m_nodedef;
@@ -316,17 +320,13 @@ protected:
 	bool isOccluded(v3s16 p0, v3s16 p1, float step, float stepfac,
 			float start_off, float end_off, u32 needed_count);
 
-	void updateNodeIfChanged(v3s16 pos, MapNode nnew, MapNode nold,
-		std::map<v3s16, MapBlock*> &modified_blocks,
-		ServerEnvironment *env,
-		std::vector<std::pair<v3s16, MapNode> > &changed_nodes,
-		std::deque<v3s16> &must_reflow);
+	LiquidLogic *m_liquid_logic;
 
 private:
-	f32 m_transforming_liquid_loop_count_multiplier = 1.0f;
-	u32 m_unprocessed_count = 0;
-	u64 m_inc_trending_up_start_time = 0; // milliseconds
-	bool m_queue_size_timer_started = false;
+//	f32 m_transforming_liquid_loop_count_multiplier = 1.0f;
+//	u32 m_unprocessed_count = 0;
+//	u64 m_inc_trending_up_start_time = 0; // milliseconds
+//	bool m_queue_size_timer_started = false;
 };
 
 /*
