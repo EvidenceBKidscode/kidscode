@@ -22,17 +22,12 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "mapblock.h"
 #include "nodedef.h"
 #include "porting.h"
-//#include "util/timetaker.h"
 #include "serverenvironment.h"
 #include "script/scripting_server.h"
 #include "rollback_interface.h"
 #include "gamedef.h"
 #include "voxelalgorithms.h"
-
-
-void LiquidLogicPreserve::addTransformingFromData(BlockMakeData *data)
-{}
-
+#include "emerge.h"
 
 const v3s16 side_4dirs[4] =
 {
@@ -53,6 +48,14 @@ void LiquidLogicPreserve::addTransforming(v3s16 p) {
 	m_liquid_queue.push_back(p);
 }
 
+void LiquidLogicPreserve::addTransformingFromData(BlockMakeData *data)
+{
+	while (data->transforming_liquid.size()) {
+		m_liquid_queue.push_back(data->transforming_liquid.front());
+		data->transforming_liquid.pop_front();
+	}
+}
+
 void LiquidLogicPreserve::scanBlock(MapBlock *block)
 {
 	// Very basic scan: pushes all liquid blocks with PRESERVE logic
@@ -70,6 +73,21 @@ void LiquidLogicPreserve::scanBlock(MapBlock *block)
 			m_liquid_queue.push_back(m_rel_block_pos + v3s16(x, y, z));
 	}
 }
+
+void LiquidLogicPreserve::scanVoxelManip(MMVManip *vm, v3s16 nmin, v3s16 nmax)
+{
+	for (s16 z = nmin.Z + 1; z <= nmax.Z - 1; z++)
+	for (s16 y = nmax.Y; y >= nmin.Y; y--) {
+		u32 vi = vm->m_area.index(nmin.X + 1, y, z);
+		for (s16 x = nmin.X + 1; x <= nmax.X - 1; x++) {
+			if (vm->m_data[vi].getContent() != CONTENT_IGNORE &&
+				m_ndef->get(vm->m_data[vi]).isLiquid())
+				m_liquid_queue.push_back(v3s16(x, y, z));
+			vi++;
+		}
+	}
+}
+
 
 // TOOD: should be inline
 void LiquidLogicPreserve::setNodeLevel(

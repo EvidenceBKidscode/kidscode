@@ -35,6 +35,7 @@ public:
 	LiquidLogicPreserve(Map *map, IGameDef *gamedef);
 	void addTransforming(v3s16 p);
 	void scanBlock(MapBlock *block);
+	void scanVoxelManip(MMVManip *vm, v3s16 nmin, v3s16 nmax);
 	void transform(std::map<v3s16, MapBlock*> &modified_blocks,
 		ServerEnvironment *env);
 	void addTransformingFromData(BlockMakeData *data);
@@ -46,10 +47,6 @@ private:
 	s8 getNodeLevel(MapNode &n, content_t c_source);
 	void updateNodeIfChanged(v3s16 pos, MapNode nnew, MapNode nold,
 		std::map<v3s16, MapBlock*> &modified_blocks, ServerEnvironment *env);
-
-	Map *m_map = nullptr;
-	IGameDef *m_gamedef = nullptr;
-	INodeDefManager *m_ndef = nullptr;
 
 	UniqueQueue<v3s16> m_liquid_queue;
 	std::deque<v3s16> m_must_reflow;

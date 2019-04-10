@@ -47,6 +47,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "script/scripting_server.h"
 #include "liquidlogic.h"
 #include "liquidlogicclassic.h"
+#include "liquidlogicpreserve.h"
 #include <deque>
 #include <queue>
 #if USE_LEVELDB
@@ -69,8 +70,7 @@ Map::Map(std::ostream &dout, IGameDef *gamedef):
 	m_gamedef(gamedef),
 	m_nodedef(gamedef->ndef())
 {
-	printf("liquid logic classic\n");
-	m_liquid_logic = new LiquidLogicClassic(this, gamedef);
+	m_liquid_logic = new LiquidLogicPreserve(this, gamedef);
 }
 
 Map::~Map()

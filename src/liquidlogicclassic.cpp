@@ -22,7 +22,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "mapblock.h"
 #include "nodedef.h"
 #include "porting.h"
-#include "util/timetaker.h"
 #include "util/directiontables.h"
 #include "serverenvironment.h"
 #include "script/scripting_server.h"
