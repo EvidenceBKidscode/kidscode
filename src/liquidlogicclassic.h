@@ -37,6 +37,8 @@ public:
 	void addTransforming(v3s16 p);
 	void scanBlock(MapBlock *block);
 	void scanVoxelManip(MMVManip *vm, v3s16 nmin, v3s16 nmax);
+	void scanVoxelManip(UniqueQueue<v3s16> *liquid_queue,
+		MMVManip *vm, v3s16 nmin, v3s16 nmax);
 	void transform(std::map<v3s16, MapBlock*> &modified_blocks,
 		ServerEnvironment *env);
 	void addTransformingFromData(BlockMakeData *data);

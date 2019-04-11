@@ -33,12 +33,14 @@ class MMVManip;
 class LiquidLogic {
 public:
 	LiquidLogic(Map *map, IGameDef *gamedef);
-	virtual void addTransforming(v3s16 p);
-	virtual void scanBlock(MapBlock *block);
-	virtual void scanVoxelManip(MMVManip *vm, v3s16 nmin, v3s16 nmax);
+	virtual void addTransforming(v3s16 p) {};
+	virtual void scanBlock(MapBlock *block) {};
+	virtual void scanVoxelManip(MMVManip *vm, v3s16 nmin, v3s16 nmax) {};
+	virtual void scanVoxelManip(UniqueQueue<v3s16> *liquid_queue,
+		MMVManip *vm, v3s16 nmin, v3s16 nmax) {};
 	virtual void transform(std::map<v3s16, MapBlock*> &modified_blocks,
-		ServerEnvironment *env);
-	virtual void addTransformingFromData(BlockMakeData *data);
+		ServerEnvironment *env) {};
+	virtual void addTransformingFromData(BlockMakeData *data) {};
 
 protected:
 	Map *m_map = nullptr;

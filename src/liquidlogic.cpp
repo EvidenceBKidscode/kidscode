@@ -27,21 +27,3 @@ LiquidLogic::LiquidLogic(Map *map, IGameDef *gamedef) :
 {
 	m_ndef = m_map->getNodeDefManager();
 }
-
-void LiquidLogic::addTransforming(v3s16 p)
-{ }
-
-void LiquidLogic::scanBlock(MapBlock *block)
-{ }
-
-void LiquidLogic::scanVoxelManip(MMVManip *vm, v3s16 nmin, v3s16 nmax)
-{ }
-
-void LiquidLogic::transform(std::map<v3s16, MapBlock*> &modified_blocks,
-	ServerEnvironment *env)
-{
-	printf("LiquidLogic transform\n");
-}
-
-void LiquidLogic::addTransformingFromData(BlockMakeData *data)
-{ }

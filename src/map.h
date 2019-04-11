@@ -507,6 +507,8 @@ public:
 	void blitBackAll(std::map<v3s16, MapBlock*> * modified_blocks,
 		bool overwrite_generated = true);
 
+	inline LiquidLogic * getLiquidLogic() { return m_map->getLiquidLogic(); }
+
 	bool m_is_dirty = false;
 
 protected:

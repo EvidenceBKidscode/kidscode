@@ -74,7 +74,8 @@ void LiquidLogicPreserve::scanBlock(MapBlock *block)
 	}
 }
 
-void LiquidLogicPreserve::scanVoxelManip(MMVManip *vm, v3s16 nmin, v3s16 nmax)
+void LiquidLogicPreserve::scanVoxelManip(UniqueQueue<v3s16> *liquid_queue,
+	MMVManip *vm, v3s16 nmin, v3s16 nmax)
 {
 	for (s16 z = nmin.Z + 1; z <= nmax.Z - 1; z++)
 	for (s16 y = nmax.Y; y >= nmin.Y; y--) {
@@ -82,12 +83,16 @@ void LiquidLogicPreserve::scanVoxelManip(MMVManip *vm, v3s16 nmin, v3s16 nmax)
 		for (s16 x = nmin.X + 1; x <= nmax.X - 1; x++) {
 			if (vm->m_data[vi].getContent() != CONTENT_IGNORE &&
 				m_ndef->get(vm->m_data[vi]).isLiquid())
-				m_liquid_queue.push_back(v3s16(x, y, z));
+				liquid_queue->push_back(v3s16(x, y, z));
 			vi++;
 		}
 	}
 }
 
+void LiquidLogicPreserve::scanVoxelManip(MMVManip *vm, v3s16 nmin, v3s16 nmax)
+{
+	scanVoxelManip(&m_liquid_queue, vm, nmin, nmax);
+}
 
 // TOOD: should be inline
 void LiquidLogicPreserve::setNodeLevel(

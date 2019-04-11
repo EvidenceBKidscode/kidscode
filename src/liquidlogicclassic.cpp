@@ -285,7 +285,8 @@ inline bool LiquidLogicClassic::isLiquidHorizontallyFlowable(
 
 // This code is very similar to scanColumn
 // TODO: Factorize
-void LiquidLogicClassic::scanVoxelManip(MMVManip *vm, v3s16 nmin, v3s16 nmax)
+void LiquidLogicClassic::scanVoxelManip(UniqueQueue<v3s16> *liquid_queue,
+	MMVManip *vm, v3s16 nmin, v3s16 nmax)
 {
 	bool isignored, isliquid, wasignored, wasliquid, waschecked, waspushed;
 	const v3s16 &em  = vm->m_area.getExtent();
@@ -310,7 +311,7 @@ void LiquidLogicClassic::scanVoxelManip(MMVManip *vm, v3s16 nmin, v3s16 nmax)
 				// This is the topmost node in the column
 				bool ispushed = false;
 				if (isLiquidHorizontallyFlowable(vm, vi, em)) {
-					m_liquid_queue.push_back(v3s16(x, y, z));
+					liquid_queue->push_back(v3s16(x, y, z));
 					ispushed = true;
 				}
 				// Remember waschecked and waspushed to avoid repeated
@@ -325,7 +326,7 @@ void LiquidLogicClassic::scanVoxelManip(MMVManip *vm, v3s16 nmin, v3s16 nmax)
 						(!waschecked && isLiquidHorizontallyFlowable(vm, vi_above, em)))) {
 					// Push back the lowest node in the column which is one
 					// node above this one
-					m_liquid_queue.push_back(v3s16(x, y + 1, z));
+					liquid_queue->push_back(v3s16(x, y + 1, z));
 				}
 			}
 
@@ -334,6 +335,11 @@ void LiquidLogicClassic::scanVoxelManip(MMVManip *vm, v3s16 nmin, v3s16 nmax)
 			vm->m_area.add_y(em, vi, -1);
 		}
 	}
+}
+
+void LiquidLogicClassic::scanVoxelManip(MMVManip *vm, v3s16 nmin, v3s16 nmax)
+{
+	scanVoxelManip(&m_liquid_queue, vm, nmin, nmax);
 }
 
 void LiquidLogicClassic::transform(
