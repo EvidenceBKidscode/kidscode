@@ -520,11 +520,7 @@ void Map::PrintInfo(std::ostream &out)
 void Map::transforming_liquid_add(v3s16 p) {
 	m_liquid_logic->addTransforming(p);
 }
-/*
-s32 Map::transforming_liquid_size() {
-        return m_transforming_liquid.size();
-}
-*/
+
 void Map::transformLiquids(std::map<v3s16, MapBlock*> &modified_blocks,
 		ServerEnvironment *env)
 {

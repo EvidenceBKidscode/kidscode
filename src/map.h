@@ -290,7 +290,6 @@ public:
 	*/
 
 	void transforming_liquid_add(v3s16 p);
-//	s32 transforming_liquid_size();
 
 	bool isBlockOccluded(MapBlock *block, v3s16 cam_pos_nodes);
 
