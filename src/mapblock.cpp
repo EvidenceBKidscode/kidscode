@@ -547,7 +547,6 @@ static void correctBlockNodeIds(const NameIdMapping *nimap, MapNode *nodes,
 
 void MapBlock::serialize(std::ostream &os, u8 version, bool disk)
 {
-
 	if(!ser_ver_supported(version))
 		throw VersionMismatchException("ERROR: MapBlock format not supported");
 
