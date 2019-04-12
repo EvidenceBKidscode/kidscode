@@ -547,6 +547,11 @@ static void correctBlockNodeIds(const NameIdMapping *nimap, MapNode *nodes,
 
 void MapBlock::serialize(std::ostream &os, u8 version, bool disk)
 {
+	if (m_pos.X == 0 && m_pos.Y == 0 && m_pos.Z == 0)
+
+printf("Block serialize (%d, %d, %d) disk=%s\n", m_pos.X, m_pos.Y, m_pos.Z, disk?"true":"false");
+
+
 	if(!ser_ver_supported(version))
 		throw VersionMismatchException("ERROR: MapBlock format not supported");
 
@@ -613,7 +618,10 @@ void MapBlock::serialize(std::ostream &os, u8 version, bool disk)
 			// Node timers
 			m_node_timers.serialize(os, version);
 		}
-
+		if (m_pos.X == 0 && m_pos.Y == 0 && m_pos.Z == 0) {
+		printf("  %d active objects\n", m_static_objects.m_active.size());
+		printf("  %d stored objects\n", m_static_objects.m_stored.size());
+	}
 		// Static objects
 		m_static_objects.serialize(os);
 
@@ -643,6 +651,9 @@ void MapBlock::serializeNetworkSpecific(std::ostream &os)
 
 void MapBlock::deSerialize(std::istream &is, u8 version, bool disk)
 {
+	if (m_pos.X == 0 && m_pos.Y == 0 && m_pos.Z == 0)
+	printf("Block deSerialize (%d, %d, %d) disk=%s\n", m_pos.X, m_pos.Y, m_pos.Z, disk?"true":"false");
+
 	if(!ser_ver_supported(version))
 		throw VersionMismatchException("ERROR: MapBlock format not supported");
 
@@ -721,6 +732,11 @@ void MapBlock::deSerialize(std::istream &is, u8 version, bool disk)
 		TRACESTREAM(<<"MapBlock::deSerialize "<<PP(getPos())
 				<<": Static objects"<<std::endl);
 		m_static_objects.deSerialize(is);
+
+		if (m_pos.X == 0 && m_pos.Y == 0 && m_pos.Z == 0) {
+		printf("  %d active objects\n", m_static_objects.m_active.size());
+		printf("  %d stored objects\n", m_static_objects.m_stored.size());
+	}
 
 		// Timestamp
 		TRACESTREAM(<<"MapBlock::deSerialize "<<PP(getPos())
