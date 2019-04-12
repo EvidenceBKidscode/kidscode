@@ -832,6 +832,9 @@ void ServerEnvironment::activateBlock(MapBlock *block, u32 additional_dtime)
 	// of opportunity for it to break from seconds to nanoseconds)
 	block->resetUsageTimer();
 
+	bool pyr = block->getPos().X == 0 && block->getPos().Y == 0 && block->getPos().Z == 0;
+if (pyr) printf("activateBlock (%d, %d, %d)\n", block->getPos().X,block->getPos().Y,block->getPos().Z);
+
 	// Get time difference
 	u32 dtime_s = 0;
 	u32 stamp = block->getTimestamp();
@@ -844,6 +847,7 @@ void ServerEnvironment::activateBlock(MapBlock *block, u32 additional_dtime)
 
 	// Remove stored static objects if clearObjects was called since block's timestamp
 	if (stamp == BLOCK_TIMESTAMP_UNDEFINED || stamp < m_last_clear_objects_time) {
+		if (pyr) printf("Cleared object because of clearobjects\n");
 		block->m_static_objects.m_stored.clear();
 		// do not set changed flag to avoid unnecessary mapblock writes
 	}
@@ -1088,7 +1092,8 @@ void ServerEnvironment::clearObjects(ClearObjectsMode mode)
 		block->refDrop();
 	}
 
-	m_last_clear_objects_time = m_game_time;
+	if (mode != CLEAR_OBJECTS_MODE_LOADED_ONLY)
+		m_last_clear_objects_time = m_game_time;
 
 	infostream << "ServerEnvironment::clearObjects(): "
 		<< "Finished: Cleared " << num_objs_cleared << " objects"
@@ -2179,4 +2184,9 @@ bool ServerEnvironment::migratePlayersDatabase(const GameParams &game_params,
 		return false;
 	}
 	return true;
+}
+
+// Clear active blocks list
+void ServerEnvironment::clearActiveBlocks() {
+	m_active_blocks.clear();
 }
