@@ -1828,24 +1828,7 @@ void ServerMap::restoreMap()
 		for (MapBlock *block : blocks)
 		{
 			if (block->refGet() != 0) continue; // ??
-/*
-// Tentative mais il y a peut être qq chose a faire côte objets
 
-for (auto &i : block->m_static_objects.m_active) {
-		StaticObject s_obj = i.second;
-		printf("Active object at %f, %f, %f\n", s_obj.pos.X,s_obj.pos.Y,s_obj.pos.Z);
-		if environmentDeletes()
-}
-
-for (auto &i : block->m_static_objects.m_stored) {
-		StaticObject s_obj = i;
-		printf("Store object at %f, %f, %f\n", s_obj.pos.X,s_obj.pos.Y,s_obj.pos.Z);
-//		delete &i;
-}
-
-			block->m_static_objects.m_active.clear();
-			block->m_static_objects.m_stored.clear();
-*/
 			// Insert block pos into event blocks list
 			event.modified_blocks.insert(block->getPos());
 
