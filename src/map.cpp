@@ -1814,17 +1814,56 @@ bool ServerMap::restoreMapReady()
 
 void ServerMap::restoreMap()
 {
-	std::vector<v3s16> unloaded_blocks;
-	unloadUnreferencedBlocks(&unloaded_blocks);
-	((MapDatabaseSQLite3 *)dbase)->restoreMap();
-
-		// Send map event to client
+	// Prepare a map event to tell to client that blocks have changed
 	MapEditEvent event;
 	event.type = MEET_OTHER;
-	std::vector<v3s16>::iterator it;
-	for (it = unloaded_blocks.begin();
-			it != unloaded_blocks.end(); ++it)
-		event.modified_blocks.insert(*it);
+
+	// Delete all map block from memory
+	for (auto &sector_it : m_sectors)
+	{
+		MapSector *sector = sector_it.second; // IL n'aime pas la suppression en fin de boucle...
+		MapBlockVect blocks;
+		sector->getBlocks(blocks);
+
+		for (MapBlock *block : blocks)
+		{
+			if (block->refGet() != 0) continue; // ??
+/*
+// Tentative mais il y a peut être qq chose a faire côte objets
+
+for (auto &i : block->m_static_objects.m_active) {
+		StaticObject s_obj = i.second;
+		printf("Active object at %f, %f, %f\n", s_obj.pos.X,s_obj.pos.Y,s_obj.pos.Z);
+		if environmentDeletes()
+}
+
+for (auto &i : block->m_static_objects.m_stored) {
+		StaticObject s_obj = i;
+		printf("Store object at %f, %f, %f\n", s_obj.pos.X,s_obj.pos.Y,s_obj.pos.Z);
+//		delete &i;
+}
+
+			block->m_static_objects.m_active.clear();
+			block->m_static_objects.m_stored.clear();
+*/
+			// Insert block pos into event blocks list
+			event.modified_blocks.insert(block->getPos());
+
+			// Delete from memory
+			sector->deleteBlock(block);
+		}
+
+		// If sector is in sector cache, remove it from there
+		if(m_sector_cache == sector)
+			m_sector_cache = NULL;
+		delete sector;
+	}
+	m_sectors.clear();
+
+	// Restore map table to backuped state
+	((MapDatabaseSQLite3 *)dbase)->restoreMap();
+
+	// Send map event to client
 	dispatchEvent(&event);
 }
 

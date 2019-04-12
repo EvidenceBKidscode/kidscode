@@ -1287,6 +1287,7 @@ int ModApiEnvMod::l_backup_map(lua_State *L)
 {
 	GET_ENV_PTR;
 	ServerMap &map = env->getServerMap();
+	env->clearActiveBlocks();
 	map.backupMap();
 	return 0;
 }
@@ -1303,7 +1304,10 @@ int ModApiEnvMod::l_restore_map(lua_State *L)
 {
 	GET_ENV_PTR;
 	ServerMap &map = env->getServerMap();
+	env->clearObjects(CLEAR_OBJECTS_MODE_LOADED_ONLY);
+	env->clearActiveBlocks();
 	map.restoreMap();
+
 	return 0;
 }
 
