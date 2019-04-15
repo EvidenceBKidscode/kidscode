@@ -43,6 +43,9 @@ protected:
 	// Open and initialize the database if needed
 	void verifyDatabase();
 
+	// Tells if a table exists in the database
+	bool tableExists(const std::string &table_name);
+
 	// Convertors
 	inline void str_to_sqlite(sqlite3_stmt *s, int iCol, const std::string &str) const
 	{
@@ -146,14 +149,16 @@ public:
 	void beginSave() { Database_SQLite3::beginSave(); }
 	void endSave() { Database_SQLite3::endSave(); }
 
-	void backupMap();
-	bool restoreMapReady();
-	void restoreMap();
+	void newSavepoint(const std::string &savepoint_name);
+	bool savepointExists(const std::string &savepoint_name);
+	void rollbackTo(const std::string &savepoint_name);
+
 //	void preRestoreMap();
 
 protected:
 	virtual void createDatabase();
 	virtual void initStatements();
+	void upgradeDatabaseStructure();
 
 private:
 	void bindPos(sqlite3_stmt *stmt, const v3s16 &pos, int index = 1);
