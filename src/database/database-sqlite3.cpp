@@ -223,6 +223,8 @@ MapDatabaseSQLite3::MapDatabaseSQLite3(const std::string &savedir):
 
 MapDatabaseSQLite3::~MapDatabaseSQLite3()
 {
+	m_thread_stop = true;
+	m_thread.join();
 	FINALIZE_STATEMENT(m_stmt_read)
 	FINALIZE_STATEMENT(m_stmt_write)
 	FINALIZE_STATEMENT(m_stmt_list)
@@ -284,11 +286,11 @@ void MapDatabaseSQLite3::upgradeDatabaseStructure()
 }
 
 // Cleans up unused blocks and savepoints
-void savepointCleanerThread(sqlite3 *m_database)
+void savepointCleanerThread(bool *stopflag, sqlite3 *m_database)
 {
 	sqlite3_stmt * stmt;
 
-	while (m_database) {
+	while (!stopflag) {
 		// Cleanup savepoints table with unused deleted savepoints
 		SQLOK(sqlite3_exec(m_database,
 			"DELETE FROM `savepoints` WHERE `status` = 0"
@@ -306,6 +308,7 @@ void savepointCleanerThread(sqlite3 *m_database)
 		int res = sqlite3_step(stmt);
 		if (res == SQLITE_DONE) {
 			sqlite3_finalize(stmt);
+			sleep(1);
 			continue; // Nothing to do for now
 		}
 		if (res != SQLITE_ROW) {
@@ -322,7 +325,7 @@ void savepointCleanerThread(sqlite3 *m_database)
 			"  AND `pos` IN (SELECT `POS` FROM `blocks`"
 			"    WHERE `savepoint` = ? LIMIT 10000)",
 			-1, &stmt, NULL),
-			"savepointCleanerThread: Failed to delete blocks (prepare)");
+				"savepointCleanerThread: Failed to delete blocks (prepare)");
 			SQLOK(sqlite3_bind_int(stmt, 1, savepoint),
 				"savepointCleanerThread: Failed to delete blocks (bind)");
 			SQLOK(sqlite3_bind_int(stmt, 2, savepoint),
@@ -370,7 +373,8 @@ void MapDatabaseSQLite3::initStatements()
 	verbosestream << "ServerMap: SQLite3 database opened." << std::endl;
 
 	// Clean up thread
-	std::thread (savepointCleanerThread, m_database).detach();
+	m_thread_stop = false;
+	m_thread = std::thread(savepointCleanerThread, &m_thread_stop, m_database); //.detach();
 }
 
 inline void MapDatabaseSQLite3::bindPos(sqlite3_stmt *stmt, const v3s16 &pos, int index)

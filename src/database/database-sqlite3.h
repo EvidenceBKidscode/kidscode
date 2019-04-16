@@ -23,6 +23,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <string>
 #include "database.h"
 #include "exceptions.h"
+#include <thread>
 
 extern "C" {
 #include "sqlite3.h"
@@ -159,6 +160,8 @@ protected:
 	virtual void createDatabase();
 	virtual void initStatements();
 	void upgradeDatabaseStructure();
+	bool m_thread_stop = true;
+	std::thread m_thread;
 
 private:
 	void bindPos(sqlite3_stmt *stmt, const v3s16 &pos, int index = 1);
