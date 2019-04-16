@@ -258,7 +258,7 @@ void MapDatabaseSQLite3::upgradeDatabaseStructure()
 			NULL, NULL, NULL),
 			"Failed to create savepoints table");
 			SQLOK(sqlite3_exec(m_database,
-				"INSERT INTO `savepoints` VALUES (0, 1, 'Initial');", NULL, NULL, NULL),
+				"INSERT INTO `savepoints` VALUES (0, 1, '<INIT>');", NULL, NULL, NULL),
 				"Failed to insert first savepoint");
 		if (blocks_exists) // Blocks needs update
 		{
@@ -458,27 +458,50 @@ void MapDatabaseSQLite3::listAllLoadableBlocks(std::vector<v3s16> &dst)
 	sqlite3_reset(m_stmt_list);
 }
 
-bool MapDatabaseSQLite3::savepointExists(const std::string &savepoint_name)
+void MapDatabaseSQLite3::listSavepoints(std::vector<std::string> &dst)
 {
 	sqlite3_stmt * stmt;
 
 	assert(m_database); // Pre-condition
 
 	SQLOK(sqlite3_prepare_v2(m_database,
-			"SELECT 1 FROM `savepoints` WHERE `status` > 0 AND `name` = ?;",
+			"SELECT `name` FROM `savepoints` WHERE `status` > 0 AND savepoint > 0;",
 			-1, &stmt, NULL),
-		"savepointExists: Failed to verify existence of savepoint (prepare)");
+		"listSavepoints: Failed to get list of savepoints (prepare)");
 
-	str_to_sqlite(stmt, 1, savepoint_name);
-	bool res = (sqlite3_step(stmt) == SQLITE_ROW);
+	while (sqlite3_step(stmt) == SQLITE_ROW)
+		dst.push_back(sqlite_to_string(stmt, 0));
+
 	sqlite3_finalize(stmt);
-	return res;
 }
 
 void MapDatabaseSQLite3::newSavepoint(const std::string &savepoint_name) {
 	sqlite3_stmt * stmt;
 
 	assert(m_database);
+
+	SQLOK(sqlite3_prepare_v2(m_database,
+			"SELECT 1 FROM `savepoints`"
+			" WHERE `status` > 0 AND savepoint > 0 AND `name` = ?;",
+			-1, &stmt, NULL),
+		"newSavepoint: Failed to check existing savepoints (prepare)");
+
+	str_to_sqlite(stmt, 1, savepoint_name);
+
+	switch (sqlite3_step(stmt))
+	{
+		case SQLITE_DONE:
+			break;
+		case SQLITE_ROW:
+			sqlite3_finalize(stmt);
+			return; // Savepoint already exists
+			break;
+		default:
+			throw DatabaseException(
+				"newSavepoint: Failed to check existing savepoints (step): " +
+				std::string(sqlite3_errmsg(m_database)));
+	}
+	sqlite3_finalize(stmt);
 
 	SQLOK(sqlite3_prepare_v2(m_database,
 		"INSERT INTO `savepoints`"
@@ -488,21 +511,22 @@ void MapDatabaseSQLite3::newSavepoint(const std::string &savepoint_name) {
 
 	str_to_sqlite(stmt, 1, savepoint_name);
 
-	if (sqlite3_step(stmt) == SQLITE_DONE)
-		sqlite3_finalize(stmt);
-	else
+	if (sqlite3_step(stmt) != SQLITE_DONE)
 		throw DatabaseException(
 			"newSavepoint: Failed to insert new savepoint (step): " +
 			std::string(sqlite3_errmsg(m_database)));
+
+	sqlite3_finalize(stmt);
 }
 
-void MapDatabaseSQLite3::rollbackTo(const std::string &savepoint_name) {
+void MapDatabaseSQLite3::restoreSavepoint(const std::string &savepoint_name) {
 	sqlite3_stmt * stmt;
 
 	assert(m_database); // Pre-condition
 
 	SQLOK(sqlite3_prepare_v2(m_database,
-			"SELECT `savepoint` FROM `savepoints` WHERE `status` > 0 AND `name` = ?;",
+			"SELECT `savepoint` FROM `savepoints`"
+			" WHERE `status` > 0 AND savepoint > 0 AND `name` = ?;",
 			-1, &stmt, NULL),
 		"rollbackTo: Failed to find savepoint (prepare)");
 

@@ -180,10 +180,17 @@ private:
 	// stops forceloading a position
 	static int l_forceload_free_block(lua_State *L);
 
-	// Savepoint / rollback mechanism
-	static int l_map_savepoint(lua_State *L);
-	static int l_map_savepoint_exists(lua_State *L);
-	static int l_map_rollback_to(lua_State *L);
+	// map_new_savepoint(savepoint_name)
+	// Create a new savepoint
+	static int l_map_new_savepoint(lua_State *L);
+
+	// map_list_savepoints()
+	// Return a list of available savepoints
+	static int l_map_list_savepoints(lua_State *L);
+
+	// map_restore_savepoint(savepoint_name)
+	// Restore map to the given savepoint
+	static int l_map_restore_savepoint(lua_State *L);
 
 public:
 	static void Initialize(lua_State *L, int top);

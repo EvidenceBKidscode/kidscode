@@ -1802,17 +1802,17 @@ bool ServerMap::repairBlockLight(v3s16 blockpos,
 	return true;
 }
 
+void ServerMap::listSavepoints(std::vector<std::string> &dst)
+{
+	((MapDatabaseSQLite3 *)dbase)->listSavepoints(dst);
+}
+
 void ServerMap::newSavepoint(const std::string &savepoint_name)
 {
 	((MapDatabaseSQLite3 *)dbase)->newSavepoint(savepoint_name);
 }
 
-bool ServerMap::savepointExists(const std::string &savepoint_name)
-{
-	return ((MapDatabaseSQLite3 *)dbase)->savepointExists(savepoint_name);
-}
-
-void ServerMap::rollbackTo(const std::string &savepoint_name)
+void ServerMap::restoreSavepoint(const std::string &savepoint_name)
 {
 	// Prepare a map event to tell to client that blocks have changed
 	MapEditEvent event;
@@ -1844,7 +1844,7 @@ void ServerMap::rollbackTo(const std::string &savepoint_name)
 	m_sectors.clear();
 
 	// Restore map table to wanted savepoint state
-	((MapDatabaseSQLite3 *)dbase)->rollbackTo(savepoint_name);
+	((MapDatabaseSQLite3 *)dbase)->restoreSavepoint(savepoint_name);
 
 	// Send map event to client
 	dispatchEvent(&event);

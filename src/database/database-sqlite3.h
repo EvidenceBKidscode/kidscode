@@ -151,8 +151,8 @@ public:
 	void endSave() { Database_SQLite3::endSave(); }
 
 	void newSavepoint(const std::string &savepoint_name);
-	bool savepointExists(const std::string &savepoint_name);
-	void rollbackTo(const std::string &savepoint_name);
+	void listSavepoints(std::vector<std::string> &dst);
+	void restoreSavepoint(const std::string &savepoint_name);
 
 //	void preRestoreMap();
 

@@ -455,8 +455,8 @@ public:
 		std::map<v3s16, MapBlock *> *modified_blocks);
 
 	void newSavepoint(const std::string &savepoint_name);
-	bool savepointExists(const std::string &savepoint_name);
-	void rollbackTo(const std::string &savepoint_name);
+	void restoreSavepoint(const std::string &savepoint_name);
+	void listSavepoints(std::vector<std::string> &dst);
 
 	MapSettingsManager settings_mgr;
 
