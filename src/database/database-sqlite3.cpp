@@ -336,6 +336,7 @@ void savepointCleanerThread(sqlite3 *m_database)
 				"savepointCleanerThread: Failed to delete blocks (step): " +
 				std::string(sqlite3_errmsg(m_database)));
 		}
+		sqlite3_finalize(stmt);
 		sleep(1);
 	}
 }
