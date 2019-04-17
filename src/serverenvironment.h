@@ -199,7 +199,6 @@ typedef std::unordered_map<u16, ServerActiveObject *> ServerActiveObjectMap;
 class ServerEnvironment : public Environment
 {
 public:
-
 	ServerEnvironment(ServerMap *map, ServerScripting *scriptIface,
 		Server *server, const std::string &path_world);
 	~ServerEnvironment();
