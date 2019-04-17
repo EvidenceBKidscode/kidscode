@@ -832,9 +832,6 @@ void ServerEnvironment::activateBlock(MapBlock *block, u32 additional_dtime)
 	// of opportunity for it to break from seconds to nanoseconds)
 	block->resetUsageTimer();
 
-	bool pyr = block->getPos().X == 0 && block->getPos().Y == 0 && block->getPos().Z == 0;
-if (pyr) printf("activateBlock (%d, %d, %d)\n", block->getPos().X,block->getPos().Y,block->getPos().Z);
-
 	// Get time difference
 	u32 dtime_s = 0;
 	u32 stamp = block->getTimestamp();
@@ -847,7 +844,6 @@ if (pyr) printf("activateBlock (%d, %d, %d)\n", block->getPos().X,block->getPos(
 
 	// Remove stored static objects if clearObjects was called since block's timestamp
 	if (stamp == BLOCK_TIMESTAMP_UNDEFINED || stamp < m_last_clear_objects_time) {
-		if (pyr) printf("Cleared object because of clearobjects\n");
 		block->m_static_objects.m_stored.clear();
 		// do not set changed flag to avoid unnecessary mapblock writes
 	}
