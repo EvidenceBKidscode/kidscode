@@ -286,7 +286,7 @@ void MapDatabaseSQLite3::upgradeDatabaseStructure()
 }
 
 // Cleans up unused blocks and savepoints
-void savepointCleanerThread(bool *stopflag, sqlite3 *m_database)
+void purgeDataThread(bool *stopflag, sqlite3 *m_database)
 {
 	sqlite3_stmt * stmt;
 
@@ -297,13 +297,13 @@ void savepointCleanerThread(bool *stopflag, sqlite3 *m_database)
 				" AND NOT EXISTS (SELECT 1 FROM `blocks` "
 				"  WHERE `blocks`.`savepoint` = `savepoints`.`savepoint`);",
 			NULL, NULL, NULL),
-			"savepointCleanerThread:Failed to clean up savepoints table");
+			"purgeDataThread:Failed to clean up savepoints table");
 
 		// Get first deleted savepoint to clean
 		SQLOK(sqlite3_prepare_v2(m_database,
 			"SELECT `savepoint` FROM `savepoints` WHERE `status` = 0",
 			-1, &stmt, NULL),
-			"savepointCleanerThread: Failed to find deleted savepoint (prepare)");
+			"purgeDataThread: Failed to find deleted savepoint (prepare)");
 
 		int res = sqlite3_step(stmt);
 		if (res == SQLITE_DONE) {
@@ -314,7 +314,7 @@ void savepointCleanerThread(bool *stopflag, sqlite3 *m_database)
 		if (res != SQLITE_ROW) {
 			sqlite3_finalize(stmt);
 			throw DatabaseException(
-				"savepointCleanerThread: Failed to delete blocks (step): " +
+				"purgeDataThread: Failed to delete blocks (step): " +
 				std::string(sqlite3_errmsg(m_database)));
 		}
 		int savepoint =  sqlite3_column_int(stmt, 0);
@@ -325,18 +325,18 @@ void savepointCleanerThread(bool *stopflag, sqlite3 *m_database)
 			"  AND `pos` IN (SELECT `POS` FROM `blocks`"
 			"    WHERE `savepoint` = ? LIMIT 10000)",
 			-1, &stmt, NULL),
-				"savepointCleanerThread: Failed to delete blocks (prepare)");
+				"purgeDataThread: Failed to delete blocks (prepare)");
 			SQLOK(sqlite3_bind_int(stmt, 1, savepoint),
-				"savepointCleanerThread: Failed to delete blocks (bind)");
+				"purgeDataThread: Failed to delete blocks (bind 1)");
 			SQLOK(sqlite3_bind_int(stmt, 2, savepoint),
-				"savepointCleanerThread: Failed to delete blocks (bind)");
+				"purgeDataThread: Failed to delete blocks (bind 2)");
 
 		res = sqlite3_step(stmt);
 		if (res != SQLITE_DONE)
 		{
 			sqlite3_finalize(stmt);
 			throw DatabaseException(
-				"savepointCleanerThread: Failed to delete blocks (step): " +
+				"purgeDataThread: Failed to delete blocks (step): " +
 				std::string(sqlite3_errmsg(m_database)));
 		}
 		sqlite3_finalize(stmt);
@@ -374,7 +374,7 @@ void MapDatabaseSQLite3::initStatements()
 
 	// Clean up thread
 	m_thread_stop = false;
-	m_thread = std::thread(savepointCleanerThread, &m_thread_stop, m_database); //.detach();
+	m_thread = std::thread(purgeDataThread, &m_thread_stop, m_database); //.detach();
 }
 
 inline void MapDatabaseSQLite3::bindPos(sqlite3_stmt *stmt, const v3s16 &pos, int index)
