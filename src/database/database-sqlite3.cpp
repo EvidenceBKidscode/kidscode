@@ -194,6 +194,23 @@ Database_SQLite3::~Database_SQLite3()
 	SQLOK_ERRSTREAM(sqlite3_close(m_database), "Failed to close database");
 }
 
+bool Database_SQLite3::tableExists(const std::string &table_name)
+{
+	sqlite3_stmt * stmt;
+
+	assert(m_database); // Pre-condition
+
+	SQLOK(sqlite3_prepare_v2(m_database,
+			"SELECT * FROM `sqlite_master` where type='table' and name=?;",
+			-1, &stmt, NULL),
+		"tableExists: Failed to verify existence of table (prepare)");
+
+	str_to_sqlite(stmt, 1, table_name);
+	bool res = (sqlite3_step(stmt) == SQLITE_ROW);
+	sqlite3_finalize(stmt);
+	return res;
+}
+
 /*
  * Map database
  */
@@ -206,40 +223,158 @@ MapDatabaseSQLite3::MapDatabaseSQLite3(const std::string &savedir):
 
 MapDatabaseSQLite3::~MapDatabaseSQLite3()
 {
+	m_thread_stop = true;
+	m_thread.join();
 	FINALIZE_STATEMENT(m_stmt_read)
 	FINALIZE_STATEMENT(m_stmt_write)
 	FINALIZE_STATEMENT(m_stmt_list)
 	FINALIZE_STATEMENT(m_stmt_delete)
 }
 
+// This method creates or upgrades database structures
+void MapDatabaseSQLite3::upgradeDatabaseStructure()
+{
+	assert(m_database);
+
+	bool blocks_exists = tableExists("blocks");
+
+	SQLOK(sqlite3_exec(m_database,
+		"CREATE TABLE IF NOT EXISTS `blocks` ("
+			"`pos` INT,"
+			"`savepoint` INT,"
+			"`data` BLOB,"
+			"PRIMARY KEY(`pos`, `savepoint`)"
+			");", NULL, NULL, NULL),
+		"Failed to create blocks table");
+
+	if (!tableExists("savepoints"))
+	{
+		SQLOK(sqlite3_exec(m_database,
+			"CREATE TABLE `savepoints` ("
+				"`savepoint` INT PRIMARY KEY,"
+				"`status` INT,"
+				"`name` VARCHAR(50)"
+				");",
+			NULL, NULL, NULL),
+			"Failed to create savepoints table");
+			SQLOK(sqlite3_exec(m_database,
+				"INSERT INTO `savepoints` VALUES (0, 1, '<INIT>');", NULL, NULL, NULL),
+				"Failed to insert first savepoint");
+		if (blocks_exists) // Blocks needs update
+		{
+			printf("Blocks table have to be updated. This may take some time.\n");
+			SQLOK(sqlite3_exec(m_database,
+				"CREATE TABLE `blocks_` ("
+				"`pos` INT,"
+				"`savepoint` INT,"
+				"`data` BLOB,"
+				"PRIMARY KEY(`pos`, `savepoint`)"
+				");", NULL, NULL, NULL),
+			"Failed to create new version of blocks table");
+			SQLOK(sqlite3_exec(m_database,
+				"INSERT INTO `blocks_` SELECT `pos`, 0, `data` FROM `blocks`;",
+				NULL, NULL, NULL),
+			"Failed to copy blocks data to new version of table");
+			SQLOK(sqlite3_exec(m_database, "DROP TABLE `blocks`;", NULL, NULL, NULL),
+				"Failed to drop old blocks table");
+			SQLOK(sqlite3_exec(m_database,
+				"ALTER TABLE `blocks_` RENAME TO `blocks`;", NULL, NULL, NULL),
+				"Failed to rename new blocks table");
+			printf("Blocks table update done.\n");
+		}
+	}
+}
+
+// Cleans up unused blocks and savepoints
+void purgeDataThread(bool *stopflag, sqlite3 *m_database)
+{
+	sqlite3_stmt * stmt;
+
+	while (!stopflag) {
+		// Cleanup savepoints table with unused deleted savepoints
+		SQLOK(sqlite3_exec(m_database,
+			"DELETE FROM `savepoints` WHERE `status` = 0"
+				" AND NOT EXISTS (SELECT 1 FROM `blocks` "
+				"  WHERE `blocks`.`savepoint` = `savepoints`.`savepoint`);",
+			NULL, NULL, NULL),
+			"purgeDataThread:Failed to clean up savepoints table");
+
+		// Get first deleted savepoint to clean
+		SQLOK(sqlite3_prepare_v2(m_database,
+			"SELECT `savepoint` FROM `savepoints` WHERE `status` = 0",
+			-1, &stmt, NULL),
+			"purgeDataThread: Failed to find deleted savepoint (prepare)");
+
+		int res = sqlite3_step(stmt);
+		if (res == SQLITE_DONE) {
+			sqlite3_finalize(stmt);
+			sleep(1);
+			continue; // Nothing to do for now
+		}
+		if (res != SQLITE_ROW) {
+			sqlite3_finalize(stmt);
+			throw DatabaseException(
+				"purgeDataThread: Failed to delete blocks (step): " +
+				std::string(sqlite3_errmsg(m_database)));
+		}
+		int savepoint =  sqlite3_column_int(stmt, 0);
+		sqlite3_finalize(stmt);
+
+		SQLOK(sqlite3_prepare_v2(m_database,
+			"DELETE FROM `blocks` WHERE `savepoint` = ? "
+			"  AND `pos` IN (SELECT `POS` FROM `blocks`"
+			"    WHERE `savepoint` = ? LIMIT 10000)",
+			-1, &stmt, NULL),
+				"purgeDataThread: Failed to delete blocks (prepare)");
+			SQLOK(sqlite3_bind_int(stmt, 1, savepoint),
+				"purgeDataThread: Failed to delete blocks (bind 1)");
+			SQLOK(sqlite3_bind_int(stmt, 2, savepoint),
+				"purgeDataThread: Failed to delete blocks (bind 2)");
+
+		res = sqlite3_step(stmt);
+		if (res != SQLITE_DONE)
+		{
+			sqlite3_finalize(stmt);
+			throw DatabaseException(
+				"purgeDataThread: Failed to delete blocks (step): " +
+				std::string(sqlite3_errmsg(m_database)));
+		}
+		sqlite3_finalize(stmt);
+		sleep(1);
+	}
+}
 
 void MapDatabaseSQLite3::createDatabase()
 {
-	assert(m_database); // Pre-condition
-
-	SQLOK(sqlite3_exec(m_database,
-		"CREATE TABLE IF NOT EXISTS `blocks` (\n"
-			"	`pos` INT PRIMARY KEY,\n"
-			"	`data` BLOB\n"
-			");\n",
-		NULL, NULL, NULL),
-		"Failed to create database table");
+	upgradeDatabaseStructure();
 }
 
 void MapDatabaseSQLite3::initStatements()
 {
-	PREPARE_STATEMENT(read, "SELECT `data` FROM `blocks` WHERE `pos` = ? LIMIT 1");
+	// May be not the best place but it will be ok for now
+	upgradeDatabaseStructure();
+
+	PREPARE_STATEMENT(read,
+		"SELECT `data` FROM `blocks`, `savepoints`"
+		" WHERE `savepoints`.`savepoint` = `blocks`.`savepoint`"
+		" AND `savepoints`.`status` > 0 AND `blocks`.`pos` = ?"
+		" ORDER BY `savepoints`.`savepoint` DESC LIMIT 1");
 #ifdef __ANDROID__
+	// TODO: TO BE UPGRADED AND TESTED, WONT WORK WITH 'versions' TABLE
 	PREPARE_STATEMENT(write,  "INSERT INTO `blocks` (`pos`, `data`) VALUES (?, ?)");
 #else
-	PREPARE_STATEMENT(write, "REPLACE INTO `blocks` (`pos`, `data`) VALUES (?, ?)");
+	PREPARE_STATEMENT(write,
+		"INSERT OR REPLACE INTO `blocks`"
+		" SELECT ?, MAX(`savepoint`), ? FROM `savepoints` WHERE `status`>0");
 #endif
 	PREPARE_STATEMENT(delete, "DELETE FROM `blocks` WHERE `pos` = ?");
-	PREPARE_STATEMENT(list, "SELECT `pos` FROM `blocks`");
-
-//	PREPARE_STATEMENT(table_exists, "SELECT 1 FROM `sqlite_master` WHERE `name` = ? AND `type` = 'TABLE'")
+	PREPARE_STATEMENT(list, "SELECT distinct `pos` FROM `blocks`");
 
 	verbosestream << "ServerMap: SQLite3 database opened." << std::endl;
+
+	// Clean up thread
+	m_thread_stop = false;
+	m_thread = std::thread(purgeDataThread, &m_thread_stop, m_database); //.detach();
 }
 
 inline void MapDatabaseSQLite3::bindPos(sqlite3_stmt *stmt, const v3s16 &pos, int index)
@@ -269,6 +404,7 @@ bool MapDatabaseSQLite3::saveBlock(const v3s16 &pos, const std::string &data)
 	verifyDatabase();
 
 #ifdef __ANDROID__
+// TODO: TO BE UPGRADED AND TESTED, WONT WORK WITH 'versions' TABLE
 	/**
 	 * Note: For some unknown reason SQLite3 fails to REPLACE blocks on Android,
 	 * deleting them and then inserting works.
@@ -322,119 +458,110 @@ void MapDatabaseSQLite3::listAllLoadableBlocks(std::vector<v3s16> &dst)
 	sqlite3_reset(m_stmt_list);
 }
 
-// VERSION SANS VERIF
-void preRestoreMapLaunch(sqlite3 *m_database)
+void MapDatabaseSQLite3::listSavepoints(std::vector<std::string> &dst)
 {
-	#define BACKUP_CHUNK 40000
-	sqlite3_stmt * m_stmt;
-
-	sleep(1);
-	SQLOK(sqlite3_exec(m_database,
-		"DROP TABLE IF EXISTS `blocks_old`;", NULL, NULL, NULL),
-		"MapBackup: Failed to drop old table");
-
-	sleep(1);
-	SQLOK(sqlite3_exec(m_database,
-		"CREATE TABLE `blocks_new_t` (`pos` INT PRIMARY KEY, `data` BLOB);",
-		NULL, NULL, NULL), "MapBackup: Failed to create new table");
-
-	// Find out the number of records to be copied
-	SQLOK(sqlite3_prepare_v2(m_database, "SELECT COUNT(*) FROM `blocks_backup`;",
-		-1, &m_stmt, NULL), "MapBackup: Failed to count backup blocks (prepare)");
-
-	SQLRES(sqlite3_step(m_stmt), SQLITE_ROW,
-		"MapBackup: Failed to count backup blocks (step)");
-
-	s32 count = sqlite3_column_int(m_stmt, 0);
-	SQLOK(sqlite3_finalize(m_stmt),
-		"MapBackup: Failed to count backup blocks (finalize)");
-
-	printf("Number of blocks: %d\n", count);
-
-	SQLOK(sqlite3_prepare_v2(m_database,
-			"INSERT INTO blocks_new_t SELECT pos, data FROM "
-			"(SELECT *, ROW_NUMBER() OVER () rownum FROM `blocks_backup`)"
-			" WHERE rownum BETWEEN ? AND ?;", -1, &m_stmt, NULL),
-		"MapBackup: Failed to copy backup table to new table (prepare)");
-
-	for (s32 index = 1; index < count; index = index + BACKUP_CHUNK ) {
-		printf("Waiting\n");
-		sleep (1); // give some database time to players
-		printf("Copying blocks from %d to %d.\n", index, index + BACKUP_CHUNK - 1 );
-		SQLOK(sqlite3_bind_int(m_stmt, 1, index),
-			"MapBackup: Failed to copy backup table to new table (bind 1)");
-		SQLOK(sqlite3_bind_int(m_stmt, 2, index + BACKUP_CHUNK - 1),
-			"MapBackup: Failed to copy backup table to new table (bind 2)");
-		//TODO: Beware, database could be locked, what to do in that case ?
-		SQLRES(sqlite3_step(m_stmt), SQLITE_DONE,
-			"MapBackup: Failed to copy backup table to new table (step)");
-		SQLOK(sqlite3_reset(m_stmt),
-			"MapBackup: Failed to copy backup table to new table (reset)");
-	}
-
-	SQLOK(sqlite3_exec(m_database,
-		"ALTER TABLE `blocks_new_t` RENAME TO `blocks_new`;", NULL, NULL, NULL),
-		"MapBackup: Failed to rename new_t table to new table");
-
-	printf("Map reset ready\n");
-}
-
-void MapDatabaseSQLite3::backupMap()
-{
-	assert(m_database); // Pre-condition
-
-	SQLOK(sqlite3_exec(m_database,
-		"CREATE TABLE IF NOT EXISTS `blocks_backup` AS SELECT * FROM `blocks`;",
-		NULL, NULL, NULL),
-		"MapBackup: Failed to backup map table");
-
-	// Lauch a separate thread for preparing and populating blocks_new table
-	std::thread (preRestoreMapLaunch, m_database).detach();
-}
-
-bool MapDatabaseSQLite3::restoreMapReady()
-{
-	sqlite3_stmt * m_stmt;
+	sqlite3_stmt * stmt;
 
 	assert(m_database); // Pre-condition
 
 	SQLOK(sqlite3_prepare_v2(m_database,
-		"SELECT * FROM `sqlite_master` where type='table' and name='blocks_new';",
-		-1, &m_stmt, NULL), "MapBackup: Failed to verify presence of new table (prepare)");
+			"SELECT `name` FROM `savepoints` WHERE `status` > 0 AND savepoint > 0;",
+			-1, &stmt, NULL),
+		"listSavepoints: Failed to get list of savepoints (prepare)");
 
-	if (sqlite3_step(m_stmt) == SQLITE_ROW)
-	{
-		sqlite3_finalize(m_stmt);
-		return true;
-	}
-	if (sqlite3_step(m_stmt) == SQLITE_DONE)
-	{
-		sqlite3_finalize(m_stmt);
-		return false;
-	}
-	throw DatabaseException(
-		"MapBackup: Failed to verify presence of new table (step): " +
-		std::string(sqlite3_errmsg(m_database)));
+	while (sqlite3_step(stmt) == SQLITE_ROW)
+		dst.push_back(sqlite_to_string(stmt, 0));
+
+	sqlite3_finalize(stmt);
 }
 
-void MapDatabaseSQLite3::restoreMap()
-{
-	// Should be called only when restoreMapReady is true
+void MapDatabaseSQLite3::newSavepoint(const std::string &savepoint_name) {
+	sqlite3_stmt * stmt;
+
+	assert(m_database);
+
+	SQLOK(sqlite3_prepare_v2(m_database,
+			"SELECT 1 FROM `savepoints`"
+			" WHERE `status` > 0 AND savepoint > 0 AND `name` = ?;",
+			-1, &stmt, NULL),
+		"newSavepoint: Failed to check existing savepoints (prepare)");
+
+	str_to_sqlite(stmt, 1, savepoint_name);
+
+	switch (sqlite3_step(stmt))
+	{
+		case SQLITE_DONE:
+			break;
+		case SQLITE_ROW:
+			sqlite3_finalize(stmt);
+			return; // Savepoint already exists
+			break;
+		default:
+			throw DatabaseException(
+				"newSavepoint: Failed to check existing savepoints (step): " +
+				std::string(sqlite3_errmsg(m_database)));
+	}
+	sqlite3_finalize(stmt);
+
+	SQLOK(sqlite3_prepare_v2(m_database,
+		"INSERT INTO `savepoints`"
+		" SELECT MAX(`savepoint`) + 1, 1, ? FROM `savepoints`;",
+		-1, &stmt, NULL),
+		"newSavepoint: Failed to insert new savepoint (prepare)");
+
+	str_to_sqlite(stmt, 1, savepoint_name);
+
+	if (sqlite3_step(stmt) != SQLITE_DONE)
+		throw DatabaseException(
+			"newSavepoint: Failed to insert new savepoint (step): " +
+			std::string(sqlite3_errmsg(m_database)));
+
+	sqlite3_finalize(stmt);
+}
+
+void MapDatabaseSQLite3::restoreSavepoint(const std::string &savepoint_name) {
+	sqlite3_stmt * stmt;
 
 	assert(m_database); // Pre-condition
 
-	SQLOK(sqlite3_exec(m_database,
-		"ALTER TABLE `blocks` RENAME TO `blocks_old`;",
-		NULL, NULL, NULL),
-		"MapBackup: Failed to rename old map table");
+	SQLOK(sqlite3_prepare_v2(m_database,
+			"SELECT `savepoint` FROM `savepoints`"
+			" WHERE `status` > 0 AND savepoint > 0 AND `name` = ?;",
+			-1, &stmt, NULL),
+		"rollbackTo: Failed to find savepoint (prepare)");
 
-	SQLOK(sqlite3_exec(m_database,
-		"ALTER TABLE `blocks_new` RENAME TO `blocks`;",
-		NULL, NULL, NULL),
-		"MapBackup: Failed to rename new map table");
+	str_to_sqlite(stmt, 1, savepoint_name);
 
-		// Lauch a separate thread for preparing and populating blocks_new table
-		std::thread (preRestoreMapLaunch, m_database).detach();
+	int res = sqlite3_step(stmt);
+
+	if (res == SQLITE_DONE) {
+		sqlite3_finalize(stmt);
+		throw DatabaseException("rollbackTo: Savepoint not found.");
+	}
+
+	if (res != SQLITE_ROW) {
+		sqlite3_finalize(stmt);
+		throw DatabaseException("rollbackTo: Failed to find savepoint: " +
+			std::string(sqlite3_errmsg(m_database)));
+	}
+
+	int savepoint =  sqlite_to_int(stmt, 0);
+	sqlite3_finalize(stmt);
+
+	SQLOK(sqlite3_prepare_v2(m_database,
+			"UPDATE `savepoints` SET `status` = 0  where `savepoint` >= ?",
+			-1, &stmt, NULL),
+		"rollbackTo: Failed to update savepoints (prepare)");
+	int_to_sqlite(stmt, 1, savepoint);
+
+	res = sqlite3_step(stmt);
+	sqlite3_finalize(stmt);
+
+	if (res != SQLITE_DONE)
+		throw DatabaseException("rollbackTo: update savepoints (prepare)");
+
+	// Create a new savepoint with same name
+	newSavepoint(savepoint_name);
 }
 
 /*

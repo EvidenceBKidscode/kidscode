@@ -70,7 +70,8 @@ Map::Map(std::ostream &dout, IGameDef *gamedef):
 	m_gamedef(gamedef),
 	m_nodedef(gamedef->ndef())
 {
-	m_liquid_logic = new LiquidLogicClassic(this, gamedef);
+	m_liquid_logic = new LiquidLogicPreserve(this, gamedef);
+//	m_liquid_logic = new LiquidLogicClassic(this, gamedef);
 }
 
 Map::~Map()
@@ -1802,17 +1803,17 @@ bool ServerMap::repairBlockLight(v3s16 blockpos,
 	return true;
 }
 
-void ServerMap::backupMap()
+void ServerMap::listSavepoints(std::vector<std::string> &dst)
 {
-	((MapDatabaseSQLite3 *)dbase)->backupMap();
+	dbase->listSavepoints(dst);
 }
 
-bool ServerMap::restoreMapReady()
+void ServerMap::newSavepoint(const std::string &savepoint_name)
 {
-	return ((MapDatabaseSQLite3 *)dbase)->restoreMapReady();
+	dbase->newSavepoint(savepoint_name);
 }
 
-void ServerMap::restoreMap()
+void ServerMap::restoreSavepoint(const std::string &savepoint_name)
 {
 	// Prepare a map event to tell to client that blocks have changed
 	MapEditEvent event;
@@ -1828,24 +1829,7 @@ void ServerMap::restoreMap()
 		for (MapBlock *block : blocks)
 		{
 			if (block->refGet() != 0) continue; // ??
-/*
-// Tentative mais il y a peut être qq chose a faire côte objets
 
-for (auto &i : block->m_static_objects.m_active) {
-		StaticObject s_obj = i.second;
-		printf("Active object at %f, %f, %f\n", s_obj.pos.X,s_obj.pos.Y,s_obj.pos.Z);
-		if environmentDeletes()
-}
-
-for (auto &i : block->m_static_objects.m_stored) {
-		StaticObject s_obj = i;
-		printf("Store object at %f, %f, %f\n", s_obj.pos.X,s_obj.pos.Y,s_obj.pos.Z);
-//		delete &i;
-}
-
-			block->m_static_objects.m_active.clear();
-			block->m_static_objects.m_stored.clear();
-*/
 			// Insert block pos into event blocks list
 			event.modified_blocks.insert(block->getPos());
 
@@ -1860,8 +1844,8 @@ for (auto &i : block->m_static_objects.m_stored) {
 	}
 	m_sectors.clear();
 
-	// Restore map table to backuped state
-	((MapDatabaseSQLite3 *)dbase)->restoreMap();
+	// Restore map table to wanted savepoint state
+	dbase->restoreSavepoint(savepoint_name);
 
 	// Send map event to client
 	dispatchEvent(&event);

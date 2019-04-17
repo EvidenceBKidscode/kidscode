@@ -46,6 +46,10 @@ public:
 	static v3s16 getIntegerAsBlock(s64 i);
 
 	virtual void listAllLoadableBlocks(std::vector<v3s16> &dst) = 0;
+
+	virtual void newSavepoint(const std::string &savepoint_name) {};
+	virtual void listSavepoints(std::vector<std::string> &dst) {};
+	virtual void restoreSavepoint(const std::string &savepoint_name) {};
 };
 
 class PlayerSAO;

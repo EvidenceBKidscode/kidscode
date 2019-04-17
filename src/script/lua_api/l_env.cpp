@@ -1277,37 +1277,45 @@ int ModApiEnvMod::l_forceload_block(lua_State *L)
 int ModApiEnvMod::l_forceload_free_block(lua_State *L)
 {
 	GET_ENV_PTR;
-
 	v3s16 blockpos = read_v3s16(L, 1);
 	env->getForceloadedBlocks()->erase(blockpos);
 	return 0;
 }
 
-int ModApiEnvMod::l_backup_map(lua_State *L)
+int ModApiEnvMod::l_map_new_savepoint(lua_State *L)
 {
 	GET_ENV_PTR;
+	const char *savepoint_name = luaL_checkstring(L, 1);
 	ServerMap &map = env->getServerMap();
 	env->clearActiveBlocks();
-	map.backupMap();
+	map.newSavepoint(savepoint_name);
 	return 0;
 }
 
-int ModApiEnvMod::l_is_restore_map_ready(lua_State *L)
+int ModApiEnvMod::l_map_list_savepoints(lua_State *L)
 {
 	GET_ENV_PTR;
 	ServerMap &map = env->getServerMap();
-	lua_pushboolean (L, map.restoreMapReady());
+	std::vector<std::string> list;
+	map.listSavepoints(list);
+
+	lua_newtable(L);
+	for (size_t i = 0; i != list.size(); i++) {
+		lua_pushstring(L, list[i].c_str());
+		lua_rawseti(L, -2, i + 1);
+	}
+
 	return 1;
 }
 
-int ModApiEnvMod::l_restore_map(lua_State *L)
+int ModApiEnvMod::l_map_restore_savepoint(lua_State *L)
 {
 	GET_ENV_PTR;
+	const char *savepoint_name = luaL_checkstring(L, 1);
 	ServerMap &map = env->getServerMap();
 	env->clearObjects(CLEAR_OBJECTS_MODE_LOADED_ONLY);
 	env->clearActiveBlocks();
-	map.restoreMap();
-
+	map.restoreSavepoint(savepoint_name);
 	return 0;
 }
 
@@ -1356,9 +1364,9 @@ void ModApiEnvMod::Initialize(lua_State *L, int top)
 	API_FCT(transforming_liquid_add);
 	API_FCT(forceload_block);
 	API_FCT(forceload_free_block);
-	API_FCT(backup_map);
-	API_FCT(is_restore_map_ready);
-	API_FCT(restore_map);
+	API_FCT(map_new_savepoint);
+	API_FCT(map_list_savepoints);
+	API_FCT(map_restore_savepoint);
 }
 
 void ModApiEnvMod::InitializeClient(lua_State *L, int top)
