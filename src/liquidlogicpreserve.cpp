@@ -31,10 +31,10 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 const v3s16 side_4dirs[4] =
 {
-	v3s16( 0, 0, 1), // back
-	v3s16( 1, 0, 0), // right
-	v3s16( 0, 0,-1), // front
-	v3s16(-1, 0, 0) // left
+	v3s16( 0, 0, 1),
+	v3s16( 1, 0, 0),
+	v3s16( 0, 0,-1),
+	v3s16(-1, 0, 0)
 };
 
 const v3s16 down_dir = v3s16( 0,-1, 0);
@@ -187,7 +187,8 @@ void LiquidLogicPreserve::transform(
 {
 	u32 loopcount = 0;
 	u32 initial_size = m_liquid_queue.size();
-	u16 start = rand()*4;
+	u16 start = rand()%4;
+	u16 rnd = rand()%100;
 
 	m_must_reflow.clear();
 	m_changed_nodes.clear();
@@ -272,30 +273,27 @@ void LiquidLogicPreserve::transform(
 		MapNode nbs_below[4];
 		v3s16 nbs_pos[4];
 		s8 nbs_level[4];
+		bool nbs_todo[4];
 
-		//TODO: ADD RANDOM START
 		for (u16 i = 0; i < 4; i++) {
 			nbs_pos[i] = p0 + side_4dirs[i];
 			nbs[i] = m_map->getNodeNoEx(nbs_pos[i]);
 			nbs_old[i] = nbs[i];
 			nbs_below[i].setContent(CONTENT_IGNORE);
-			nbs_level[i] = getNodeLevel(nbs[i], c_source);
-
+			nbs_level[i] = getNodeLevel(nbs[i], c_source); // -1 if not fillable
 			// eliminate target already filled or higher than source
-			if (nbs_level[i] >= source_level &&
-				nbs_level[i] >= LIQUID_LEVEL_SOURCE)
-				nbs_level[i] = -1;
+			nbs_todo[i] = (nbs_level[i] >= 0 && nbs_level[i] < source_level);
 		}
 
 		u8 remaining;
-		start++; start%=65000;
+		start++; start%=4;
 		do
 		{
 			remaining = 0;
 			for (u16 j = 0; j < 4; j++)
 			{
 				u16 i = (start+j)%4;
-				if (nbs_level[i] >= 0)
+				if (nbs_todo[i])
 				{
 					remaining ++;
 					if (nbs_level[i] >= LIQUID_LEVEL_SOURCE ||
@@ -303,8 +301,7 @@ void LiquidLogicPreserve::transform(
 						source_level <= 0) {
 						setNodeLevel(nbs[i], nbs_level[i], false, c_source, c_flowing, c_empty);
 						updateNodeIfChanged(nbs_pos[i], nbs[i], nbs_old[i], modified_blocks, env);
-
-						nbs_level[i] = -1;
+						nbs_todo[i] = false;
 					}
 					else
 					{
@@ -330,7 +327,7 @@ void LiquidLogicPreserve::transform(
 							{
 								setNodeLevel(nbs[i], nbs_level[i], false, c_source, c_flowing, c_empty);
 								updateNodeIfChanged(nbs_pos[i], nbs[i], nbs_old[i], modified_blocks, env);
-								nbs_level[i] = -1;
+								nbs_todo[i] = false;
 							}
 						}
 					}
@@ -338,6 +335,33 @@ void LiquidLogicPreserve::transform(
 			}
 		} while (remaining);
 
+		// Evapo-condensation (this does not preserve liquid quantity)
+		// If all blocks around are +1/-1 level, set the same level on source
+
+		s8 adjust = 0;
+		for (u16 i = 0; i < 4; i++) {
+			if (nbs_level[i] >= 0) {
+				if (!adjust) {
+					adjust = nbs_level[i] - source_level;
+
+					if (adjust != 1 && adjust !=-1)
+					{
+						adjust = 0;
+						break;
+					}
+				} else if (nbs_level[i] - source_level != adjust) {
+					adjust = 0;
+					break;
+				}
+			}
+		}
+
+		rnd++; rnd%=10;
+
+//		if (adjust && rnd == 9) {
+			printf("%d, %d, %d : adjust %d (%d --> %d)\n", p0.X, p0.Y, p0.Z, adjust, source_level, source_level+adjust);
+			source_level = source_level + adjust;
+//		}
 		// Finally update source
 		// Set level
 		setNodeLevel(n0, source_level, (nb_level >= 0), c_source, c_flowing, c_empty);
