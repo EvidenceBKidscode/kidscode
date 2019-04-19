@@ -150,9 +150,9 @@ public:
 	void beginSave() { Database_SQLite3::beginSave(); }
 	void endSave() { Database_SQLite3::endSave(); }
 
-	void newSavepoint(const std::string &savepoint_name);
-	void listSavepoints(std::vector<std::string> &dst);
-	void restoreSavepoint(const std::string &savepoint_name);
+	bool newBackup(const std::string &name);
+	void listVersions(std::vector<std::string> &dst);
+	void restoreBackup(const std::string &name);
 
 //	void preRestoreMap();
 
@@ -165,6 +165,7 @@ protected:
 
 private:
 	void bindPos(sqlite3_stmt *stmt, const v3s16 &pos, int index = 1);
+	void setCurrentVersion(int id);
 
 	// Map
 	sqlite3_stmt *m_stmt_read = nullptr;

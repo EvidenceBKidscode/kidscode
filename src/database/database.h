@@ -47,9 +47,9 @@ public:
 
 	virtual void listAllLoadableBlocks(std::vector<v3s16> &dst) = 0;
 
-	virtual void newSavepoint(const std::string &savepoint_name) {};
-	virtual void listSavepoints(std::vector<std::string> &dst) {};
-	virtual void restoreSavepoint(const std::string &savepoint_name) {};
+	virtual bool newBackup(const std::string &name) { return false; };
+	virtual void listVersions(std::vector<std::string> &dst) {};
+	virtual void restoreBackup(const std::string &name) {};
 };
 
 class PlayerSAO;

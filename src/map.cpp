@@ -1805,12 +1805,13 @@ bool ServerMap::repairBlockLight(v3s16 blockpos,
 
 void ServerMap::listSavepoints(std::vector<std::string> &dst)
 {
-	dbase->listSavepoints(dst);
+	dbase->listVersions(dst);
 }
 
 void ServerMap::newSavepoint(const std::string &savepoint_name)
 {
-	dbase->newSavepoint(savepoint_name);
+	// TODO: Return if backup has been saved
+	dbase->newBackup(savepoint_name);
 }
 
 void ServerMap::restoreSavepoint(const std::string &savepoint_name)
@@ -1845,7 +1846,7 @@ void ServerMap::restoreSavepoint(const std::string &savepoint_name)
 	m_sectors.clear();
 
 	// Restore map table to wanted savepoint state
-	dbase->restoreSavepoint(savepoint_name);
+	dbase->restoreBackup(savepoint_name);
 
 	// Send map event to client
 	dispatchEvent(&event);
