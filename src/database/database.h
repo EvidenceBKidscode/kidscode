@@ -48,6 +48,7 @@ public:
 	virtual void listAllLoadableBlocks(std::vector<v3s16> &dst) = 0;
 
 	virtual bool newBackup(const std::string &name) { return false; };
+	virtual void deleteBackup(const std::string &name) {};
 	virtual void listVersions(std::vector<std::string> &dst) {};
 	virtual void restoreBackup(const std::string &name) {};
 };

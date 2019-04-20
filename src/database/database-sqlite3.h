@@ -151,6 +151,7 @@ public:
 	void endSave() { Database_SQLite3::endSave(); }
 
 	bool newBackup(const std::string &name);
+	void deleteBackup(const std::string &name);
 	void listVersions(std::vector<std::string> &dst);
 	void restoreBackup(const std::string &name);
 
@@ -166,6 +167,7 @@ protected:
 private:
 	void bindPos(sqlite3_stmt *stmt, const v3s16 &pos, int index = 1);
 	void setCurrentVersion(int id);
+	int getVersionByName(const std::string &name);
 
 	// Map
 	sqlite3_stmt *m_stmt_read = nullptr;
