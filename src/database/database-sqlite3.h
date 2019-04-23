@@ -150,11 +150,10 @@ public:
 	void beginSave() { Database_SQLite3::beginSave(); }
 	void endSave() { Database_SQLite3::endSave(); }
 
-	bool newBackup(const std::string &name);
-	void deleteBackup(const std::string &name);
-	void listVersions(std::vector<std::string> &dst);
+	void listBackups(std::vector<std::string> &dst);
+	bool createBackup(const std::string &name);
 	void restoreBackup(const std::string &name);
-
+	void deleteBackup(const std::string &name);
 //	void preRestoreMap();
 
 protected:

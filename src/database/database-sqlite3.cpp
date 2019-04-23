@@ -357,11 +357,12 @@ void MapDatabaseSQLite3::initStatements()
 	upgradeDatabaseStructure();
 
 	PREPARE_STATEMENT(read,
-		"SELECT data FROM blocks WHERE version_id IN ("
+		"SELECT data FROM blocks WHERE pos = ? AND version_id IN ("
 		" WITH RECURSIVE r(id, parent_id) AS ("
 		" SELECT id, parent_id FROM versions WHERE status='C' UNION ALL"
 		" SELECT v.id, v.parent_id FROM r, versions v"
-		" WHERE r.parent_id = v.id) SELECT id FROM r)");
+		" WHERE r.parent_id = v.id) SELECT id FROM r)"
+		" ORDER BY version_id DESC LIMIT 1");
 #ifdef __ANDROID__
 	// TODO: TO BE UPGRADED AND TESTED, WONT WORK WITH 'versions' TABLE
 	PREPARE_STATEMENT(write, "INSERT INTO `blocks` (`pos`, `data`) VALUES (?, ?)");
@@ -474,27 +475,6 @@ void MapDatabaseSQLite3::setCurrentVersion(int id)
 		"UPDATE versions SET status = 'P' WHERE status = 'C'", NULL, NULL, NULL),
 		"newCurrentVersion: Failed to mark old current for purge");
 
-	// Activate versions from root to current
-	SQLOK(sqlite3_exec(m_database,
-		"UPDATE versions SET status = 'I' WHERE status = 'A'", NULL, NULL, NULL),
-		"newCurrentVersion: Failed disable all versions");
-
-	SQLOK(sqlite3_prepare_v2(m_database,
-		"UPDATE versions SET status='A' WHERE status='I'"
-		" AND id IN (WITH RECURSIVE r(id, parent_id, ancest_id) AS"
-		"  (SELECT id, parent_id, id FROM versions UNION ALL"
-		"   SELECT r.id, v.parent_id, v.id FROM r, versions v "
-		"    WHERE r.parent_id = v.id)"
-		" SELECT ancest_id FROM r WHERE id = ?)", -1, &stmt, NULL),
-		"newCurrentVersion: Failed to activate versions (prepare)");
-	int_to_sqlite(stmt, 1, id);
-	if (sqlite3_step(stmt) != SQLITE_DONE) {
-		sqlite3_finalize(stmt);
-		throw DatabaseException(
-			"newCurrentVersion: Failed to activate versions (step): " +
-			std::string(sqlite3_errmsg(m_database)));
-	}
-
 	// Create new current
 	SQLOK(sqlite3_prepare_v2(m_database,
 		"INSERT INTO versions SELECT MAX(id)+1, 'C', '.current', ? FROM versions",
@@ -519,7 +499,7 @@ int MapDatabaseSQLite3::getVersionByName(const std::string &name)
 	assert(m_database);
 
 	SQLOK(sqlite3_prepare_v2(m_database,
-			"SELECT id FROM versions WHERE status IN ('I', 'A') AND name = ?",
+			"SELECT id FROM versions WHERE status = 'A' AND name = ?",
 			-1, &stmt, NULL),
 		"getVersionByName: Failed to find version (prepare)");
 	str_to_sqlite(stmt, 1, name);
@@ -540,14 +520,14 @@ int MapDatabaseSQLite3::getVersionByName(const std::string &name)
 }
 
 // Backups list
-void MapDatabaseSQLite3::listVersions(std::vector<std::string> &dst)
+void MapDatabaseSQLite3::listBackups(std::vector<std::string> &dst)
 {
 	sqlite3_stmt * stmt;
 
 	assert(m_database);
 
 	SQLOK(sqlite3_prepare_v2(m_database,
-		"SELECT name FROM versions WHERE status IN ('I', 'A')",
+		"SELECT name FROM versions WHERE status = 'A'",
 		-1, &stmt, NULL),
 		"listSavepoversionningListBackupsints: Failed to get list of backups (prepare)");
 
@@ -557,14 +537,14 @@ void MapDatabaseSQLite3::listVersions(std::vector<std::string> &dst)
 	sqlite3_finalize(stmt);
 }
 
-bool MapDatabaseSQLite3::newBackup(const std::string &name) {
+bool MapDatabaseSQLite3::createBackup(const std::string &name) {
 	sqlite3_stmt * stmt;
 	int id;
 
 	assert(m_database);
 
 	SQLOK(sqlite3_prepare_v2(m_database,
-		"SELECT 1 FROM versions WHERE status IN ('I', 'A') AND name = ?",
+		"SELECT 1 FROM versions WHERE status = 'A' AND name = ?",
 		-1, &stmt, NULL),
 		"newBackup: Failed to check existing backup (prepare)");
 	str_to_sqlite(stmt, 1, name);
@@ -583,7 +563,7 @@ bool MapDatabaseSQLite3::newBackup(const std::string &name) {
 	sqlite3_finalize(stmt);
 
 	SQLOK(sqlite3_prepare_v2(m_database,
-		"SELECT id FROM versions WHERE status='C'", -1, &stmt, NULL),
+		"SELECT id FROM versions WHERE status = 'C'", -1, &stmt, NULL),
 		"newBackup: Failed to get current version (prepare)");
 	switch (sqlite3_step(stmt))
 	{
@@ -621,26 +601,25 @@ bool MapDatabaseSQLite3::newBackup(const std::string &name) {
 	return true;
 }
 
+void MapDatabaseSQLite3::restoreBackup(const std::string &name)
+{
+	setCurrentVersion(getVersionByName(name));
+}
+
 void MapDatabaseSQLite3::deleteBackup(const std::string &name) {
 	int id = getVersionByName(name);
-
+	sqlite3_stmt * stmt;
 	SQLOK(sqlite3_prepare_v2(m_database,
 			"UPDATE versions SET status = 'D' WHERE id = ?",
 			-1, &stmt, NULL),
 		"deleteBackup: Failed mark version for deletion (prepare)");
-	str_to_sqlite(stmt, 1, name);
+	int_to_sqlite(stmt, 1, id);
 	if (sqlite3_step(stmt) != SQLITE_DONE) {
 		sqlite3_finalize(stmt);
 		throw DatabaseException("deleteBackup: Failed mark version for deletion (step): " +
 			std::string(sqlite3_errmsg(m_database)));
 	}
 	sqlite3_finalize(stmt);
-
-}
-
-void MapDatabaseSQLite3::restoreBackup(const std::string &name)
-{
-	setCurrentVersion(getVersionByName(name));
 }
 
 /*

@@ -1803,18 +1803,13 @@ bool ServerMap::repairBlockLight(v3s16 blockpos,
 	return true;
 }
 
-void ServerMap::listSavepoints(std::vector<std::string> &dst)
-{
-	dbase->listVersions(dst);
-}
-
-void ServerMap::newSavepoint(const std::string &savepoint_name)
+void ServerMap::createBackup(const std::string &backup_name)
 {
 	// TODO: Return if backup has been saved
-	dbase->newBackup(savepoint_name);
+	dbase->createBackup(backup_name);
 }
 
-void ServerMap::restoreSavepoint(const std::string &savepoint_name)
+void ServerMap::restoreBackup(const std::string &backup_name)
 {
 	// Prepare a map event to tell to client that blocks have changed
 	MapEditEvent event;
@@ -1846,10 +1841,20 @@ void ServerMap::restoreSavepoint(const std::string &savepoint_name)
 	m_sectors.clear();
 
 	// Restore map table to wanted savepoint state
-	dbase->restoreBackup(savepoint_name);
+	dbase->restoreBackup(backup_name);
 
 	// Send map event to client
 	dispatchEvent(&event);
+}
+
+void ServerMap::deleteBackup(const std::string &backup_name)
+{
+	dbase->deleteBackup(backup_name);
+}
+
+void ServerMap::listBackups(std::vector<std::string> &dst)
+{
+	dbase->listBackups(dst);
 }
 
 MMVManip::MMVManip(Map *map):
