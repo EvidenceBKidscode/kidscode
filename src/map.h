@@ -454,9 +454,10 @@ public:
 	bool repairBlockLight(v3s16 blockpos,
 		std::map<v3s16, MapBlock *> *modified_blocks);
 
-	void newSavepoint(const std::string &savepoint_name);
-	void restoreSavepoint(const std::string &savepoint_name);
-	void listSavepoints(std::vector<std::string> &dst);
+	void createBackup(const std::string &backup_name);
+	void restoreBackup(const std::string &backup_name);
+	void deleteBackup(const std::string &backup_name);
+	void listBackups(std::vector<std::string> &dst);
 
 	MapSettingsManager settings_mgr;
 
