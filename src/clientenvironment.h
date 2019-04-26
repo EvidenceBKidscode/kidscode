@@ -30,6 +30,7 @@ class ClientScripting;
 class ClientActiveObject;
 class GenericCAO;
 class LocalPlayer;
+struct ParticleOverlaySpec;
 
 /*
 	The client-side environment.
@@ -141,13 +142,19 @@ public:
 	void updateCameraOffset(const v3s16 &camera_offset)
 	{ m_camera_offset = camera_offset; }
 	v3s16 getCameraOffset() const { return m_camera_offset; }
+	ParticleOverlaySpec* getParticleSpecOverlay(const std::string &name);
 private:
+	void stepParticleOverlays(f32 dtime);
 	ClientMap *m_map;
 	LocalPlayer *m_local_player = nullptr;
 	ITextureSource *m_texturesource;
 	Client *m_client;
 	ClientScripting *m_script = nullptr;
 	ClientActiveObjectMap m_active_objects;
+
+	std::unordered_map<std::string, ParticleOverlaySpec *> m_particle_overlay_specs;
+	float m_overlay_spec_interval = 0.5f;
+
 	std::vector<ClientSimpleObject*> m_simple_objects;
 	std::queue<ClientEnvEvent> m_client_event_queue;
 	IntervalLimiter m_active_object_light_update_interval;

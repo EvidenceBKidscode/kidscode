@@ -1842,6 +1842,17 @@ void Server::SendMovePlayer(session_t peer_id)
 	Send(&pkt);
 }
 
+void Server::SendParticleOverlaySpec(session_t peer_id, const ParticleOverlaySpec &poSpec)
+{
+	NetworkPacket pkt(TOCLIENT_PARTICLE_OVERLAY, sizeof(ParticleOverlaySpec) +
+		poSpec.name.size() + poSpec.texture_name.size(), peer_id);
+	pkt << poSpec.name << poSpec.texture_name << poSpec.texture_scale_factor.Width
+		<< poSpec.texture_scale_factor.Height << poSpec.minpps << poSpec.maxpps
+		<< poSpec.direction << poSpec.velocity << poSpec.gravity_factor
+		<< poSpec.enabled;
+	Send(&pkt);
+}
+
 void Server::SendLocalPlayerAnimations(session_t peer_id, v2s32 animation_frames[4],
 		f32 animation_speed)
 {
