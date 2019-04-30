@@ -23,6 +23,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "irrlichttypes_extrabloated.h"
 #include "c_types.h"
 #include "particleoverlay.h"
+#include "c_converter.h"
 
 bool LuaHelper::isNaN(lua_State *L, int idx)
 {
@@ -144,10 +145,8 @@ ParticleOverlaySpec LuaHelper::readParam(lua_State *L, int index)
 			std::to_string(poSpec.maxpps));
 
 	lua_getfield(L, index, "direction");
-	poSpec.direction = readParam<u16>(L, -1, 0);
+	poSpec.direction = read_v3f(L, -1);
 	lua_pop(L, 1);
-	if (poSpec.direction > 359)
-		throw LuaError("ParticleOverlay direction must be between 0 and 359");
 
 	lua_getfield(L, index, "velocity");
 	poSpec.velocity = readParam<float>(L, -1, 0.0f);
