@@ -32,10 +32,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "guiscalingfilter.h"
 #include "renderingengine.h"
 
-#include <mutex>
-#if defined(_WIN32)
-	#include "../threading/mingw.mutex.h"
-#endif
 
 #ifdef __ANDROID__
 #include <GLES/gl.h>

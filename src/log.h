@@ -23,17 +23,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <queue>
 #include <string>
 #include <fstream>
-
 #include <thread>
-#if defined(_WIN32) && defined(__GNUC__)
-	#include "threading/mingw.thread.h"
-#endif
-
 #include <mutex>
-#if defined(_WIN32)
-	#include "threading/mingw.mutex.h"
-#endif
-
 #include "irrlichttypes.h"
 
 class ILogOutput;

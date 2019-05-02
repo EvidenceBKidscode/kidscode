@@ -5,8 +5,6 @@ project(minetest)
 INCLUDE(CheckIncludeFiles)
 INCLUDE(CheckLibraryExists)
 
-set (CMAKE_CXX_STANDARD 11)
-
 # Add custom SemiDebug build mode
 set(CMAKE_CXX_FLAGS_SEMIDEBUG "-O1 -g -Wall -Wabi" CACHE STRING
 	"Flags used by the C++ compiler during semidebug builds."

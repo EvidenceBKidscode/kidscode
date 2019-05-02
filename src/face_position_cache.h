@@ -24,11 +24,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <map>
 #include <vector>
 #include <unordered_map>
-
 #include <mutex>
-#if defined(_WIN32)
-	#include "threading/mingw.mutex.h"
-#endif
 
 /*
  * This class permits caching getFacePosition call results.
