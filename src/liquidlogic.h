@@ -33,6 +33,7 @@ class MMVManip;
 class LiquidLogic {
 public:
 	LiquidLogic(Map *map, IGameDef *gamedef);
+	virtual ~LiquidLogic() {};
 	virtual void addTransforming(v3s16 p) {};
 	virtual void scanBlock(MapBlock *block) {};
 	virtual void scanVoxelManip(MMVManip *vm, v3s16 nmin, v3s16 nmax) {};
