@@ -190,6 +190,7 @@ void LiquidLogicPreserve::transform(
 	u16 start = rand()%4;
 	u16 rnd = rand()%100;
 
+printf("LiquidLogicPreserve:transform queue size %d\n",m_liquid_queue.size());
 	m_must_reflow.clear();
 	m_changed_nodes.clear();
 
@@ -207,6 +208,7 @@ void LiquidLogicPreserve::transform(
 			Get a queued transforming liquid node
 		*/
 		v3s16 p0 = m_liquid_queue.front();
+printf("== dequeue (%d,%d,%d)\n", p0.X, p0.Y, p0.Z);
 		m_liquid_queue.pop_front();
 
 		// Get source node information
@@ -227,6 +229,7 @@ void LiquidLogicPreserve::transform(
 				continue;
 				break;
 		}
+s8 source_level0=source_level;
 
 		content_t c_flowing = m_ndef->getId(cf.liquid_alternative_flowing);
 		content_t c_source = m_ndef->getId(cf.liquid_alternative_source);
@@ -255,6 +258,12 @@ void LiquidLogicPreserve::transform(
 		if (source_level <= 0) {
 			setNodeLevel(n0, source_level, true, c_source, c_flowing, c_empty);
 			updateNodeIfChanged(p0, n0, n00, modified_blocks, env);
+
+			printf(">>reflow (%d,%d,%d)\n", p0.X, p0.Y-1, p0.Z);
+			printf(">>reflow (%d,%d,%d)\n", p0.X+1, p0.Y, p0.Z);
+			printf(">>reflow (%d,%d,%d)\n", p0.X, p0.Y, p0.Z+1);
+			printf(">>reflow (%d,%d,%d)\n", p0.X-1, p0.Y, p0.Z);
+			printf(">>reflow (%d,%d,%d)\n", p0.X, p0.Y, p0.Z-1);
 
 			// Source emptied, surrounding nodes may reflow
 			m_must_reflow.push_back(p0 - down_dir);
@@ -344,7 +353,8 @@ void LiquidLogicPreserve::transform(
 				if (!adjust) {
 					adjust = nbs_level[i] - source_level;
 
-					if (adjust != 1 && adjust !=-1)
+					// Only evaporation as a test
+					if (/*adjust != 1 && */adjust !=-1)
 					{
 						adjust = 0;
 						break;
@@ -359,7 +369,7 @@ void LiquidLogicPreserve::transform(
 		rnd++; rnd%=10;
 
 //		if (adjust && rnd == 9) {
-			printf("%d, %d, %d : adjust %d (%d --> %d)\n", p0.X, p0.Y, p0.Z, adjust, source_level, source_level+adjust);
+//			printf("%d, %d, %d : adjust %d (%d --> %d)\n", p0.X, p0.Y, p0.Z, adjust, source_level, source_level+adjust);
 			source_level = source_level + adjust;
 //		}
 		// Finally update source
@@ -373,6 +383,13 @@ void LiquidLogicPreserve::transform(
 			m_must_reflow.push_back(p0 + side_4dirs[1]);
 			m_must_reflow.push_back(p0 + side_4dirs[2]);
 			m_must_reflow.push_back(p0 + side_4dirs[3]);
+printf("--changed from %d to %d\n", source_level0, source_level);
+			printf(">>reflow (%d,%d,%d)\n", p0.X, p0.Y-1, p0.Z);
+			printf(">>reflow (%d,%d,%d)\n", p0.X+1, p0.Y, p0.Z);
+			printf(">>reflow (%d,%d,%d)\n", p0.X, p0.Y, p0.Z+1);
+			printf(">>reflow (%d,%d,%d)\n", p0.X-1, p0.Y, p0.Z);
+			printf(">>reflow (%d,%d,%d)\n", p0.X, p0.Y, p0.Z-1);
+
 		}
 	}
 	//infostream<<"Map::transformLiquids(): loopcount="<<loopcount<<std::endl;
