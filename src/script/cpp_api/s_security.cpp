@@ -384,7 +384,7 @@ bool ScriptApiSecurity::isSecure(lua_State *L)
 
 extern "C" // :PATCH:
 {
-	int luaL_loadfile(lua_State *L, const char *path) 
+	inline int luaL_loadfile(lua_State *L, const char *path) 
 	{
 		size_t size;
 		const char *buffer = readText(path, size);
