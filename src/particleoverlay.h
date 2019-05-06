@@ -31,6 +31,6 @@ struct ParticleOverlaySpec
 	u32 maxpps = 1000;
 	float gravity_factor = 1.0f;
 	float velocity = 0.0f;
-	u16 direction = 0;
+	v3f direction = v3f(0.0f, 0.0f, 0.0f);
 	bool enabled = false;
 };

@@ -253,7 +253,7 @@ void ScriptApiClient::on_particle_overlay_spec(const ParticleOverlaySpec &poSpec
 	lua_pushboolean(L, poSpec.enabled);
 	lua_pushnumber(L, poSpec.minpps);
 	lua_pushnumber(L, poSpec.maxpps);
-	lua_pushnumber(L, poSpec.direction);
+	push_v3f(L, poSpec.direction);
 	lua_pushnumber(L, poSpec.velocity);
 	lua_pushnumber(L, poSpec.gravity_factor);
 	runCallbacks(7, RUN_CALLBACKS_MODE_FIRST);

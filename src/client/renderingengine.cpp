@@ -182,9 +182,13 @@ bool RenderingEngine::renderParticleOverlay(const ParticleOverlaySpec &spec,
 	f32 applied_gravity_force = gravity_force * spec.gravity_factor;
 	f32 applied_timeforce_lost = 1000 / (spec.gravity_factor * spec.gravity_factor * 0.5);
 
-	v3f particle_target(1000, 0, 0);
+	v3f particle_target = v3f(
+		rangelim(spec.direction.X, -1, 1) * 1000,
+		rangelim(spec.direction.Y, -1, 1) * 1000,
+		rangelim(spec.direction.Z, -1, 1) * 1000);
+
 	particle_target += camera->getAbsolutePosition();
-	particle_target.rotateXZBy(spec.direction, camera->getAbsolutePosition());
+	//particle_target.rotateXZBy(spec.direction, camera->getAbsolutePosition());
 
 	// If emitter was not initialized, initialize it
 	if (!em) {
@@ -234,17 +238,24 @@ bool RenderingEngine::renderParticleOverlay(const ParticleOverlaySpec &spec,
 		pssn->setMaterialTexture(0, texture);
 
 	for (auto &affector: pssn->getAffectors()) {
-		if (affector->getType() == scene::EPAT_GRAVITY) {
-						auto iga = (scene::IParticleGravityAffector *) affector;
-			iga->setGravity(core::vector3df(0.00f, applied_gravity_force, 0.0f));
-			iga->setTimeForceLost(applied_timeforce_lost);
-		} else if (affector->getType() == scene::EPAT_ATTRACT) {
-			auto iaa = (scene::CParticleAttractionAffector *) affector;
-			iaa->setSpeed(spec.velocity);
-			iaa->setPoint(particle_target);
-		} else if (affector->getType() == scene::EPAT_SCALE) {
-			auto isa = (scene::CParticleScaleAffector *) affector;
-			isa->setScaleTo(spec.texture_scale_factor);
+		switch(affector->getType()) {
+			case scene::EPAT_GRAVITY: {
+				auto iga = (scene::IParticleGravityAffector *) affector;
+				iga->setGravity(core::vector3df(0.00f, applied_gravity_force, 0.0f));
+				iga->setTimeForceLost(applied_timeforce_lost);
+				break;
+			}
+			case scene::EPAT_ATTRACT: {
+				auto iaa = (scene::CParticleAttractionAffector *) affector;
+				iaa->setSpeed(spec.velocity);
+				iaa->setPoint(particle_target);
+				break;
+			}
+			case scene::EPAT_SCALE: {
+				auto isa = (scene::CParticleScaleAffector *) affector;
+				isa->setScaleTo(spec.texture_scale_factor);
+				break;
+			}
 		}
 	}
 
