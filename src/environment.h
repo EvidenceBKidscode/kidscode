@@ -33,12 +33,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <queue>
 #include <map>
 #include <atomic>
-
 #include <mutex>
-#if defined(_WIN32)
-	#include "threading/mingw.mutex.h"
-#endif
-
 #include "irr_v3d.h"
 #include "network/networkprotocol.h" // for AccessDeniedCode
 #include "util/basic_macros.h"

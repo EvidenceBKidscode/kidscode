@@ -26,12 +26,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <cstring>
 #include <map>
 #include <sstream>
-
 #include <thread>
-#if defined(_WIN32) && defined(__GNUC__)
-	#include "threading/mingw.thread.h"
-#endif
-
 #include "threading/mutex_auto_lock.h"
 #include "config.h"
 

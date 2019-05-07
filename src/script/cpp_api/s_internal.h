@@ -27,10 +27,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #pragma once
 
 #include <thread>
-#if defined(_WIN32) && defined(__GNUC__)
-	#include "../threading/mingw.thread.h"
-#endif
-
 #include "common/c_internal.h"
 #include "cpp_api/s_base.h"
 #include "threading/mutex_auto_lock.h"

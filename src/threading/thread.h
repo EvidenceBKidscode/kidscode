@@ -29,16 +29,8 @@ DEALINGS IN THE SOFTWARE.
 
 #include <string>
 #include <atomic>
-
 #include <thread>
-#if defined(_WIN32) && defined(__GNUC__)
-	#include "threading/mingw.thread.h"
-#endif
-
 #include <mutex>
-#if defined(_WIN32)
-	#include "threading/mingw.mutex.h"
-#endif
 
 #ifdef _AIX
 	#include <sys/thread.h> // for tid_t
@@ -56,8 +48,37 @@ DEALINGS IN THE SOFTWARE.
 	#define THREAD_PRIORITY_HIGHEST      4
 #endif
 
-#define std_mutex std::mutex
-#define std_mutex_auto_lock MutexAutoLock
+// :PATCH::
+#if defined(_WIN32)
+	#include "porting.h"
+	
+	class std_mutex {
+	public:
+		std_mutex();
+		~std_mutex();
+		void lock();
+		void try_lock();
+		void unlock();
+        
+		bool locked;
+		CRITICAL_SECTION criticalSection;
+	};
+
+	class std_mutex_auto_lock {
+	public:
+		std_mutex_auto_lock(std_mutex & mutex_) : _mutex( &mutex_ )
+            { _mutex->lock(); }
+
+		~std_mutex_auto_lock()
+            { _mutex->unlock();	}
+
+		std_mutex * _mutex;
+	};
+#else
+	#define std_mutex std::mutex
+	#define std_mutex_auto_lock MutexAutoLock
+#endif
+// ::PATCH:
 
 class Thread {
 public:

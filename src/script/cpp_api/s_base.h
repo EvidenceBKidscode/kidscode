@@ -21,15 +21,10 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #include <iostream>
 #include <string>
-
 #include <thread>
-#if defined(_WIN32) && defined(__GNUC__)
-	#include "../threading/mingw.thread.h"
-#endif
-
 #include <mutex>
-#include <unordered_map>
-#include "common/helper.h"
+//#include <unordered_map>
+//#include "common/helper.h"
 #include "util/basic_macros.h"
 
 extern "C" {

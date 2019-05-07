@@ -20,12 +20,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #pragma once
 
 #include <map>
-
 #include <mutex>
-#if defined(_WIN32)
-	#include "threading/mingw.mutex.h"
-#endif
-
 #include "network/networkprotocol.h"
 #include "irr_v3d.h"
 #include "util/container.h"
