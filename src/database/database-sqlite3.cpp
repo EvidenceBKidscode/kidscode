@@ -316,7 +316,7 @@ void purgeDataThread(bool *stopflag, sqlite3 *m_database)
 		int res = sqlite3_step(stmt);
 		if (res == SQLITE_DONE) {
 			sqlite3_finalize(stmt);
-			sleep(1);
+			Sleep(1);
 			continue; // Nothing to do for now
 		}
 		if (res != SQLITE_ROW) {
@@ -348,7 +348,7 @@ void purgeDataThread(bool *stopflag, sqlite3 *m_database)
 				std::string(sqlite3_errmsg(m_database)));
 		}
 		sqlite3_finalize(stmt);
-		sleep(1);
+		Sleep(1);
 	}
 }
 
