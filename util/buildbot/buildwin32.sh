@@ -70,22 +70,22 @@ cd $libdir
 # Get minetest
 cd $builddir
 if [ ! "x$EXISTING_MINETEST_DIR" = "x" ]; then
-	ln -s $EXISTING_MINETEST_DIR minetest
+	ln -s $EXISTING_MINETEST_DIR kidscode
 else
-	[ -d minetest ] && (cd minetest && git pull) || (git clone https://github.com/minetest/minetest)
+	[ -d kidscode ] && (cd kidscode && git pull) || (git clone https://github.com/EvidenceBKidscode/kidscode)
 fi
-cd minetest
+cd kidscode
 git_hash=$(git rev-parse --short HEAD)
 
 # Get minetest_game
 cd games
 if [ "x$NO_MINETEST_GAME" = "x" ]; then
-	[ -d minetest_game ] && (cd minetest_game && git pull) || (git clone https://github.com/minetest/minetest_game)
+	[ -d minetest_game ] && (cd minetest_game && git pull) || (git clone https://github.com/EvidenceBKidscode/minetest_game)
 fi
 cd ../..
 
 # Build the thing
-cd minetest
+cd kidscode
 [ -d _build ] && rm -Rf _build/
 mkdir _build
 cd _build
