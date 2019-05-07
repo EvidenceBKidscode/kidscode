@@ -1,6 +1,13 @@
 #!/bin/bash
 set -e
 
+CORE_GIT=https://github.com/EvidenceBKidscode/kidscode
+CORE_BRANCH=ign
+CORE_NAME=kidscode
+GAME_GIT=https://github.com/EvidenceBKidscode/minetest_game
+GAME_BRANCH=master
+GAME_NAME=minetest_game
+
 dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 if [ $# -ne 1 ]; then
 	echo "Usage: $0 <build directory>"
@@ -70,22 +77,22 @@ cd $libdir
 # Get minetest
 cd $builddir
 if [ ! "x$EXISTING_MINETEST_DIR" = "x" ]; then
-	ln -s $EXISTING_MINETEST_DIR kidscode
+	ln -s $EXISTING_MINETEST_DIR $CORE_NAME
 else
-	[ -d kidscode ] && (cd kidscode && git pull) || (git clone https://github.com/EvidenceBKidscode/kidscode)
+	[ -d $CORE_NAME ] && (cd $CORE_NAME && git pull) || (git clone -b $CORE_BRANCH $CORE_GIT)
 fi
-cd kidscode
+cd $CORE_NAME
 git_hash=$(git rev-parse --short HEAD)
 
 # Get minetest_game
 cd games
 if [ "x$NO_MINETEST_GAME" = "x" ]; then
-	[ -d minetest_game ] && (cd minetest_game && git pull) || (git clone https://github.com/EvidenceBKidscode/minetest_game)
+	[ -d $GAME_NAME ] && (cd $GAME_NAME && git pull) || (git clone -b $GAME_BRANCH $GAME_GIT)
 fi
 cd ../..
 
 # Build the thing
-cd kidscode
+cd $CORE_NAME
 [ -d _build ] && rm -Rf _build/
 mkdir _build
 cd _build
@@ -143,13 +150,13 @@ cmake .. \
 	\
 	-DSQLITE3_INCLUDE_DIR=$libdir/sqlite3/include \
 	-DSQLITE3_LIBRARY=$libdir/sqlite3/lib/libsqlite3.dll.a \
-	-DSQLITE3_DLL=$libdir/sqlite3/bin/libsqlite3-0.dll \
-	\
-	-DLEVELDB_INCLUDE_DIR=$libdir/leveldb/include \
-	-DLEVELDB_LIBRARY=$libdir/leveldb/lib/libleveldb.dll.a \
-	-DLEVELDB_DLL=$libdir/leveldb/bin/libleveldb.dll
+	-DSQLITE3_DLL=$libdir/sqlite3/bin/libsqlite3-0.dll
+#	\
+#	-DLEVELDB_INCLUDE_DIR=$libdir/leveldb/include \
+#	-DLEVELDB_LIBRARY=$libdir/leveldb/lib/libleveldb.dll.a \
+#	-DLEVELDB_DLL=$libdir/leveldb/bin/libleveldb.dll
 
-make -j2
+make -j$(nproc)
 
 [ "x$NO_PACKAGE" = "x" ] && make package
 
