@@ -114,6 +114,11 @@ private:
 	std::map<v3s16, MinimapMapblock *> m_blocks_cache;
 };
 
+struct MinimapMarker {
+	v2f pos;
+	video::ITexture *texture;
+};
+
 class Minimap {
 public:
 	Minimap(Client *client);
@@ -159,5 +164,5 @@ private:
 	u16 m_surface_mode_scan_height;
 	f32 m_angle;
 	std::mutex m_mutex;
-	std::list<v2f> m_active_markers;
+	std::list<MinimapMarker> m_active_markers;
 };

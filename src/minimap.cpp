@@ -534,10 +534,11 @@ void Minimap::drawMinimap()
 	f32 sin_angle = sin(m_angle * core::DEGTORAD);
 	f32 cos_angle = cos(m_angle * core::DEGTORAD);
 	s32 marker_size2 =  0.025 * (float)size;
-	for (std::list<v2f>::const_iterator
+
+	for (std::list<MinimapMarker>::const_iterator
 			i = m_active_markers.begin();
 			i != m_active_markers.end(); ++i) {
-		v2f posf = *i;
+		v2f posf = i->pos;
 		if (data->minimap_shape_round) {
 			f32 t1 = posf.X * cos_angle - posf.Y * sin_angle;
 			f32 t2 = posf.X * sin_angle + posf.Y * cos_angle;
@@ -551,7 +552,7 @@ void Minimap::drawMinimap()
 			s_pos.Y + posf.Y - marker_size2,
 			s_pos.X + posf.X + marker_size2,
 			s_pos.Y + posf.Y + marker_size2);
-		driver->draw2DImage(data->object_marker_red, dest_rect,
+		driver->draw2DImage(i->texture, dest_rect,
 			img_rect, &dest_rect, &c[0], true);
 	}
 }
@@ -583,8 +584,31 @@ void Minimap::updateActiveMarkers()
 			continue;
 		}
 
-		m_active_markers.emplace_back(((float)pos.X / (float)MINIMAP_MAX_SX) - 0.5,
-			(1.0 - (float)pos.Z / (float)MINIMAP_MAX_SY) - 0.5);
+		MinimapMarker marker;
+		marker.pos.X = (float)pos.X / (float)MINIMAP_MAX_SX - 0.5;
+		marker.pos.Y = 1.0 - (float)pos.Z / (float)MINIMAP_MAX_SY - 0.5;
+		marker.texture = data->object_marker_red;
+		m_active_markers.emplace_back(marker);
+	}
+
+	v3s16 pos = floatToInt(v3f(0.0,0.0,0.0) +
+		intToFloat(client->getCamera()->getOffset(), BS), BS);
+	pos -= data->pos - v3s16(data->map_size / 2, data->scan_height / 2,
+			data->map_size / 2);
+
+	if (pos.X < 0 || pos.X > data->map_size ||
+			pos.Y < 0 || pos.Y > data->scan_height ||
+			pos.Z < 0 || pos.Z > data->map_size) {}
+	else {
+		pos.X = ((float)pos.X / data->map_size) * MINIMAP_MAX_SX;
+		pos.Z = ((float)pos.Z / data->map_size) * MINIMAP_MAX_SY;
+
+		MinimapMarker marker;
+		marker.pos.X = (float)pos.X / (float)MINIMAP_MAX_SX - 0.5;
+		marker.pos.Y = 1.0 - (float)pos.Z / (float)MINIMAP_MAX_SY - 0.5;
+		marker.texture = m_tsrc->getTexture("object_marker_green.png");
+
+		m_active_markers.emplace_back(marker);
 	}
 }
 
