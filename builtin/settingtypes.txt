@@ -787,6 +787,10 @@ minimap_shape_round (Round minimap) bool true
 #    Usable to make minimap smoother on slower machines.
 minimap_double_scan_height (Minimap scan height) bool true
 
+#    Minimap text display font size.
+minimap_font_size (Minimap font size) int 10 2 72
+
+
 #    Make fog and sky colors depend on daytime (dawn/sunset) and view direction.
 directional_colored_fog (Colored fog) bool true
 

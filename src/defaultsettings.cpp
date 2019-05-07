@@ -245,6 +245,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("enable_minimap", "true");
 	settings->setDefault("minimap_shape_round", "true");
 	settings->setDefault("minimap_double_scan_height", "true");
+	settings->setDefault("minimap_font_size", "10");
 
 	// Effects
 	settings->setDefault("directional_colored_fog", "true");
@@ -336,7 +337,6 @@ void set_default_settings(Settings *settings)
 #else
 	settings->setDefault("contentdb_flag_blacklist", "nonfree, desktop_default");
 #endif
-
 
 	// Server
 	settings->setDefault("disable_escape_sequences", "false");

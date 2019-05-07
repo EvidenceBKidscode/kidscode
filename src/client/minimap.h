@@ -60,10 +60,18 @@ struct MinimapPixel {
 	u16 air_count;
 };
 
+// POI?
+struct MinimapSymbol {
+	v3s16 pos;
+	std::string texture;
+	std::string text;
+};
+
 struct MinimapMapblock {
-	void getMinimapNodes(VoxelManipulator *vmanip, const v3s16 &pos);
+	void getMinimapNodes(VoxelManipulator *vmanip, const v3s16 &pos, Map &map);
 
 	MinimapPixel data[MAP_BLOCKSIZE * MAP_BLOCKSIZE];
+	std::list<MinimapSymbol> m_symbols;
 };
 
 struct MinimapData {
@@ -71,6 +79,7 @@ struct MinimapData {
 	v3s16 pos;
 	v3s16 old_pos;
 	MinimapPixel minimap_scan[MINIMAP_MAX_SX * MINIMAP_MAX_SY];
+	std::list<MinimapSymbol> symbols;
 	bool map_invalidated;
 	bool minimap_shape_round;
 	video::IImage *minimap_mask_round = nullptr;
@@ -107,6 +116,12 @@ private:
 	std::mutex m_queue_mutex;
 	std::deque<QueuedMinimapUpdate> m_update_queue;
 	std::map<v3s16, MinimapMapblock *> m_blocks_cache;
+};
+
+struct MinimapMarker {
+	v2f pos;
+	video::ITexture *texture;
+	core::stringw text;
 };
 
 class Minimap {
@@ -154,7 +169,11 @@ public:
 	Client* client;
 	MinimapData *data;
 
+protected:
+	void addMarker(v3s16 pos, std::string texture, std::string text);
+
 private:
+
 	ITextureSource *m_tsrc;
 	IShaderSource *m_shdrsrc;
 	const NodeDefManager *m_ndef;
@@ -166,5 +185,5 @@ private:
 	u16 m_surface_mode_scan_height;
 	f32 m_angle;
 	std::mutex m_mutex;
-	std::list<v2f> m_active_markers;
+	std::list<MinimapMarker> m_active_markers;
 };
