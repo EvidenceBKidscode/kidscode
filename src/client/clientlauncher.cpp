@@ -35,11 +35,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "renderingengine.h"
 #include "network/networkexceptions.h"
 
-#include <mutex>
-#if defined(_WIN32)
-	#include "threading/mingw.mutex.h"
-#endif
-
 /* mainmenumanager.h
  */
 gui::IGUIEnvironment *guienv = nullptr;

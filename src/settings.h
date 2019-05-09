@@ -24,11 +24,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <string>
 #include <list>
 #include <set>
-
 #include <mutex>
-#if defined(_WIN32)
-	#include "threading/mingw.mutex.h"
-#endif
 
 class Settings;
 struct NoiseParams;
