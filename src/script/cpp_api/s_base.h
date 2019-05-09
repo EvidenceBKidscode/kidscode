@@ -23,10 +23,10 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <string>
 #include <thread>
 #include <mutex>
-/*
+
 #include <unordered_map>
 #include "common/helper.h"
-*/
+
 #include "util/basic_macros.h"
 
 extern "C" {
@@ -62,7 +62,6 @@ enum class ScriptingType: u8 {
 	Server,
 	MainMenu
 };
-
 class Server;
 #ifndef SERVER
 class Client;
