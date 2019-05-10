@@ -616,7 +616,7 @@ void Minimap::updateActiveMarkers()
 //// MinimapMapblock
 ////
 
-void MinimapMapblock::getMinimapNodes(VoxelManipulator *vmanip, const v3s16 &pos)
+void MinimapMapblock::getMinimapNodes(VoxelManipulator *vmanip, const v3s16 &pos, Map &map)
 {
 
 	for (s16 x = 0; x < MAP_BLOCKSIZE; x++)
@@ -635,6 +635,11 @@ void MinimapMapblock::getMinimapNodes(VoxelManipulator *vmanip, const v3s16 &pos
 			} else if (n.getContent() == CONTENT_AIR) {
 				air_count++;
 			}
+v3s16 pp = pos + p;
+			NodeMetadata *meta = map.getNodeMetadata(pp);
+			if (! meta->empty())
+				printf("Metadata at (%d,%d,%d)", pp.X,pp.Y,pp.Z);
+			//nodemetadata.h
 		}
 
 		if (!surface_found)
