@@ -382,9 +382,15 @@ bool ScriptApiSecurity::isSecure(lua_State *L)
 	}
 
 
-extern "C" // :PATCH:
+extern "C"
 {
-	inline int luaL_loadfile(lua_State *L, const char *path) 
+// Not sure about the condition. It seems inline is required when using
+// external Lua lib and must not be there where using bundled lib.
+#if USE_LUAJIT
+	inline int luaL_loadfile(lua_State *L, const char *path)
+#else
+	int luaL_loadfile(lua_State *L, const char *path)
+#endif
 	{
 		size_t size;
 		const char *buffer = readText(path, size);
