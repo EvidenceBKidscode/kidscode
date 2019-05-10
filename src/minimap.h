@@ -62,10 +62,17 @@ struct MinimapPixel {
 	u16 air_count;
 };
 
+// POI?
+struct MinimapSymbol {
+	v3s16 pos;
+	std::string texture;
+};
+
 struct MinimapMapblock {
 	void getMinimapNodes(VoxelManipulator *vmanip, const v3s16 &pos, Map &map);
 
 	MinimapPixel data[MAP_BLOCKSIZE * MAP_BLOCKSIZE];
+	std::list<MinimapSymbol> m_symbols;
 };
 
 struct MinimapData {
@@ -76,6 +83,7 @@ struct MinimapData {
 	u16 scan_height;
 	u16 map_size;
 	MinimapPixel minimap_scan[MINIMAP_MAX_SX * MINIMAP_MAX_SY];
+	std::list<MinimapSymbol> symbols;
 	bool map_invalidated;
 	bool minimap_shape_round;
 	video::IImage *minimap_mask_round = nullptr;

@@ -128,6 +128,7 @@ void MinimapUpdateThread::getMap(v3s16 pos, s16 size, s16 height)
 		mmpixel.height = 0;
 		mmpixel.n = MapNode(CONTENT_AIR);
 	}
+	data->symbols.clear();
 
 // draw the map
 	v3s16 blockpos;
@@ -164,6 +165,9 @@ void MinimapUpdateThread::getMap(v3s16 pos, s16 size, s16 height)
 				out_pixel.height = inmap_pos.Y + in_pixel.height;
 			}
 		}
+
+		for (MinimapSymbol symbol : block.m_symbols)
+			data->symbols.emplace_back(symbol);
 	}
 }
 
@@ -591,24 +595,27 @@ void Minimap::updateActiveMarkers()
 		m_active_markers.emplace_back(marker);
 	}
 
-	v3s16 pos = floatToInt(v3f(0.0,0.0,0.0) +
-		intToFloat(client->getCamera()->getOffset(), BS), BS);
-	pos -= data->pos - v3s16(data->map_size / 2, data->scan_height / 2,
+	// Place map symbols as markers
+	for (MinimapSymbol symbol : data->symbols) {
+		v3s16 pos = symbol.pos;
+
+		pos -= data->pos - v3s16(data->map_size / 2, data->scan_height / 2,
 			data->map_size / 2);
 
-	if (pos.X < 0 || pos.X > data->map_size ||
-			pos.Y < 0 || pos.Y > data->scan_height ||
-			pos.Z < 0 || pos.Z > data->map_size) {}
-	else {
-		pos.X = ((float)pos.X / data->map_size) * MINIMAP_MAX_SX;
-		pos.Z = ((float)pos.Z / data->map_size) * MINIMAP_MAX_SY;
+		if (pos.X >= 0 && pos.X <= data->map_size &&
+			pos.Y >= 0 && pos.Y <= data->scan_height &&
+			pos.Z >= 0 && pos.Z <= data->map_size)
+		{
+			pos.X = ((float)pos.X / data->map_size) * MINIMAP_MAX_SX;
+			pos.Z = ((float)pos.Z / data->map_size) * MINIMAP_MAX_SY;
 
-		MinimapMarker marker;
-		marker.pos.X = (float)pos.X / (float)MINIMAP_MAX_SX - 0.5;
-		marker.pos.Y = 1.0 - (float)pos.Z / (float)MINIMAP_MAX_SY - 0.5;
-		marker.texture = m_tsrc->getTexture("object_marker_green.png");
+			MinimapMarker marker;
+			marker.pos.X = (float)pos.X / (float)MINIMAP_MAX_SX - 0.5;
+			marker.pos.Y = 1.0 - (float)pos.Z / (float)MINIMAP_MAX_SY - 0.5;
+			marker.texture = m_tsrc->getTexture(symbol.texture);
 
-		m_active_markers.emplace_back(marker);
+			m_active_markers.emplace_back(marker);
+		}
 	}
 }
 
@@ -635,11 +642,19 @@ void MinimapMapblock::getMinimapNodes(VoxelManipulator *vmanip, const v3s16 &pos
 			} else if (n.getContent() == CONTENT_AIR) {
 				air_count++;
 			}
-v3s16 pp = pos + p;
-			NodeMetadata *meta = map.getNodeMetadata(pp);
-			if (! meta->empty())
-				printf("Metadata at (%d,%d,%d)", pp.X,pp.Y,pp.Z);
-			//nodemetadata.h
+			if (n.getContent() != CONTENT_UNKNOWN && n.getContent() != CONTENT_IGNORE)
+			{
+				v3s16 pp = pos + p;
+				NodeMetadata *meta = map.getNodeMetadata(pp);
+
+				if (meta != NULL && !meta->empty() and meta->contains("minimap_symbol"))
+				{
+					MinimapSymbol symbol;
+					symbol.pos = pp;
+					symbol.texture = meta->getString("minimap_symbol");
+					m_symbols.emplace_back(symbol);
+				}
+			}
 		}
 
 		if (!surface_found)
