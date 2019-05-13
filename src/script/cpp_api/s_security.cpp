@@ -382,7 +382,7 @@ bool ScriptApiSecurity::isSecure(lua_State *L)
 	}
 
 
-extern "C"
+extern "C" // :PATCH:
 {
 // Not sure about the condition. It seems inline is required when using
 // external Lua lib and must not be there where using bundled lib.
