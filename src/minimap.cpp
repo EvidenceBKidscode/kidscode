@@ -625,7 +625,6 @@ void Minimap::updateActiveMarkers()
 
 void MinimapMapblock::getMinimapNodes(VoxelManipulator *vmanip, const v3s16 &pos, Map &map)
 {
-
 	for (s16 x = 0; x < MAP_BLOCKSIZE; x++)
 	for (s16 z = 0; z < MAP_BLOCKSIZE; z++) {
 		s16 air_count = 0;
@@ -642,10 +641,13 @@ void MinimapMapblock::getMinimapNodes(VoxelManipulator *vmanip, const v3s16 &pos
 			} else if (n.getContent() == CONTENT_AIR) {
 				air_count++;
 			}
-			if (n.getContent() != CONTENT_UNKNOWN && n.getContent() != CONTENT_IGNORE)
+			if (n.getContent() != CONTENT_UNKNOWN
+			 && n.getContent() != CONTENT_IGNORE
+			 && n.getContent() != CONTENT_AIR)
 			{
 				v3s16 pp = pos + p;
 				NodeMetadata *meta = map.getNodeMetadata(pp);
+
 
 				if (meta != NULL && !meta->empty() and meta->contains("minimap_symbol"))
 				{
