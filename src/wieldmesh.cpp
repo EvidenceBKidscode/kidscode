@@ -368,7 +368,7 @@ void WieldMeshSceneNode::setItem(const ItemStack &item, Client *client)
 	if (def.type == ITEM_NODE) {
 		if (f.mesh_ptr[0]) {
 			// e.g. mesh nodes and nodeboxes
-			scene::SMesh *mesh = cloneMesh(f.mesh_ptr[0]);
+			mesh = cloneMesh(f.mesh_ptr[0]);
 			postProcessNodeMesh(mesh, f, m_enable_shaders, true,
 				&m_material_type, &m_colors);
 			changeToMesh(mesh);
@@ -405,7 +405,9 @@ void WieldMeshSceneNode::setItem(const ItemStack &item, Client *client)
 					break;
 				}
 				case NDT_NORMAL:
-				case NDT_ALLFACES: {
+				case NDT_ALLFACES:
+				case NDT_LIQUID:
+				case NDT_FLOWINGLIQUID: {
 					setCube(f, def.wield_scale);
 					break;
 				}
@@ -422,6 +424,7 @@ void WieldMeshSceneNode::setItem(const ItemStack &item, Client *client)
 		u32 material_count = m_meshnode->getMaterialCount();
 		for (u32 i = 0; i < material_count; ++i) {
 			video::SMaterial &material = m_meshnode->getMaterial(i);
+			material.MaterialType = m_material_type;
 			material.setFlag(video::EMF_BACK_FACE_CULLING, true);
 			material.setFlag(video::EMF_BILINEAR_FILTER, m_bilinear_filter);
 			material.setFlag(video::EMF_TRILINEAR_FILTER, m_trilinear_filter);
