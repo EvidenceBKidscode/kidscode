@@ -90,6 +90,8 @@ public:
 
 	static LuaPerlinNoiseMap *checkobject(lua_State *L, int narg);
 
+	Noise *getNoise() const { return noise; }
+
 	static void Register(lua_State *L);
 };
 
@@ -122,6 +124,7 @@ public:
 	static LuaPseudoRandom *checkobject(lua_State *L, int narg);
 
 	static void Register(lua_State *L);
+
 };
 
 /*
