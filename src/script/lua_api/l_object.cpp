@@ -197,7 +197,7 @@ int ObjectRef::l_move_to(lua_State *L)
 	// pos
 	v3f pos = checkFloatPos(L, 2);
 	// continuous
-	bool continuous = lua_toboolean(L, 3);
+	bool continuous = readParam<bool>(L, 3);
 	// Do it
 	co->moveTo(pos, continuous);
 	return 0;
@@ -270,8 +270,7 @@ int ObjectRef::l_set_hp(lua_State *L)
 	ServerActiveObject *co = getobject(ref);
 	if (co == NULL) return 0;
 	int hp = lua_tonumber(L, 2);
-	/*infostream<<"ObjectRef::l_set_hp(): id="<<co->getId()
-			<<" hp="<<hp<<std::endl;*/
+
 	// Do it
 	co->setHP(hp);
 	if (co->getType() == ACTIVEOBJECT_TYPE_PLAYER)
@@ -487,7 +486,7 @@ int ObjectRef::l_set_animation(lua_State *L)
 		frame_blend = lua_tonumber(L, 4);
 	bool frame_loop = true;
 	if (lua_isboolean(L, 5))
-		frame_loop = lua_toboolean(L, 5);
+		frame_loop = readParam<bool>(L, 5);
 	co->setAnimation(frames, frame_speed, frame_blend, frame_loop);
 	return 0;
 }
@@ -634,7 +633,7 @@ int ObjectRef::l_set_bone_position(lua_State *L)
 	// Do it
 	std::string bone;
 	if (!lua_isnil(L, 2))
-		bone = lua_tostring(L, 2);
+		bone = readParam<std::string>(L, 2);
 	v3f position = v3f(0, 0, 0);
 	if (!lua_isnil(L, 3))
 		position = check_v3f(L, 3);
@@ -656,7 +655,7 @@ int ObjectRef::l_get_bone_position(lua_State *L)
 	// Do it
 	std::string bone;
 	if (!lua_isnil(L, 2))
-		bone = lua_tostring(L, 2);
+		bone = readParam<std::string>(L, 2);
 
 	v3f position = v3f(0, 0, 0);
 	v3f rotation = v3f(0, 0, 0);
@@ -693,7 +692,7 @@ int ObjectRef::l_set_attach(lua_State *L)
 
 	bone = "";
 	if (!lua_isnil(L, 3))
-		bone = lua_tostring(L, 3);
+		bone = readParam<std::string>(L, 3);
 	position = v3f(0, 0, 0);
 	if (!lua_isnil(L, 4))
 		position = read_v3f(L, 4);
@@ -912,16 +911,51 @@ int ObjectRef::l_get_acceleration(lua_State *L)
 	return 1;
 }
 
+// set_rotation(self, {x=num, y=num, z=num})
+// Each 'num' is in radians
+int ObjectRef::l_set_rotation(lua_State *L)
+{
+	NO_MAP_LOCK_REQUIRED;
+	ObjectRef *ref = checkobject(L, 1);
+	LuaEntitySAO *co = getluaobject(ref);
+	if (!co)
+		return 0;
+
+	v3f rotation = check_v3f(L, 2) * core::RADTODEG;
+	co->setRotation(rotation);
+	return 0;
+}
+
+// get_rotation(self)
+// returns: {x=num, y=num, z=num}
+// Each 'num' is in radians
+int ObjectRef::l_get_rotation(lua_State *L)
+{
+	NO_MAP_LOCK_REQUIRED;
+	ObjectRef *ref = checkobject(L, 1);
+	LuaEntitySAO *co = getluaobject(ref);
+	if (!co)
+		return 0;
+
+	lua_newtable(L);
+	v3f rotation = co->getRotation() * core::DEGTORAD;
+	push_v3f(L, rotation);
+	return 1;
+}
+
 // set_yaw(self, radians)
 int ObjectRef::l_set_yaw(lua_State *L)
 {
 	NO_MAP_LOCK_REQUIRED;
 	ObjectRef *ref = checkobject(L, 1);
 	LuaEntitySAO *co = getluaobject(ref);
+
 	if (co == NULL) return 0;
-	float yaw = luaL_checknumber(L, 2) * core::RADTODEG;
-	// Do it
-	co->setYaw(yaw);
+	if (isNaN(L, 2))
+		throw LuaError("ObjectRef::set_yaw: NaN value is not allowed.");
+
+	float yaw = readParam<float>(L, 2) * core::RADTODEG;
+	co->setRotation(v3f(0, yaw, 0));
 	return 0;
 }
 
@@ -931,9 +965,10 @@ int ObjectRef::l_get_yaw(lua_State *L)
 	NO_MAP_LOCK_REQUIRED;
 	ObjectRef *ref = checkobject(L, 1);
 	LuaEntitySAO *co = getluaobject(ref);
-	if (co == NULL) return 0;
-	// Do it
-	float yaw = co->getYaw() * core::DEGTORAD;
+	if (!co)
+		return 0;
+
+	float yaw = co->getRotation().Y * core::DEGTORAD;
 	lua_pushnumber(L, yaw);
 	return 1;
 }
@@ -984,7 +1019,7 @@ int ObjectRef::l_set_sprite(lua_State *L)
 		framelength = lua_tonumber(L, 4);
 	bool select_horiz_by_yawpitch = false;
 	if (!lua_isnil(L, 5))
-		select_horiz_by_yawpitch = lua_toboolean(L, 5);
+		select_horiz_by_yawpitch = readParam<bool>(L, 5);
 	co->setSprite(p, num_frames, framelength, select_horiz_by_yawpitch);
 	return 0;
 }
@@ -1066,7 +1101,7 @@ int ObjectRef::l_get_look_dir(lua_State *L)
 	PlayerSAO* co = getplayersao(ref);
 	if (co == NULL) return 0;
 	// Do it
-	float pitch = co->getRadPitchDep();
+	float pitch = co->getRadLookPitchDep();
 	float yaw = co->getRadYawDep();
 	v3f v(cos(pitch)*cos(yaw), sin(pitch), cos(pitch)*sin(yaw));
 	push_v3f(L, v);
@@ -1086,7 +1121,7 @@ int ObjectRef::l_get_look_pitch(lua_State *L)
 	PlayerSAO* co = getplayersao(ref);
 	if (co == NULL) return 0;
 	// Do it
-	lua_pushnumber(L, co->getRadPitchDep());
+	lua_pushnumber(L, co->getRadLookPitchDep());
 	return 1;
 }
 
@@ -1115,7 +1150,7 @@ int ObjectRef::l_get_look_vertical(lua_State *L)
 	PlayerSAO* co = getplayersao(ref);
 	if (co == NULL) return 0;
 	// Do it
-	lua_pushnumber(L, co->getRadPitch());
+	lua_pushnumber(L, co->getRadLookPitch());
 	return 1;
 }
 
@@ -1127,7 +1162,7 @@ int ObjectRef::l_get_look_horizontal(lua_State *L)
 	PlayerSAO* co = getplayersao(ref);
 	if (co == NULL) return 0;
 	// Do it
-	lua_pushnumber(L, co->getRadYaw());
+	lua_pushnumber(L, co->getRadRotation().Y);
 	return 1;
 }
 
@@ -1140,7 +1175,7 @@ int ObjectRef::l_set_look_vertical(lua_State *L)
 	if (co == NULL) return 0;
 	float pitch = luaL_checknumber(L, 2) * core::RADTODEG;
 	// Do it
-	co->setPitchAndSend(pitch);
+	co->setLookPitchAndSend(pitch);
 	return 1;
 }
 
@@ -1153,7 +1188,7 @@ int ObjectRef::l_set_look_horizontal(lua_State *L)
 	if (co == NULL) return 0;
 	float yaw = luaL_checknumber(L, 2) * core::RADTODEG;
 	// Do it
-	co->setYawAndSend(yaw);
+	co->setPlayerYawAndSend(yaw);
 	return 1;
 }
 
@@ -1171,7 +1206,7 @@ int ObjectRef::l_set_look_pitch(lua_State *L)
 	if (co == NULL) return 0;
 	float pitch = luaL_checknumber(L, 2) * core::RADTODEG;
 	// Do it
-	co->setPitchAndSend(pitch);
+	co->setLookPitchAndSend(pitch);
 	return 1;
 }
 
@@ -1189,7 +1224,7 @@ int ObjectRef::l_set_look_yaw(lua_State *L)
 	if (co == NULL) return 0;
 	float yaw = luaL_checknumber(L, 2) * core::RADTODEG;
 	// Do it
-	co->setYawAndSend(yaw);
+	co->setPlayerYawAndSend(yaw);
 	return 1;
 }
 
@@ -1655,7 +1690,7 @@ int ObjectRef::l_hud_set_hotbar_image(lua_State *L)
 	if (player == NULL)
 		return 0;
 
-	std::string name = lua_tostring(L, 2);
+	std::string name = readParam<std::string>(L, 2);
 
 	getServer(L)->hudSetHotbarImage(player, name);
 	return 1;
@@ -1684,7 +1719,7 @@ int ObjectRef::l_hud_set_hotbar_selected_image(lua_State *L)
 	if (player == NULL)
 		return 0;
 
-	std::string name = lua_tostring(L, 2);
+	std::string name = readParam<std::string>(L, 2);
 
 	getServer(L)->hudSetHotbarSelectedImage(player, name);
 	return 1;
@@ -1724,7 +1759,7 @@ int ObjectRef::l_set_sky(lua_State *L)
 		while (lua_next(L, 4) != 0) {
 			// key at index -2 and value at index -1
 			if (lua_isstring(L, -1))
-				params.emplace_back(lua_tostring(L, -1));
+				params.emplace_back(readParam<std::string>(L, -1));
 			else
 				params.emplace_back("");
 			// removes value, keeps key for next iteration
@@ -1737,7 +1772,7 @@ int ObjectRef::l_set_sky(lua_State *L)
 
 	bool clouds = true;
 	if (lua_isboolean(L, 5))
-		clouds = lua_toboolean(L, 5);
+		clouds = readParam<bool>(L, 5);
 
 	if (!getServer(L)->setSky(player, bgcolor, type, params, clouds))
 		return 0;
@@ -1850,6 +1885,21 @@ int ObjectRef::l_get_clouds(lua_State *L)
 	lua_setfield(L, -2, "y");
 	lua_setfield(L, -2, "speed");
 
+	return 1;
+}
+
+
+int ObjectRef::l_set_particle_overlay(lua_State *L)
+{
+	NO_MAP_LOCK_REQUIRED;
+	ObjectRef *ref = checkobject(L, 1);
+	RemotePlayer *player = getplayer(ref);
+	if (!player)
+		return 0;
+
+	getServer(L)->SendParticleOverlaySpec(player->getPeerId(),
+		readParam<ParticleOverlaySpec>(L, 2));
+	lua_pushboolean(L, true);
 	return 1;
 }
 
@@ -1986,6 +2036,8 @@ const luaL_Reg ObjectRef::methods[] = {
 	luamethod_aliased(ObjectRef, get_acceleration, getacceleration),
 	luamethod_aliased(ObjectRef, set_yaw, setyaw),
 	luamethod_aliased(ObjectRef, get_yaw, getyaw),
+	luamethod(ObjectRef, set_rotation),
+	luamethod(ObjectRef, get_rotation),
 	luamethod_aliased(ObjectRef, set_texture_mod, settexturemod),
 	luamethod_aliased(ObjectRef, set_sprite, setsprite),
 	luamethod(ObjectRef, get_entity_name),
@@ -2030,6 +2082,7 @@ const luaL_Reg ObjectRef::methods[] = {
 	luamethod(ObjectRef, get_sky),
 	luamethod(ObjectRef, set_clouds),
 	luamethod(ObjectRef, get_clouds),
+	luamethod(ObjectRef, set_particle_overlay),
 	luamethod(ObjectRef, override_day_night_ratio),
 	luamethod(ObjectRef, get_day_night_ratio),
 	luamethod(ObjectRef, set_local_animation),

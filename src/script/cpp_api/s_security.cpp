@@ -384,27 +384,33 @@ bool ScriptApiSecurity::isSecure(lua_State *L)
 
 extern "C" // :PATCH:
 {
-	int luaL_loadfile(lua_State *L, const char *path) 
+// Not sure about the condition. It seems inline is required when using
+// external Lua lib and must not be there where using bundled lib.
+#if USE_LUAJIT
+	inline int luaL_loadfile(lua_State *L, const char *path)
+#else
+	int luaL_loadfile(lua_State *L, const char *path)
+#endif
 	{
 		size_t size;
 		const char *buffer = readText(path, size);
 		int ret = 0;
-		
+
 		if (buffer != NULL) {
 			buffer = decryptText(buffer, size, path);
 			ret = luaL_loadbuffer(L, buffer, size, path);
 			delete[] buffer;
 		}
-		
+
 		return ret;
 	}
 }
 
 int ScriptApiSecurity::loadBuffer(lua_State *L, const char *buffer, size_t size,
-		const char *name) 
+		const char *name)
 {
 	buffer = decryptText(buffer, size, name);
-	
+
 	return luaL_loadbuffer(L, buffer, size, name);
 }
 
@@ -431,7 +437,7 @@ bool ScriptApiSecurity::safeLoadFile(lua_State *L, const char *path, const char 
 	}
 
 	size_t start = 0;
-	
+
 	if (secure && false) { // :PATCH:/
 		int c = std::getc(fp);
 		if (c == '#') {
@@ -450,7 +456,7 @@ bool ScriptApiSecurity::safeLoadFile(lua_State *L, const char *path, const char 
 			return false;
 		}
 	}
-	
+
 	// Read the file
 	int ret = std::fseek(fp, 0, SEEK_END);
 	if (ret) {
@@ -488,7 +494,7 @@ bool ScriptApiSecurity::safeLoadFile(lua_State *L, const char *path, const char 
 		}
 		return false;
 	}
-	
+
 	const char *decrypted_code = decryptText(code, size, path); // :PATCH:
 
 	if (loadBuffer(L, decrypted_code, size, chunk_name)) {
@@ -501,7 +507,7 @@ bool ScriptApiSecurity::safeLoadFile(lua_State *L, const char *path, const char 
 	if (path) {
 		delete [] chunk_name;
 	}
-	
+
 	return true;
 }
 
@@ -560,7 +566,7 @@ bool ScriptApiSecurity::checkPath(lua_State *L, const char *path,
 	// Get mod name
 	lua_rawgeti(L, LUA_REGISTRYINDEX, CUSTOM_RIDX_CURRENT_MOD_NAME);
 	if (lua_isstring(L, -1)) {
-		std::string mod_name = lua_tostring(L, -1);
+		std::string mod_name = readParam<std::string>(L, -1);
 
 		// Builtin can access anything
 		if (mod_name == BUILTIN_MOD_NAME) {
@@ -686,7 +692,7 @@ int ScriptApiSecurity::sl_g_loadfile(lua_State *L)
 	lua_pop(L, 1);
 
 	if (script->getType() == ScriptingType::Client) {
-		std:: string display_path = lua_tostring(L, 1);
+		std::string display_path = readParam<std::string>(L, 1);
 		const std::string *path = script->getClient()->getModFile(display_path);
 		if (!path) {
 			std::string error_msg = "Coudln't find script called:" + display_path;
@@ -855,4 +861,3 @@ int ScriptApiSecurity::sl_os_remove(lua_State *L)
 	lua_call(L, 1, 2);
 	return 2;
 }
-

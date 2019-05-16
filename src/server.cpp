@@ -1828,17 +1828,28 @@ void Server::SendMovePlayer(session_t peer_id)
 	assert(sao);
 
 	NetworkPacket pkt(TOCLIENT_MOVE_PLAYER, sizeof(v3f) + sizeof(f32) * 2, peer_id);
-	pkt << sao->getBasePosition() << sao->getPitch() << sao->getYaw();
+	pkt << sao->getBasePosition() << sao->getLookPitch() << sao->getRotation().Y;
 
 	{
 		v3f pos = sao->getBasePosition();
 		verbosestream << "Server: Sending TOCLIENT_MOVE_PLAYER"
 				<< " pos=(" << pos.X << "," << pos.Y << "," << pos.Z << ")"
-				<< " pitch=" << sao->getPitch()
-				<< " yaw=" << sao->getYaw()
+				<< " pitch=" << sao->getLookPitch()
+				<< " yaw=" << sao->getRotation().Y
 				<< std::endl;
 	}
 
+	Send(&pkt);
+}
+
+void Server::SendParticleOverlaySpec(session_t peer_id, const ParticleOverlaySpec &poSpec)
+{
+	NetworkPacket pkt(TOCLIENT_PARTICLE_OVERLAY, sizeof(ParticleOverlaySpec) +
+		poSpec.name.size() + poSpec.texture_name.size(), peer_id);
+	pkt << poSpec.name << poSpec.texture_name << poSpec.texture_scale_factor.Width
+		<< poSpec.texture_scale_factor.Height << poSpec.minpps << poSpec.maxpps
+		<< poSpec.direction << poSpec.velocity << poSpec.gravity_factor
+		<< poSpec.enabled;
 	Send(&pkt);
 }
 

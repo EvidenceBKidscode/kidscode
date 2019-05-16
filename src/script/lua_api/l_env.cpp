@@ -166,10 +166,10 @@ int LuaRaycast::create_object(lua_State *L)
 	v3f pos1 = checkFloatPos(L, 1);
 	v3f pos2 = checkFloatPos(L, 2);
 	if (lua_isboolean(L, 3)) {
-		objects = lua_toboolean(L, 3);
+		objects = readParam<bool>(L, 3);
 	}
 	if (lua_isboolean(L, 4)) {
-		liquids = lua_toboolean(L, 4);
+		liquids = readParam<bool>(L, 4);
 	}
 
 	LuaRaycast *o = new LuaRaycast(core::line3d<f32>(pos1, pos2),
@@ -729,15 +729,15 @@ int ModApiEnvMod::l_find_node_near(lua_State *L)
 		while (lua_next(L, 3) != 0) {
 			// key at index -2 and value at index -1
 			luaL_checktype(L, -1, LUA_TSTRING);
-			ndef->getIds(lua_tostring(L, -1), filter);
+			ndef->getIds(readParam<std::string>(L, -1), filter);
 			// removes value, keeps key for next iteration
 			lua_pop(L, 1);
 		}
 	} else if (lua_isstring(L, 3)) {
-		ndef->getIds(lua_tostring(L, 3), filter);
+		ndef->getIds(readParam<std::string>(L, 3), filter);
 	}
 
-	int start_radius = (lua_toboolean(L, 4)) ? 0 : 1;
+	int start_radius = (lua_isboolean(L, 4) && readParam<bool>(L, 4)) ? 0 : 1;
 
 #ifndef SERVER
 	// Client API limitations
@@ -790,12 +790,12 @@ int ModApiEnvMod::l_find_nodes_in_area(lua_State *L)
 		while (lua_next(L, 3) != 0) {
 			// key at index -2 and value at index -1
 			luaL_checktype(L, -1, LUA_TSTRING);
-			ndef->getIds(lua_tostring(L, -1), filter);
+			ndef->getIds(readParam<std::string>(L, -1), filter);
 			// removes value, keeps key for next iteration
 			lua_pop(L, 1);
 		}
 	} else if (lua_isstring(L, 3)) {
-		ndef->getIds(lua_tostring(L, 3), filter);
+		ndef->getIds(readParam<std::string>(L, 3), filter);
 	}
 
 	std::vector<u32> individual_count;
@@ -863,12 +863,12 @@ int ModApiEnvMod::l_find_nodes_in_area_under_air(lua_State *L)
 		while (lua_next(L, 3) != 0) {
 			// key at index -2 and value at index -1
 			luaL_checktype(L, -1, LUA_TSTRING);
-			ndef->getIds(lua_tostring(L, -1), filter);
+			ndef->getIds(readParam<std::string>(L, -1), filter);
 			// removes value, keeps key for next iteration
 			lua_pop(L, 1);
 		}
 	} else if (lua_isstring(L, 3)) {
-		ndef->getIds(lua_tostring(L, 3), filter);
+		ndef->getIds(readParam<std::string>(L, 3), filter);
 	}
 
 	lua_newtable(L);
@@ -1282,22 +1282,37 @@ int ModApiEnvMod::l_forceload_free_block(lua_State *L)
 	return 0;
 }
 
-int ModApiEnvMod::l_map_new_savepoint(lua_State *L)
+int ModApiEnvMod::l_map_create_backup(lua_State *L)
 {
 	GET_ENV_PTR;
-	const char *savepoint_name = luaL_checkstring(L, 1);
+	const char *backup_name = luaL_checkstring(L, 1);
 	ServerMap &map = env->getServerMap();
+
+	// Force loaded entities to hibernate
 	env->clearActiveBlocks();
-	map.newSavepoint(savepoint_name);
+	env->deactivateFarObjects(false);
+	map.unloadUnreferencedBlocks(NULL);
+
+	map.createBackup(backup_name);
 	return 0;
 }
 
-int ModApiEnvMod::l_map_list_savepoints(lua_State *L)
+int ModApiEnvMod::l_map_delete_backup(lua_State *L)
+{
+	GET_ENV_PTR;
+	const char *backup_name = luaL_checkstring(L, 1);
+	ServerMap &map = env->getServerMap();
+	env->clearActiveBlocks();
+	map.deleteBackup(backup_name);
+	return 0;
+}
+
+int ModApiEnvMod::l_map_list_backups(lua_State *L)
 {
 	GET_ENV_PTR;
 	ServerMap &map = env->getServerMap();
 	std::vector<std::string> list;
-	map.listSavepoints(list);
+	map.listBackups(list);
 
 	lua_newtable(L);
 	for (size_t i = 0; i != list.size(); i++) {
@@ -1308,14 +1323,14 @@ int ModApiEnvMod::l_map_list_savepoints(lua_State *L)
 	return 1;
 }
 
-int ModApiEnvMod::l_map_restore_savepoint(lua_State *L)
+int ModApiEnvMod::l_map_restore_backup(lua_State *L)
 {
 	GET_ENV_PTR;
-	const char *savepoint_name = luaL_checkstring(L, 1);
+	const char *backup_name = luaL_checkstring(L, 1);
 	ServerMap &map = env->getServerMap();
 	env->clearObjects(CLEAR_OBJECTS_MODE_LOADED_ONLY);
 	env->clearActiveBlocks();
-	map.restoreSavepoint(savepoint_name);
+	map.restoreBackup(backup_name);
 	return 0;
 }
 
@@ -1364,9 +1379,10 @@ void ModApiEnvMod::Initialize(lua_State *L, int top)
 	API_FCT(transforming_liquid_add);
 	API_FCT(forceload_block);
 	API_FCT(forceload_free_block);
-	API_FCT(map_new_savepoint);
-	API_FCT(map_list_savepoints);
-	API_FCT(map_restore_savepoint);
+	API_FCT(map_create_backup);
+	API_FCT(map_list_backups);
+	API_FCT(map_restore_backup);
+	API_FCT(map_delete_backup);
 }
 
 void ModApiEnvMod::InitializeClient(lua_State *L, int top)

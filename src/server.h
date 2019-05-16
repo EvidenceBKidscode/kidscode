@@ -36,6 +36,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "serverenvironment.h"
 #include "clientiface.h"
 #include "chatmessage.h"
+#include "particleoverlay.h"
 #include <string>
 #include <list>
 #include <map>
@@ -337,6 +338,7 @@ public:
 	void SendPlayerBreath(PlayerSAO *sao);
 	void SendInventory(PlayerSAO* playerSAO);
 	void SendMovePlayer(session_t peer_id);
+	void SendParticleOverlaySpec(session_t peer_id, const ParticleOverlaySpec &poSpec);
 
 	virtual bool registerModStorage(ModMetadata *storage);
 	virtual void unregisterModStorage(const std::string &name);

@@ -27,6 +27,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "util/string.h"
 #include "util/pointedthing.h"
 #include "lua_api/l_item.h"
+#include "particleoverlay.h"
 
 #ifdef _CRT_MSVCP_CURRENT
 #include <cstdint>
@@ -58,6 +59,7 @@ public:
 	bool on_item_use(const ItemStack &item, const PointedThing &pointed);
 
 	bool on_inventory_open(Inventory *inventory);
+	void on_particle_overlay_spec(const ParticleOverlaySpec &poSpec);
 
 	void setEnv(ClientEnvironment *env);
 };

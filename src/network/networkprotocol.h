@@ -633,6 +633,17 @@ enum ToClientCommand
 	 	std::string channel name
 	 */
 
+	TOCLIENT_PARTICLE_OVERLAY = 0x59,
+	/*
+		std::string name
+	 	std::string texture_name
+	 	float poSpec.intensity
+	 	u16 poSpec.direction
+		float poSpec.velocity
+	 	float poSpec.gravity_factor
+	 	bool enabled
+	 */
+
 	TOCLIENT_SRP_BYTES_S_B = 0x60,
 	/*
 		Belonging to AUTH_MECHANISM_SRP.

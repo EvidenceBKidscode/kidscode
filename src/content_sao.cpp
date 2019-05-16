@@ -285,7 +285,7 @@ ServerActiveObject* LuaEntitySAO::create(ServerEnvironment *env, v3f pos,
 	std::string state;
 	s16 hp = 1;
 	v3f velocity;
-	float yaw = 0;
+	v3f rotation;
 	if (!data.empty()) {
 		std::istringstream is(data, std::ios::binary);
 		// read version
@@ -300,7 +300,7 @@ ServerActiveObject* LuaEntitySAO::create(ServerEnvironment *env, v3f pos,
 			state = deSerializeLongString(is);
 			hp = readS16(is);
 			velocity = readV3F1000(is);
-			yaw = readF1000(is);
+			rotation = readV3F1000(is);
 		}
 	}
 	// create object
@@ -309,7 +309,7 @@ ServerActiveObject* LuaEntitySAO::create(ServerEnvironment *env, v3f pos,
 	LuaEntitySAO *sao = new LuaEntitySAO(env, pos, name, state);
 	sao->m_hp = hp;
 	sao->m_velocity = velocity;
-	sao->m_yaw = yaw;
+	sao->m_rotation = rotation;
 	return sao;
 }
 
@@ -374,18 +374,13 @@ void LuaEntitySAO::step(float dtime, bool send_recommended)
 		if((m_prop.automatic_face_movement_dir) &&
 				(fabs(m_velocity.Z) > 0.001 || fabs(m_velocity.X) > 0.001))
 		{
-			float optimal_yaw = atan2(m_velocity.Z,m_velocity.X) * 180 / M_PI
-					+ m_prop.automatic_face_movement_dir_offset;
+			float target_yaw = atan2(m_velocity.Z, m_velocity.X) * 180 / M_PI
+				+ m_prop.automatic_face_movement_dir_offset;
 			float max_rotation_delta =
 					dtime * m_prop.automatic_face_movement_max_rotation_per_sec;
 
-			if ((m_prop.automatic_face_movement_max_rotation_per_sec > 0) &&
-				(fabs(m_yaw - optimal_yaw) > max_rotation_delta)) {
-
-				m_yaw = optimal_yaw < m_yaw ? m_yaw - max_rotation_delta : m_yaw + max_rotation_delta;
-			} else {
-				m_yaw = optimal_yaw;
-			}
+			m_rotation.Y = wrapDegrees_0_360(m_rotation.Y);
+			wrappedApproachShortest(m_rotation.Y, target_yaw, max_rotation_delta, 360.f);
 		}
 	}
 
@@ -421,8 +416,12 @@ void LuaEntitySAO::step(float dtime, bool send_recommended)
 		float move_d = m_base_position.getDistanceFrom(m_last_sent_position);
 		move_d += m_last_sent_move_precision;
 		float vel_d = m_velocity.getDistanceFrom(m_last_sent_velocity);
-		if(move_d > minchange || vel_d > minchange ||
-				fabs(m_yaw - m_last_sent_yaw) > 1.0){
+
+		if (move_d > minchange || vel_d > minchange ||
+				std::fabs(m_rotation.X - m_last_sent_rotation.X) > 1.0f ||
+				std::fabs(m_rotation.Y - m_last_sent_rotation.Y) > 1.0f ||
+				std::fabs(m_rotation.Z - m_last_sent_rotation.Z) > 1.0f) {
+
 			sendPosition(true, false);
 		}
 	}
@@ -484,7 +483,7 @@ std::string LuaEntitySAO::getClientInitializationData(u16 protocol_version)
 	writeU8(os, 0); // is_player
 	writeS16(os, getId()); //id
 	writeV3F1000(os, m_base_position);
-	writeF1000(os, m_yaw);
+	writeV3F1000(os, m_rotation);
 	writeS16(os, m_hp);
 
 	std::ostringstream msg_os(std::ios::binary);
@@ -539,8 +538,9 @@ void LuaEntitySAO::getStaticData(std::string *result) const
 	writeS16(os, m_hp);
 	// velocity
 	writeV3F1000(os, m_velocity);
-	// yaw
-	writeF1000(os, m_yaw);
+	// rotation
+	writeV3F1000(os, m_rotation);
+
 	*result = os.str();
 }
 
@@ -723,10 +723,10 @@ void LuaEntitySAO::sendPosition(bool do_interpolate, bool is_movement_end)
 	m_last_sent_move_precision = m_base_position.getDistanceFrom(
 			m_last_sent_position);
 	m_last_sent_position_timer = 0;
-	m_last_sent_yaw = m_yaw;
 	m_last_sent_position = m_base_position;
 	m_last_sent_velocity = m_velocity;
 	//m_last_sent_acceleration = m_acceleration;
+	m_last_sent_rotation = m_rotation;
 
 	float update_interval = m_env->getSendRecommendedInterval();
 
@@ -734,7 +734,7 @@ void LuaEntitySAO::sendPosition(bool do_interpolate, bool is_movement_end)
 		m_base_position,
 		m_velocity,
 		m_acceleration,
-		m_yaw,
+		m_rotation,
 		do_interpolate,
 		is_movement_end,
 		update_interval
@@ -872,9 +872,9 @@ std::string PlayerSAO::getClientInitializationData(u16 protocol_version)
 	writeU8(os, 1); // version
 	os << serializeString(m_player->getName()); // name
 	writeU8(os, 1); // is_player
-	writeS16(os, getId()); //id
+	writeS16(os, getId()); // id
 	writeV3F1000(os, m_base_position);
-	writeF1000(os, m_yaw);
+	writeV3F1000(os, m_rotation);
 	writeS16(os, getHP());
 
 	std::ostringstream msg_os(std::ios::binary);
@@ -1017,9 +1017,9 @@ void PlayerSAO::step(float dtime, bool send_recommended)
 	if (!send_recommended)
 		return;
 
-	// If the object is attached client-side, don't waste bandwidth sending its position to clients
-	if(m_position_not_sent && !isAttached())
-	{
+	// If the object is attached client-side, don't waste bandwidth sending its
+	// position or rotation to clients.
+	if (m_position_not_sent && !isAttached()) {
 		m_position_not_sent = false;
 		float update_interval = m_env->getSendRecommendedInterval();
 		v3f pos;
@@ -1029,9 +1029,9 @@ void PlayerSAO::step(float dtime, bool send_recommended)
 			pos = m_base_position;
 		std::string str = gob_cmd_update_position(
 			pos,
-			v3f(0,0,0),
-			v3f(0,0,0),
-			m_yaw,
+			v3f(0.0f, 0.0f, 0.0f),
+			v3f(0.0f, 0.0f, 0.0f),
+			v3f(0.0f, 0.0f, 0.0f),
 			true,
 			false,
 			update_interval
@@ -1128,12 +1128,14 @@ void PlayerSAO::moveTo(v3f pos, bool continuous)
 	m_env->getGameDef()->SendMovePlayer(m_peer_id);
 }
 
-void PlayerSAO::setYaw(const float yaw)
+void PlayerSAO::setPlayerYaw(const float yaw)
 {
-	if (m_player && yaw != m_yaw)
+	v3f rotation(0, yaw, 0);
+	if (m_player && yaw != m_rotation.Y)
 		m_player->setDirty(true);
 
-	UnitSAO::setYaw(yaw);
+	// Set player model yaw, not look view
+	UnitSAO::setRotation(rotation);
 }
 
 void PlayerSAO::setFov(const float fov)
@@ -1152,13 +1154,13 @@ void PlayerSAO::setWantedRange(const s16 range)
 	m_wanted_range = range;
 }
 
-void PlayerSAO::setYawAndSend(const float yaw)
+void PlayerSAO::setPlayerYawAndSend(const float yaw)
 {
-	setYaw(yaw);
+	setPlayerYaw(yaw);
 	m_env->getGameDef()->SendMovePlayer(m_peer_id);
 }
 
-void PlayerSAO::setPitch(const float pitch)
+void PlayerSAO::setLookPitch(const float pitch)
 {
 	if (m_player && pitch != m_pitch)
 		m_player->setDirty(true);
@@ -1166,9 +1168,9 @@ void PlayerSAO::setPitch(const float pitch)
 	m_pitch = pitch;
 }
 
-void PlayerSAO::setPitchAndSend(const float pitch)
+void PlayerSAO::setLookPitchAndSend(const float pitch)
 {
-	setPitch(pitch);
+	setLookPitch(pitch);
 	m_env->getGameDef()->SendMovePlayer(m_peer_id);
 }
 

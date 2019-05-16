@@ -51,51 +51,100 @@ struct ToolCapabilities;
 
 std::unordered_map<u16, ClientActiveObject::Factory> ClientActiveObject::m_types;
 
-void SmoothTranslator::init(v3f vect)
+template<typename T>
+void SmoothTranslator<T>::init(T current)
 {
-	vect_old = vect;
-	vect_show = vect;
-	vect_aim = vect;
-	anim_counter = 0;
+	val_old = current;
+	val_current = current;
+	val_target = current;
 	anim_time = 0;
 	anim_time_counter = 0;
 	aim_is_end = true;
 }
 
-void SmoothTranslator::update(v3f vect_new, bool is_end_position, float update_interval)
+template<typename T>
+void SmoothTranslator<T>::update(T new_target, bool is_end_position, float update_interval)
 {
 	aim_is_end = is_end_position;
-	vect_old = vect_show;
-	vect_aim = vect_new;
-	if(update_interval > 0)
-	{
+	val_old = val_current;
+	val_target = new_target;
+	if (update_interval > 0) {
 		anim_time = update_interval;
 	} else {
-		if(anim_time < 0.001 || anim_time > 1.0)
+		if (anim_time < 0.001 || anim_time > 1.0)
 			anim_time = anim_time_counter;
 		else
 			anim_time = anim_time * 0.9 + anim_time_counter * 0.1;
 	}
 	anim_time_counter = 0;
-	anim_counter = 0;
 }
 
-void SmoothTranslator::translate(f32 dtime)
+template<typename T>
+void SmoothTranslator<T>::translate(f32 dtime)
 {
 	anim_time_counter = anim_time_counter + dtime;
-	anim_counter = anim_counter + dtime;
-	v3f vect_move = vect_aim - vect_old;
+	T val_diff = val_target - val_old;
 	f32 moveratio = 1.0;
-	if(anim_time > 0.001)
+	if (anim_time > 0.001)
 		moveratio = anim_time_counter / anim_time;
+	f32 move_end = aim_is_end ? 1.0 : 1.5;
+
 	// Move a bit less than should, to avoid oscillation
-	moveratio = moveratio * 0.8;
-	float move_end = 1.5;
-	if(aim_is_end)
-		move_end = 1.0;
-	if(moveratio > move_end)
-		moveratio = move_end;
-	vect_show = vect_old + vect_move * moveratio;
+	moveratio = std::min(moveratio * 0.8f, move_end);
+	val_current = val_old + val_diff * moveratio;
+}
+
+void SmoothTranslatorWrapped::translate(f32 dtime)
+{
+	anim_time_counter = anim_time_counter + dtime;
+	f32 val_diff = std::abs(val_target - val_old);
+	if (val_diff > 180.f)
+		val_diff = 360.f - val_diff;
+
+	f32 moveratio = 1.0;
+	if (anim_time > 0.001)
+		moveratio = anim_time_counter / anim_time;
+	f32 move_end = aim_is_end ? 1.0 : 1.5;
+
+	// Move a bit less than should, to avoid oscillation
+	moveratio = std::min(moveratio * 0.8f, move_end);
+	wrappedApproachShortest(val_current, val_target,
+		val_diff * moveratio, 360.f);
+}
+
+void SmoothTranslatorWrappedv3f::translate(f32 dtime)
+{
+	anim_time_counter = anim_time_counter + dtime;
+
+	v3f val_diff_v3f;
+	val_diff_v3f.X = std::abs(val_target.X - val_old.X);
+	val_diff_v3f.Y = std::abs(val_target.Y - val_old.Y);
+	val_diff_v3f.Z = std::abs(val_target.Z - val_old.Z);
+
+	if (val_diff_v3f.X > 180.f)
+		val_diff_v3f.X = 360.f - val_diff_v3f.X;
+
+	if (val_diff_v3f.Y > 180.f)
+		val_diff_v3f.Y = 360.f - val_diff_v3f.Y;
+
+	if (val_diff_v3f.Z > 180.f)
+		val_diff_v3f.Z = 360.f - val_diff_v3f.Z;
+
+	f32 moveratio = 1.0;
+	if (anim_time > 0.001)
+		moveratio = anim_time_counter / anim_time;
+	f32 move_end = aim_is_end ? 1.0 : 1.5;
+
+	// Move a bit less than should, to avoid oscillation
+	moveratio = std::min(moveratio * 0.8f, move_end);
+	wrappedApproachShortest(val_current.X, val_target.X,
+		val_diff_v3f.X * moveratio, 360.f);
+
+	wrappedApproachShortest(val_current.Y, val_target.Y,
+		val_diff_v3f.Y * moveratio, 360.f);
+
+	wrappedApproachShortest(val_current.Z, val_target.Z,
+		val_diff_v3f.Z * moveratio, 360.f);
 }
 
 /*
@@ -315,7 +364,7 @@ void GenericCAO::processInitData(const std::string &data)
 		m_is_player = readU8(is);
 		m_id = readU16(is);
 		m_position = readV3F1000(is);
-		m_yaw = readF1000(is);
+		m_rotation = readV3F1000(is);
 		m_hp = readS16(is);
 		num_messages = readU8(is);
 	} else {
@@ -329,7 +378,9 @@ void GenericCAO::processInitData(const std::string &data)
 		processMessage(message);
 	}
 
+	m_rotation = wrapDegrees_0_360_v3f(m_rotation);
 	pos_translator.init(m_position);
+	rot_translator.init(m_rotation);
 	updateNodePos();
 }
 
@@ -357,7 +408,7 @@ v3f GenericCAO::getPosition()
 
 		return m_position;
 	}
-	return pos_translator.vect_show;
+	return pos_translator.val_current;
 }
 
 scene::ISceneNode* GenericCAO::getSceneNode()
@@ -780,10 +831,9 @@ void GenericCAO::updateNodePos()
 
 	if (node) {
 		v3s16 camera_offset = m_env->getCameraOffset();
-		node->setPosition(pos_translator.vect_show - intToFloat(camera_offset, BS));
-		if (node != m_spritenode && node != m_textspritenode) { // rotate if not a sprite
-			v3f rot = node->getRotation();
-			rot.Y = -m_yaw;
+		node->setPosition(pos_translator.val_current - intToFloat(camera_offset, BS));
+		if (node != m_spritenode) { // rotate if not a sprite
+			v3f rot = m_is_local_player ? -m_rotation : -rot_translator.val_current;
 			node->setRotation(rot);
 		}
 	}
@@ -798,10 +848,11 @@ void GenericCAO::step(float dtime, ClientEnvironment *env)
 			int old_anim = player->last_animation;
 			float old_anim_speed = player->last_animation_speed;
 			m_position = player->getPosition();
+			m_rotation.Y = wrapDegrees_0_360(player->getYaw());
 			m_velocity = v3f(0,0,0);
 			m_acceleration = v3f(0,0,0);
-			pos_translator.vect_show = m_position;
-			m_yaw = player->getYaw();
+			pos_translator.val_current = m_position;
+			rot_translator.val_current = m_rotation;
 			const PlayerControl &controls = player->getPlayerControl();
 
 			bool walking = false;
@@ -904,7 +955,7 @@ void GenericCAO::step(float dtime, ClientEnvironment *env)
 		m_position = getPosition();
 		m_velocity = v3f(0,0,0);
 		m_acceleration = v3f(0,0,0);
-		pos_translator.vect_show = m_position;
+		pos_translator.val_current = m_position;
 
 		if(m_is_local_player) // Update local player attachment position
 		{
@@ -913,7 +964,8 @@ void GenericCAO::step(float dtime, ClientEnvironment *env)
 			m_env->getLocalPlayer()->parent = getParent();
 		}
 	} else {
-		v3f lastpos = pos_translator.vect_show;
+		rot_translator.translate(dtime);
+		v3f lastpos = pos_translator.val_current;
 
 		if(m_prop.physical)
 		{
@@ -945,7 +997,7 @@ void GenericCAO::step(float dtime, ClientEnvironment *env)
 			updateNodePos();
 		}
 
-		float moved = lastpos.getDistanceFrom(pos_translator.vect_show);
+		float moved = lastpos.getDistanceFrom(pos_translator.val_current);
 		m_step_distance_counter += moved;
 		if (m_step_distance_counter > 1.5f * BS) {
 			m_step_distance_counter = 0.0f;
@@ -982,27 +1034,23 @@ void GenericCAO::step(float dtime, ClientEnvironment *env)
 			updateTextures(m_previous_texture_modifier);
 		}
 	}
-	if(!getParent() && fabs(m_prop.automatic_rotate) > 0.001)
-	{
-		m_yaw += dtime * m_prop.automatic_rotate * 180 / M_PI;
+	if (!getParent() && std::fabs(m_prop.automatic_rotate) > 0.001) {
+		m_rotation.Y += dtime * m_prop.automatic_rotate * 180 / M_PI;
+		rot_translator.val_current = m_rotation;
 		updateNodePos();
 	}
 
 	if (!getParent() && m_prop.automatic_face_movement_dir &&
 			(fabs(m_velocity.Z) > 0.001 || fabs(m_velocity.X) > 0.001))
 	{
-		float optimal_yaw = atan2(m_velocity.Z,m_velocity.X) * 180 / M_PI
+		float target_yaw = atan2(m_velocity.Z, m_velocity.X) * 180 / M_PI
 				+ m_prop.automatic_face_movement_dir_offset;
 		float max_rotation_delta =
 				dtime * m_prop.automatic_face_movement_max_rotation_per_sec;
 
-		if ((m_prop.automatic_face_movement_max_rotation_per_sec > 0) &&
-			(fabs(m_yaw - optimal_yaw) > max_rotation_delta)) {
+		wrappedApproachShortest(m_rotation.Y, target_yaw, max_rotation_delta, 360.f);
+		rot_translator.val_current = m_rotation;
 
-			m_yaw = optimal_yaw < m_yaw ? m_yaw - max_rotation_delta : m_yaw + max_rotation_delta;
-		} else {
-			m_yaw = optimal_yaw;
-		}
 		updateNodePos();
 	}
 }
@@ -1043,7 +1091,7 @@ void GenericCAO::updateTexturePos()
 			else{
 				float mob_dir =
 						atan2(cam_to_entity.Z, cam_to_entity.X) / M_PI * 180.;
-				float dir = mob_dir - m_yaw;
+				float dir = mob_dir - m_rotation.Y;
 				dir = wrapDegrees_180(dir);
 				//infostream<<"id="<<m_id<<" dir="<<dir<<std::endl;
 				if(fabs(wrapDegrees_180(dir - 0)) <= 45.1)
@@ -1373,10 +1421,13 @@ void GenericCAO::processMessage(const std::string &data)
 		m_position = readV3F1000(is);
 		m_velocity = readV3F1000(is);
 		m_acceleration = readV3F1000(is);
-		if(fabs(m_prop.automatic_rotate) < 0.001)
-			m_yaw = readF1000(is);
+
+		if (std::fabs(m_prop.automatic_rotate) < 0.001f)
+			m_rotation = readV3F1000(is);
 		else
-			readF1000(is);
+			readV3F1000(is);
+
+		m_rotation = wrapDegrees_0_360_v3f(m_rotation);
 		bool do_interpolate = readU8(is);
 		bool is_end_position = readU8(is);
 		float update_interval = readF1000(is);
@@ -1396,6 +1447,7 @@ void GenericCAO::processMessage(const std::string &data)
 		} else {
 			pos_translator.init(m_position);
 		}
+		rot_translator.update(m_rotation, false, update_interval);
 		updateNodePos();
 	} else if (cmd == GENERIC_CMD_SET_TEXTURE_MOD) {
 		std::string mod = deSerializeString(is);

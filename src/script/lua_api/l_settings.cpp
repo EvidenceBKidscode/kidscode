@@ -100,7 +100,11 @@ int LuaSettings::l_get_bool(lua_State* L)
 		bool value = o->m_settings->getBool(key);
 		lua_pushboolean(L, value);
 	} else {
-		lua_pushnil(L);
+		// Push default value
+		if (lua_isboolean(L, 3))
+			lua_pushboolean(L, readParam<bool>(L, 3));
+		else
+			lua_pushnil(L);
 	}
 
 	return 1;
@@ -148,7 +152,7 @@ int LuaSettings::l_set_bool(lua_State* L)
 	LuaSettings* o = checkobject(L, 1);
 
 	std::string key = std::string(luaL_checkstring(L, 2));
-	bool value = lua_toboolean(L, 3);
+	bool value = readParam<bool>(L, 3);
 
 	SET_SECURITY_CHECK(L, key);
 

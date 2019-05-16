@@ -31,6 +31,26 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "voxelalgorithms.h"
 #include "liquidlogic.h"
 
+extern "C" {
+
+void VoxelManip_get_pointer(void **lvmp, void **ptr)
+{
+	if (lvmp == nullptr || ptr == nullptr)
+		throw ModError("Nil pointer in C call");
+
+	*ptr = (*(LuaVoxelManip **)lvmp)->vm->m_data;
+}
+
+s32 VoxelManip_get_volume(void **lvmp)
+{
+	if (lvmp == nullptr)
+		throw ModError("Nil pointer in C call");
+
+	return (*(LuaVoxelManip **)lvmp)->vm->m_area.getVolume();
+}
+
+} // extern "C"
+
 // garbage collector
 int LuaVoxelManip::gc_object(lua_State *L)
 {
@@ -84,15 +104,6 @@ int LuaVoxelManip::l_get_data(lua_State *L)
 	return 1;
 }
 
-int LuaVoxelManip::l_get_data_ptr(lua_State *L)
-{
-	NO_MAP_LOCK_REQUIRED;
-	LuaVoxelManip *o = checkobject(L, 1);
-	MMVManip *vm = o->vm;
-	lua_pushinteger(L, (long int)vm->m_data);
-	return 1;
-}
-
 int LuaVoxelManip::l_set_data(lua_State *L)
 {
 	NO_MAP_LOCK_REQUIRED;
@@ -121,7 +132,7 @@ int LuaVoxelManip::l_write_to_map(lua_State *L)
 	MAP_LOCK_REQUIRED;
 
 	LuaVoxelManip *o = checkobject(L, 1);
-	bool update_light = !lua_isboolean(L, 2) || lua_toboolean(L, 2);
+	bool update_light = !lua_isboolean(L, 2) || readParam<bool>(L, 2);
 	GET_ENV_PTR;
 	ServerMap *map = &(env->getServerMap());
 	if (o->is_mapgen_vm || !update_light) {
@@ -201,7 +212,7 @@ int LuaVoxelManip::l_calc_lighting(lua_State *L)
 	v3s16 fpmax  = vm->m_area.MaxEdge;
 	v3s16 pmin   = lua_istable(L, 2) ? check_v3s16(L, 2) : fpmin + yblock;
 	v3s16 pmax   = lua_istable(L, 3) ? check_v3s16(L, 3) : fpmax - yblock;
-	bool propagate_shadow = !lua_isboolean(L, 4) || lua_toboolean(L, 4);
+	bool propagate_shadow = !lua_isboolean(L, 4) || readParam<bool>(L, 4);
 
 	sortBoxVerticies(pmin, pmax);
 	if (!vm->m_area.contains(VoxelArea(pmin, pmax)))
@@ -457,7 +468,6 @@ const char LuaVoxelManip::className[] = "VoxelManip";
 const luaL_Reg LuaVoxelManip::methods[] = {
 	luamethod(LuaVoxelManip, read_from_map),
 	luamethod(LuaVoxelManip, get_data),
-	luamethod(LuaVoxelManip, get_data_ptr),
 	luamethod(LuaVoxelManip, set_data),
 	luamethod(LuaVoxelManip, get_node_at),
 	luamethod(LuaVoxelManip, set_node_at),
