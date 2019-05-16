@@ -528,14 +528,14 @@ int MapDatabaseSQLite3::getVersionByName(const std::string &name)
 // Backups list
 void MapDatabaseSQLite3::listBackups(std::vector<std::string> &dst)
 {
-	sqlite3_stmt * stmt;
+	verifyDatabase();
 
-	assert(m_database);
+	sqlite3_stmt * stmt;
 
 	SQLOK(sqlite3_prepare_v2(m_database,
 		"SELECT name FROM versions WHERE status = 'A'",
 		-1, &stmt, NULL),
-		"listSavepoversionningListBackupsints: Failed to get list of backups (prepare)");
+		"listBackups: Failed to get list of backups (prepare)");
 
 	while (sqlite3_step(stmt) == SQLITE_ROW)
 		dst.push_back(sqlite_to_string(stmt, 0));
@@ -544,10 +544,10 @@ void MapDatabaseSQLite3::listBackups(std::vector<std::string> &dst)
 }
 
 bool MapDatabaseSQLite3::createBackup(const std::string &name) {
+	verifyDatabase();
+
 	sqlite3_stmt * stmt;
 	int id;
-
-	assert(m_database);
 
 	SQLOK(sqlite3_prepare_v2(m_database,
 		"SELECT 1 FROM versions WHERE status = 'A' AND name = ?",
@@ -609,10 +609,13 @@ bool MapDatabaseSQLite3::createBackup(const std::string &name) {
 
 void MapDatabaseSQLite3::restoreBackup(const std::string &name)
 {
+	verifyDatabase();
 	setCurrentVersion(getVersionByName(name));
 }
 
 void MapDatabaseSQLite3::deleteBackup(const std::string &name) {
+	verifyDatabase();
+
 	int id = getVersionByName(name);
 	sqlite3_stmt * stmt;
 	SQLOK(sqlite3_prepare_v2(m_database,
