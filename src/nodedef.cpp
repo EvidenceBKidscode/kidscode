@@ -734,7 +734,8 @@ void ContentFeatures::updateTextures(ITextureSource *tsrc, IShaderSource *shdsrc
 		assert(liquid_type == LIQUID_SOURCE);
 		if (tsettings.opaque_water)
 			alpha = 255;
-		solidness = 1;
+//		solidness = 1;
+		solidness = 0;
 		is_liquid = true;
 		break;
 	case NDT_FLOWINGLIQUID:
