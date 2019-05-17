@@ -30,6 +30,20 @@ class Map;
 class MapBlock;
 class MapNode;
 
+struct LiquidInfo {
+	content_t c_source;
+	content_t c_flowing;
+	content_t c_empty;
+};
+
+struct NodeInfo {
+	v3s16 pos;
+	s8 level;
+	MapNode node;
+	bool flowing_down;
+	bool fillable;
+};
+
 class LiquidLogicPreserve: public LiquidLogic {
 public:
 	LiquidLogicPreserve(Map *map, IGameDef *gamedef);
@@ -43,15 +57,17 @@ public:
 	void addTransformingFromData(BlockMakeData *data);
 
 private:
-	void setNodeLevel(
-		MapNode &n, s8 l, bool flowing_down,
-		content_t c_source, content_t c_flowing, content_t c_empty);
-	s8 getNodeLevel(MapNode &n, content_t c_source);
-	void updateNodeIfChanged(v3s16 pos, MapNode nnew, MapNode nold,
+	LiquidInfo get_liquid_info(v3s16 pos);
+	NodeInfo get_node_info(v3s16 pos, LiquidInfo liquid);
+	void update_node(NodeInfo &info, LiquidInfo liquid,
+		std::map<v3s16, MapBlock*> &modified_blocks, ServerEnvironment *env);
+	void distribute(std::list<NodeInfo> targets, NodeInfo &source,
+		LiquidInfo liquid, bool equalize,
 		std::map<v3s16, MapBlock*> &modified_blocks, ServerEnvironment *env);
 
 	UniqueQueue<v3s16> m_liquid_queue;
 	std::deque<v3s16> m_must_reflow;
+	std::set<v3s16> m_skip;
 	std::vector<std::pair<v3s16, MapNode> > m_changed_nodes;
 	v3s16 m_block_pos, m_rel_block_pos;
 	u32 m_unprocessed_count = 0;

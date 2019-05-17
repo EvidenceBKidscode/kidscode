@@ -94,91 +94,151 @@ void LiquidLogicPreserve::scanVoxelManip(MMVManip *vm, v3s16 nmin, v3s16 nmax)
 	scanVoxelManip(&m_liquid_queue, vm, nmin, nmax);
 }
 
-// TOOD: should be inline
-void LiquidLogicPreserve::setNodeLevel(
-	MapNode &n, s8 l, bool flowing_down,
-	content_t c_source, content_t c_flowing, content_t c_empty)
-{
-	if (l >= LIQUID_LEVEL_SOURCE) {
-		n.setContent(c_source);
-		n.param2 = 0;
-	} else if (l <= 0) {
-		n.setContent(c_empty);
-		n.param2 = 0;
-	} else {
-		n.setContent(c_flowing);
-		n.param2 = (flowing_down ? LIQUID_FLOW_DOWN_MASK : 0x00) | (l & LIQUID_LEVEL_MASK);
-	}
+LiquidInfo LiquidLogicPreserve::get_liquid_info(v3s16 pos) {
+	LiquidInfo info;
+	MapNode node = m_map->getNodeNoEx(pos);
+	const ContentFeatures &cf = m_ndef->get(node);
+	info.c_source = m_ndef->getId(cf.liquid_alternative_source);
+	info.c_flowing = m_ndef->getId(cf.liquid_alternative_flowing);
+	info.c_empty = CONTENT_AIR;
+	return info;
 }
 
-s8 LiquidLogicPreserve::getNodeLevel(
-	MapNode &n, content_t c_source)
-{
-	const ContentFeatures &cf = m_ndef->get(n);
+NodeInfo LiquidLogicPreserve::get_node_info(v3s16 pos, LiquidInfo liquid) {
+	NodeInfo info;
+	info.pos = pos;
+	info.node = m_map->getNodeNoEx(pos);
+	info.level = -1; // By default, not fillable
+	info.fillable = false; // Can hold more liquid
+
+	if (info.node.getContent() == CONTENT_IGNORE) return info;
+
+	const ContentFeatures &cf = m_ndef->get(info.node);
+
 	switch (cf.liquid_type) {
 		case LIQUID_SOURCE:
-			if (m_ndef->getId(cf.liquid_alternative_source) == c_source)
-				return LIQUID_LEVEL_SOURCE;
+			if (m_ndef->getId(cf.liquid_alternative_source) == liquid.c_source)
+				info.level =  LIQUID_LEVEL_SOURCE;
 			break;
 		case LIQUID_FLOWING:
-			if (m_ndef->getId(cf.liquid_alternative_source) == c_source)
-				return (n.param2 & LIQUID_LEVEL_MASK);
+			if (m_ndef->getId(cf.liquid_alternative_source) == liquid.c_source) {
+				info.level = info.node.param2 & LIQUID_LEVEL_MASK;
+				info.fillable = true;
+			}
 			break;
 		case LIQUID_NONE:
-			if (cf.floodable)
-				return 0;
+			if (cf.floodable) {
+				info.level = 0;
+				info.fillable = true;
+			}
 			break;
 	}
-	return -1;
+
+	return info;
 }
 
-void LiquidLogicPreserve::updateNodeIfChanged(v3s16 pos, MapNode nnew, MapNode nold,
-	std::map<v3s16, MapBlock*> &modified_blocks, ServerEnvironment *env)
-{
-	if (nnew.getContent() == nold.getContent() && nnew.param2 == nold.param2)
+void LiquidLogicPreserve::update_node(NodeInfo &info, LiquidInfo liquid,
+	std::map<v3s16, MapBlock*> &modified_blocks, ServerEnvironment *env) {
+	NodeInfo old = info;
+	if (info.level >= LIQUID_LEVEL_SOURCE) {
+			info.node.setContent(liquid.c_source);
+			info.node.param2 = 0;
+	} else if (info.level <= 0) {
+			info.node.setContent(liquid.c_empty);
+			info.node.param2 = 0;
+		} else {
+			info.node.setContent(liquid.c_flowing);
+			info.node.param2 = (info.flowing_down ? LIQUID_FLOW_DOWN_MASK : 0x00)
+				| (info.level & LIQUID_LEVEL_MASK);
+		}
+
+	// No change, skip
+	if (old.node.getContent() == info.node.getContent()
+	 && old.node.param2 == info.node.param2)
 		return;
 
+	// Node has changed this turn, ignore it
+	m_skip.insert(info.pos);
+
+	// But check it next turn
+	m_must_reflow.push_back(info.pos);
+
+	old.level = (old.node.getContent() == liquid.c_source)?LIQUID_LEVEL_SOURCE:
+		old.node.param2&LIQUID_LEVEL_MASK; // Supose param2=0 for empty nodes
+
+	// Trigger liquid transform on side blocks if level has lowered
+	if (old.level > info.level) {
+		for (u16 i = 0; i < 4; i++)
+			m_must_reflow.push_back(info.pos + side_4dirs[i]);
+		m_must_reflow.push_back(info.pos - down_dir);
+	}
+
 	// on_flood() the node
-	const ContentFeatures &cf = m_ndef->get(nold);
-	if (nold.getContent() != CONTENT_AIR && cf.liquid_type == LIQUID_NONE) {
-		if (env->getScriptIface()->node_on_flood(pos, nold, nnew))
+	const ContentFeatures &cf = m_ndef->get(old.node);
+	if (old.node.getContent() != CONTENT_AIR && cf.liquid_type == LIQUID_NONE) {
+		if (env->getScriptIface()->node_on_flood(info.pos, old.node, info.node))
 			return;
 	}
 
 	// Ignore light (because calling voxalgo::update_lighting_nodes)
-	nnew.setLight(LIGHTBANK_DAY, 0, m_ndef);
-	nnew.setLight(LIGHTBANK_NIGHT, 0, m_ndef);
+	info.node.setLight(LIGHTBANK_DAY, 0, m_ndef);
+	info.node.setLight(LIGHTBANK_NIGHT, 0, m_ndef);
 
 	// Find out whether there is a suspect for this action
 	std::string suspect;
 	if (m_gamedef->rollback())
-		suspect = m_gamedef->rollback()->getSuspect(pos, 83, 1);
+		suspect = m_gamedef->rollback()->getSuspect(info.pos, 83, 1);
 
 	if (m_gamedef->rollback() && !suspect.empty()) {
 		// Blame suspect
 		RollbackScopeActor rollback_scope(m_gamedef->rollback(), suspect, true);
 		// Get old node for rollback
-		RollbackNode rollback_oldnode(m_map, pos, m_gamedef);
+		RollbackNode rollback_oldnode(m_map, info.pos, m_gamedef);
 		// Set node
-		m_map->setNode(pos, nnew);
+		m_map->setNode(info.pos, info.node);
 		// Report
-		RollbackNode rollback_newnode(m_map, pos, m_gamedef);
+		RollbackNode rollback_newnode(m_map, info.pos, m_gamedef);
 		RollbackAction action;
-		action.setSetNode(pos, rollback_oldnode, rollback_newnode);
+		action.setSetNode(info.pos, rollback_oldnode, rollback_newnode);
 		m_gamedef->rollback()->reportAction(action);
 	} else {
 		// Set node
-		m_map->setNode(pos, nnew);
+		m_map->setNode(info.pos, info.node);
 	}
 
-	m_must_reflow.push_back(pos);
-
-	v3s16 blockpos = getNodeBlockPos(pos);
+	v3s16 blockpos = getNodeBlockPos(info.pos);
 	MapBlock *block = m_map->getBlockNoCreateNoEx(blockpos);
 	if (block != NULL) {
 		modified_blocks[blockpos] =  block;
-		m_changed_nodes.emplace_back(pos, nold);
+		m_changed_nodes.emplace_back(info.pos, old.node);
 	}
+}
+
+void LiquidLogicPreserve::distribute(
+	std::list<NodeInfo> targets, NodeInfo &source,
+	LiquidInfo liquid, bool equalize,
+	std::map<v3s16, MapBlock*> &modified_blocks, ServerEnvironment *env
+)
+{
+	do
+	{
+		std::list<NodeInfo>::iterator target = targets.begin();
+		while (target != targets.end())
+		{
+			if (target->level >= LIQUID_LEVEL_SOURCE || source.level <= (equalize?1:0)
+				|| (equalize && (target->level >= source.level))) {
+				update_node(*target, liquid, modified_blocks, env);
+				targets.erase(target++);
+				continue;
+			}
+			if (source.level > 0)
+			{
+				target->level++;
+				source.level--;
+			}
+			target++;
+		}
+	} while (!targets.empty());
 }
 
 void LiquidLogicPreserve::transform(
@@ -188,11 +248,11 @@ void LiquidLogicPreserve::transform(
 	u32 loopcount = 0;
 	u32 initial_size = m_liquid_queue.size();
 	u16 start = rand()%4;
-	u16 rnd = rand()%100;
+	NodeInfo info;
 
-printf("LiquidLogicPreserve:transform queue size %d\n",m_liquid_queue.size());
 	m_must_reflow.clear();
 	m_changed_nodes.clear();
+	m_skip.clear();
 
 	u32 liquid_loop_max = g_settings->getS32("liquid_loop_max");
 	u32 loop_max = liquid_loop_max;
@@ -207,191 +267,54 @@ printf("LiquidLogicPreserve:transform queue size %d\n",m_liquid_queue.size());
 		/*
 			Get a queued transforming liquid node
 		*/
-		v3s16 p0 = m_liquid_queue.front();
-printf("== dequeue (%d,%d,%d)\n", p0.X, p0.Y, p0.Z);
+		v3s16 pos = m_liquid_queue.front();
+
 		m_liquid_queue.pop_front();
+		if (m_skip.count(pos) > 0) continue;
 
 		// Get source node information
-		MapNode n0 = m_map->getNodeNoEx(p0);
-		MapNode n00 = n0;
+		LiquidInfo liquid = get_liquid_info(pos);
+		NodeInfo source = get_node_info(pos, liquid);
+		if (source.level <= 0) continue;
 
-		s8 source_level = -1;
-		const ContentFeatures &cf = m_ndef->get(n0);
+		// Blocks to fill in priority :
+		// 1 - Block under
+		// 2 - Blocks under flowable neighboors
+		// 3 - Side blocks
 
-		switch (cf.liquid_type) {
-			case LIQUID_SOURCE:
-				source_level = LIQUID_LEVEL_SOURCE;
-				break;
-			case LIQUID_FLOWING:
-				source_level = (n0.param2 & LIQUID_LEVEL_MASK);
-				break;
-			case LIQUID_NONE:
+		// Right under (1)
+		info = get_node_info(pos + down_dir, liquid);
+		if (info.fillable) {
+			distribute(std::list<NodeInfo>{info}, source, liquid, false, modified_blocks, env);
+			if (source.level <= 0) {
+				update_node(source, liquid, modified_blocks, env);
 				continue;
-				break;
-		}
-s8 source_level0=source_level;
-
-		content_t c_flowing = m_ndef->getId(cf.liquid_alternative_flowing);
-		content_t c_source = m_ndef->getId(cf.liquid_alternative_source);
-		content_t c_empty = CONTENT_AIR;
-
-		// Flow down
-		v3s16 npos = p0 + down_dir;
-		MapNode nb = m_map->getNodeNoEx(npos);
-		s8 nb_level = getNodeLevel(nb, c_source);
-
-		if (nb_level >= 0) {
-			s8 transfer = LIQUID_LEVEL_SOURCE - nb_level;
-			if (source_level < transfer) transfer = source_level;
-			if (transfer > 0) {
-				source_level = source_level - transfer;
-				nb_level = nb_level + transfer;
-
-				// Update target node
-				MapNode nb0 = nb;
-				setNodeLevel(nb, nb_level, false, c_source, c_flowing, c_empty);
-				updateNodeIfChanged(npos, nb, nb0, modified_blocks, env);
 			}
 		}
 
-		// Check source not empty
-		if (source_level <= 0) {
-			setNodeLevel(n0, source_level, true, c_source, c_flowing, c_empty);
-			updateNodeIfChanged(p0, n0, n00, modified_blocks, env);
+		// Side blocks and blocks under (2+3)
+		std::list<NodeInfo> sides;
+		std::list<NodeInfo> under;
 
-			printf(">>reflow (%d,%d,%d)\n", p0.X, p0.Y-1, p0.Z);
-			printf(">>reflow (%d,%d,%d)\n", p0.X+1, p0.Y, p0.Z);
-			printf(">>reflow (%d,%d,%d)\n", p0.X, p0.Y, p0.Z+1);
-			printf(">>reflow (%d,%d,%d)\n", p0.X-1, p0.Y, p0.Z);
-			printf(">>reflow (%d,%d,%d)\n", p0.X, p0.Y, p0.Z-1);
-
-			// Source emptied, surrounding nodes may reflow
-			m_must_reflow.push_back(p0 - down_dir);
-			m_must_reflow.push_back(p0 + side_4dirs[0]);
-			m_must_reflow.push_back(p0 + side_4dirs[1]);
-			m_must_reflow.push_back(p0 + side_4dirs[2]);
-			m_must_reflow.push_back(p0 + side_4dirs[3]);
-
-			// Done with this node
+		for (u16 i = 0; i < 4; i++) {
+			v3s16 tgtpos = pos + side_4dirs[(i + start)%4];
+			info = get_node_info(tgtpos, liquid);
+			if (info.fillable) {
+				sides.push_back(info);
+				info = get_node_info(tgtpos + down_dir, liquid);
+				if (info.fillable)
+					under.push_back(info);
+			}
+		}
+		distribute(under, source, liquid, false, modified_blocks, env);
+		if (source.level <= 0) {
+			update_node(source, liquid, modified_blocks, env);
 			continue;
 		}
+		distribute(sides, source, liquid, true, modified_blocks, env);
+		update_node(source, liquid, modified_blocks, env);
+	} // while (m_liquid_queue.size() != 0)
 
-		// Side blocks
-		MapNode nbs[4];
-		MapNode nbs_old[4];
-		MapNode nbs_below[4];
-		v3s16 nbs_pos[4];
-		s8 nbs_level[4];
-		bool nbs_todo[4];
-
-		for (u16 i = 0; i < 4; i++) {
-			nbs_pos[i] = p0 + side_4dirs[i];
-			nbs[i] = m_map->getNodeNoEx(nbs_pos[i]);
-			nbs_old[i] = nbs[i];
-			nbs_below[i].setContent(CONTENT_IGNORE);
-			nbs_level[i] = getNodeLevel(nbs[i], c_source); // -1 if not fillable
-			// eliminate target already filled or higher than source
-			nbs_todo[i] = (nbs_level[i] >= 0 && nbs_level[i] < source_level);
-		}
-
-		u8 remaining;
-		start++; start%=4;
-		do
-		{
-			remaining = 0;
-			for (u16 j = 0; j < 4; j++)
-			{
-				u16 i = (start+j)%4;
-				if (nbs_todo[i])
-				{
-					remaining ++;
-					if (nbs_level[i] >= LIQUID_LEVEL_SOURCE ||
-						nbs_level[i] >= source_level ||
-						source_level <= 0) {
-						setNodeLevel(nbs[i], nbs_level[i], false, c_source, c_flowing, c_empty);
-						updateNodeIfChanged(nbs_pos[i], nbs[i], nbs_old[i], modified_blocks, env);
-						nbs_todo[i] = false;
-					}
-					else
-					{
-						if (source_level > 1)
-						{
-							nbs_level[i]++;
-							source_level--;
-						}
-						else
-						{
-							// Move level 1 only if it can fall above target
-							// This is a atempt to avoid level 1 nodes moving around
-
-							if (nbs_below[i].getContent() == CONTENT_IGNORE)
-							 	nbs_below[i] = m_map->getNodeNoEx(nbs_pos[i] + down_dir);
-
-							if (getNodeLevel(nbs_below[i], c_source) >= 0)
-							{
-								nbs_level[i]++;
-								source_level--;
-							}
-							else
-							{
-								setNodeLevel(nbs[i], nbs_level[i], false, c_source, c_flowing, c_empty);
-								updateNodeIfChanged(nbs_pos[i], nbs[i], nbs_old[i], modified_blocks, env);
-								nbs_todo[i] = false;
-							}
-						}
-					}
-				}
-			}
-		} while (remaining);
-
-		// Evapo-condensation (this does not preserve liquid quantity)
-		// If all blocks around are +1/-1 level, set the same level on source
-
-		s8 adjust = 0;
-		for (u16 i = 0; i < 4; i++) {
-			if (nbs_level[i] >= 0) {
-				if (!adjust) {
-					adjust = nbs_level[i] - source_level;
-
-					// Only evaporation as a test
-					if (/*adjust != 1 && */adjust !=-1)
-					{
-						adjust = 0;
-						break;
-					}
-				} else if (nbs_level[i] - source_level != adjust) {
-					adjust = 0;
-					break;
-				}
-			}
-		}
-
-		rnd++; rnd%=10;
-
-//		if (adjust && rnd == 9) {
-//			printf("%d, %d, %d : adjust %d (%d --> %d)\n", p0.X, p0.Y, p0.Z, adjust, source_level, source_level+adjust);
-			source_level = source_level + adjust;
-//		}
-		// Finally update source
-		// Set level
-		setNodeLevel(n0, source_level, (nb_level >= 0), c_source, c_flowing, c_empty);
-		if (n0.getContent() != n00.getContent() || n0.param2 != n00.param2) {
-			updateNodeIfChanged(p0, n0, n00, modified_blocks, env);
-			// Source emptied, surrounding nodes may reflow
-			m_must_reflow.push_back(p0 - down_dir);
-			m_must_reflow.push_back(p0 + side_4dirs[0]);
-			m_must_reflow.push_back(p0 + side_4dirs[1]);
-			m_must_reflow.push_back(p0 + side_4dirs[2]);
-			m_must_reflow.push_back(p0 + side_4dirs[3]);
-printf("--changed from %d to %d\n", source_level0, source_level);
-			printf(">>reflow (%d,%d,%d)\n", p0.X, p0.Y-1, p0.Z);
-			printf(">>reflow (%d,%d,%d)\n", p0.X+1, p0.Y, p0.Z);
-			printf(">>reflow (%d,%d,%d)\n", p0.X, p0.Y, p0.Z+1);
-			printf(">>reflow (%d,%d,%d)\n", p0.X-1, p0.Y, p0.Z);
-			printf(">>reflow (%d,%d,%d)\n", p0.X, p0.Y, p0.Z-1);
-
-		}
-	}
 	//infostream<<"Map::transformLiquids(): loopcount="<<loopcount<<std::endl;
 
 	for (auto &iter : m_must_reflow)
