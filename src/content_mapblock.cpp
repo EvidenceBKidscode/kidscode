@@ -462,7 +462,7 @@ f32 MapblockMeshGenerator::getCornerLevel(int i, int k)
 		content_t content = neighbor_data.content;
 
 		// If top is liquid, draw starting from top of node
-		if (neighbor_data.top_is_same_liquid)
+		if (neighbor_data.is_same_liquid && neighbor_data.top_is_same_liquid)
 			return 0.5 * BS;
 
 		// Source always has the full height
