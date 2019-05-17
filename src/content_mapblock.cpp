@@ -410,7 +410,7 @@ void MapblockMeshGenerator::prepareLiquidNodeDrawing()
 
 void MapblockMeshGenerator::getLiquidNeighborhood()
 {
-	u8 range = rangelim(nodedef->get(c_flowing).liquid_range, 1, 8);
+//	u8 range = rangelim(nodedef->get(c_flowing).liquid_range, 1, 8);
 
 	for (int w = -1; w <= 1; w++)
 	for (int u = -1; u <= 1; u++) {
@@ -431,12 +431,8 @@ void MapblockMeshGenerator::getLiquidNeighborhood()
 		} else if (neighbor.content == c_flowing) {
 			neighbor.is_same_liquid = true;
 			u8 liquid_level = (n2.param2 & LIQUID_LEVEL_MASK);
-			if (liquid_level <= LIQUID_LEVEL_MAX + 1 - range)
-				liquid_level = 0;
-			else
-				liquid_level -= (LIQUID_LEVEL_MAX + 1 - range);
-			neighbor.level = (-0.5 + (liquid_level + 0.5) / range) * BS;
-		}
+			neighbor.level = (-0.5 + ((float)liquid_level)/(LIQUID_LEVEL_MAX + 1) ) * BS ;
+	}
 
 		// Check node above neighbor.
 		// NOTE: This doesn't get executed if neighbor
@@ -459,7 +455,7 @@ f32 MapblockMeshGenerator::getCornerLevel(int i, int k)
 {
 	float sum = 0;
 	int count = 0;
-	int air_count = 0;
+//	int air_count = 0;
 	for (int dk = 0; dk < 2; dk++)
 	for (int di = 0; di < 2; di++) {
 		NeighborData &neighbor_data = liquid_neighbors[k + dk][i + di];
@@ -470,6 +466,7 @@ f32 MapblockMeshGenerator::getCornerLevel(int i, int k)
 			return 0.5 * BS;
 
 		// Source always has the full height
+		// Ca va faire une pente de toutes facons si on veut pas toucher à la forme de la source (ca reste à voir d'ailleurs)
 		if (content == c_source)
 			return 0.5 * BS;
 
@@ -477,15 +474,12 @@ f32 MapblockMeshGenerator::getCornerLevel(int i, int k)
 		if (content == c_flowing) {
 			sum += neighbor_data.level;
 			count++;
-		} else if (content == CONTENT_AIR) {
-			air_count++;
-			if (air_count >= 2)
-				return -0.5 * BS + 0.2;
 		}
 	}
 	if (count > 0)
 		return sum / count;
-	return 0;
+
+	return 0; // Should not occur (At least 1 block is liquid)
 }
 
 void MapblockMeshGenerator::drawLiquidSides()
