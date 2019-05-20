@@ -455,7 +455,7 @@ void MapblockMeshGenerator::getLiquidNeighborhood()
 			}
 		}
 
-		if (neighbor.content != c_flowing) {
+		if (neighbor.content == c_source) {
 			if (nabove.getContent() == c_source) {
 				neighbor.is_same_liquid = true;
 				neighbor.level = 16;
