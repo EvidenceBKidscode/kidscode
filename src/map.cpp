@@ -71,7 +71,7 @@ Map::Map(std::ostream &dout, IGameDef *gamedef):
 	m_gamedef(gamedef),
 	m_nodedef(gamedef->ndef())
 {
-	//m_liquid_logic = new LiquidLogicNone(this, gamedef);
+//	m_liquid_logic = new LiquidLogicNone(this, gamedef);
 	m_liquid_logic = new LiquidLogicPreserve(this, gamedef);
 //	m_liquid_logic = new LiquidLogicClassic(this, gamedef);
 }
