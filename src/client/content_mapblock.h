@@ -107,7 +107,9 @@ public:
 
 // liquid-specific
 	bool top_is_same_liquid;
-	bool draw_liquid_bottom;
+	// bool draw_liquid_bottom; //KIDSCODE
+	bool bottom_is_same_liquid;
+	bool bottom_is_solid;
 	TileSpec tile_liquid;
 	TileSpec tile_liquid_top;
 	content_t c_flowing;
