@@ -257,8 +257,11 @@ void MapDatabaseSQLite3::upgradeDatabaseStructure()
 				");", NULL, NULL, NULL),
 			"Failed to create versions table");
 			SQLOK(sqlite3_exec(m_database,
-				"INSERT INTO versions VALUES (0, '0', '.init', NULL);", NULL, NULL, NULL),
+				"INSERT INTO versions VALUES (0, '0', '.origin', NULL);", NULL, NULL, NULL),
 				"Failed to insert first version");
+			SQLOK(sqlite3_exec(m_database,
+				"INSERT INTO versions VALUES (1, 'A', '.init', 0);", NULL, NULL, NULL),
+				"Failed to insert INIT version");
 		if (blocks_exists) // Blocks needs update
 		{
 			printf("Blocks table have to be updated. This may take some time.\n");
@@ -281,7 +284,7 @@ void MapDatabaseSQLite3::upgradeDatabaseStructure()
 				"Failed to rename new blocks table");
 			printf("Blocks table update done.\n");
 		}
-		setCurrentVersion(0);
+		setCurrentVersion(1);
 	}
 }
 
