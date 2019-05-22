@@ -62,9 +62,13 @@ private:
 	NodeInfo get_node_info(v3s16 pos, LiquidInfo liquid);
 	void update_node(NodeInfo &info, LiquidInfo liquid,
 		std::map<v3s16, MapBlock*> &modified_blocks, ServerEnvironment *env);
-	void transfer(NodeInfo &source, NodeInfo &target,
+	bool transfer(NodeInfo &source, NodeInfo &target,
 		LiquidInfo liquid, bool equalize,
 		std::map<v3s16, MapBlock*> &modified_blocks, ServerEnvironment *env);
+	void transform_node(v3s16 pos, u16 start,
+		std::map<v3s16, MapBlock*> &modified_blocks,
+		ServerEnvironment *env);
+
 	UniqueQueue<v3s16> m_liquid_queue;
 	std::deque<v3s16> m_must_reflow;
 	std::set<v3s16> m_skip;
