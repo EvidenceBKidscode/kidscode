@@ -386,10 +386,16 @@ void MapblockMeshGenerator::prepareLiquidNodeDrawing()
 	getSpecialTile(0, &tile_liquid_top);
 	getSpecialTile(1, &tile_liquid);
 
-	MapNode ntop = data->m_vmanip.getNodeNoEx(blockpos_nodes + v3s16(p.X, p.Y + 1, p.Z));
 	c_flowing = nodedef->getId(f->liquid_alternative_flowing);
 	c_source = nodedef->getId(f->liquid_alternative_source);
+
+	MapNode ntop = data->m_vmanip.getNodeNoEx(blockpos_nodes + v3s16(p.X, p.Y + 1, p.Z));
 	top_is_same_liquid = (ntop.getContent() == c_flowing) || (ntop.getContent() == c_source);
+
+	MapNode nbottom = data->m_vmanip.getNodeNoEx(blockpos_nodes + v3s16(p.X, p.Y - 1, p.Z));
+	bottom_is_same_liquid = (nbottom.getContent() == c_flowing) || (nbottom.getContent() == c_source);
+	const ContentFeatures &neighbor_features = nodedef->get(nbottom.getContent());
+	bottom_is_solid = neighbor_features.solidness == 2;
 
 	if (data->m_smooth_lighting)
 		return; // don't need to pre-compute anything in this case
@@ -547,7 +553,6 @@ void MapblockMeshGenerator::drawLiquidSides()
 		// at the top to which it should be connected. Again, unless the face
 		// there would be inside the liquid
 		if (neighbor.is_same_liquid) {
-
 			if (!top_is_same_liquid)
 				continue;
 			if (neighbor.top_is_same_liquid)
@@ -575,6 +580,25 @@ void MapblockMeshGenerator::drawLiquidSides()
 			pos += origin;
 			vertices[j] = video::S3DVertex(pos.X, pos.Y, pos.Z, 0, 0, 0, color, vertex.u, vertex.v);
 		};
+
+		collector->append(tile_liquid, vertices, 4, quad_indices, 6);
+	}
+
+	if (!bottom_is_same_liquid && !bottom_is_solid) {
+		video::S3DVertex vertices[4] = {
+			video::S3DVertex( BS / 2, -BS / 2,  BS / 2, 0, 0, 0, color, 0, 1),
+			video::S3DVertex(-BS / 2, -BS / 2,  BS / 2, 0, 0, 0, color, 1, 1),
+			video::S3DVertex(-BS / 2, -BS / 2, -BS / 2, 0, 0, 0, color, 1, 0),
+			video::S3DVertex( BS / 2, -BS / 2, -BS / 2, 0, 0, 0, color, 0, 0),
+		};
+
+		for (int i = 0; i < 4; i++) {
+			if (data->m_smooth_lighting)
+				vertices[i].Color = blendLightColor(vertices[i].Pos);
+			vertices[i].Pos += origin;
+			v3f normal(0, 0, 1);
+			vertices[i].Normal = normal;
+		}
 		collector->append(tile_liquid, vertices, 4, quad_indices, 6);
 	}
 }
