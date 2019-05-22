@@ -47,8 +47,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "script/scripting_server.h"
 #include "liquidlogic.h"
 #include "liquidlogicclassic.h"
-#include "liquidlogicpreserve.h"
-#include "liquidlogicnone.h"
+//#include "liquidlogicpreserve.h"
+#include "liquidlogicfinite.h"
 #include <deque>
 #include <queue>
 #if USE_LEVELDB
@@ -71,8 +71,8 @@ Map::Map(std::ostream &dout, IGameDef *gamedef):
 	m_gamedef(gamedef),
 	m_nodedef(gamedef->ndef())
 {
-//	m_liquid_logic = new LiquidLogicNone(this, gamedef);
-	m_liquid_logic = new LiquidLogicPreserve(this, gamedef);
+	m_liquid_logic = new LiquidLogicFinite(this, gamedef);
+//	m_liquid_logic = new LiquidLogicPreserve(this, gamedef);
 //	m_liquid_logic = new LiquidLogicClassic(this, gamedef);
 }
 

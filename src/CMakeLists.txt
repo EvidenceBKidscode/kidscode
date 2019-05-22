@@ -409,8 +409,9 @@ set(common_SRCS
 	itemstackmetadata.cpp
 	light.cpp
 	liquidlogic.cpp
-	liquidlogicpreserve.cpp
 	liquidlogicclassic.cpp
+	liquidlogicfinite.cpp
+	liquidlogicpreserve.cpp
 	log.cpp
 	map.cpp
 	map_settings_manager.cpp
