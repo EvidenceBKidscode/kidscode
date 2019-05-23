@@ -427,6 +427,7 @@ void MapblockMeshGenerator::getLiquidNeighborhood()
 		neighbor.level = 0;
 		neighbor.is_same_liquid = false;
 		neighbor.top_is_same_liquid = false;
+		s8 level = 0;
 
 		if (neighbor.content == CONTENT_IGNORE)
 			continue;
@@ -434,46 +435,38 @@ void MapblockMeshGenerator::getLiquidNeighborhood()
 		// Basic things
 		p2.Y++;
 		MapNode nabove = data->m_vmanip.getNodeNoEx(blockpos_nodes + p2);
-//		p2.Y-=2;
-//		MapNode nbelow = data->m_vmanip.getNodeNoEx(blockpos_nodes + p2);
 
 		if (nabove.getContent() == c_source || nabove.getContent() == c_flowing)
 			neighbor.top_is_same_liquid = true;
 
 		if (neighbor.content == c_source) {
 			neighbor.is_same_liquid = true;
-			neighbor.level = 8;
+			level = 8;
 		}
 
 		if (neighbor.content == c_flowing) {
 			neighbor.is_same_liquid = true;
-			neighbor.level = (n2.param2 & LIQUID_LEVEL_MASK);
+			level = (n2.param2 & LIQUID_LEVEL_MASK);
 		}
 
-		// Modifiers according to above node
-/*		if (neighbor.content == CONTENT_AIR) {
-			if (nbelow.getContent() == c_source)
-				neighbor.is_same_liquid = true; // Considered same liquid because air with water underneath
-
-			if (nbelow.getContent() == c_flowing) {
-				neighbor.is_same_liquid = true;
-				neighbor.level = (nbelow.param2 & LIQUID_LEVEL_MASK) - 8;
-			}
-		}
-*/
 		if (neighbor.content != c_flowing) {
 			if (nabove.getContent() == c_source) {
 				neighbor.is_same_liquid = true;
-				neighbor.level = 16;
+				level = 16;
 			}
 			if (nabove.getContent() == c_flowing) {
 				neighbor.is_same_liquid = true;
-				neighbor.level = (nabove.param2 & LIQUID_LEVEL_MASK) + 8;
+				level = (nabove.param2 & LIQUID_LEVEL_MASK) + 8;
 			}
 		}
 
 		// Convert level to visual size
-		neighbor.level = (-0.5 + ((float)neighbor.level)/(LIQUID_LEVEL_MAX+1)) * BS;
+		// First, and ninth slices are very thin, other are 1/7 nodes height
+		s8 r = level % (LIQUID_LEVEL_MAX + 1);
+		neighbor.level = level / (LIQUID_LEVEL_MAX + 1);
+		if (r > 0)
+			neighbor.level += 0.01 + ((float)r - 1)/LIQUID_LEVEL_MAX;
+		neighbor.level = (- 0.5 + neighbor.level) * BS;
 	}
 }
 
@@ -482,17 +475,12 @@ void MapblockMeshGenerator::calculateCornerLevels()
 	v3s16 p2 = p;
 	p2.Y++;
 	MapNode nabove = data->m_vmanip.getNodeNoEx(blockpos_nodes + p2);
-//	p2.Y-=2;
-//	MapNode nbelow = data->m_vmanip.getNodeNoEx(blockpos_nodes + p2);
 
-//	bool clipBelow = nbelow.getContent() != CONTENT_AIR;
 	bool clipAbove = nabove.getContent() != CONTENT_AIR;
 
 	for (int k = 0; k < 2; k++)
 	for (int i = 0; i < 2; i++) {
 		corner_levels[k][i] = getCornerLevel(i, k);
-//		if (clipBelow && (corner_levels[k][i] < - 0.5 * BS))
-//			corner_levels[k][i] = - 0.5 * BS;
 		if (clipAbove && (corner_levels[k][i] > 0.5 * BS))
 			corner_levels[k][i] = 0.5 * BS;
 	}
@@ -500,7 +488,6 @@ void MapblockMeshGenerator::calculateCornerLevels()
 
 f32 MapblockMeshGenerator::getCornerLevel(int i, int k)
 {
-	float sum = 0;
 	float max = -0.5 * BS;
 
 	int count = 0;
@@ -510,18 +497,11 @@ f32 MapblockMeshGenerator::getCornerLevel(int i, int k)
 		NeighborData &neighbor_data = liquid_neighbors[k + dk][i + di];
 
 		if (neighbor_data.is_same_liquid) {
-			sum += neighbor_data.level;
 			max = max<neighbor_data.level?neighbor_data.level:max;
 			count++;
 		}
 	}
 	return max;
-	/*
-	if (count > 0)
-		return sum / count;
-
-	return 0; // Should not occur (At least 1 block is liquid)
-*/
 }
 
 void MapblockMeshGenerator::drawLiquidSides()
@@ -654,11 +634,15 @@ void MapblockMeshGenerator::drawLiquidTop()
 
 void MapblockMeshGenerator::drawLiquidNode()
 {
-//	if (f->drawtype == NDT_FLOWINGLIQUID && (n.param2 & LIQUID_LEVEL_MASK) == 0)
-//			return; // Dont draw level 0 flowing liquids
 	prepareLiquidNodeDrawing();
 	getLiquidNeighborhood();
 	calculateCornerLevels();
+	if (corner_levels[0][0] <= -0.5 * BS &&
+		corner_levels[1][0] <= -0.5 * BS &&
+		corner_levels[0][1] <= -0.5 * BS &&
+		corner_levels[1][1] <= -0.5 * BS)
+			return; // Dont draw level 0 flowing liquids with no neighbor
+
 	drawLiquidSides();
 	if (!top_is_same_liquid)
 		drawLiquidTop();
