@@ -394,6 +394,7 @@ void MapblockMeshGenerator::prepareLiquidNodeDrawing()
 
 	MapNode nbottom = data->m_vmanip.getNodeNoEx(blockpos_nodes + v3s16(p.X, p.Y - 1, p.Z));
 	bottom_is_same_liquid = (nbottom.getContent() == c_flowing) || (nbottom.getContent() == c_source);
+
 	const ContentFeatures &neighbor_features = nodedef->get(nbottom.getContent());
 	bottom_is_solid = neighbor_features.solidness == 2;
 
@@ -637,7 +638,8 @@ void MapblockMeshGenerator::drawLiquidNode()
 	prepareLiquidNodeDrawing();
 	getLiquidNeighborhood();
 	calculateCornerLevels();
-	if (corner_levels[0][0] <= -0.5 * BS &&
+	if ((!bottom_is_same_liquid) &&
+		corner_levels[0][0] <= -0.5 * BS &&
 		corner_levels[1][0] <= -0.5 * BS &&
 		corner_levels[0][1] <= -0.5 * BS &&
 		corner_levels[1][1] <= -0.5 * BS)
