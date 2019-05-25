@@ -37,7 +37,7 @@ public:
 	MeshMakeData *data;
 	MeshCollector *collector;
 
-	INodeDefManager *nodedef;
+	const NodeDefManager *nodedef;
 	scene::IMeshManipulator *meshmanip;
 
 // options

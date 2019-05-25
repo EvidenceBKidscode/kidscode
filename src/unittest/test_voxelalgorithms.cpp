@@ -30,16 +30,16 @@ public:
 
 	void runTests(IGameDef *gamedef);
 
-	void testPropogateSunlight(INodeDefManager *ndef);
-	void testClearLightAndCollectSources(INodeDefManager *ndef);
-	void testVoxelLineIterator(INodeDefManager *ndef);
+	void testPropogateSunlight(const NodeDefManager *ndef);
+	void testClearLightAndCollectSources(const NodeDefManager *ndef);
+	void testVoxelLineIterator(const NodeDefManager *ndef);
 };
 
 static TestVoxelAlgorithms g_test_instance;
 
 void TestVoxelAlgorithms::runTests(IGameDef *gamedef)
 {
-	INodeDefManager *ndef = gamedef->getNodeDefManager();
+	const NodeDefManager *ndef = gamedef->getNodeDefManager();
 
 	TEST(testPropogateSunlight, ndef);
 	TEST(testClearLightAndCollectSources, ndef);
@@ -48,7 +48,7 @@ void TestVoxelAlgorithms::runTests(IGameDef *gamedef)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void TestVoxelAlgorithms::testPropogateSunlight(INodeDefManager *ndef)
+void TestVoxelAlgorithms::testPropogateSunlight(const NodeDefManager *ndef)
 {
 	VoxelManipulator v;
 
@@ -171,7 +171,7 @@ void TestVoxelAlgorithms::testPropogateSunlight(INodeDefManager *ndef)
 	}
 }
 
-void TestVoxelAlgorithms::testClearLightAndCollectSources(INodeDefManager *ndef)
+void TestVoxelAlgorithms::testClearLightAndCollectSources(const NodeDefManager *ndef)
 {
 	VoxelManipulator v;
 
@@ -206,7 +206,7 @@ void TestVoxelAlgorithms::testClearLightAndCollectSources(INodeDefManager *ndef)
 	}
 }
 
-void TestVoxelAlgorithms::testVoxelLineIterator(INodeDefManager *ndef)
+void TestVoxelAlgorithms::testVoxelLineIterator(const NodeDefManager *ndef)
 {
 	// Test some lines
 	// Do not test lines that start or end on the border of
