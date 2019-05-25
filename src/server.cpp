@@ -1484,7 +1484,7 @@ void Server::SendItemDef(session_t peer_id,
 }
 
 void Server::SendNodeDef(session_t peer_id,
-		INodeDefManager *nodedef, u16 protocol_version)
+		const NodeDefManager *nodedef, u16 protocol_version)
 {
 	NetworkPacket pkt(TOCLIENT_NODEDEF, 0, peer_id);
 
@@ -3324,7 +3324,7 @@ IItemDefManager *Server::getItemDefManager()
 	return m_itemdef;
 }
 
-INodeDefManager *Server::getNodeDefManager()
+const NodeDefManager *Server::getNodeDefManager()
 {
 	return m_nodedef;
 }
@@ -3349,7 +3349,7 @@ IWritableItemDefManager *Server::getWritableItemDefManager()
 	return m_itemdef;
 }
 
-IWritableNodeDefManager *Server::getWritableNodeDefManager()
+NodeDefManager *Server::getWritableNodeDefManager()
 {
 	return m_nodedef;
 }

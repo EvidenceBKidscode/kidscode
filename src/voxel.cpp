@@ -48,7 +48,7 @@ void VoxelManipulator::clear()
 	m_flags = nullptr;
 }
 
-void VoxelManipulator::print(std::ostream &o, INodeDefManager *ndef,
+void VoxelManipulator::print(std::ostream &o, const NodeDefManager *ndef,
 		VoxelPrintMode mode)
 {
 	const v3s16 &em = m_area.getExtent();
@@ -316,7 +316,7 @@ void VoxelManipulator::clearFlag(u8 flags)
 }
 
 void VoxelManipulator::unspreadLight(enum LightBank bank, v3s16 p, u8 oldlight,
-		std::set<v3s16> & light_sources, INodeDefManager *nodemgr)
+		std::set<v3s16> & light_sources, const NodeDefManager *nodemgr)
 {
 	VoxelArea voxel_area(p - v3s16(1,1,1), p + v3s16(1,1,1));
 	addArea(voxel_area);
@@ -371,7 +371,7 @@ void VoxelManipulator::unspreadLight(enum LightBank bank, v3s16 p, u8 oldlight,
 }
 
 void VoxelManipulator::spreadLight(enum LightBank bank, v3s16 p,
-		INodeDefManager *nodemgr)
+		const NodeDefManager *nodemgr)
 {
 	VoxelArea voxel_area(p - v3s16(1,1,1), p + v3s16(1,1,1));
 	addArea(voxel_area);
@@ -431,7 +431,7 @@ const MapNode VoxelManipulator::ContentIgnoreNode = MapNode(CONTENT_IGNORE);
 	goes on recursively.
 */
 void VoxelManipulator::spreadLight(enum LightBank bank,
-		std::set<v3s16> & from_nodes, INodeDefManager *nodemgr)
+		std::set<v3s16> & from_nodes, const NodeDefManager *nodemgr)
 {
 	if(from_nodes.empty())
 		return;
