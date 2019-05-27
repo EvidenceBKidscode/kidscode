@@ -456,6 +456,10 @@ void ContentFeatures::serialize(std::ostream &os, u16 protocol_version) const
 	writeU16(os, connects_to_ids.size());
 	for (u16 connects_to_id : connects_to_ids)
 		writeU16(os, connects_to_id);
+	writeU8(os, post_effect_color.getAlpha());
+	writeU8(os, post_effect_color.getRed());
+	writeU8(os, post_effect_color.getGreen());
+	writeU8(os, post_effect_color.getBlue());
 	writeU8(os, leveled);
 
 	// lighting
