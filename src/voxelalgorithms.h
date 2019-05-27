@@ -34,10 +34,10 @@ namespace voxalgo
 // TODO: Move unspreadLight and spreadLight from VoxelManipulator to here
 
 void setLight(VoxelManipulator &v, VoxelArea a, u8 light,
-		INodeDefManager *ndef);
+		const NodeDefManager *ndef);
 
 void clearLightAndCollectSources(VoxelManipulator &v, VoxelArea a,
-		enum LightBank bank, INodeDefManager *ndef,
+		enum LightBank bank, const NodeDefManager *ndef,
 		std::set<v3s16> & light_sources,
 		std::map<v3s16, u8> & unlight_from);
 
@@ -53,7 +53,7 @@ struct SunlightPropagateResult
 SunlightPropagateResult propagateSunlight(VoxelManipulator &v, VoxelArea a,
 		bool inexistent_top_provides_sunlight,
 		std::set<v3s16> & light_sources,
-		INodeDefManager *ndef);
+		const NodeDefManager *ndef);
 
 /*!
  * Updates the lighting on the map.

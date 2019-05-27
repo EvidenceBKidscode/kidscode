@@ -46,7 +46,7 @@ class ChatEvent;
 struct ChatEventChat;
 struct ChatInterface;
 class IWritableItemDefManager;
-class IWritableNodeDefManager;
+class NodeDefManager;
 class IWritableCraftDefManager;
 class BanManager;
 class EventManager;
@@ -257,7 +257,7 @@ public:
 	// IGameDef interface
 	// Under envlock
 	virtual IItemDefManager* getItemDefManager();
-	virtual INodeDefManager* getNodeDefManager();
+	virtual const NodeDefManager* getNodeDefManager();
 	virtual ICraftDefManager* getCraftDefManager();
 	virtual u16 allocateUnknownNodeId(const std::string &name);
 	virtual MtEventManager* getEventManager();
@@ -265,7 +265,7 @@ public:
 	virtual EmergeManager *getEmergeManager() { return m_emerge; }
 
 	IWritableItemDefManager* getWritableItemDefManager();
-	IWritableNodeDefManager* getWritableNodeDefManager();
+	NodeDefManager* getWritableNodeDefManager();
 	IWritableCraftDefManager* getWritableCraftDefManager();
 
 	virtual const std::vector<ModSpec> &getMods() const { return m_mods; }
@@ -368,7 +368,8 @@ private:
 	void SendDeathscreen(session_t peer_id, bool set_camera_point_target,
 		v3f camera_point_target);
 	void SendItemDef(session_t peer_id, IItemDefManager *itemdef, u16 protocol_version);
-	void SendNodeDef(session_t peer_id, INodeDefManager *nodedef, u16 protocol_version);
+	void SendNodeDef(session_t peer_id, const NodeDefManager *nodedef,
+		u16 protocol_version);
 
 	/* mark blocks not sent for all clients */
 	void SetBlocksNotSent(std::map<v3s16, MapBlock *>& block);
@@ -545,7 +546,7 @@ private:
 	IWritableItemDefManager *m_itemdef;
 
 	// Node definition manager
-	IWritableNodeDefManager *m_nodedef;
+	NodeDefManager *m_nodedef;
 
 	// Craft definition manager
 	IWritableCraftDefManager *m_craftdef;

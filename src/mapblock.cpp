@@ -154,7 +154,7 @@ std::string MapBlock::getModifiedReasonString()
 bool MapBlock::propagateSunlight(std::set<v3s16> & light_sources,
 		bool remove_light, bool *black_air_left)
 {
-	INodeDefManager *nodemgr = m_gamedef->ndef();
+	const NodeDefManager *nodemgr = m_gamedef->ndef();
 
 	// Whether the sunlight at the top of the bottom block is valid
 	bool block_below_is_valid = true;
@@ -346,7 +346,7 @@ void MapBlock::copyFrom(VoxelManipulator &dst)
 
 void MapBlock::actuallyUpdateDayNightDiff()
 {
-	INodeDefManager *nodemgr = m_gamedef->ndef();
+	const NodeDefManager *nodemgr = m_gamedef->ndef();
 
 	// Running this function un-expires m_day_night_differs
 	m_day_night_differs_expired = false;
@@ -444,7 +444,7 @@ s16 MapBlock::getGroundLevel(v2s16 p2d)
 // mapblocks.
 static content_t getBlockNodeIdMapping_mapping[USHRT_MAX + 1];
 static void getBlockNodeIdMapping(NameIdMapping *nimap, MapNode *nodes,
-		INodeDefManager *nodedef)
+	const NodeDefManager *nodedef)
 {
 	memset(getBlockNodeIdMapping_mapping, 0xFF, (USHRT_MAX + 1) * sizeof(content_t));
 
@@ -486,7 +486,7 @@ static void getBlockNodeIdMapping(NameIdMapping *nimap, MapNode *nodes,
 static void correctBlockNodeIds(const NameIdMapping *nimap, MapNode *nodes,
 		IGameDef *gamedef)
 {
-	INodeDefManager *nodedef = gamedef->ndef();
+	const NodeDefManager *nodedef = gamedef->ndef();
 	// This means the block contains incorrect ids, and we contain
 	// the information to convert those to names.
 	// nodedef contains information to convert our names to globally
@@ -933,7 +933,7 @@ void MapBlock::deSerialize_pre22(std::istream &is, u8 version, bool disk)
 
 	// Legacy data changes
 	// This code has to convert from pre-22 to post-22 format.
-	INodeDefManager *nodedef = m_gamedef->ndef();
+	const NodeDefManager *nodedef = m_gamedef->ndef();
 	for(u32 i=0; i<nodecount; i++)
 	{
 		const ContentFeatures &f = nodedef->get(data[i].getContent());

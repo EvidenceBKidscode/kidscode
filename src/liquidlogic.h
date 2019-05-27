@@ -25,7 +25,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 class ServerEnvironment;
 class IGameDef;
-class INodeDefManager;
+class NodeDefManager;
 class Map;
 class MapBlock;
 class MMVManip;
@@ -45,5 +45,5 @@ public:
 protected:
 	Map *m_map = nullptr;
 	IGameDef *m_gamedef = nullptr;
-	INodeDefManager *m_ndef = nullptr;
+	const NodeDefManager *m_ndef = nullptr;
 };

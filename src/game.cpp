@@ -496,7 +496,7 @@ public:
 class SoundMaker
 {
 	ISoundManager *m_sound;
-	INodeDefManager *m_ndef;
+	const NodeDefManager *m_ndef;
 public:
 	bool makes_footstep_sound;
 	float m_player_step_timer;
@@ -505,7 +505,7 @@ public:
 	SimpleSoundSpec m_player_leftpunch_sound;
 	SimpleSoundSpec m_player_rightpunch_sound;
 
-	SoundMaker(ISoundManager *sound, INodeDefManager *ndef):
+	SoundMaker(ISoundManager *sound, const NodeDefManager *ndef):
 		m_sound(sound),
 		m_ndef(ndef),
 		makes_footstep_sound(true),
@@ -806,7 +806,7 @@ bool nodePlacementPrediction(Client &client, const ItemDefinition &playeritem_de
 	const ItemStack &playeritem, v3s16 nodepos, v3s16 neighbourpos)
 {
 	std::string prediction = playeritem_def.node_placement_prediction;
-	INodeDefManager *nodedef = client.ndef();
+	const NodeDefManager *nodedef = client.ndef();
 	ClientMap &map = client.getEnv().getClientMap();
 	MapNode node;
 	bool is_valid_position;
@@ -1448,7 +1448,7 @@ private:
 
 	// When created, these will be filled with data received from the server
 	IWritableItemDefManager *itemdef_manager;
-	IWritableNodeDefManager *nodedef_manager;
+	NodeDefManager *nodedef_manager;
 
 	GameOnDemandSoundFetcher soundfetcher; // useful when testing
 	ISoundManager *sound;
@@ -2117,7 +2117,7 @@ bool Game::initGui()
 
 	// Make sure the size of the recent messages buffer is right
 	chat_backend->applySettings();
-    
+
 	// Chat backend and console
 	gui_chat_console = new GUIChatConsole(guienv, guienv->getRootGUIElement(),
 			-1, chat_backend, client, &g_menumgr);
@@ -3127,29 +3127,29 @@ void Game::updateCameraOrientation(CameraOrientation *cam, float dtime)
 	s32 dy = input->getMousePos().Y - (driver->getScreenSize().Height / 2);
 
 	static f32 dampening_factor = 1.0f;
-	
+
 	if (m_cache_mouse_dampening_influence > 0.0f) {
 		f32 mouse_speed = 0.0f;
 		f32 offset_factor = 1000.0f / driver->getScreenSize().Width;
 		f32 x_offset = dx * offset_factor;
 		f32 y_offset = dy * offset_factor;
-		
+
 		if (dtime > 0.0f)
 			mouse_speed = sqrtf(x_offset * x_offset + y_offset * y_offset) / dtime;
-		
+
 		if (mouse_speed >= m_cache_mouse_dampening_speed) {
 			dampening_factor = 1.0f;
 		} else {
 			dampening_factor -= dtime * m_cache_mouse_dampening_influence;
-			
+
 			if (dampening_factor < 0.0f)
 				dampening_factor = 0.0f;
-		
+
 			dx = dx * dampening_factor;
 			dy = dy * dampening_factor;
 		}
 	}
-	
+
 	if (m_invert_mouse || camera->getCameraMode() == CAMERA_MODE_THIRD_FRONT) {
 		dy = -dy;
 	}
@@ -3848,7 +3848,7 @@ PointedThing Game::updatePointedThing(
 
 	ClientEnvironment &env = client->getEnv();
 	ClientMap &map = env.getClientMap();
-	INodeDefManager *nodedef = map.getNodeDefManager();
+	const NodeDefManager *nodedef = map.getNodeDefManager();
 
 	runData.selected_object = NULL;
 
@@ -4570,7 +4570,7 @@ void Game::updateGui(const RunStats &stats, f32 dtime, const CameraOrientation &
 
 	if (flags.show_debug && runData.pointed_old.type == POINTEDTHING_NODE) {
 		ClientMap &map = client->getEnv().getClientMap();
-		const INodeDefManager *nodedef = client->getNodeDefManager();
+		const NodeDefManager *nodedef = client->getNodeDefManager();
 		MapNode n = map.getNodeNoEx(runData.pointed_old.node_undersurface);
 
 		if (n.getContent() != CONTENT_IGNORE && nodedef->get(n).name != "unknown") {

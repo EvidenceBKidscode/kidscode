@@ -391,6 +391,7 @@ extern "C" // :PATCH:
 #else
 	int luaL_loadfile(lua_State *L, const char *path)
 #endif
+
 	{
 		size_t size;
 		const char *buffer = readText(path, size);
