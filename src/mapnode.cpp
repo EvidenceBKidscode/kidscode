@@ -30,6 +30,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "util/numeric.h"
 #include <string>
 #include <sstream>
+#include <cstddef>
 
 static const Rotation wallmounted_to_rot[] = {
 	ROTATE_0, ROTATE_180, ROTATE_90, ROTATE_270
@@ -43,6 +44,14 @@ static const u8 rot_to_wallmounted[] = {
 /*
 	MapNode
 */
+
+extern "C" int get_mapnode_version(void)
+{
+	if (sizeof(MapNode) == 4 && offsetof(MapNode, param0) == 0
+			&& offsetof(MapNode, param1) == 2 && offsetof(MapNode, param2) == 3)
+		return 1;
+	return 0;
+}
 
 // Create directly from a nodename
 // If name is unknown, sets CONTENT_IGNORE

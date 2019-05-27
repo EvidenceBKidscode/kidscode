@@ -154,8 +154,9 @@ private:
 class ActiveBlockList
 {
 public:
-	void update(std::vector<v3s16> &active_positions,
-		s16 radius,
+	void update(std::vector<PlayerSAO*> &active_players,
+		s16 active_block_range,
+		s16 active_object_range,
 		std::set<v3s16> &blocks_removed,
 		std::set<v3s16> &blocks_added);
 
@@ -168,6 +169,7 @@ public:
 	}
 
 	std::set<v3s16> m_list;
+	std::set<v3s16> m_abm_list;
 	std::set<v3s16> m_forceloaded_list;
 
 private:
@@ -183,6 +185,9 @@ enum ClearObjectsMode {
 	// Clear objects immediately in loaded mapblocks;
 	// clear objects in unloaded mapblocks only when the mapblocks are next activated.
 		CLEAR_OBJECTS_MODE_QUICK,
+
+	// Special mode that clears loaded objects but does not clear objects on further mapblock activation
+		CLEAR_OBJECTS_MODE_LOADED_ONLY,
 };
 
 /*
@@ -347,6 +352,21 @@ public:
 
 	static bool migratePlayersDatabase(const GameParams &game_params,
 			const Settings &cmd_args);
+
+	// Clear active blocks list
+	void clearActiveBlocks();
+
+	/*
+		Convert objects that are not in active blocks to static.
+
+		If m_known_by_count != 0, active object is not deleted, but static
+		data is still updated.
+
+		If force_delete is set, active object is deleted nevertheless. It
+		shall only be set so in the destructor of the environment.
+	*/
+	void deactivateFarObjects(bool force_delete);
+
 private:
 
 	static PlayerDatabase *openPlayerDatabase(const std::string &name,
@@ -377,17 +397,6 @@ private:
 		Convert stored objects from block to active
 	*/
 	void activateObjects(MapBlock *block, u32 dtime_s);
-
-	/*
-		Convert objects that are not in active blocks to static.
-
-		If m_known_by_count != 0, active object is not deleted, but static
-		data is still updated.
-
-		If force_delete is set, active object is deleted nevertheless. It
-		shall only be set so in the destructor of the environment.
-	*/
-	void deactivateFarObjects(bool force_delete);
 
 	/*
 		A few helpers used by the three above methods
