@@ -2063,7 +2063,8 @@ bool Game::createClient(const std::string &playername,
 
 	mapper = client->getMinimap();
 	if (mapper)
-		mapper->setMinimapMode(MINIMAP_MODE_OFF);
+		mapper->setMinimapMode(mapper->getMinimapMode());
+
 
 	return true;
 }
