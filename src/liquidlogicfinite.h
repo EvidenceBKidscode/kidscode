@@ -42,11 +42,12 @@ struct NodeInfo {
 	MapNode node;
 	bool flowing_down;
 	bool fillable;
+	bool wet;
 };
 
-class LiquidLogicPreserve: public LiquidLogic {
+class LiquidLogicFinite: public LiquidLogic {
 public:
-	LiquidLogicPreserve(Map *map, IGameDef *gamedef);
+	LiquidLogicFinite(Map *map, IGameDef *gamedef);
 	void addTransforming(v3s16 p);
 	void scanBlock(MapBlock *block);
 	void scanVoxelManip(MMVManip *vm, v3s16 nmin, v3s16 nmax);
@@ -61,9 +62,12 @@ private:
 	NodeInfo get_node_info(v3s16 pos, LiquidInfo liquid);
 	void update_node(NodeInfo &info, LiquidInfo liquid,
 		std::map<v3s16, MapBlock*> &modified_blocks, ServerEnvironment *env);
-	void distribute(std::list<NodeInfo> targets, NodeInfo &source,
+	bool transfer(NodeInfo &source, NodeInfo &target,
 		LiquidInfo liquid, bool equalize,
 		std::map<v3s16, MapBlock*> &modified_blocks, ServerEnvironment *env);
+	void transform_node(v3s16 pos, u16 start,
+		std::map<v3s16, MapBlock*> &modified_blocks,
+		ServerEnvironment *env);
 
 	UniqueQueue<v3s16> m_liquid_queue;
 	std::deque<v3s16> m_must_reflow;
