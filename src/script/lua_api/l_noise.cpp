@@ -405,6 +405,9 @@ luaL_Reg LuaPerlinNoiseMap::methods[] = {
 // >> ffi_accel patch
 extern "C" {
 
+	#ifdef WIN32
+	__declspec(dllexport)
+	#endif
 	size_t PerlinNoiseMap_get_area(void **pnmp)
 	{
 		NO_MAP_LOCK_REQUIRED;
@@ -419,6 +422,9 @@ extern "C" {
 		return n->sx * n->sy;
 	}
 
+	#ifdef WIN32
+	__declspec(dllexport)
+	#endif
 	size_t PerlinNoiseMap_get_volume(void **pnmp)
 	{
 		NO_MAP_LOCK_REQUIRED;
@@ -433,6 +439,9 @@ extern "C" {
 		return n->sx * n->sy * n->sz;
 	}
 
+	#ifdef WIN32
+	__declspec(dllexport)
+	#endif
 	void PerlinNoiseMap_get_pointer(void **pnmp, void **ptr)
 	{
 		NO_MAP_LOCK_REQUIRED;

@@ -46,13 +46,18 @@ static const u8 rot_to_wallmounted[] = {
 */
 
 // >> ffi_accel patch
-extern "C" int get_mapnode_version(void)
-{
-	if (sizeof(MapNode) == 4 && offsetof(MapNode, param0) == 0
-			&& offsetof(MapNode, param1) == 2 && offsetof(MapNode, param2) == 3)
-		return 1;
-	return 0;
-}
+extern "C" {
+	#ifdef WIN32
+	__declspec(dllexport)
+	#endif
+	int get_mapnode_version(void)
+	{
+		if (sizeof(MapNode) == 4 && offsetof(MapNode, param0) == 0
+				&& offsetof(MapNode, param1) == 2 && offsetof(MapNode, param2) == 3)
+			return 1;
+		return 0;
+	}
+} // extern "C"
 // << ffi_accel patch
 
 void MapNode::getColor(const ContentFeatures &f, video::SColor *color) const
