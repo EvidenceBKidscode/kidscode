@@ -45,13 +45,20 @@ static const u8 rot_to_wallmounted[] = {
 	MapNode
 */
 
-extern "C" int get_mapnode_version(void)
+extern "C" {
+
+#ifdef WIN32
+__declspec(dllexport)
+#endif
+int get_mapnode_version(void)
 {
 	if (sizeof(MapNode) == 4 && offsetof(MapNode, param0) == 0
 			&& offsetof(MapNode, param1) == 2 && offsetof(MapNode, param2) == 3)
 		return 1;
 	return 0;
 }
+
+} // extern "C"
 
 // Create directly from a nodename
 // If name is unknown, sets CONTENT_IGNORE

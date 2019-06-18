@@ -33,6 +33,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 extern "C" {
 
+#ifdef WIN32
+__declspec(dllexport)
+#endif
 void VoxelManip_get_pointer(void **lvmp, void **ptr)
 {
 	if (lvmp == nullptr || ptr == nullptr)
@@ -41,6 +44,9 @@ void VoxelManip_get_pointer(void **lvmp, void **ptr)
 	*ptr = (*(LuaVoxelManip **)lvmp)->vm->m_data;
 }
 
+#ifdef WIN32
+__declspec(dllexport)
+#endif
 s32 VoxelManip_get_volume(void **lvmp)
 {
 	if (lvmp == nullptr)
