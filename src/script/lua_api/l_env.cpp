@@ -1407,6 +1407,15 @@ int ModApiEnvMod::l_map_restore_backup(lua_State *L)
 	return 0;
 }
 
+int ModApiEnvMod::l_enable_liquids_transform(lua_State *L)
+{
+	GET_ENV_PTR;
+	bool enable = lua_toboolean(L, 1);
+	ServerMap &map = env->getServerMap();
+	map.enableLiquidsTransform(enable);
+	return 0;
+}
+
 void ModApiEnvMod::Initialize(lua_State *L, int top)
 {
 	API_FCT(set_node);
@@ -1458,6 +1467,7 @@ void ModApiEnvMod::Initialize(lua_State *L, int top)
 	API_FCT(map_list_backups);
 	API_FCT(map_restore_backup);
 	API_FCT(map_delete_backup);
+	API_FCT(enable_liquids_transform);
 }
 
 void ModApiEnvMod::InitializeClient(lua_State *L, int top)

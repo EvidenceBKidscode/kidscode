@@ -230,6 +230,8 @@ public:
 	// For debug printing. Prints "Map: ", "ServerMap: " or "ClientMap: "
 	virtual void PrintInfo(std::ostream &out);
 
+	void enableLiquidsTransform(bool enabled);
+
 	void transformLiquids(std::map<v3s16, MapBlock*> & modified_blocks,
 			ServerEnvironment *env);
 
@@ -310,6 +312,7 @@ protected:
 		u32 needed_count);
 
 	LiquidLogic *m_liquid_logic;
+	bool m_liquid_transform_enabled = true;
 
 private:
 //	f32 m_transforming_liquid_loop_count_multiplier = 1.0f;

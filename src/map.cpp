@@ -490,10 +490,15 @@ void Map::transforming_liquid_add(v3s16 p) {
 	m_liquid_logic->addTransforming(p);
 }
 
+void Map::enableLiquidsTransform(bool enabled) {
+	m_liquid_transform_enabled = enabled;
+}
+
 void Map::transformLiquids(std::map<v3s16, MapBlock*> &modified_blocks,
 		ServerEnvironment *env)
 {
-	m_liquid_logic->transform(modified_blocks, env);
+	if (m_liquid_transform_enabled)
+		m_liquid_logic->transform(modified_blocks, env);
 }
 
 std::vector<v3s16> Map::findNodesWithMetadata(v3s16 p1, v3s16 p2)
