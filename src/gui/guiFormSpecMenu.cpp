@@ -57,6 +57,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "guiComboBox.h"
 #include "guiScrollBar.h"
 #include "guiImageTabControl.h"
+#include "guiText.h"
 
 #if USE_FREETYPE && IRRLICHT_VERSION_MAJOR == 1 && IRRLICHT_VERSION_MINOR < 9
 #include "intlGUIEditBox.h"
@@ -1379,6 +1380,49 @@ void GUIFormSpecMenu::parseField(parserData* data, const std::string &element,
 	errorstream<< "Invalid field element(" << parts.size() << "): '" << element << "'"  << std::endl;
 }
 
+void GUIFormSpecMenu::parseText(parserData* data, const std::string &element)
+{
+	std::vector<std::string> parts = split(element,';');
+	if (parts.size() == 3)
+	{
+		std::vector<std::string> v_pos = split(parts[0],',');
+		std::vector<std::string> v_geom = split(parts[1],',');
+		std::string text = parts[2];
+
+		MY_CHECKPOS("text",0);
+		MY_CHECKGEOM("text",1);
+
+		// [ Taken from textarea
+		v2s32 pos = pos_offset * spacing;
+		pos.X += stof(v_pos[0]) * (float) spacing.X;
+		pos.Y += stof(v_pos[1]) * (float) spacing.Y + m_btn_height;
+
+		v2s32 geom;
+		geom.X = (stof(v_geom[0]) * (float)spacing.X) - (spacing.X-imgsize.X);
+		geom.Y = (stof(v_geom[1]) * (float)imgsize.Y) - (spacing.Y-imgsize.Y);
+
+		core::rect<s32> rect = core::rect<s32>(pos.X, pos.Y, pos.X+geom.X, pos.Y+geom.Y);
+		// ]
+		if(m_form_src)
+			text = m_form_src->resolveText(text);
+
+		FieldSpec spec(
+			"",
+			utf8_to_wide(unescape_string(text)),
+			utf8_to_wide(unescape_string(text)),
+			258+m_fields.size()
+		);
+
+		GUIText *gui_text = new GUIText(spec.flabel.c_str(), Environment, this, spec.fid, rect);
+
+		m_fields.push_back(spec);
+
+// PYR//
+		return;
+	}
+	errorstream<< "Invalid text element(" << parts.size() << "): '" << element << "'"  << std::endl;
+}
+
 void GUIFormSpecMenu::parseLabel(parserData* data, const std::string &element)
 {
 	std::vector<std::string> parts = split(element,';');
@@ -1647,7 +1691,7 @@ void GUIFormSpecMenu::parseImageTab(parserData* data, const std::string &element
 
 		s32 width = DesiredRect.getWidth();
 		s32 height = DesiredRect.getHeight();
-		
+
 		MY_CHECKPOS("image_tab",0);
 
 		if (parts.size() > 4 && parts[4].length() > 0) {
@@ -1664,7 +1708,7 @@ void GUIFormSpecMenu::parseImageTab(parserData* data, const std::string &element
 
 			if (values.size() > 3 && values[3].length() > 0)
 				tab_spacing = parseDimension(values[3], width, height);
-			
+
 			if (values.size() > 5 && values[5].length() > 0)
 				padding = parseDimension(values[5], width, height);
 		}
@@ -1728,7 +1772,7 @@ void GUIFormSpecMenu::parseImageTab(parserData* data, const std::string &element
 		rect.UpperLeftCorner.Y = content_rect.UpperLeftCorner.Y - tab_height;
 		rect.LowerRightCorner.X = content_rect.LowerRightCorner.X + tab_width;
 		rect.LowerRightCorner.Y = content_rect.LowerRightCorner.Y + tab_height;
-		
+
 		content_texture = m_tsrc->getTexture(tab_prefix + "content.png");
 		top_tab_texture = m_tsrc->getTexture(tab_prefix + "top.png");
 		top_active_tab_texture = m_tsrc->getTexture(tab_prefix + "top_active.png");
@@ -1746,13 +1790,13 @@ void GUIFormSpecMenu::parseImageTab(parserData* data, const std::string &element
 		left_arrow_pressed_texture = m_tsrc->getTexture(tab_prefix + "arrow_left_pressed.png");
 		right_arrow_texture = m_tsrc->getTexture(tab_prefix + "arrow_right.png");
 		right_arrow_pressed_texture = m_tsrc->getTexture(tab_prefix + "arrow_right_pressed.png");
-		
+
 		guiImageTabControl* e = new guiImageTabControl(Environment,
 			this, rect, spec.fid,
 			tab_height, tab_width, tab_padding, tab_spacing,
 			width, height, border_width, border_height, border_offset,
 			button_width, button_height, button_spacing, button_offset, button_distance,
-			content_texture, 
+			content_texture,
 			top_tab_texture, top_active_tab_texture,
 			bottom_tab_texture, bottom_active_tab_texture,
 			left_tab_texture, left_active_tab_texture,
@@ -1772,19 +1816,19 @@ void GUIFormSpecMenu::parseImageTab(parserData* data, const std::string &element
 		}
 
 		e->setNotClipped(true);
-		
+
 		s32 tab_number=0;
 		std::string previous_side_name = "top";
-		
+
 		for (std::string &button : buttons) {
-			std::string side_name;            
+			std::string side_name;
 			parseTextString(button, button, side_name, ':');
-			
+
 			if (side_name.length() > 0)
 				previous_side_name = side_name;
 			else
 				side_name = previous_side_name;
-			
+
 			f32 scaling = 1.0f;
 			video::ITexture *texture = 0;
 
@@ -1792,7 +1836,7 @@ void GUIFormSpecMenu::parseImageTab(parserData* data, const std::string &element
 					|| button.find(".jpg", 0) != std::string::npos
 					|| button.find(".png", 0) != std::string::npos
 					|| button.find(".tga", 0) != std::string::npos) {
-				std::string scaling_value;	
+				std::string scaling_value;
 				parseTextString(button, button, scaling_value, '@');
 
 				if (scaling_value.length() > 0) {
@@ -1820,7 +1864,7 @@ void GUIFormSpecMenu::parseImageTab(parserData* data, const std::string &element
 
 			e->addImageTab(unescape_translate(unescape_string(utf8_to_wide(button))).c_str(),
 				-1, texture, scaling, side)->setNumber(tab_number);
-				
+
 			++tab_number;
 		}
 
@@ -2326,6 +2370,11 @@ void GUIFormSpecMenu::parseElement(parserData* data, const std::string &element)
 		return;
 	}
 
+	if (type == "text") {
+		parseText(data,description);
+		return;
+	}
+
 	if (type == "label") {
 		parseLabel(data,description);
 		return;
@@ -2350,7 +2399,7 @@ void GUIFormSpecMenu::parseElement(parserData* data, const std::string &element)
 		parseImageTab(data,description);
 		return;
 	}
-	
+
 	if (type == "tabheader") {
 		parseTabHeader(data,description);
 		return;
