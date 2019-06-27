@@ -2,9 +2,15 @@ uniform sampler2D baseTexture;
 uniform sampler2D normalTexture;
 uniform sampler2D textureFlags;
 
+// Directional lighting information
+uniform vec4 lightColor;
+uniform vec3 lightDirection;
+
 uniform vec4 skyBgColor;
 uniform float fogDistance;
+
 uniform vec3 eyePosition;
+uniform vec3 wrappedEyePosition;
 
 // The cameraOffset is the current center of the visible world.
 uniform vec3 cameraOffset;
@@ -17,6 +23,7 @@ varying vec3 vPosition;
 // cameraOffset + worldPosition (for large coordinates the limits of float
 // precision must be considered).
 varying vec3 worldPosition;
+varying vec3 worldNormal;
 varying float area_enable_parallax;
 
 varying vec3 eyeVec;
