@@ -74,6 +74,7 @@ Camera::Camera(MapDrawControl &draw_control, Client *client):
 	m_cache_fov                 = g_settings->getFloat("fov");
 	m_cache_zoom_fov            = g_settings->getFloat("zoom_fov");
 	m_arm_inertia		    = g_settings->getBool("arm_inertia");
+	m_enable_shaders            = g_settings->getBool("enable_shaders");
 	m_nametags.clear();
 }
 

@@ -2,12 +2,19 @@ uniform sampler2D baseTexture;
 uniform sampler2D normalTexture;
 uniform sampler2D textureFlags;
 
+// Directional lighting information
+uniform vec4 lightColor;
+uniform vec3 lightDirection;
+
 uniform vec4 skyBgColor;
 uniform float fogDistance;
+
 uniform vec3 eyePosition;
+uniform vec3 wrappedEyePosition;
 
 varying vec3 vPosition;
 varying vec3 worldPosition;
+varying vec3 worldNormal;
 varying float area_enable_parallax;
 
 varying vec3 eyeVec;
