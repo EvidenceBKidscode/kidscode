@@ -2,10 +2,235 @@
 #include "IGUIEnvironment.h"
 #include "IGUIFont.h"
 #include <vector>
+#include <unordered_map>
 using namespace irr::gui;
 #include "guiText.h"
 #include "fontengine.h"
 #include <SColor.h>
+
+
+// PARSER ?
+/*
+struct currentstate {
+	int halign = left;
+	int fontsize = medium;
+
+}
+
+struct inline_content {
+	core::dimension2d<u32> dimension;
+	core::stringw text;
+	gui::IGUIFont* font;
+}
+
+struct inline_block {
+	core::dimension2d<u32> dimension;
+	std::vector<GUIText:inline_content>& content;
+};
+
+std::vector<GUIText::inline_block>& inline_blocks;
+*/
+
+void GUIText::update_properties()
+{
+	m_style_properties.clear();
+	for (auto const& tag : m_tag_stack)
+		for (auto const& prop : tag.style_properties)
+			m_style_properties[prop.first] = prop.second;
+
+/*	printf("Tag stack:");
+	for (auto const& tag: m_tag_stack)
+		printf("%ls", tag.name.c_str());
+	printf("\nProperties:\n");
+	for (auto const& prop : m_style_properties)
+		printf("  %s='%s'\n", prop.first.c_str(), prop.second.c_str());
+*/}
+
+void GUIText::end_paragraph()
+{
+	printf("\n(paragraph end)\n");
+}
+
+void GUIText::push_char(wchar_t c)
+{
+	printf("%lc", c);
+}
+
+u32 GUIText::parse_tag(u32 cursor)
+{
+	u32 textsize = Text.size();
+	bool tag_end = false;
+	bool tag_start = false;
+	core::stringw tag_name = "";
+	core::stringw tag_param = "";
+	wchar_t c;
+
+	if (cursor >= textsize) return 0;
+	c = Text[cursor];
+
+	if (c == L'/') {
+		tag_end = true;
+		if (++cursor >= textsize) return 0;
+		c = Text[cursor];
+	}
+
+	while (c != ' ' && c != '>')
+	{
+		tag_name += c;
+		if (++cursor >= textsize) return 0;
+		c = Text[cursor];
+	}
+
+	while (c == ' ') {
+		if (++cursor >= textsize) return 0;
+		c = Text[cursor];
+	}
+
+	while (c != '>') {
+		tag_param += c;
+		if (++cursor >= textsize) return 0;
+		c = Text[cursor];
+	}
+
+	++cursor; // last '>'
+
+	std::unordered_map<std::string, std::string> properties;
+
+	if (tag_name == L"center") {
+		if (!tag_end) {
+			properties["halign"] = "center";
+			tag_start = true;
+		}
+	} else if (tag_name == L"justify") {
+		if (!tag_end) {
+			properties["halign"] = "justify";
+			tag_start = true;
+		}
+	} else if (tag_name == L"left") {
+		if (!tag_end) {
+			properties["halign"] = "left";
+			tag_start = true;
+		}
+	} else if (tag_name == L"right") {
+		if (!tag_end) {
+			properties["halign"] = "right";
+			tag_start = true;
+		}
+	} else if (tag_name == L"small") {
+		if (!tag_end) {
+			properties["fontsize"] = "12";
+			tag_start = true;
+		}
+	} else if (tag_name == L"medium") {
+		if (!tag_end) {
+			properties["fontsize"] = "16";
+			tag_start = true;
+		}
+	} else if (tag_name == L"large") {
+		if (!tag_end) {
+			properties["fontsize"] = "22";
+			tag_start = true;
+		}
+	} else if (tag_name == L"mono") {
+		if (!tag_end) {
+			properties["fontstyle"] = "mono";
+			tag_start = true;
+		}
+	} else if (tag_name == L"normal") {
+		if (!tag_end) {
+			properties["fontstyle"] = "normal";
+			tag_start = true;
+		}
+	} else return 0; // Unknown tag
+
+	if (tag_end)
+		printf("\ntag '%ls' end\n", tag_name.c_str());
+	else
+		printf("\ntag '%ls'\n", tag_name.c_str());
+
+	if (tag_start) {
+		markup_tag tag;
+		tag.name = tag_name;
+		tag.style_properties = properties;
+
+		m_tag_stack.push_back(tag);
+		update_properties();
+	}
+
+	// Tag end, unstack last stacked tag with same name
+	if (tag_end) {
+		bool found = false;
+		for (auto tag = m_tag_stack.rbegin(); tag != m_tag_stack.rend(); ++tag)
+			if (tag->name == tag_name) {
+				m_tag_stack.erase(std::next(tag).base());
+				found = true;
+				break;
+			}
+		if (!found) return 0;
+		update_properties();
+	}
+
+	return cursor;
+}
+
+void GUIText::parse()
+{
+	m_tag_stack.clear();
+	markup_tag root_tag;
+	root_tag.name = L"root";
+	root_tag.style_properties["fontsize"] = "12";
+	root_tag.style_properties["fontstyle"] = "normal";
+	root_tag.style_properties["halign"] = "left";
+	root_tag.style_properties["color"] = "#FFFFFF";
+	m_tag_stack.push_back(root_tag);
+
+	update_properties();
+
+//	inline_blocks.clear()
+	u32 cursor = 0;
+	bool escape = false;
+	wchar_t c;
+	u32 textsize = Text.size();
+	while (cursor < textsize)
+	{
+		c = Text[cursor];
+		cursor++;
+
+		if (c == L'\r') { // Mac or Windows breaks
+			if (cursor < textsize && Text[cursor] == L'\n')
+				cursor++;
+			end_paragraph();
+			continue;
+		}
+
+		if (c == L'\n') { // Unix breaks
+			end_paragraph();
+			continue;
+		}
+
+		if (escape) {
+			escape = false;
+			push_char(c);
+			continue;
+		}
+
+		if (c == L'\\') {
+			escape = true;
+			continue;
+		}
+		// Tag check
+		if (c == L'<') {
+			u32 newcursor = parse_tag(cursor);
+			if (newcursor > 0) {
+				cursor = newcursor;
+				continue;
+			}
+		}
+
+		// Default behavior
+		push_char(c);
+	}
+}
 
 //! constructor
 GUIText::GUIText(
@@ -20,6 +245,7 @@ GUIText::GUIText(
 	#endif
 
 	Text = text;
+	parse();
 }
 
 //! destructor

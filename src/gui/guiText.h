@@ -20,6 +20,21 @@ class GUIText : public gui::IGUIElement
 
 	protected:
 
+
+		void update_properties();
+		void end_paragraph();
+		void push_char(wchar_t c);
+		u32 parse_tag(u32 cursor);
+		void parse();
+
+		struct markup_tag {
+			core::stringw name;
+			std::unordered_map<std::string, std::string> style_properties;
+		};
+
+		std::vector<GUIText::markup_tag> m_tag_stack;
+		std::unordered_map<std::string, std::string> m_style_properties;
+
 		enum halign {
 			center,
 			left,
