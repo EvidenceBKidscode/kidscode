@@ -18,7 +18,18 @@ class GUIText : public gui::IGUIElement
 		//! draws the element and its children
 		virtual void draw();
 
+		bool OnEvent(const SEvent& event);
+
 	protected:
+
+		core::rect<s32> m_display_text_rect;
+
+		core::position2d<s32> m_text_scrollpos;
+
+		u32 m_scrollbar_width;
+		GUIScrollBar *m_vscrollbar;
+
+		void createVScrollBar();
 
 		enum halign { center, left, right, justify };
 

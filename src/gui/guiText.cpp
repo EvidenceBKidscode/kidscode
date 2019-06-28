@@ -1,5 +1,6 @@
 
 #include "IGUIEnvironment.h"
+#include "guiScrollBar.h"
 #include "IGUIFont.h"
 #include <vector>
 #include <unordered_map>
@@ -7,6 +8,89 @@ using namespace irr::gui;
 #include "guiText.h"
 #include "fontengine.h"
 #include <SColor.h>
+
+//! constructor
+GUIText::GUIText(
+	const wchar_t* text,
+	IGUIEnvironment* environment,
+	IGUIElement* parent, s32 id,
+	const core::rect<s32>& rectangle) :
+	IGUIElement(EGUIET_ELEMENT, environment, parent, id, rectangle),
+	m_vscrollbar(NULL),
+	m_text_scrollpos(0, 0)
+{
+	#ifdef _DEBUG
+		setDebugName("GUIText");
+	#endif
+
+	Text = text;
+
+	createVScrollBar();
+}
+
+//! destructor
+GUIText::~GUIText()
+{
+	m_vscrollbar->remove();
+}
+
+//! create a vertical scroll bar
+void GUIText::createVScrollBar()
+{
+	IGUISkin *skin = 0;
+	if (Environment)
+		skin = Environment->getSkin();
+
+	m_scrollbar_width = skin ? skin->getSize(gui::EGDS_SCROLLBAR_SIZE) : 16;
+
+	m_vscrollbar = new GUIScrollBar(Environment, false, this, -1,
+		irr::core::rect<s32>(
+			RelativeRect.getWidth() - m_scrollbar_width,
+			0,
+			RelativeRect.getWidth(),
+			RelativeRect.getHeight()
+		)
+	);
+
+	m_vscrollbar->setVisible(true);
+	m_vscrollbar->setSmallStep(1);
+	m_vscrollbar->setLargeStep(1);
+	m_vscrollbar->setPos(0);
+	m_vscrollbar->setMax(100);
+}
+
+bool GUIText::OnEvent(const SEvent& event) {
+	if (event.EventType == EET_GUI_EVENT)
+		if (event.GUIEvent.EventType == EGET_SCROLL_BAR_CHANGED)
+			if (event.GUIEvent.Caller == m_vscrollbar)
+				m_text_scrollpos.Y = -m_vscrollbar->getPos();
+
+	return IGUIElement::OnEvent(event);
+}
+
+//! draws the element and its children
+void GUIText::draw()
+{
+
+	m_vscrollbar->draw();
+
+	if (!IsVisible)
+		return;
+
+	m_display_text_rect = AbsoluteRect;
+	m_display_text_rect.LowerRightCorner.X -= m_scrollbar_width;
+	m_current_paragraph.linewidth = m_display_text_rect.getWidth();
+	m_current_paragraph.pos = m_display_text_rect.UpperLeftCorner;
+	m_current_paragraph.pos.X += m_text_scrollpos.X;
+	m_current_paragraph.pos.Y += m_text_scrollpos.Y;
+
+	parse();
+
+	// draw children
+	IGUIElement::draw();
+}
+
+
 
 bool GUIText::update_style()
 {
@@ -85,10 +169,10 @@ void GUIText::draw_line(bool lastline)
 				m_current_paragraph.pos.X + x + fragment.dimension.Width,
 				m_current_paragraph.pos.Y + textheight);
 
-			if (c.isRectCollided(AbsoluteClippingRect)) {
+			if (c.isRectCollided(m_display_text_rect)) {
 				fragment.style.font->draw(fragment.text, c,
 					fragment.style.color,
-					false, true, &AbsoluteClippingRect);
+					false, true, &m_display_text_rect);
 			}
 			x += fragment.dimension.Width;
 		}
@@ -404,37 +488,4 @@ void GUIText::parse()
 		push_char(c);
 	}
 	end_paragraph();
-}
-
-//! constructor
-GUIText::GUIText(
-	const wchar_t* text,
-	IGUIEnvironment* environment,
-	IGUIElement* parent, s32 id,
-	const core::rect<s32>& rectangle)
-	: IGUIElement(EGUIET_ELEMENT, environment, parent, id, rectangle)
-{
-	#ifdef _DEBUG
-		setDebugName("GUIText");
-	#endif
-
-	Text = text;
-}
-
-//! destructor
-GUIText::~GUIText()
-{}
-//! draws the element and its children
-void GUIText::draw()
-{
-	if (!IsVisible)
-		return;
-
-	m_current_paragraph.linewidth = AbsoluteRect.getWidth();
-	m_current_paragraph.pos = AbsoluteRect.UpperLeftCorner;
-
-	parse();
-
-	// draw children
-	IGUIElement::draw();
 }
