@@ -166,7 +166,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("smooth_lighting", "true");
 	settings->setDefault("lighting_alpha", "0.0");
 	settings->setDefault("lighting_beta", "0.0");
-	settings->setDefault("display_gamma", "1.0");
+	settings->setDefault("display_gamma", "10.0");
 	settings->setDefault("texture_path", "");
 	settings->setDefault("shader_path", "");
 	settings->setDefault("video_driver", "opengl");
@@ -212,7 +212,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("arm_inertia", "false");
 
 	settings->setDefault("enable_minimap", "true");
-	settings->setDefault("minimap_shape_round", "true");
+	settings->setDefault("minimap_shape_round", "false");
 	settings->setDefault("minimap_double_scan_height", "true");
 
 	// Effects
