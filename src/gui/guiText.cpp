@@ -71,12 +71,16 @@ bool GUIText::OnEvent(const SEvent& event) {
 //! draws the element and its children
 void GUIText::draw()
 {
-
-	m_vscrollbar->draw();
-
 	if (!IsVisible)
 		return;
 
+	// Frame
+	IGUISkin* skin = Environment->getSkin();
+	if (skin)
+		skin->draw3DSunkenPane(this, video::SColor(0), false, false,
+				AbsoluteRect, &AbsoluteClippingRect);
+
+	// Text
 	m_display_text_rect = AbsoluteRect;
 	m_display_text_rect.LowerRightCorner.X -= m_scrollbar_width;
 	m_current_paragraph.linewidth = m_display_text_rect.getWidth();
