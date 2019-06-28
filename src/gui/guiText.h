@@ -20,41 +20,59 @@ class GUIText : public gui::IGUIElement
 
 	protected:
 
+		enum halign { center, left, right, justify };
 
-		void update_properties();
+		typedef std::unordered_map<std::string, std::string> properties;
+
+		struct markup_tag {
+			core::stringw name;
+			GUIText::properties style_properties;
+		};
+
+		struct style_def {
+			int halign;
+			gui::IGUIFont* font;
+			irr::video::SColor color;
+		};
+
+		std::vector<GUIText::markup_tag> m_tag_stack;
+		style_def m_style;
+
+		bool update_style();
+		void draw_line(bool lastline);
+		void end_fragment();
+		void end_word();
 		void end_paragraph();
 		void push_char(wchar_t c);
 		u32 parse_tag(u32 cursor);
 		void parse();
 
-		struct markup_tag {
-			core::stringw name;
-			std::unordered_map<std::string, std::string> style_properties;
-		};
-
-		std::vector<GUIText::markup_tag> m_tag_stack;
-		std::unordered_map<std::string, std::string> m_style_properties;
-
-		enum halign {
-			center,
-			left,
-			right,
-			justify
+		struct fragment {
+			style_def style;
+			core::stringw text;
+			core::dimension2d<u32> dimension;
+			bool ended = false;
 		};
 
 		struct word {
+			std::vector<fragment> fragments;
 			core::dimension2d<u32> dimension;
-			core::stringw text;
-			gui::IGUIFont* font;
-			word(core::dimension2d<u32> dim, core::stringw txt, gui::IGUIFont* fnt):
-				dimension(dim), text(txt)
-				{ font = fnt; }
+			bool ended = false;
+			bool separator = false;
 		};
 
-		void drawline(
-			core::rect<s32>& rectangle,
-			std::vector<GUIText::word>& words,
-			int halign);
+		struct paragraph {
+			style_def style;
+			std::vector<word> words;
+			u32 width = 0;
+			u32 linewidth;
+			core::position2d<s32> pos;
+			bool ended = false;
+		};
+
+		fragment m_current_fragment;
+		word m_current_word;
+		paragraph m_current_paragraph;
 };
 
 

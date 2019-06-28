@@ -8,52 +8,187 @@ using namespace irr::gui;
 #include "fontengine.h"
 #include <SColor.h>
 
-
-// PARSER ?
-/*
-struct currentstate {
-	int halign = left;
-	int fontsize = medium;
-
-}
-
-struct inline_content {
-	core::dimension2d<u32> dimension;
-	core::stringw text;
-	gui::IGUIFont* font;
-}
-
-struct inline_block {
-	core::dimension2d<u32> dimension;
-	std::vector<GUIText:inline_content>& content;
-};
-
-std::vector<GUIText::inline_block>& inline_blocks;
-*/
-
-void GUIText::update_properties()
+bool GUIText::update_style()
 {
-	m_style_properties.clear();
+	GUIText::properties style_properties;
 	for (auto const& tag : m_tag_stack)
 		for (auto const& prop : tag.style_properties)
-			m_style_properties[prop.first] = prop.second;
+			style_properties[prop.first] = prop.second;
 
-/*	printf("Tag stack:");
-	for (auto const& tag: m_tag_stack)
-		printf("%ls", tag.name.c_str());
-	printf("\nProperties:\n");
-	for (auto const& prop : m_style_properties)
-		printf("  %s='%s'\n", prop.first.c_str(), prop.second.c_str());
-*/}
+	if (style_properties["halign"] == "center")
+		m_style.halign = center;
+	else if (style_properties["halign"] == "right")
+		m_style.halign = right;
+	else if (style_properties["halign"] == "justify")
+		m_style.halign = justify;
+	else
+		m_style.halign = left;
 
-void GUIText::end_paragraph()
+	int r, g, b;
+	sscanf(style_properties["color"].c_str(),"%2x%2x%2x", &r, &g, &b);
+	m_style.color = irr::video::SColor(255, r, g, b);
+
+	unsigned int font_size = std::atoi(style_properties["fontsize"].c_str());
+	FontMode font_mode = FM_Standard;
+	if (style_properties["fontstyle"] == "mono")
+		font_mode = FM_Mono;
+	m_style.font = g_fontengine->getFont(font_size, font_mode);
+
+	if (!m_style.font) {
+		printf("No font found ! Size=%d, mode=%d\n", font_size, font_mode);
+		return false;
+	}
+
+	return true;
+}
+
+void GUIText::draw_line(bool lastline)
 {
-	printf("\n(paragraph end)\n");
+	s32 textwidth = 0;
+	s32 textheight = 0;
+	float x = 0;
+	float extraspace = 0;
+
+	// remove trailing non printable chars
+	for (auto word = m_current_paragraph.words.rbegin();
+			word != m_current_paragraph.words.rend(); ++word)
+		if (word->separator)
+			m_current_paragraph.words.erase(std::next(word).base());
+		else
+			break;
+
+	for (auto & word : m_current_paragraph.words) {
+		textwidth += word.dimension.Width;
+		if (textheight < word.dimension.Height)
+			textheight = word.dimension.Height;
+	}
+
+	switch(m_current_paragraph.style.halign)
+	{
+		case center:
+			x = (m_current_paragraph.linewidth - textwidth) / 2;
+			break;
+		case justify:
+			if (!lastline && m_current_paragraph.words.size() > 1)
+				extraspace = ((float)(m_current_paragraph.linewidth - textwidth)) /
+						(m_current_paragraph.words.size() - 1);
+			break;
+		case right:
+			x = m_current_paragraph.linewidth - textwidth;
+	}
+
+	for (auto & word : m_current_paragraph.words) {
+		for (auto & fragment : word.fragments) {
+			core::rect<s32> c(
+				m_current_paragraph.pos.X + x,
+				m_current_paragraph.pos.Y,
+				m_current_paragraph.pos.X + x + fragment.dimension.Width,
+				m_current_paragraph.pos.Y + textheight);
+
+			if (c.isRectCollided(AbsoluteClippingRect)) {
+				fragment.style.font->draw(fragment.text, c,
+					fragment.style.color,
+					false, true, &AbsoluteClippingRect);
+			}
+			x += fragment.dimension.Width;
+		}
+		x += extraspace;
+	}
+
+	m_current_paragraph.pos.Y += textheight;
+	m_current_paragraph.width = 0;
+	m_current_paragraph.words.clear();
 }
 
 void GUIText::push_char(wchar_t c)
 {
-	printf("%lc", c);
+	bool separator = (c == L' ' || c == L'\t');
+
+		// New paragraph if needed
+	if (m_current_paragraph.ended) {
+		m_current_paragraph.ended = false;
+		m_current_paragraph.style = m_style;
+		m_current_paragraph.width = 0;
+		m_current_paragraph.words.clear(); // Should already be cleared
+	};
+
+	if (m_current_word.separator != separator)
+		end_word();
+
+	// New word if needed
+	if (m_current_word.ended) {
+		m_current_word.ended = false;
+		m_current_word.fragments.clear();
+		m_current_word.separator = separator;
+	};
+
+
+	// New fragement if needed
+	if (m_current_fragment.ended) {
+		m_current_fragment.ended = false;
+		m_current_fragment.style = m_style;
+		m_current_fragment.text = "";
+	}
+
+	m_current_fragment.text += c;
+}
+
+void GUIText::end_fragment()
+{
+	if (m_current_fragment.ended) return;
+
+	// Compute size
+	m_current_fragment.dimension =
+			m_current_fragment.style.font->getDimension(
+					m_current_fragment.text.c_str());
+
+	m_current_fragment.ended = true;
+	m_current_word.fragments.push_back(m_current_fragment);
+}
+
+void GUIText::end_word()
+{
+	if (m_current_word.ended) return;
+
+	end_fragment();
+
+	// Compute size
+	m_current_word.dimension.Height = 0;
+	m_current_word.dimension.Width = 0;
+
+	for (auto const & fragment: m_current_word.fragments) {
+		if (m_current_word.dimension.Height < fragment.dimension.Height)
+			m_current_word.dimension.Height = fragment.dimension.Height;
+		m_current_word.dimension.Width += fragment.dimension.Width;
+	}
+
+	if (m_current_paragraph.width + m_current_word.dimension.Width >
+			m_current_paragraph.linewidth)
+		draw_line(false);
+
+	m_current_word.ended = true;
+
+	if (!m_current_word.separator || !m_current_paragraph.words.empty()) {
+		m_current_paragraph.words.push_back(m_current_word);
+		m_current_paragraph.width += m_current_word.dimension.Width;
+	}
+}
+
+void GUIText::end_paragraph()
+{
+	if (m_current_paragraph.ended) return;
+
+	end_word();
+
+	if (!m_current_paragraph.words.empty())
+		draw_line(true);
+}
+
+char getwcharhexdigit(wchar_t c)
+{
+	if ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'F')) return (char)c;
+	if (c >= 'a' && c <= 'f') return (char)(c - 32);
+	return 0;
 }
 
 u32 GUIText::parse_tag(u32 cursor)
@@ -118,17 +253,17 @@ u32 GUIText::parse_tag(u32 cursor)
 		}
 	} else if (tag_name == L"small") {
 		if (!tag_end) {
-			properties["fontsize"] = "12";
+			properties["fontsize"] = "16";
 			tag_start = true;
 		}
 	} else if (tag_name == L"medium") {
 		if (!tag_end) {
-			properties["fontsize"] = "16";
+			properties["fontsize"] = "24";
 			tag_start = true;
 		}
 	} else if (tag_name == L"large") {
 		if (!tag_end) {
-			properties["fontsize"] = "22";
+			properties["fontsize"] = "36";
 			tag_start = true;
 		}
 	} else if (tag_name == L"mono") {
@@ -141,12 +276,37 @@ u32 GUIText::parse_tag(u32 cursor)
 			properties["fontstyle"] = "normal";
 			tag_start = true;
 		}
+	} else if (tag_name == L"color") {
+		if (!tag_end) {
+			if (tag_param[0] == L'#') {
+				std::string color = "";
+				char c;
+				if (tag_param.size() == 4) {
+					if (!(c = getwcharhexdigit(tag_param[1]))) return 0;
+					color += c; color += c;
+					if (!(c = getwcharhexdigit(tag_param[2]))) return 0;
+					color += c; color += c;
+					if (!(c = getwcharhexdigit(tag_param[3]))) return 0;
+					color += c; color += c;
+				} else if (tag_param.size() == 7) {
+					if (!(c = getwcharhexdigit(tag_param[1]))) return 0;
+					color += c;
+					if (!(c = getwcharhexdigit(tag_param[2]))) return 0;
+					color += c;
+					if (!(c = getwcharhexdigit(tag_param[3]))) return 0;
+					color += c;
+					if (!(c = getwcharhexdigit(tag_param[4]))) return 0;
+					color += c;
+					if (!(c = getwcharhexdigit(tag_param[5]))) return 0;
+					color += c;
+					if (!(c = getwcharhexdigit(tag_param[6]))) return 0;
+					color += c;
+				} else return 0;
+				properties["color"] = color;
+				tag_start = true;
+			} else return 0;
+		}
 	} else return 0; // Unknown tag
-
-	if (tag_end)
-		printf("\ntag '%ls' end\n", tag_name.c_str());
-	else
-		printf("\ntag '%ls'\n", tag_name.c_str());
 
 	if (tag_start) {
 		markup_tag tag;
@@ -154,7 +314,7 @@ u32 GUIText::parse_tag(u32 cursor)
 		tag.style_properties = properties;
 
 		m_tag_stack.push_back(tag);
-		update_properties();
+		update_style();
 	}
 
 	// Tag end, unstack last stacked tag with same name
@@ -167,7 +327,7 @@ u32 GUIText::parse_tag(u32 cursor)
 				break;
 			}
 		if (!found) return 0;
-		update_properties();
+		update_style();
 	}
 
 	return cursor;
@@ -181,12 +341,14 @@ void GUIText::parse()
 	root_tag.style_properties["fontsize"] = "12";
 	root_tag.style_properties["fontstyle"] = "normal";
 	root_tag.style_properties["halign"] = "left";
-	root_tag.style_properties["color"] = "#FFFFFF";
+	root_tag.style_properties["color"] = "FFFFFF";
 	m_tag_stack.push_back(root_tag);
+	update_style();
 
-	update_properties();
+	m_current_fragment.ended = true;
+	m_current_word.ended = true;
+	m_current_paragraph.ended = true;
 
-//	inline_blocks.clear()
 	u32 cursor = 0;
 	bool escape = false;
 	wchar_t c;
@@ -200,11 +362,13 @@ void GUIText::parse()
 			if (cursor < textsize && Text[cursor] == L'\n')
 				cursor++;
 			end_paragraph();
+			escape = false;
 			continue;
 		}
 
 		if (c == L'\n') { // Unix breaks
 			end_paragraph();
+			escape = false;
 			continue;
 		}
 
@@ -245,110 +409,22 @@ GUIText::GUIText(
 	#endif
 
 	Text = text;
-	parse();
 }
 
 //! destructor
 GUIText::~GUIText()
 {}
-
-void GUIText::drawline(
-	core::rect<s32>& rectangle,
-	std::vector<GUIText::word>& words,
-	int halign)
-{
-
-	s32 textwidth = 0;
-	s32 textheight = 0;
-	float x = 0;
-	float extraspace = 0;
-
-	for (auto & word : words) {
-		textwidth += word.dimension.Width;
-		if (textheight < word.dimension.Height)
-			textheight = word.dimension.Height;
-	}
-
-	rectangle.LowerRightCorner.Y = rectangle.UpperLeftCorner.Y + textheight;
-
-	switch(halign)
-	{
-		case center:
-			x = (rectangle.getWidth() - textwidth) / 2;
-			break;
-		case justify:
-			if (words.size() > 1)
-				extraspace = ((float)(rectangle.getWidth() - textwidth)) / (words.size() - 1);
-			break;
-		case right:
-			x = (rectangle.getWidth() - textwidth);
-	}
-
-	for (auto & word : words) {
-		core::rect<s32> c = rectangle + core::position2d<s32>(x, 0);
-		if (c.isRectCollided(AbsoluteClippingRect)) {
-			word.font->draw(word.text, c,
-				irr::video::SColor(255, 255, 255, 255),
-				false, true, &AbsoluteClippingRect);
-		}
-		x += word.dimension.Width + extraspace;
-	}
-	words.clear();
-	rectangle += core::position2d<s32>(0, textheight);
-}
-
 //! draws the element and its children
 void GUIText::draw()
 {
 	if (!IsVisible)
 		return;
 
-	IGUISkin* skin = Environment->getSkin();
-	if (!skin)
-		return;
-//	IGUIFont* font = skin->getFont();
+	m_current_paragraph.linewidth = AbsoluteRect.getWidth();
+	m_current_paragraph.pos = AbsoluteRect.UpperLeftCorner;
 
-//	skin->draw2DRectangle (this, irr::video::SColor(255, 255, 0, 0), AbsoluteRect);
-//	skin->draw2DRectangle (this, irr::video::SColor(255, 0, 255, 0), AbsoluteClippingRect);
+	parse();
 
-	IGUIFont* font = g_fontengine->getFont(18);
-	if (!font)
-		return;
-
-	s32 linewidth = AbsoluteRect.getWidth();
-
-	std::vector<core::stringw> paragraphs;
-	Text.split(paragraphs, L"\n");
-
-	core::rect<s32> line_rect = AbsoluteRect;
-	std::vector<GUIText::word> words_to_draw;
-
-	for (auto & paragraph : paragraphs) {
-		std::vector<core::stringw> words;
-
-		paragraph.split(words, L" ", 1, false, true);
-
-		u32 width = 0;
-
-		for (auto & word : words)
-		{
-			if (font->getDimension(word.c_str()).Width + width > linewidth)
-			{
-				// TODO: Split very large words
-				drawline(line_rect, words_to_draw, justify);
-				width = 0;
-			}
-			// Remove first space of each line
-			if (words_to_draw.size() == 0 && (word[0] == L' ')) word.erase(0);
-
-			GUIText::word word_to_draw(font->getDimension(word.c_str()), word, font);
-			words_to_draw.push_back(word_to_draw);
-			width += word_to_draw.dimension.Width;
-		}
-
-		if (! words_to_draw.empty())
-			drawline(line_rect, words_to_draw, left);
-	}
 	// draw children
 	IGUIElement::draw();
 }
