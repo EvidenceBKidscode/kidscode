@@ -95,6 +95,9 @@ void GUIText::draw_line(bool lastline)
 		x += extraspace;
 	}
 
+	// TODO: Improve that with something in style
+	if (lastline) m_current_paragraph.pos.Y += 10;
+
 	m_current_paragraph.pos.Y += textheight;
 	m_current_paragraph.width = 0;
 	m_current_paragraph.words.clear();
@@ -182,6 +185,8 @@ void GUIText::end_paragraph()
 
 	if (!m_current_paragraph.words.empty())
 		draw_line(true);
+
+	m_current_paragraph.ended = true;
 }
 
 char getwcharhexdigit(wchar_t c)
@@ -236,21 +241,25 @@ u32 GUIText::parse_tag(u32 cursor)
 			properties["halign"] = "center";
 			tag_start = true;
 		}
+		end_paragraph();
 	} else if (tag_name == L"justify") {
 		if (!tag_end) {
 			properties["halign"] = "justify";
 			tag_start = true;
 		}
+		end_paragraph();
 	} else if (tag_name == L"left") {
 		if (!tag_end) {
 			properties["halign"] = "left";
 			tag_start = true;
 		}
+		end_paragraph();
 	} else if (tag_name == L"right") {
 		if (!tag_end) {
 			properties["halign"] = "right";
 			tag_start = true;
 		}
+		end_paragraph();
 	} else if (tag_name == L"small") {
 		if (!tag_end) {
 			properties["fontsize"] = "16";
@@ -394,6 +403,7 @@ void GUIText::parse()
 		// Default behavior
 		push_char(c);
 	}
+	end_paragraph();
 }
 
 //! constructor
