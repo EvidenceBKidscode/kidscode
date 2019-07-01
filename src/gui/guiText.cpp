@@ -70,6 +70,13 @@ bool GUIText::OnEvent(const SEvent& event) {
 			if (event.GUIEvent.Caller == m_vscrollbar)
 				m_text_scrollpos.Y = -m_vscrollbar->getPos();
 
+	if (event.EventType == EET_MOUSE_INPUT_EVENT)
+		if (event.MouseInput.Event == EMIE_MOUSE_WHEEL) {
+			m_vscrollbar->setPos(m_vscrollbar->getPos() +
+					event.MouseInput.Wheel * m_vscrollbar->getLargeStep());
+			m_text_scrollpos.Y = -m_vscrollbar->getPos();
+		}
+
 	return IGUIElement::OnEvent(event);
 }
 
@@ -207,12 +214,12 @@ void GUIText::place(
 			u32 wordcount = 0;
 			u32 linewidth = text_rect.getWidth();
 
-			std::vector<GUIText::word>::iterator linestart = current_word;
-
 			while(current_word != paragraph.words.end() && current_word->type == t_separator) {
 				current_word->draw = false;
 				current_word++;
 			}
+
+			std::vector<GUIText::word>::iterator linestart = current_word;
 
 			// Need a distinct value to detect empty lines
 			std::vector<GUIText::word>::iterator lineend = paragraph.words.end();
@@ -276,8 +283,7 @@ void GUIText::place(
 
 						fragment->draw = c.isRectCollided(text_rect);
 						word->draw = word->draw || fragment->draw;
-						if (fragment->draw)
-							x += fragment->dimension.Width;
+						x += fragment->dimension.Width;
 					}
 					if (word->type == t_separator)
 						x += extraspace;
@@ -533,26 +539,31 @@ u32 GUIText::parse_tag(u32 cursor)
 			properties["fontsize"] = "16";
 			tag_start = true;
 		}
+		end_fragment();
 	} else if (tag_name == "medium") {
 		if (!tag_end) {
 			properties["fontsize"] = "24";
 			tag_start = true;
 		}
+		end_fragment();
 	} else if (tag_name == "large") {
 		if (!tag_end) {
 			properties["fontsize"] = "36";
 			tag_start = true;
 		}
+		end_fragment();
 	} else if (tag_name == "mono") {
 		if (!tag_end) {
 			properties["fontstyle"] = "mono";
 			tag_start = true;
 		}
+		end_fragment();
 	} else if (tag_name == "normal") {
 		if (!tag_end) {
 			properties["fontstyle"] = "normal";
 			tag_start = true;
 		}
+		end_fragment();
 	} else if (tag_name == "color") {
 		if (!tag_end) {
 			if (tag_param[0] == '#') {
@@ -582,6 +593,7 @@ u32 GUIText::parse_tag(u32 cursor)
 				properties["color"] = color;
 				tag_start = true;
 			} else return 0;
+		end_fragment();
 		}
 	} else return 0; // Unknown tag
 
