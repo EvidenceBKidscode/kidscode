@@ -22,15 +22,6 @@ class GUIText : public gui::IGUIElement
 
 	protected:
 
-		core::rect<s32> m_display_text_rect;
-
-		core::position2d<s32> m_text_scrollpos;
-
-		u32 m_scrollbar_width;
-		GUIScrollBar *m_vscrollbar;
-
-		void createVScrollBar();
-
 		enum halign { center, left, right, justify };
 
 		typedef std::unordered_map<std::string, std::string> properties;
@@ -45,9 +36,34 @@ class GUIText : public gui::IGUIElement
 			gui::IGUIFont* font;
 			irr::video::SColor color;
 		};
+		struct fragment {
+			style_def style;
+			core::stringw text;
+			core::dimension2d<u32> dimension;
+			core::position2d<s32> position;
+			bool draw = false;
+			bool ended = false;
+		};
+
+		struct word {
+			std::vector<fragment> fragments;
+			core::dimension2d<u32> dimension;
+			bool ended = false;
+			bool draw = false;
+			bool separator = false;
+		};
+
+		struct paragraph {
+			style_def style;
+			std::vector<word> words;
+			u32 height = 0;
+			u32 linewidth;
+			bool ended = false;
+		};
+
+		typedef std::vector<GUIText::paragraph> text;
 
 		std::vector<GUIText::markup_tag> m_tag_stack;
-		style_def m_style;
 
 		bool update_style();
 		void draw_line(bool lastline);
@@ -58,32 +74,26 @@ class GUIText : public gui::IGUIElement
 		u32 parse_tag(u32 cursor);
 		void parse();
 
-		struct fragment {
-			style_def style;
-			core::stringw text;
-			core::dimension2d<u32> dimension;
-			bool ended = false;
-		};
+		void size(GUIText::text &text);
+		void place(GUIText::text &text, core::rect<s32> & text_rect);
+		void draw(GUIText::text &text, core::rect<s32> & text_rect);
 
-		struct word {
-			std::vector<fragment> fragments;
-			core::dimension2d<u32> dimension;
-			bool ended = false;
-			bool separator = false;
-		};
+		void createVScrollBar();
 
-		struct paragraph {
-			style_def style;
-			std::vector<word> words;
-			u32 width = 0;
-			u32 linewidth;
-			core::position2d<s32> pos;
-			bool ended = false;
-		};
+		core::rect<s32> m_display_text_rect;
+
+		core::position2d<s32> m_text_scrollpos;
+
+		u32 m_scrollbar_width;
+		GUIScrollBar *m_vscrollbar;
+
+		style_def m_style;
 
 		fragment m_current_fragment;
 		word m_current_word;
 		paragraph m_current_paragraph;
+		text m_parsed_text;
+
 };
 
 

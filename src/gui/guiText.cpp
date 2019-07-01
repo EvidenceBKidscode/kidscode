@@ -25,7 +25,7 @@ GUIText::GUIText(
 
 	Text = text;
 
-	createVScrollBar();
+//	createVScrollBar();
 }
 
 //! destructor
@@ -82,19 +82,165 @@ void GUIText::draw()
 
 	// Text
 	m_display_text_rect = AbsoluteRect;
-	m_display_text_rect.LowerRightCorner.X -= m_scrollbar_width;
+//	m_display_text_rect.LowerRightCorner.X -= m_scrollbar_width;
 	m_current_paragraph.linewidth = m_display_text_rect.getWidth();
-	m_current_paragraph.pos = m_display_text_rect.UpperLeftCorner;
+/*	m_current_paragraph.pos = m_display_text_rect.UpperLeftCorner;
 	m_current_paragraph.pos.X += m_text_scrollpos.X;
 	m_current_paragraph.pos.Y += m_text_scrollpos.Y;
+*/
 
+//	m_parsed_text = parse(Text);
 	parse();
+	size(m_parsed_text);
+	place(m_parsed_text, m_display_text_rect);
+	draw(m_parsed_text, m_display_text_rect);
 
 	// draw children
 	IGUIElement::draw();
 }
 
+// -----------------------------------------------------------------------------
+// Drawing
+// -----------------------------------------------------------------------------
 
+void GUIText::draw(GUIText::text &text, core::rect<s32> & text_rect)
+{
+	for (auto & paragraph : text)
+		for (auto & word : paragraph.words)
+			if (word.draw)
+				for (auto & fragment : word.fragments)
+					if (fragment.draw)
+					{
+						core::rect<s32> c(
+							fragment.position.X, fragment.position.Y,
+							fragment.position.X + fragment.dimension.Width,
+							fragment.position.Y + fragment.dimension.Height);
+
+						fragment.style.font->draw(fragment.text, c,
+							fragment.style.color, false, true, &text_rect);
+					}
+}
+
+// -----------------------------------------------------------------------------
+// Placing
+// -----------------------------------------------------------------------------
+
+void GUIText::size(GUIText::text &text)
+{
+	for (auto & paragraph : text) {
+		for (auto & word : paragraph.words) {
+			word.dimension.Height = 0;
+			word.dimension.Width = 0;
+
+			for (auto & fragment : word.fragments) {
+				fragment.dimension =
+					fragment.style.font->getDimension(fragment.text.c_str());
+				if (word.dimension.Height < fragment.dimension.Height)
+					word.dimension.Height = fragment.dimension.Height;
+				word.dimension.Width += fragment.dimension.Width;
+			}
+		}
+	}
+}
+
+void GUIText::place(GUIText::text &text, core::rect<s32> & text_rect)
+{
+	core::position2d<s32> position = text_rect.UpperLeftCorner;
+	for (auto & paragraph : text) {
+		paragraph.height = 0;
+
+		std::vector<GUIText::word>::iterator current_word =  paragraph.words.begin();
+		while (current_word != paragraph.words.end())
+	 	{
+			s32 textwidth = 0;
+			s32 textheight = 0;
+			u32 wordcount = 0;
+
+			std::vector<GUIText::word>::iterator linestart = current_word;
+
+			while(current_word != paragraph.words.end() && current_word->separator) {
+				current_word->draw = false;
+				current_word++;
+			}
+
+			// Need a distinct value to detect empty lines
+			std::vector<GUIText::word>::iterator lineend = paragraph.words.end();
+
+			// First pass, find words fitting into line
+			while(current_word != paragraph.words.end() &&
+					textwidth + current_word->dimension.Width <= paragraph.linewidth) {
+
+				if (! current_word->separator) {
+					lineend = current_word;
+					wordcount++;
+				}
+
+				textwidth += current_word->dimension.Width;
+				current_word++;
+			}
+
+			// Empty line, nothing to place or draw
+			if (lineend == paragraph.words.end()) return;
+
+			lineend++; // Point to the first position outside line (may be end())
+			bool lastline = lineend == paragraph.words.end();
+
+			// Second pass, compute printable line width and adjustments
+			textwidth = 0;
+			for(auto word = linestart; word != lineend; ++word) {
+				textwidth += word->dimension.Width;
+				if (textheight < word->dimension.Height)
+					textheight = word->dimension.Height;
+			}
+
+			float x = 0;
+			float extraspace = 0;
+
+			switch(paragraph.style.halign)
+			{
+				case center:
+					x = (paragraph.linewidth - textwidth) / 2;
+					break;
+				case justify:
+					if (wordcount > 1 && !lastline)
+						extraspace = ((float)(paragraph.linewidth - textwidth)) / (wordcount - 1);
+					break;
+				case right:
+					x = paragraph.linewidth - textwidth;
+			}
+
+			// Third pass, actually place everything
+			for(auto word = linestart; word != lineend; ++word)
+			{
+				for (auto fragment = word->fragments.begin();
+					fragment != word->fragments.end(); ++fragment)
+				{
+					fragment->position.X = position.X + x;
+					fragment->position.Y = position.Y; // TODO: valing mnagement
+					core::rect<s32> c(fragment->position.X, fragment->position.Y,
+						fragment->position.X + fragment->dimension.Width,
+						fragment->position.Y + fragment->dimension.Height);
+
+					fragment->draw = c.isRectCollided(text_rect);
+					word->draw = word->draw || fragment->draw;
+					if (fragment->draw) {
+						x += fragment->dimension.Width;
+						x += extraspace;
+					}
+				}
+
+			}
+			paragraph.height += textheight;
+			position.Y += textheight;
+		}
+		// TODO: Paragraph spacing to be set in stye
+		position.Y += 10;
+	}
+}
+
+// -----------------------------------------------------------------------------
+// Parser
+// -----------------------------------------------------------------------------
 
 bool GUIText::update_style()
 {
@@ -130,65 +276,31 @@ bool GUIText::update_style()
 	return true;
 }
 
-void GUIText::draw_line(bool lastline)
+void GUIText::end_fragment()
 {
-	s32 textwidth = 0;
-	s32 textheight = 0;
-	float x = 0;
-	float extraspace = 0;
+	if (m_current_fragment.ended) return;
+	m_current_fragment.ended = true;
+	m_current_word.fragments.push_back(m_current_fragment);
+}
 
-	// remove trailing non printable chars
-	for (auto word = m_current_paragraph.words.rbegin();
-			word != m_current_paragraph.words.rend(); ++word)
-		if (word->separator)
-			m_current_paragraph.words.erase(std::next(word).base());
-		else
-			break;
+void GUIText::end_word()
+{
+	if (m_current_word.ended) return;
 
-	for (auto & word : m_current_paragraph.words) {
-		textwidth += word.dimension.Width;
-		if (textheight < word.dimension.Height)
-			textheight = word.dimension.Height;
-	}
+	end_fragment();
+	m_current_word.ended = true;
+	m_current_paragraph.words.push_back(m_current_word);
+}
 
-	switch(m_current_paragraph.style.halign)
-	{
-		case center:
-			x = (m_current_paragraph.linewidth - textwidth) / 2;
-			break;
-		case justify:
-			if (!lastline && m_current_paragraph.words.size() > 1)
-				extraspace = ((float)(m_current_paragraph.linewidth - textwidth)) /
-						(m_current_paragraph.words.size() - 1);
-			break;
-		case right:
-			x = m_current_paragraph.linewidth - textwidth;
-	}
+void GUIText::end_paragraph()
+{
+	if (m_current_paragraph.ended) return;
 
-	for (auto & word : m_current_paragraph.words) {
-		for (auto & fragment : word.fragments) {
-			core::rect<s32> c(
-				m_current_paragraph.pos.X + x,
-				m_current_paragraph.pos.Y,
-				m_current_paragraph.pos.X + x + fragment.dimension.Width,
-				m_current_paragraph.pos.Y + textheight);
+	end_word();
 
-			if (c.isRectCollided(m_display_text_rect)) {
-				fragment.style.font->draw(fragment.text, c,
-					fragment.style.color,
-					false, true, &m_display_text_rect);
-			}
-			x += fragment.dimension.Width;
-		}
-		x += extraspace;
-	}
+	m_current_paragraph.ended = true;
 
-	// TODO: Improve that with something in style
-	if (lastline) m_current_paragraph.pos.Y += 10;
-
-	m_current_paragraph.pos.Y += textheight;
-	m_current_paragraph.width = 0;
-	m_current_paragraph.words.clear();
+	m_parsed_text.push_back(m_current_paragraph);
 }
 
 void GUIText::push_char(wchar_t c)
@@ -199,7 +311,6 @@ void GUIText::push_char(wchar_t c)
 	if (m_current_paragraph.ended) {
 		m_current_paragraph.ended = false;
 		m_current_paragraph.style = m_style;
-		m_current_paragraph.width = 0;
 		m_current_paragraph.words.clear(); // Should already be cleared
 	};
 
@@ -222,59 +333,6 @@ void GUIText::push_char(wchar_t c)
 	}
 
 	m_current_fragment.text += c;
-}
-
-void GUIText::end_fragment()
-{
-	if (m_current_fragment.ended) return;
-
-	// Compute size
-	m_current_fragment.dimension =
-			m_current_fragment.style.font->getDimension(
-					m_current_fragment.text.c_str());
-
-	m_current_fragment.ended = true;
-	m_current_word.fragments.push_back(m_current_fragment);
-}
-
-void GUIText::end_word()
-{
-	if (m_current_word.ended) return;
-
-	end_fragment();
-
-	// Compute size
-	m_current_word.dimension.Height = 0;
-	m_current_word.dimension.Width = 0;
-
-	for (auto const & fragment: m_current_word.fragments) {
-		if (m_current_word.dimension.Height < fragment.dimension.Height)
-			m_current_word.dimension.Height = fragment.dimension.Height;
-		m_current_word.dimension.Width += fragment.dimension.Width;
-	}
-
-	if (m_current_paragraph.width + m_current_word.dimension.Width >
-			m_current_paragraph.linewidth)
-		draw_line(false);
-
-	m_current_word.ended = true;
-
-	if (!m_current_word.separator || !m_current_paragraph.words.empty()) {
-		m_current_paragraph.words.push_back(m_current_word);
-		m_current_paragraph.width += m_current_word.dimension.Width;
-	}
-}
-
-void GUIText::end_paragraph()
-{
-	if (m_current_paragraph.ended) return;
-
-	end_word();
-
-	if (!m_current_paragraph.words.empty())
-		draw_line(true);
-
-	m_current_paragraph.ended = true;
 }
 
 char getwcharhexdigit(wchar_t c)
@@ -432,6 +490,8 @@ u32 GUIText::parse_tag(u32 cursor)
 
 void GUIText::parse()
 {
+	m_parsed_text.clear();
+
 	m_tag_stack.clear();
 	markup_tag root_tag;
 	root_tag.name = L"root";
