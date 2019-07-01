@@ -30,7 +30,8 @@ class GUIText : public gui::IGUIElement
 
 	protected:
 
-		enum halign { center, left, right, justify };
+		enum halign_type { h_center, h_left, h_right, h_justify };
+		enum valign_type { v_middle, v_top, v_bottom };
 		enum wordtype { t_word, t_separator, t_image };
 		typedef std::unordered_map<std::string, std::string> properties;
 
@@ -39,35 +40,40 @@ class GUIText : public gui::IGUIElement
 			GUIText::properties style_properties;
 		};
 
-		struct style_def {
-			int halign;
+		struct fragment_style {
+			valign_type valign;
 			gui::IGUIFont* font;
 			irr::video::SColor color;
 		};
+
+		struct paragraph_style {
+			halign_type halign;
+		};
+
 		struct fragment {
-			style_def style;
+			bool ended = false;
+			fragment_style style;
 			core::stringw text;
 			core::dimension2d<u32> dimension;
 			core::position2d<s32> position;
 			bool draw = false;
-			bool ended = false;
 		};
 
 		struct word {
+			bool ended = false;
 			std::vector<fragment> fragments;
 			core::dimension2d<u32> dimension;
 			core::position2d<s32> position;
-			bool ended = false;
 			bool draw = false;
 			wordtype type;
 			std::string name;
 		};
 
 		struct paragraph {
-			style_def style;
+			bool ended = false;
+			paragraph_style style;
 			std::vector<word> words;
 			u32 height;
-			bool ended = false;
 		};
 /*
 		struct image {
@@ -111,7 +117,8 @@ class GUIText : public gui::IGUIElement
 		GUIScrollBar *m_vscrollbar;
 
 
-		style_def m_style;
+		paragraph_style m_paragraph_style;
+		fragment_style m_fragment_style;
 
 		fragment m_current_fragment;
 		word m_current_word;

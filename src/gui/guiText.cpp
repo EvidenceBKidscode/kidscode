@@ -256,14 +256,14 @@ void GUIText::place(
 
 			switch(paragraph.style.halign)
 			{
-				case center:
+				case h_center:
 					x = (linewidth - textwidth) / 2;
 					break;
-				case justify:
+				case h_justify:
 					if (wordcount > 1 && !lastline)
 						extraspace = ((float)(linewidth - textwidth)) / (wordcount - 1);
 					break;
-				case right:
+				case h_right:
 					x = linewidth - textwidth;
 			}
 
@@ -278,7 +278,18 @@ void GUIText::place(
 						fragment != word->fragments.end(); ++fragment)
 					{
 						fragment->position.X = position.X + x;
-						fragment->position.Y = position.Y; // TODO: valing mnagement
+
+						switch(fragment->style.valign)
+						{
+							case v_top:
+								fragment->position.Y = position.Y;
+								break;
+							case v_middle:
+								fragment->position.Y = position.Y + (textheight - fragment->dimension.Height) / 2 ;
+								break;
+							default:
+								fragment->position.Y = position.Y + textheight - fragment->dimension.Height ;
+						}
 						core::rect<s32> c(fragment->position, fragment->dimension);
 
 						fragment->draw = c.isRectCollided(text_rect);
@@ -352,25 +363,32 @@ bool GUIText::update_style()
 			style_properties[prop.first] = prop.second;
 
 	if (style_properties["halign"] == "center")
-		m_style.halign = center;
+		m_paragraph_style.halign = h_center;
 	else if (style_properties["halign"] == "right")
-		m_style.halign = right;
+		m_paragraph_style.halign = h_right;
 	else if (style_properties["halign"] == "justify")
-		m_style.halign = justify;
+		m_paragraph_style.halign = h_justify;
 	else
-		m_style.halign = left;
+		m_paragraph_style.halign = h_left;
+
+	if (style_properties["valign"] == "middle")
+		m_fragment_style.valign = v_middle;
+	else if (style_properties["valign"] == "top")
+		m_fragment_style.valign = v_top;
+	else
+		m_fragment_style.valign = v_bottom;
 
 	int r, g, b;
 	sscanf(style_properties["color"].c_str(),"%2x%2x%2x", &r, &g, &b);
-	m_style.color = irr::video::SColor(255, r, g, b);
+	m_fragment_style.color = irr::video::SColor(255, r, g, b);
 
 	unsigned int font_size = std::atoi(style_properties["fontsize"].c_str());
 	FontMode font_mode = FM_Standard;
 	if (style_properties["fontstyle"] == "mono")
 		font_mode = FM_Mono;
-	m_style.font = g_fontengine->getFont(font_size, font_mode);
+	m_fragment_style.font = g_fontengine->getFont(font_size, font_mode);
 
-	if (!m_style.font) {
+	if (!m_fragment_style.font) {
 		printf("No font found ! Size=%d, mode=%d\n", font_size, font_mode);
 		return false;
 	}
@@ -409,10 +427,9 @@ void GUIText::end_paragraph()
 void GUIText::in_paragraph()
 {
 	if (m_current_paragraph.ended) {
-		m_current_paragraph.ended = false;
-		m_current_paragraph.style = m_style;
-		m_current_paragraph.words.clear();
-	};
+		m_current_paragraph = {};
+		m_current_paragraph.style = m_paragraph_style;
+	}
 }
 
 void GUIText::in_word(wordtype type)
@@ -421,10 +438,9 @@ void GUIText::in_word(wordtype type)
 		end_word();
 
 	if (m_current_word.ended) {
-		m_current_word.ended = false;
+		m_current_word = {};
 		m_current_word.type = type;
-		m_current_word.fragments.clear();
-	};
+	}
 }
 
 void GUIText::push_char(wchar_t c)
@@ -440,9 +456,8 @@ void GUIText::push_char(wchar_t c)
 
 	// New fragement if needed
 	if (m_current_fragment.ended) {
-		m_current_fragment.ended = false;
-		m_current_fragment.style = m_style;
-		m_current_fragment.text = "";
+		m_current_fragment = {};
+		m_current_fragment.style = m_fragment_style;
 	}
 
 	m_current_fragment.text += c;
