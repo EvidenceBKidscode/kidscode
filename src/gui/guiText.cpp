@@ -25,7 +25,7 @@ GUIText::GUIText(
 
 	Text = text;
 
-//	createVScrollBar();
+	createVScrollBar();
 }
 
 //! destructor
@@ -52,11 +52,11 @@ void GUIText::createVScrollBar()
 		)
 	);
 
-	m_vscrollbar->setVisible(true);
+	m_vscrollbar->setVisible(false);
 	m_vscrollbar->setSmallStep(1);
-	m_vscrollbar->setLargeStep(1);
+	m_vscrollbar->setLargeStep(100);
 	m_vscrollbar->setPos(0);
-	m_vscrollbar->setMax(100);
+	m_vscrollbar->setMax(1);
 }
 
 bool GUIText::OnEvent(const SEvent& event) {
@@ -82,17 +82,23 @@ void GUIText::draw()
 
 	// Text
 	m_display_text_rect = AbsoluteRect;
-//	m_display_text_rect.LowerRightCorner.X -= m_scrollbar_width;
-	m_current_paragraph.linewidth = m_display_text_rect.getWidth();
-/*	m_current_paragraph.pos = m_display_text_rect.UpperLeftCorner;
-	m_current_paragraph.pos.X += m_text_scrollpos.X;
-	m_current_paragraph.pos.Y += m_text_scrollpos.Y;
-*/
-
-//	m_parsed_text = parse(Text);
 	parse();
 	size(m_parsed_text);
-	place(m_parsed_text, m_display_text_rect);
+	place(m_parsed_text, m_display_text_rect, m_text_scrollpos);
+
+	if (m_parsed_text.height > m_display_text_rect.getHeight()) {
+
+		m_vscrollbar->setMax(m_parsed_text.height - m_display_text_rect.getHeight());
+		m_vscrollbar->setVisible(true);
+
+		core::rect<s32> smaller_rect = m_display_text_rect;
+		smaller_rect.LowerRightCorner.X -= m_scrollbar_width;
+		place(m_parsed_text, smaller_rect, m_text_scrollpos);
+
+	} else {
+		// TODO: vertical adjust
+		m_vscrollbar->setVisible(false);
+	}
 	draw(m_parsed_text, m_display_text_rect);
 
 	// draw children
@@ -105,7 +111,7 @@ void GUIText::draw()
 
 void GUIText::draw(GUIText::text &text, core::rect<s32> & text_rect)
 {
-	for (auto & paragraph : text)
+	for (auto & paragraph : text.paragraphs)
 		for (auto & word : paragraph.words)
 			if (word.draw)
 				for (auto & fragment : word.fragments)
@@ -127,7 +133,7 @@ void GUIText::draw(GUIText::text &text, core::rect<s32> & text_rect)
 
 void GUIText::size(GUIText::text &text)
 {
-	for (auto & paragraph : text) {
+	for (auto & paragraph : text.paragraphs) {
 		for (auto & word : paragraph.words) {
 			word.dimension.Height = 0;
 			word.dimension.Width = 0;
@@ -143,10 +149,14 @@ void GUIText::size(GUIText::text &text)
 	}
 }
 
-void GUIText::place(GUIText::text &text, core::rect<s32> & text_rect)
+void GUIText::place(
+	GUIText::text & text,
+	core::rect<s32> & text_rect,
+	core::position2d<s32> & offset)
 {
-	core::position2d<s32> position = text_rect.UpperLeftCorner;
-	for (auto & paragraph : text) {
+	text.height = 0;
+	core::position2d<s32> position = text_rect.UpperLeftCorner + offset;
+	for (auto & paragraph : text.paragraphs) {
 		paragraph.height = 0;
 
 		std::vector<GUIText::word>::iterator current_word =  paragraph.words.begin();
@@ -155,6 +165,7 @@ void GUIText::place(GUIText::text &text, core::rect<s32> & text_rect)
 			s32 textwidth = 0;
 			s32 textheight = 0;
 			u32 wordcount = 0;
+			u32 linewidth = text_rect.getWidth();
 
 			std::vector<GUIText::word>::iterator linestart = current_word;
 
@@ -168,7 +179,7 @@ void GUIText::place(GUIText::text &text, core::rect<s32> & text_rect)
 
 			// First pass, find words fitting into line
 			while(current_word != paragraph.words.end() &&
-					textwidth + current_word->dimension.Width <= paragraph.linewidth) {
+					textwidth + current_word->dimension.Width <= linewidth) {
 
 				if (! current_word->separator) {
 					lineend = current_word;
@@ -199,14 +210,14 @@ void GUIText::place(GUIText::text &text, core::rect<s32> & text_rect)
 			switch(paragraph.style.halign)
 			{
 				case center:
-					x = (paragraph.linewidth - textwidth) / 2;
+					x = (linewidth - textwidth) / 2;
 					break;
 				case justify:
 					if (wordcount > 1 && !lastline)
-						extraspace = ((float)(paragraph.linewidth - textwidth)) / (wordcount - 1);
+						extraspace = ((float)(linewidth - textwidth)) / (wordcount - 1);
 					break;
 				case right:
-					x = paragraph.linewidth - textwidth;
+					x = linewidth - textwidth;
 			}
 
 			// Third pass, actually place everything
@@ -223,17 +234,20 @@ void GUIText::place(GUIText::text &text, core::rect<s32> & text_rect)
 
 					fragment->draw = c.isRectCollided(text_rect);
 					word->draw = word->draw || fragment->draw;
-					if (fragment->draw) {
+					if (fragment->draw)
 						x += fragment->dimension.Width;
-						x += extraspace;
-					}
 				}
-
+				if (word->separator)
+					x += extraspace;
 			}
 			paragraph.height += textheight;
 			position.Y += textheight;
 		}
+		text.height += paragraph.height;
+
 		// TODO: Paragraph spacing to be set in stye
+		// TODO: margin managment (overlapping)
+		text.height += 10;
 		position.Y += 10;
 	}
 }
@@ -300,7 +314,7 @@ void GUIText::end_paragraph()
 
 	m_current_paragraph.ended = true;
 
-	m_parsed_text.push_back(m_current_paragraph);
+	m_parsed_text.paragraphs.push_back(m_current_paragraph);
 }
 
 void GUIText::push_char(wchar_t c)
@@ -490,7 +504,7 @@ u32 GUIText::parse_tag(u32 cursor)
 
 void GUIText::parse()
 {
-	m_parsed_text.clear();
+	m_parsed_text.paragraphs.clear();
 
 	m_tag_stack.clear();
 	markup_tag root_tag;

@@ -56,12 +56,14 @@ class GUIText : public gui::IGUIElement
 		struct paragraph {
 			style_def style;
 			std::vector<word> words;
-			u32 height = 0;
-			u32 linewidth;
+			u32 height;
 			bool ended = false;
 		};
 
-		typedef std::vector<GUIText::paragraph> text;
+		struct text {
+			std::vector<paragraph> paragraphs;
+			u32 height;
+		};
 
 		std::vector<GUIText::markup_tag> m_tag_stack;
 
@@ -75,7 +77,7 @@ class GUIText : public gui::IGUIElement
 		void parse();
 
 		void size(GUIText::text &text);
-		void place(GUIText::text &text, core::rect<s32> & text_rect);
+		void place(GUIText::text &text, core::rect<s32> & text_rect, core::position2d<s32> & offset);
 		void draw(GUIText::text &text, core::rect<s32> & text_rect);
 
 		void createVScrollBar();
