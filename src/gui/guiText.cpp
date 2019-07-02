@@ -12,6 +12,7 @@ using namespace irr::gui;
 #include "client/tile.h"
 #include "IVideoDriver.h"
 #include "client.h"
+#include "client/renderingengine.h"
 
 //! constructor
 GUIText::GUIText(
@@ -68,17 +69,36 @@ void GUIText::createVScrollBar()
 }
 
 bool GUIText::OnEvent(const SEvent& event) {
-	if (event.EventType == EET_GUI_EVENT)
+	if (event.EventType == EET_GUI_EVENT) {
 		if (event.GUIEvent.EventType == EGET_SCROLL_BAR_CHANGED)
 			if (event.GUIEvent.Caller == m_vscrollbar)
 				m_text_scrollpos.Y = -m_vscrollbar->getPos();
+	}
 
-	if (event.EventType == EET_MOUSE_INPUT_EVENT)
+	if (event.EventType == EET_MOUSE_INPUT_EVENT) {
 		if (event.MouseInput.Event == EMIE_MOUSE_WHEEL) {
 			m_vscrollbar->setPos(m_vscrollbar->getPos() -
 					event.MouseInput.Wheel * m_vscrollbar->getLargeStep());
 			m_text_scrollpos.Y = -m_vscrollbar->getPos();
+		} else if (event.MouseInput.Event == EMIE_LMOUSE_PRESSED_DOWN) {
+			GUIText::fragment * fragment = getFragmentAt(event.MouseInput.X,event.MouseInput.Y);
+			if (fragment)
+				printf("Fragment %ls\n", fragment->text.c_str());
+			else
+				printf("No fragment at %d, %d\n",event.MouseInput.X,event.MouseInput.Y);
+		} else if (event.MouseInput.Event == EMIE_MOUSE_MOVED) {
+			GUIText::fragment * fragment = getFragmentAt(event.MouseInput.X,event.MouseInput.Y);
+			if (fragment)
+				m_hover_link_id = fragment->linkid;
+			else
+				m_hover_link_id = -1;
+
+			if (m_hover_link_id < 0)
+				RenderingEngine::get_raw_device()->getCursorControl()->setActiveIcon(gui::ECI_NORMAL);
+			else
+				RenderingEngine::get_raw_device()->getCursorControl()->setActiveIcon(gui::ECI_HAND);
 		}
+	}
 
 	return IGUIElement::OnEvent(event);
 }
@@ -118,7 +138,7 @@ void GUIText::draw()
 		// TODO: vertical adjust
 		m_vscrollbar->setVisible(false);
 	}
-	draw(m_parsed_text, m_display_text_rect, m_text_scrollpos);
+	draw(m_parsed_text, m_display_text_rect);
 
 	// draw children
 	IGUIElement::draw();
@@ -128,10 +148,12 @@ void GUIText::draw()
 // Drawing
 // -----------------------------------------------------------------------------
 
+irr::video::SColor hovercolor(255, 255, 0, 0);
+irr::video::SColor linkcolor(255, 0, 0, 255);
+
 void GUIText::draw(
 	GUIText::text & text,
-	core::rect<s32> & text_rect,
-	core::position2d<s32> & offset)
+	core::rect<s32> & text_rect)
 {
 	for (auto & paragraph : text.paragraphs) {
 		for (auto & word : paragraph.words)
@@ -139,18 +161,26 @@ void GUIText::draw(
 			if (word.type == t_word) {
 				for (auto & fragment : word.fragments)
 				{
-					core::rect<s32> rect(fragment.position + offset, fragment.dimension);
+					core::rect<s32> rect(fragment.position + m_text_scrollpos, fragment.dimension);
+
+					irr::video::SColor color = fragment.style.color;
+					if (fragment.linkid >= 0) {
+						if (fragment.linkid == m_hover_link_id)
+							color = hovercolor;
+						else
+							color = linkcolor;
+					}
 
 					if (rect.isRectCollided(text_rect))
 						fragment.style.font->draw(fragment.text, rect,
-							fragment.style.color, false, true, &text_rect);
+							color, false, true, &text_rect);
 				}
 
 			} else if (word.type == t_image) {
 				video::ITexture *texture = m_tsrc->getTexture(word.name);
 				if (texture != 0)
 				{
-					core::rect<s32> rect(word.position + offset, word.dimension);
+					core::rect<s32> rect(word.position + m_text_scrollpos, word.dimension);
 					if (rect.isRectCollided(text_rect))
 					{
 						Environment->getVideoDriver()->draw2DImage(texture,
@@ -162,7 +192,7 @@ void GUIText::draw(
 				} else printf("Texture %s not found!\n", word.name.c_str());
 
 			} else if (word.type == t_item) {
-				core::rect<s32> rect(word.position + offset, word.dimension);
+				core::rect<s32> rect(word.position + m_text_scrollpos, word.dimension);
 				if (rect.isRectCollided(text_rect))
 				{
 					IItemDefManager *idef = m_client->idef();
@@ -170,8 +200,8 @@ void GUIText::draw(
 					item.deSerialize(word.name, idef);
 					drawItemStack(
 							Environment->getVideoDriver(), g_fontengine->getFont(), item,
-							irr::core::rect<s32>(word.position + offset, word.dimension), &text_rect,
-							m_client, IT_ROT_NONE);
+							irr::core::rect<s32>(word.position + m_text_scrollpos, word.dimension),
+							&text_rect, m_client, IT_ROT_NONE);
 							// There is a bug in drawItemStack: no clip when drawing 3D block
 					// TODO: Add IT_ROT_SELECTED possibility
 				}
@@ -180,6 +210,37 @@ void GUIText::draw(
 	}
 }
 
+GUIText::word* GUIText::getWordAt(s32 X, s32 Y)
+{
+	core::position2d<s32> pos(X, Y);
+	pos -= m_text_scrollpos;
+
+	for (auto & paragraph : m_parsed_text.paragraphs) {
+		for (auto & word : paragraph.words) {
+			core::rect<s32> rect(word.position, word.dimension);
+			if (rect.isPointInside(pos))
+				return &word;
+		}
+	}
+	return 0;
+}
+
+GUIText::fragment* GUIText::getFragmentAt(s32 X, s32 Y)
+{
+	core::position2d<s32> pos(X, Y);
+	pos -= m_text_scrollpos;
+
+	for (auto & paragraph : m_parsed_text.paragraphs) {
+		for (auto & word : paragraph.words) {
+			for (auto & fragment : word.fragments) {
+				core::rect<s32> rect(fragment.position, fragment.dimension);
+				if (rect.isPointInside(pos))
+					return &fragment;
+				}
+		}
+	}
+	return 0;
+}
 // -----------------------------------------------------------------------------
 // Placing
 // -----------------------------------------------------------------------------
@@ -345,12 +406,18 @@ void GUIText::place(
 			}
 
 			// Third pass, actually place everything
-			for(auto word = linestart; word != lineend; ++word) {
-				if (word->floating == floating_none) {
+			for(auto word = linestart; word != lineend; ++word)
+			{
+				if (word->floating == floating_none)
+				{
 					word->position.X = x;
 					word->position.Y = y;
 
-					if (word->type == t_word || word->type == t_separator) {
+					if (word->type == t_word || word->type == t_separator)
+					{
+
+						word->dimension.Height = textheight;
+
 						for (auto fragment = word->fragments.begin();
 							fragment != word->fragments.end(); ++fragment)
 						{
@@ -432,6 +499,11 @@ bool GUIText::update_style()
 	for (auto const& tag : m_tag_stack)
 		for (auto const& prop : tag.style_properties)
 			style_properties[prop.first] = prop.second;
+
+	if (style_properties.count("linkid"))
+		m_fragment_style.linkid = std::atoi(style_properties["linkid"].c_str());
+	else
+		m_fragment_style.linkid = -1;
 
 	if (style_properties["halign"] == "center")
 		m_paragraph_style.halign = h_center;
@@ -528,6 +600,7 @@ void GUIText::push_char(wchar_t c)
 	if (m_current_fragment.ended) {
 		m_current_fragment = {};
 		m_current_fragment.style = m_fragment_style;
+		m_current_fragment.linkid = m_fragment_style.linkid;
 	}
 
 	m_current_fragment.text += c;
@@ -571,17 +644,26 @@ u32 GUIText::parse_tag(u32 cursor)
 
 	++cursor; // last '>'
 
+	std::map<std::string, std::string> attrs = get_attributes(tag_param);
+
 	std::unordered_map<std::string, std::string> properties;
 
-	if (tag_name == "img" || tag_name == "item") {
+	if (tag_name == "link") {
+		if (!tag_end) {
+			if (!attrs.count("name"))
+				return 0;
+			int linkid = m_links.size();
+			m_links.push_back(attrs["name"]);
+			properties["linkid"] = std::to_string(linkid);
+			tag_start = true;
+		}
+	} else if (tag_name == "img" || tag_name == "item") {
 		if (tag_end) return 0;
 
 		if (tag_name == "img")
 			in_word(t_image);
 		else
 			in_word(t_item);
-
-		std::map<std::string, std::string> attrs = get_attributes(tag_param);
 
 		// Required attributes
 		if (!attrs.count("name"))
@@ -722,7 +804,7 @@ u32 GUIText::parse_tag(u32 cursor)
 void GUIText::parse()
 {
 	m_parsed_text.paragraphs.clear();
-
+	m_links.clear();
 	m_tag_stack.clear();
 	markup_tag root_tag;
 	root_tag.name = "root";

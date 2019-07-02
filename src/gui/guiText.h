@@ -47,6 +47,7 @@ class GUIText : public gui::IGUIElement
 			valign_type valign;
 			gui::IGUIFont* font;
 			irr::video::SColor color;
+			int linkid;
 		};
 
 		struct paragraph_style {
@@ -59,6 +60,7 @@ class GUIText : public gui::IGUIElement
 			core::stringw text;
 			core::dimension2d<u32> dimension;
 			core::position2d<s32> position;
+			int linkid;
 		};
 
 		struct word {
@@ -106,8 +108,9 @@ class GUIText : public gui::IGUIElement
 
 		void size(GUIText::text &text);
 		void place(GUIText::text &text, core::rect<s32> & text_rect);
-		void draw(GUIText::text &text, core::rect<s32> & text_rect, core::position2d<s32> & offset);
-
+		void draw(GUIText::text &text, core::rect<s32> & text_rect);
+		GUIText::word* getWordAt(s32 X, s32 Y);
+		GUIText::fragment* getFragmentAt(s32 X, s32 Y);
 		void createVScrollBar();
 
 		ISimpleTextureSource *m_tsrc;
@@ -119,7 +122,6 @@ class GUIText : public gui::IGUIElement
 		u32 m_scrollbar_width;
 		GUIScrollBar *m_vscrollbar;
 
-
 		paragraph_style m_paragraph_style;
 		fragment_style m_fragment_style;
 
@@ -129,6 +131,8 @@ class GUIText : public gui::IGUIElement
 		text m_parsed_text;
 
 		std::vector<core::rect<s32>> m_floating;
+		std::vector<std::string> m_links;
+		int m_hover_link_id =  -1;
 };
 
 
