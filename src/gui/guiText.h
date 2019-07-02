@@ -6,6 +6,7 @@
 using namespace irr;
 
 class ISimpleTextureSource;
+class Client;
 
 class GUIText : public gui::IGUIElement
 {
@@ -18,6 +19,7 @@ class GUIText : public gui::IGUIElement
 			gui::IGUIElement* parent,
 			s32 id,
 			const core::rect<s32>& rectangle,
+			Client *client,
 			ISimpleTextureSource *tsrc);
 
 		//! destructor
@@ -32,7 +34,8 @@ class GUIText : public gui::IGUIElement
 
 		enum halign_type { h_center, h_left, h_right, h_justify };
 		enum valign_type { v_middle, v_top, v_bottom };
-		enum wordtype { t_word, t_separator, t_image };
+		enum wordtype { t_word, t_separator, t_image, t_item };
+		enum floating_type { floating_none, floating_right, floating_left };
 		typedef std::unordered_map<std::string, std::string> properties;
 
 		struct markup_tag {
@@ -64,9 +67,10 @@ class GUIText : public gui::IGUIElement
 			std::vector<fragment> fragments;
 			core::dimension2d<u32> dimension;
 			core::position2d<s32> position;
-			bool draw = false;
 			wordtype type;
+			floating_type floating = floating_none;
 			std::string name;
+			bool draw = false;
 		};
 
 		struct paragraph {
@@ -109,6 +113,7 @@ class GUIText : public gui::IGUIElement
 		void createVScrollBar();
 
 		ISimpleTextureSource *m_tsrc;
+		Client *m_client;
 
 		core::rect<s32> m_display_text_rect;
 		core::position2d<s32> m_text_scrollpos;
@@ -125,6 +130,7 @@ class GUIText : public gui::IGUIElement
 		paragraph m_current_paragraph;
 		text m_parsed_text;
 
+		std::vector<core::rect<s32>> m_floating;
 
 };
 

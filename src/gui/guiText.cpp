@@ -11,6 +11,7 @@ using namespace irr::gui;
 #include <SColor.h>
 #include "client/tile.h"
 #include "IVideoDriver.h"
+#include "client.h"
 
 //! constructor
 GUIText::GUIText(
@@ -18,9 +19,11 @@ GUIText::GUIText(
 	IGUIEnvironment* environment,
 	IGUIElement* parent, s32 id,
 	const core::rect<s32>& rectangle,
+	Client *client,
 	ISimpleTextureSource *tsrc) :
 	IGUIElement(EGUIET_ELEMENT, environment, parent, id, rectangle),
 	m_tsrc(tsrc),
+	m_client(client),
 	m_vscrollbar(NULL),
 	m_text_scrollpos(0, 0)
 {
@@ -72,7 +75,7 @@ bool GUIText::OnEvent(const SEvent& event) {
 
 	if (event.EventType == EET_MOUSE_INPUT_EVENT)
 		if (event.MouseInput.Event == EMIE_MOUSE_WHEEL) {
-			m_vscrollbar->setPos(m_vscrollbar->getPos() +
+			m_vscrollbar->setPos(m_vscrollbar->getPos() -
 					event.MouseInput.Wheel * m_vscrollbar->getLargeStep());
 			m_text_scrollpos.Y = -m_vscrollbar->getPos();
 		}
@@ -151,7 +154,17 @@ void GUIText::draw(GUIText::text &text, core::rect<s32> & text_rect)
 							irr::core::rect<s32>(core::position2d<s32>(0, 0), texture->getOriginalSize()), // Source rect
 							&text_rect, // Clip rect
 							0, true); // Colors, use alpha
-					} else printf("Texture %s not found!\n", word.name);
+					} else printf("Texture %s not found!\n", word.name.c_str());
+				} else if (word.type == t_item) {
+					IItemDefManager *idef = m_client->idef();
+					ItemStack item;
+					item.deSerialize(word.name, idef);
+					drawItemStack(
+							Environment->getVideoDriver(), g_fontengine->getFont(), item,
+							irr::core::rect<s32>(word.position, word.dimension), &text_rect,
+							m_client, IT_ROT_NONE);
+							// There is a bug in drawItemStack: no clip when drawing 3D block
+					// TODO: Add IT_ROT_SELECTED possibility
 				}
 			}
 		}
@@ -176,20 +189,24 @@ void GUIText::size(GUIText::text &text)
 						word.dimension.Height = fragment.dimension.Height;
 					word.dimension.Width += fragment.dimension.Width;
 				}
-			} else if (word.type == t_image) {
+			} else if (word.type == t_image || word.type == t_item) {
 				// Dont resize already sized items (sized by another mechanism)
 				if (word.dimension.Height == 0 || word.dimension.Width == 0) {
-					video::ITexture *texture = m_tsrc->getTexture(word.name);
-					if (texture != 0) {
-						core::dimension2d<u32> dim = texture->getOriginalSize();
-						if (word.dimension.Height == 0)
-							if (word.dimension.Width == 0)
-								word.dimension = dim;
-							else
-								word.dimension.Height = dim.Height * word.dimension.Width / dim.Width;
-						else
-							word.dimension.Width = dim.Width * word.dimension.Height / dim.Height;
+					core::dimension2d<u32> dim(80, 80); // Default image and item size
+
+					if (word.type == t_image) {
+						video::ITexture *texture = m_tsrc->getTexture(word.name);
+						if (texture != 0)
+							dim = texture->getOriginalSize();
 					}
+
+					if (word.dimension.Height == 0)
+						if (word.dimension.Width == 0)
+							word.dimension = dim;
+						else
+							word.dimension.Height = dim.Height * word.dimension.Width / dim.Width;
+					else
+						word.dimension.Width = dim.Width * word.dimension.Height / dim.Height;
 				}
 			}
 		}
@@ -201,119 +218,175 @@ void GUIText::place(
 	core::rect<s32> & text_rect,
 	core::position2d<s32> & offset)
 {
-	text.height = 0;
-	core::position2d<s32> position = text_rect.UpperLeftCorner + offset;
+	m_floating.clear();
+	s32 y = text_rect.UpperLeftCorner.Y + offset.Y;
+
 	for (auto & paragraph : text.paragraphs) {
 		paragraph.height = 0;
 
-		std::vector<GUIText::word>::iterator current_word =  paragraph.words.begin();
+		// Find and place floating stuff in paragraph
+		for (auto word = paragraph.words.begin(); word != paragraph.words.end();
+				++word) {
+			if (word->floating != floating_none) {
+				word->position.Y = y;
+				if (word->floating == floating_left)
+					word->position.X = text_rect.UpperLeftCorner.X;
+				if (word->floating == floating_right)
+					word->position.X = text_rect.LowerRightCorner.X -
+							word->dimension.Width;
+
+				core::rect<s32> rect(word->position, word->dimension);
+				word->draw = rect.isRectCollided(text_rect);
+
+				m_floating.push_back(rect);
+			}
+		}
+
+		// Place non floating stuff
+		std::vector<GUIText::word>::iterator current_word = paragraph.words.begin();
 		while (current_word != paragraph.words.end())
 	 	{
-			s32 textwidth = 0;
-			s32 textheight = 0;
-			u32 wordcount = 0;
-			u32 linewidth = text_rect.getWidth();
+			// Determine line width and y pos
+			s32 xmin, xmax;
+			s32 nexty = y;
+			do {
+				y = nexty;
+				nexty = 0;
 
-			while(current_word != paragraph.words.end() && current_word->type == t_separator) {
+				xmin = text_rect.UpperLeftCorner.X + offset.X;
+				xmax = text_rect.LowerRightCorner.X + offset.X;
+				for (auto rect : m_floating) {
+					if (rect.UpperLeftCorner.Y <= y && rect.LowerRightCorner.Y >= y) {
+						if (!nexty || rect.LowerRightCorner.Y < nexty)
+							nexty = rect.LowerRightCorner.Y + 1;
+						if (rect.UpperLeftCorner.X <= xmin && rect.LowerRightCorner.X < xmax)
+						{ // float on left
+							if (rect.LowerRightCorner.X > xmin)
+								xmin = rect.LowerRightCorner.X;
+						} else if (rect.LowerRightCorner.X >= xmax && rect.UpperLeftCorner.X > xmin)
+						{ // float on right
+							if (rect.UpperLeftCorner.X < xmax)
+								xmax = rect.UpperLeftCorner.X;
+						} else if (rect.UpperLeftCorner.X <= xmin && rect.LowerRightCorner.X >= xmax)
+						{ // float taking all space
+							xmin = xmax;
+						} else { // float in the middle -- should not occure yet, see that later
+						}
+					}
+				}
+			}
+			while (nexty && xmax <= xmin);
+
+			u32 linewidth = xmax - xmin;
+			float x = xmin;
+
+			while(current_word != paragraph.words.end() &&
+					current_word->type == t_separator) {
 				current_word->draw = false;
 				current_word++;
 			}
 
-			std::vector<GUIText::word>::iterator linestart = current_word;
+			s32 textwidth = 0;
+			s32 textheight = 0;
+			u32 wordcount = 0;
 
-			// Need a distinct value to detect empty lines
+			std::vector<GUIText::word>::iterator linestart = current_word;
 			std::vector<GUIText::word>::iterator lineend = paragraph.words.end();
 
-			// First pass, find words fitting into line
+			// First pass, find words fitting into line (or at least one world)
 			while(current_word != paragraph.words.end() &&
-					textwidth + current_word->dimension.Width <= linewidth) {
-
-				if (current_word->type != t_separator) {
-					lineend = current_word;
-					wordcount++;
+					(textwidth == 0 || textwidth + current_word->dimension.Width <= linewidth))
+			{
+				if (current_word->floating == floating_none)
+				{
+					if (current_word->type != t_separator)
+					{
+						lineend = current_word;
+						wordcount++;
+					}
+					textwidth += current_word->dimension.Width;
 				}
-
-				textwidth += current_word->dimension.Width;
 				current_word++;
 			}
 
 			// Empty line, nothing to place or draw
-			if (lineend == paragraph.words.end()) return;
+			if (lineend == paragraph.words.end()) continue;
 
 			lineend++; // Point to the first position outside line (may be end())
-			bool lastline = lineend == paragraph.words.end();
 
 			// Second pass, compute printable line width and adjustments
 			textwidth = 0;
 			for(auto word = linestart; word != lineend; ++word) {
-				textwidth += word->dimension.Width;
-				if (textheight < word->dimension.Height)
-					textheight = word->dimension.Height;
+				if (word->floating == floating_none) {
+					textwidth += word->dimension.Width;
+					if (textheight < word->dimension.Height)
+						textheight = word->dimension.Height;
+				}
 			}
 
-			float x = 0;
 			float extraspace = 0;
 
 			switch(paragraph.style.halign)
 			{
 				case h_center:
-					x = (linewidth - textwidth) / 2;
+					x += (linewidth - textwidth) / 2;
 					break;
 				case h_justify:
-					if (wordcount > 1 && !lastline)
+					if (wordcount > 1 && // Justification only if at least two words.
+						!(lineend == paragraph.words.end())) // Don't justify last line.
 						extraspace = ((float)(linewidth - textwidth)) / (wordcount - 1);
 					break;
 				case h_right:
-					x = linewidth - textwidth;
+					x += linewidth - textwidth;
 			}
 
 			// Third pass, actually place everything
-			for(auto word = linestart; word != lineend; ++word)
-			{
-				word->position.X = position.X + x;
-				word->position.Y = position.Y;
+			for(auto word = linestart; word != lineend; ++word) {
+				if (word->floating == floating_none) {
+					word->position.X = x;
+					word->position.Y = y;
 
-				if (word->type == t_word || word->type == t_separator) {
-					for (auto fragment = word->fragments.begin();
-						fragment != word->fragments.end(); ++fragment)
-					{
-						fragment->position.X = position.X + x;
-
-						switch(fragment->style.valign)
+					if (word->type == t_word || word->type == t_separator) {
+						for (auto fragment = word->fragments.begin();
+							fragment != word->fragments.end(); ++fragment)
 						{
-							case v_top:
-								fragment->position.Y = position.Y;
-								break;
-							case v_middle:
-								fragment->position.Y = position.Y + (textheight - fragment->dimension.Height) / 2 ;
-								break;
-							default:
-								fragment->position.Y = position.Y + textheight - fragment->dimension.Height ;
-						}
-						core::rect<s32> c(fragment->position, fragment->dimension);
+							fragment->position.X = x;
 
-						fragment->draw = c.isRectCollided(text_rect);
-						word->draw = word->draw || fragment->draw;
-						x += fragment->dimension.Width;
+							switch(fragment->style.valign)
+							{
+								case v_top:
+									fragment->position.Y = y;
+									break;
+								case v_middle:
+									fragment->position.Y = y + (textheight - fragment->dimension.Height) / 2 ;
+									break;
+								default:
+									fragment->position.Y = y + textheight - fragment->dimension.Height ;
+							}
+							core::rect<s32> rect(fragment->position, fragment->dimension);
+
+							fragment->draw = rect.isRectCollided(text_rect);
+							word->draw = word->draw || fragment->draw;
+							x += fragment->dimension.Width;
+						}
+						if (word->type == t_separator)
+							x += extraspace;
+					} else if (word->type == t_image || word->type == t_item) {
+						core::rect<s32> rect(word->position, word->dimension);
+						word->draw = rect.isRectCollided(text_rect);
+						x += word->dimension.Width;
 					}
-					if (word->type == t_separator)
-						x += extraspace;
-				} else if (word->type == t_image) {
-					x += word->dimension.Width;
-					core::rect<s32> c(word->position, word->dimension);
-					word->draw = c.isRectCollided(text_rect);
 				}
 			}
 			paragraph.height += textheight;
-			position.Y += textheight;
+			y += textheight;
 		}
-		text.height += paragraph.height;
-
 		// TODO: Paragraph spacing to be set in stye
 		// TODO: margin managment (overlapping)
-		text.height += 10;
-		position.Y += 10;
+		y += 10;
 	}
+	text.height = y - text_rect.UpperLeftCorner.Y - offset.Y;
+	// TODO:check if floating goes under
 }
 
 // -----------------------------------------------------------------------------
@@ -434,6 +507,8 @@ void GUIText::in_paragraph()
 
 void GUIText::in_word(wordtype type)
 {
+	in_paragraph();
+
 	if (m_current_word.type != type)
 		end_word();
 
@@ -445,9 +520,6 @@ void GUIText::in_word(wordtype type)
 
 void GUIText::push_char(wchar_t c)
 {
-	// New paragraph if needed
-	in_paragraph();
-
 	// New word if needed
 	if (c == L' ' || c == L'\t')
 		in_word(t_separator);
@@ -503,15 +575,25 @@ u32 GUIText::parse_tag(u32 cursor)
 
 	std::unordered_map<std::string, std::string> properties;
 
-	if (tag_name == "img") {
+	if (tag_name == "img" || tag_name == "item") {
 		if (tag_end) return 0;
-		in_word(t_image);
+
+		if (tag_name == "img")
+			in_word(t_image);
+		else
+			in_word(t_item);
+
 		std::map<std::string, std::string> attrs = get_attributes(tag_param);
 
 		// Required attributes
 		if (!attrs.count("name"))
 			return 0;
 		m_current_word.name = attrs["name"];
+
+		if (attrs.count("float")) {
+			if (attrs["float"] == "left") m_current_word.floating = floating_left;
+			if (attrs["float"] == "right") m_current_word.floating = floating_right;
+		}
 
 		if (attrs.count("width")) {
 			int width = strtol(attrs["width"].c_str(), NULL, 10);
@@ -524,6 +606,8 @@ u32 GUIText::parse_tag(u32 cursor)
 			if (height)
 				m_current_word.dimension.Height = height;
 		}
+
+		end_word();
 
 	} else if (tag_name == "center") {
 		if (!tag_end) {

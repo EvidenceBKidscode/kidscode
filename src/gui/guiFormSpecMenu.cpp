@@ -1413,7 +1413,8 @@ void GUIFormSpecMenu::parseText(parserData* data, const std::string &element)
 			258+m_fields.size()
 		);
 
-		GUIText *gui_text = new GUIText(spec.flabel.c_str(), Environment, this, spec.fid, rect, m_tsrc);
+		GUIText *gui_text = new GUIText(
+			spec.flabel.c_str(), Environment, this, spec.fid, rect, m_client, m_tsrc);
 
 		m_fields.push_back(spec);
 
