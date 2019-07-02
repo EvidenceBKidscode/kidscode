@@ -103,7 +103,7 @@ void GUIText::draw()
 	m_display_text_rect.LowerRightCorner.Y --;
 	parse();
 	size(m_parsed_text);
-	place(m_parsed_text, m_display_text_rect, m_text_scrollpos);
+	place(m_parsed_text, m_display_text_rect);
 
 	if (m_parsed_text.height > m_display_text_rect.getHeight()) {
 
@@ -112,13 +112,13 @@ void GUIText::draw()
 
 		core::rect<s32> smaller_rect = m_display_text_rect;
 		smaller_rect.LowerRightCorner.X -= m_scrollbar_width;
-		place(m_parsed_text, smaller_rect, m_text_scrollpos);
+		place(m_parsed_text, smaller_rect);
 
 	} else {
 		// TODO: vertical adjust
 		m_vscrollbar->setVisible(false);
 	}
-	draw(m_parsed_text, m_display_text_rect);
+	draw(m_parsed_text, m_display_text_rect, m_text_scrollpos);
 
 	// draw children
 	IGUIElement::draw();
@@ -128,40 +128,49 @@ void GUIText::draw()
 // Drawing
 // -----------------------------------------------------------------------------
 
-void GUIText::draw(GUIText::text &text, core::rect<s32> & text_rect)
+void GUIText::draw(
+	GUIText::text & text,
+	core::rect<s32> & text_rect,
+	core::position2d<s32> & offset)
 {
 	for (auto & paragraph : text.paragraphs) {
-		for (auto & word : paragraph.words) {
-			if (word.draw) {
-				if (word.type == t_word || word.type == t_separator) {
-					for (auto & fragment : word.fragments) {
-						if (fragment.draw)
-						{
-							core::rect<s32> c(
-								fragment.position.X, fragment.position.Y,
-								fragment.position.X + fragment.dimension.Width,
-								fragment.position.Y + fragment.dimension.Height);
+		for (auto & word : paragraph.words)
+		{
+			if (word.type == t_word) {
+				for (auto & fragment : word.fragments)
+				{
+					core::rect<s32> rect(fragment.position + offset, fragment.dimension);
 
-							fragment.style.font->draw(fragment.text, c,
-								fragment.style.color, false, true, &text_rect);
-						}
-					}
-				} else if (word.type == t_image) {
-					video::ITexture *texture = m_tsrc->getTexture(word.name);
-					if (texture != 0) {
+					if (rect.isRectCollided(text_rect))
+						fragment.style.font->draw(fragment.text, rect,
+							fragment.style.color, false, true, &text_rect);
+				}
+
+			} else if (word.type == t_image) {
+				video::ITexture *texture = m_tsrc->getTexture(word.name);
+				if (texture != 0)
+				{
+					core::rect<s32> rect(word.position + offset, word.dimension);
+					if (rect.isRectCollided(text_rect))
+					{
 						Environment->getVideoDriver()->draw2DImage(texture,
-							irr::core::rect<s32>(word.position, word.dimension), // Dest rect
+							rect, // Dest rect
 							irr::core::rect<s32>(core::position2d<s32>(0, 0), texture->getOriginalSize()), // Source rect
 							&text_rect, // Clip rect
 							0, true); // Colors, use alpha
-					} else printf("Texture %s not found!\n", word.name.c_str());
-				} else if (word.type == t_item) {
+					}
+				} else printf("Texture %s not found!\n", word.name.c_str());
+
+			} else if (word.type == t_item) {
+				core::rect<s32> rect(word.position + offset, word.dimension);
+				if (rect.isRectCollided(text_rect))
+				{
 					IItemDefManager *idef = m_client->idef();
 					ItemStack item;
 					item.deSerialize(word.name, idef);
 					drawItemStack(
 							Environment->getVideoDriver(), g_fontengine->getFont(), item,
-							irr::core::rect<s32>(word.position, word.dimension), &text_rect,
+							irr::core::rect<s32>(word.position + offset, word.dimension), &text_rect,
 							m_client, IT_ROT_NONE);
 							// There is a bug in drawItemStack: no clip when drawing 3D block
 					// TODO: Add IT_ROT_SELECTED possibility
@@ -215,11 +224,10 @@ void GUIText::size(GUIText::text &text)
 
 void GUIText::place(
 	GUIText::text & text,
-	core::rect<s32> & text_rect,
-	core::position2d<s32> & offset)
+	core::rect<s32> & text_rect)
 {
 	m_floating.clear();
-	s32 y = text_rect.UpperLeftCorner.Y + offset.Y;
+	s32 y = text_rect.UpperLeftCorner.Y;
 
 	for (auto & paragraph : text.paragraphs) {
 		paragraph.height = 0;
@@ -235,10 +243,7 @@ void GUIText::place(
 					word->position.X = text_rect.LowerRightCorner.X -
 							word->dimension.Width;
 
-				core::rect<s32> rect(word->position, word->dimension);
-				word->draw = rect.isRectCollided(text_rect);
-
-				m_floating.push_back(rect);
+				m_floating.push_back(core::rect<s32>(word->position, word->dimension));
 			}
 		}
 
@@ -253,8 +258,8 @@ void GUIText::place(
 				y = nexty;
 				nexty = 0;
 
-				xmin = text_rect.UpperLeftCorner.X + offset.X;
-				xmax = text_rect.LowerRightCorner.X + offset.X;
+				xmin = text_rect.UpperLeftCorner.X;
+				xmax = text_rect.LowerRightCorner.X;
 				for (auto rect : m_floating) {
 					if (rect.UpperLeftCorner.Y <= y && rect.LowerRightCorner.Y >= y) {
 						if (!nexty || rect.LowerRightCorner.Y < nexty)
@@ -282,7 +287,6 @@ void GUIText::place(
 
 			while(current_word != paragraph.words.end() &&
 					current_word->type == t_separator) {
-				current_word->draw = false;
 				current_word++;
 			}
 
@@ -363,17 +367,11 @@ void GUIText::place(
 								default:
 									fragment->position.Y = y + textheight - fragment->dimension.Height ;
 							}
-							core::rect<s32> rect(fragment->position, fragment->dimension);
-
-							fragment->draw = rect.isRectCollided(text_rect);
-							word->draw = word->draw || fragment->draw;
 							x += fragment->dimension.Width;
 						}
 						if (word->type == t_separator)
 							x += extraspace;
 					} else if (word->type == t_image || word->type == t_item) {
-						core::rect<s32> rect(word->position, word->dimension);
-						word->draw = rect.isRectCollided(text_rect);
 						x += word->dimension.Width;
 					}
 				}
@@ -385,7 +383,7 @@ void GUIText::place(
 		// TODO: margin managment (overlapping)
 		y += 10;
 	}
-	text.height = y - text_rect.UpperLeftCorner.Y - offset.Y;
+	text.height = y - text_rect.UpperLeftCorner.Y;
 	// TODO:check if floating goes under
 }
 

@@ -59,7 +59,6 @@ class GUIText : public gui::IGUIElement
 			core::stringw text;
 			core::dimension2d<u32> dimension;
 			core::position2d<s32> position;
-			bool draw = false;
 		};
 
 		struct word {
@@ -70,7 +69,6 @@ class GUIText : public gui::IGUIElement
 			wordtype type;
 			floating_type floating = floating_none;
 			std::string name;
-			bool draw = false;
 		};
 
 		struct paragraph {
@@ -107,8 +105,8 @@ class GUIText : public gui::IGUIElement
 		void parse();
 
 		void size(GUIText::text &text);
-		void place(GUIText::text &text, core::rect<s32> & text_rect, core::position2d<s32> & offset);
-		void draw(GUIText::text &text, core::rect<s32> & text_rect);
+		void place(GUIText::text &text, core::rect<s32> & text_rect);
+		void draw(GUIText::text &text, core::rect<s32> & text_rect, core::position2d<s32> & offset);
 
 		void createVScrollBar();
 
@@ -131,7 +129,6 @@ class GUIText : public gui::IGUIElement
 		text m_parsed_text;
 
 		std::vector<core::rect<s32>> m_floating;
-
 };
 
 
