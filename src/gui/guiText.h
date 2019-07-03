@@ -36,104 +36,98 @@ class GUIText : public gui::IGUIElement
 		enum valign_type { v_middle, v_top, v_bottom };
 		enum wordtype { t_word, t_separator, t_image, t_item };
 		enum floating_type { floating_none, floating_right, floating_left };
-		typedef std::unordered_map<std::string, std::string> properties;
+		typedef std::unordered_map<std::string, std::string> KeyValues;
 
-		struct markup_tag {
-			std::string name;
-			GUIText::properties style_properties;
-		};
+		struct markup_tag;
 
-		struct fragment_style {
+		struct fragment {
+			core::dimension2d<u32> dimension;
+			core::position2d<s32> position;
+			core::stringw text;
 			valign_type valign;
 			gui::IGUIFont* font;
 			irr::video::SColor color;
-			int linkid;
-		};
-
-		struct paragraph_style {
-			halign_type halign;
-		};
-
-		struct fragment {
-			bool ended = false;
-			fragment_style style;
-			core::stringw text;
-			core::dimension2d<u32> dimension;
-			core::position2d<s32> position;
-			int linkid;
+			std::list<s32> tag_ids;
+			void set_style(KeyValues &style);
 		};
 
 		struct word {
-			bool ended = false;
-			std::vector<fragment> fragments;
+			wordtype type;
 			core::dimension2d<u32> dimension;
 			core::position2d<s32> position;
-			wordtype type;
-			floating_type floating = floating_none;
+			std::vector<fragment> fragments;
 			std::string name;
+			floating_type floating = floating_none;
 		};
 
 		struct paragraph {
-			bool ended = false;
-			paragraph_style style;
 			std::vector<word> words;
+			halign_type halign;
 			u32 height;
+			void set_style(KeyValues &style);
 		};
-/*
-		struct image {
-			std::string name;
-			core::dimension2d<u32> dimension;
-			core::position2d<s32> position;
-			bool draw = false;
-		};
-*/
+
 		struct text {
 			std::vector<paragraph> paragraphs;
-//			std::vector<image> images;
 			u32 height;
 		};
 
-		std::vector<markup_tag> m_tag_stack;
-
-		bool update_style();
-		void draw_line(bool lastline);
-		void end_fragment();
-		void in_word(wordtype type);
-		void end_word();
-		void in_paragraph();
-		void end_paragraph();
-		void push_char(wchar_t c);
-		u32 parse_tag(u32 cursor);
-		void parse();
+		struct markup_tag {
+			std::string name;
+			KeyValues attrs;
+			KeyValues style;
+			std::vector<fragment *> fragments;
+			std::string link;
+		};
 
 		void size(GUIText::text &text);
 		void place(GUIText::text &text, core::rect<s32> & text_rect);
 		void draw(GUIText::text &text, core::rect<s32> & text_rect);
 		GUIText::word* getWordAt(s32 X, s32 Y);
 		GUIText::fragment* getFragmentAt(s32 X, s32 Y);
-		void createVScrollBar();
+		void checkHover(s32 X, s32 Y);
 
+		// Parser functions
+		void update_style();
+		void enter_fragment(wordtype type);
+		void end_fragment();
+		void enter_word(wordtype type);
+		void end_word();
+		void enter_paragraph();
+		void end_paragraph();
+		void push_char(wchar_t c);
+		u32 parse_tag(u32 cursor);
+		KeyValues get_attributes(std::string const& s);
+		void parse();
+		markup_tag* get_tag_for_fragment(std::string tag_name);
+
+		// GUI members
 		ISimpleTextureSource *m_tsrc;
 		Client *m_client;
-
-		core::rect<s32> m_display_text_rect;
-		core::position2d<s32> m_text_scrollpos;
-
-		u32 m_scrollbar_width;
 		GUIScrollBar *m_vscrollbar;
 
-		paragraph_style m_paragraph_style;
-		fragment_style m_fragment_style;
+		// Positionning
+		u32 m_scrollbar_width;
+		core::rect<s32> m_display_text_rect;
+		core::position2d<s32> m_text_scrollpos;
+		s32 m_hover_tag_id = 0;
 
-		fragment m_current_fragment;
-		word m_current_word;
-		paragraph m_current_paragraph;
-		text m_parsed_text;
+		// Raw unparsed text in a single string
 		core::stringw m_raw_text;
 
+		// Parsed text broke down into paragraphs / words / fragments + layout info
+		text m_parsed_text;
+
 		std::vector<core::rect<s32>> m_floating;
-		std::vector<std::string> m_links;
-		int m_hover_link_id =  -1;
+		std::vector<markup_tag> m_tags;
+
+		// Parser vars
+		std::list<s32> m_active_tag_ids;
+		KeyValues m_current_style;
+
+		fragment * m_current_fragment = 0;
+		word * m_current_word = 0;
+		paragraph * m_current_paragraph = 0;
 };
 
 

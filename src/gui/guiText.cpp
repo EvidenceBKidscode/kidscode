@@ -3,6 +3,7 @@
 #include "guiScrollBar.h"
 #include "IGUIFont.h"
 #include <vector>
+#include <list>
 #include <unordered_map>
 #include <cstdlib>
 using namespace irr::gui;
@@ -34,18 +35,6 @@ GUIText::GUIText(
 
 	m_raw_text = text;
 
-	createVScrollBar();
-}
-
-//! destructor
-GUIText::~GUIText()
-{
-	m_vscrollbar->remove();
-}
-
-//! create a vertical scroll bar
-void GUIText::createVScrollBar()
-{
 	IGUISkin *skin = 0;
 	if (Environment)
 		skin = Environment->getSkin();
@@ -68,6 +57,30 @@ void GUIText::createVScrollBar()
 	m_vscrollbar->setMax(1);
 }
 
+//! destructor
+GUIText::~GUIText()
+{
+	m_vscrollbar->remove();
+}
+
+
+void GUIText::checkHover(s32 X, s32 Y) {
+	GUIText::fragment * fragment = getFragmentAt(X, Y);
+	m_hover_tag_id = 0;
+	if (fragment) {
+		for (auto id : fragment->tag_ids) {
+			if (m_tags[id].name == "link") {
+				m_hover_tag_id = id;
+				break;
+			}
+		}
+	}
+	if (m_hover_tag_id)
+		RenderingEngine::get_raw_device()->getCursorControl()->setActiveIcon(gui::ECI_HAND);
+		else
+		RenderingEngine::get_raw_device()->getCursorControl()->setActiveIcon(gui::ECI_NORMAL);
+}
+
 bool GUIText::OnEvent(const SEvent& event) {
 	if (event.EventType == EET_GUI_EVENT) {
 		if (event.GUIEvent.EventType == EGET_SCROLL_BAR_CHANGED)
@@ -80,32 +93,33 @@ bool GUIText::OnEvent(const SEvent& event) {
 			m_vscrollbar->setPos(m_vscrollbar->getPos() -
 					event.MouseInput.Wheel * m_vscrollbar->getLargeStep());
 			m_text_scrollpos.Y = -m_vscrollbar->getPos();
+			draw(m_parsed_text, m_display_text_rect);
+			checkHover(event.MouseInput.X,event.MouseInput.Y);
 		} else if (event.MouseInput.Event == EMIE_LMOUSE_PRESSED_DOWN) {
 			GUIText::fragment * fragment = getFragmentAt(event.MouseInput.X,event.MouseInput.Y);
-			if (fragment && fragment->linkid > -1) {
-				Text = std::wstring(m_links[fragment->linkid].begin(), m_links[fragment->linkid].end()).c_str();
-				Text = core::stringw(L"link:") + Text;
-				if (Parent)
-				{
-					SEvent newEvent;
-					newEvent.EventType = EET_GUI_EVENT;
-					newEvent.GUIEvent.Caller = this;
-					newEvent.GUIEvent.Element = 0;
-					newEvent.GUIEvent.EventType = EGET_BUTTON_CLICKED;
-					Parent->OnEvent(newEvent);
+			if (fragment) {
+				for (auto id : fragment->tag_ids) {
+					if (m_tags[id].name == "link") {
+					 	if (m_tags[id].link != "") {
+							Text = std::wstring(m_tags[id].link.begin(), m_tags[id].link.end()).c_str();
+							Text = core::stringw(L"link:") + Text;
+							if (Parent)
+							{
+								SEvent newEvent;
+								newEvent.EventType = EET_GUI_EVENT;
+								newEvent.GUIEvent.Caller = this;
+								newEvent.GUIEvent.Element = 0;
+								newEvent.GUIEvent.EventType = EGET_BUTTON_CLICKED;
+								Parent->OnEvent(newEvent);
+							}
+						}
+						break;
+					}
 				}
 			}
+			// TODO: Does not receive event if not foccused
 		} else if (event.MouseInput.Event == EMIE_MOUSE_MOVED) {
-			GUIText::fragment * fragment = getFragmentAt(event.MouseInput.X,event.MouseInput.Y);
-			if (fragment)
-				m_hover_link_id = fragment->linkid;
-			else
-				m_hover_link_id = -1;
-
-			if (m_hover_link_id < 0)
-				RenderingEngine::get_raw_device()->getCursorControl()->setActiveIcon(gui::ECI_NORMAL);
-			else
-				RenderingEngine::get_raw_device()->getCursorControl()->setActiveIcon(gui::ECI_HAND);
+			checkHover(event.MouseInput.X, event.MouseInput.Y);
 		}
 	}
 
@@ -172,16 +186,20 @@ void GUIText::draw(
 				{
 					core::rect<s32> rect(fragment.position + m_text_scrollpos, fragment.dimension);
 
-					irr::video::SColor color = fragment.style.color;
-					if (fragment.linkid >= 0) {
-						if (fragment.linkid == m_hover_link_id)
+					irr::video::SColor color = fragment.color;
+					for (auto id:fragment.tag_ids) {
+						if (id && id == m_hover_tag_id) {
 							color = hovercolor;
-						else
+							break;
+						}
+						if (m_tags[id].name == "link") {
 							color = linkcolor;
+							break;
+						}
 					}
 
-					if (rect.isRectCollided(text_rect))
-						fragment.style.font->draw(fragment.text, rect,
+					if (rect.isRectCollided(text_rect) && fragment.font)
+						fragment.font->draw(fragment.text, rect,
 							color, false, true, &text_rect);
 				}
 
@@ -262,8 +280,12 @@ void GUIText::size(GUIText::text &text)
 				word.dimension.Height = 0;
 				word.dimension.Width = 0;
 				for (auto & fragment : word.fragments) {
-					fragment.dimension =
-						fragment.style.font->getDimension(fragment.text.c_str());
+					if (fragment.font)
+						fragment.dimension =
+							fragment.font->getDimension(fragment.text.c_str());
+					else
+						fragment.dimension = {0, 0};
+
 					if (word.dimension.Height < fragment.dimension.Height)
 						word.dimension.Height = fragment.dimension.Height;
 					word.dimension.Width += fragment.dimension.Width;
@@ -400,7 +422,7 @@ void GUIText::place(
 
 			float extraspace = 0;
 
-			switch(paragraph.style.halign)
+			switch(paragraph.halign)
 			{
 				case h_center:
 					x += (linewidth - textwidth) / 2;
@@ -432,7 +454,7 @@ void GUIText::place(
 						{
 							fragment->position.X = x;
 
-							switch(fragment->style.valign)
+							switch(fragment->valign)
 							{
 								case v_top:
 									fragment->position.Y = y;
@@ -467,12 +489,11 @@ void GUIText::place(
 // Parser
 // -----------------------------------------------------------------------------
 
-
 // Code snippet from Galik at https://stackoverflow.com/questions/38812780/split-string-into-key-value-pairs-using-c
 
-std::map<std::string, std::string> get_attributes(std::string const& s)
+GUIText::KeyValues GUIText::get_attributes(std::string const& s)
 {
-	std::map<std::string, std::string> m;
+	GUIText::KeyValues m;
 
 	std::string::size_type key_pos = 0;
 	std::string::size_type key_end;
@@ -502,98 +523,105 @@ char getwcharhexdigit(char c)
 	return 0;
 }
 
-bool GUIText::update_style()
-{
-	GUIText::properties style_properties;
-	for (auto const& tag : m_tag_stack)
-		for (auto const& prop : tag.style_properties)
-			style_properties[prop.first] = prop.second;
-
-	if (style_properties.count("linkid"))
-		m_fragment_style.linkid = std::atoi(style_properties["linkid"].c_str());
+void GUIText::fragment::set_style(KeyValues &style) {
+	if (style["valign"] == "middle")
+		this->valign = v_middle;
+	else if (style["valign"] == "top")
+		this->valign = v_top;
 	else
-		m_fragment_style.linkid = -1;
-
-	if (style_properties["halign"] == "center")
-		m_paragraph_style.halign = h_center;
-	else if (style_properties["halign"] == "right")
-		m_paragraph_style.halign = h_right;
-	else if (style_properties["halign"] == "justify")
-		m_paragraph_style.halign = h_justify;
-	else
-		m_paragraph_style.halign = h_left;
-
-	if (style_properties["valign"] == "middle")
-		m_fragment_style.valign = v_middle;
-	else if (style_properties["valign"] == "top")
-		m_fragment_style.valign = v_top;
-	else
-		m_fragment_style.valign = v_bottom;
+		this->valign = v_bottom;
 
 	int r, g, b;
-	sscanf(style_properties["color"].c_str(),"%2x%2x%2x", &r, &g, &b);
-	m_fragment_style.color = irr::video::SColor(255, r, g, b);
+	sscanf(style["color"].c_str(),"%2x%2x%2x", &r, &g, &b);
+	this->color = irr::video::SColor(255, r, g, b);
 
-	unsigned int font_size = std::atoi(style_properties["fontsize"].c_str());
+	unsigned int font_size = std::atoi(style["fontsize"].c_str());
 	FontMode font_mode = FM_Standard;
-	if (style_properties["fontstyle"] == "mono")
+	if (style["fontstyle"] == "mono")
 		font_mode = FM_Mono;
-	m_fragment_style.font = g_fontengine->getFont(font_size, font_mode);
 
-	if (!m_fragment_style.font) {
+	// TODO : Here server can crash depending on user entry :/
+	this->font = g_fontengine->getFont(font_size, font_mode);
+	if (!this->font)
 		printf("No font found ! Size=%d, mode=%d\n", font_size, font_mode);
-		return false;
-	}
+}
 
-	return true;
+void GUIText::paragraph::set_style(KeyValues &style) {
+	if (style["halign"] == "center")
+		this->halign = h_center;
+	else if (style["halign"] == "right")
+		this->halign = h_right;
+	else if (style["halign"] == "justify")
+		this->halign = h_justify;
+	else
+		this->halign = h_left;
+}
+
+void GUIText::update_style()
+{
+	m_current_style.clear();
+
+ 	for (auto id = m_active_tag_ids.crbegin(); id != m_active_tag_ids.crend(); ++id) {
+		for (auto const& prop : m_tags[*id].style) {
+			m_current_style[prop.first] = prop.second;
+		}
+	}
 }
 
 void GUIText::end_fragment()
 {
-	if (m_current_fragment.ended) return;
-	m_current_fragment.ended = true;
-	m_current_word.fragments.push_back(m_current_fragment);
+	if (!m_current_fragment) return;
+	m_current_fragment = NULL;
 }
 
 void GUIText::end_word()
 {
-	if (m_current_word.ended) return;
+	if (!m_current_word) return;
 
 	end_fragment();
-	m_current_word.ended = true;
-	m_current_paragraph.words.push_back(m_current_word);
+	m_current_word = NULL;
 }
 
 void GUIText::end_paragraph()
 {
-	if (m_current_paragraph.ended) return;
+	if (!m_current_paragraph) return;
 
 	end_word();
-
-	m_current_paragraph.ended = true;
-
-	m_parsed_text.paragraphs.push_back(m_current_paragraph);
+	m_current_paragraph = NULL;
 }
 
-// Ensure we are in a paragraph
-void GUIText::in_paragraph()
+void GUIText::enter_paragraph()
 {
-	if (m_current_paragraph.ended) {
-		m_current_paragraph = {};
-		m_current_paragraph.style = m_paragraph_style;
+	if (!m_current_paragraph) {
+		m_parsed_text.paragraphs.emplace_back();
+		m_current_paragraph = & m_parsed_text.paragraphs.back();
+		m_current_paragraph->set_style(m_current_style);
 	}
 }
 
-void GUIText::in_word(wordtype type)
+void GUIText::enter_word(wordtype type)
 {
-	in_paragraph();
+	enter_paragraph();
 
-	if (m_current_word.type != type)
+	if (m_current_word and m_current_word->type != type)
 		end_word();
 
-	if (m_current_word.ended) {
-		m_current_word = {};
-		m_current_word.type = type;
+	if (!m_current_word) {
+		m_current_paragraph->words.emplace_back();
+		m_current_word = & m_current_paragraph->words.back();
+		m_current_word->type = type;
+	}
+}
+
+void GUIText::enter_fragment(wordtype type)
+{
+	enter_word(type);
+
+	if (!m_current_fragment) {
+		m_current_word->fragments.emplace_back();
+		m_current_fragment = & m_current_word->fragments.back();
+		m_current_fragment->set_style(m_current_style);
+		m_current_fragment->tag_ids = m_active_tag_ids;
 	}
 }
 
@@ -601,18 +629,11 @@ void GUIText::push_char(wchar_t c)
 {
 	// New word if needed
 	if (c == L' ' || c == L'\t')
-		in_word(t_separator);
+		enter_fragment(t_separator);
 	else
-		in_word(t_word);
+		enter_fragment(t_word);
 
-	// New fragement if needed
-	if (m_current_fragment.ended) {
-		m_current_fragment = {};
-		m_current_fragment.style = m_fragment_style;
-		m_current_fragment.linkid = m_fragment_style.linkid;
-	}
-
-	m_current_fragment.text += c;
+	m_current_fragment->text += c;
 }
 
 u32 GUIText::parse_tag(u32 cursor)
@@ -620,8 +641,8 @@ u32 GUIText::parse_tag(u32 cursor)
 	u32 textsize = m_raw_text.size();
 	bool tag_end = false;
 	bool tag_start = false;
-	std::string tag_name = "";
 	std::string tag_param = "";
+	markup_tag tag;
 	wchar_t c;
 
 	if (cursor >= textsize) return 0;
@@ -635,7 +656,7 @@ u32 GUIText::parse_tag(u32 cursor)
 
 	while (c != ' ' && c != '>')
 	{
-		tag_name += (char)c;
+		tag.name += (char)c;
 		if (++cursor >= textsize) return 0;
 		c = m_raw_text[cursor];
 	}
@@ -653,106 +674,104 @@ u32 GUIText::parse_tag(u32 cursor)
 
 	++cursor; // last '>'
 
-	std::map<std::string, std::string> attrs = get_attributes(tag_param);
+	tag.attrs = get_attributes(tag_param);
 
-	std::unordered_map<std::string, std::string> properties;
+	KeyValues style;
 
-	if (tag_name == "link") {
+	if (tag.name == "link") {
 		if (!tag_end) {
-			if (!attrs.count("name"))
+			if (!tag.attrs.count("name"))
 				return 0;
-			int linkid = m_links.size();
-			m_links.push_back(attrs["name"]);
-			properties["linkid"] = std::to_string(linkid);
+			tag.link = tag.attrs["name"];
 			tag_start = true;
 		}
-	} else if (tag_name == "img" || tag_name == "item") {
+	} else if (tag.name == "img" || tag.name == "item") {
 		if (tag_end) return 0;
 
-		if (tag_name == "img")
-			in_word(t_image);
+		if (tag.name == "img")
+			enter_word(t_image);
 		else
-			in_word(t_item);
+			enter_word(t_item);
 
 		// Required attributes
-		if (!attrs.count("name"))
+		if (!tag.attrs.count("name"))
 			return 0;
-		m_current_word.name = attrs["name"];
+		m_current_word->name = tag.attrs["name"];
 
-		if (attrs.count("float")) {
-			if (attrs["float"] == "left") m_current_word.floating = floating_left;
-			if (attrs["float"] == "right") m_current_word.floating = floating_right;
+		if (tag.attrs.count("float")) {
+			if (tag.attrs["float"] == "left") m_current_word->floating = floating_left;
+			if (tag.attrs["float"] == "right") m_current_word->floating = floating_right;
 		}
 
-		if (attrs.count("width")) {
-			int width = strtol(attrs["width"].c_str(), NULL, 10);
+		if (tag.attrs.count("width")) {
+			int width = strtol(tag.attrs["width"].c_str(), NULL, 10);
 			if (width)
-				m_current_word.dimension.Width = width;
+				m_current_word->dimension.Width = width;
 		}
 
-		if (attrs.count("height")) {
-			int height = strtol(attrs["height"].c_str(), NULL, 10);
+		if (tag.attrs.count("height")) {
+			int height = strtol(tag.attrs["height"].c_str(), NULL, 10);
 			if (height)
-				m_current_word.dimension.Height = height;
+				m_current_word->dimension.Height = height;
 		}
 
 		end_word();
 
-	} else if (tag_name == "center") {
+	} else if (tag.name == "center") {
 		if (!tag_end) {
-			properties["halign"] = "center";
+			tag.style["halign"] = "center";
 			tag_start = true;
 		}
 		end_paragraph();
-	} else if (tag_name == "justify") {
+	} else if (tag.name == "justify") {
 		if (!tag_end) {
-			properties["halign"] = "justify";
+			tag.style["halign"] = "justify";
 			tag_start = true;
 		}
 		end_paragraph();
-	} else if (tag_name == "left") {
+	} else if (tag.name == "left") {
 		if (!tag_end) {
-			properties["halign"] = "left";
+			tag.style["halign"] = "left";
 			tag_start = true;
 		}
 		end_paragraph();
-	} else if (tag_name == "right") {
+	} else if (tag.name == "right") {
 		if (!tag_end) {
-			properties["halign"] = "right";
+			tag.style["halign"] = "right";
 			tag_start = true;
 		}
 		end_paragraph();
-	} else if (tag_name == "small") {
+	} else if (tag.name == "small") {
 		if (!tag_end) {
-			properties["fontsize"] = "16";
+			tag.style["fontsize"] = "16";
 			tag_start = true;
 		}
 		end_fragment();
-	} else if (tag_name == "medium") {
+	} else if (tag.name == "medium") {
 		if (!tag_end) {
-			properties["fontsize"] = "24";
+			tag.style["fontsize"] = "24";
 			tag_start = true;
 		}
 		end_fragment();
-	} else if (tag_name == "large") {
+	} else if (tag.name == "large") {
 		if (!tag_end) {
-			properties["fontsize"] = "36";
+			tag.style["fontsize"] = "36";
 			tag_start = true;
 		}
 		end_fragment();
-	} else if (tag_name == "mono") {
+	} else if (tag.name == "mono") {
 		if (!tag_end) {
-			properties["fontstyle"] = "mono";
+			tag.style["fontstyle"] = "mono";
 			tag_start = true;
 		}
 		end_fragment();
-	} else if (tag_name == "normal") {
+	} else if (tag.name == "normal") {
 		if (!tag_end) {
-			properties["fontstyle"] = "normal";
+			tag.style["fontstyle"] = "normal";
 			tag_start = true;
 		}
 		end_fragment();
-	} else if (tag_name == "color") {
+	} else if (tag.name == "color") {
 		if (!tag_end) {
 			if (tag_param[0] == '#') {
 				std::string color = "";
@@ -778,7 +797,7 @@ u32 GUIText::parse_tag(u32 cursor)
 					if (!(c = getwcharhexdigit(tag_param[6]))) return 0;
 					color += c;
 				} else return 0;
-				properties["color"] = color;
+				tag.style["color"] = color;
 				tag_start = true;
 			} else return 0;
 		end_fragment();
@@ -786,47 +805,46 @@ u32 GUIText::parse_tag(u32 cursor)
 	} else return 0; // Unknown tag
 
 	if (tag_start) {
-		markup_tag tag;
-		tag.name = tag_name;
-		tag.style_properties = properties;
-
-		m_tag_stack.push_back(tag);
+		// tag index is used as tag id
+		s32 id = m_tags.size();
+		m_tags.push_back(tag);
+		m_active_tag_ids.push_front(id);
 		update_style();
 	}
-
 	// Tag end, unstack last stacked tag with same name
 	if (tag_end) {
 		bool found = false;
-		for (auto tag = m_tag_stack.rbegin(); tag != m_tag_stack.rend(); ++tag)
-			if (tag->name == tag_name) {
-				m_tag_stack.erase(std::next(tag).base());
+		for (auto id = m_active_tag_ids.begin(); id != m_active_tag_ids.end(); ++id)
+			if (m_tags[*id].name == tag.name) {
+				m_active_tag_ids.erase(id);
 				found = true;
 				break;
 			}
 		if (!found) return 0;
 		update_style();
 	}
-
 	return cursor;
 }
 
 void GUIText::parse()
 {
-	m_parsed_text.paragraphs.clear();
-	m_links.clear();
-	m_tag_stack.clear();
+	m_tags.clear();
+	m_active_tag_ids.clear();
 	markup_tag root_tag;
 	root_tag.name = "root";
-	root_tag.style_properties["fontsize"] = "12";
-	root_tag.style_properties["fontstyle"] = "normal";
-	root_tag.style_properties["halign"] = "left";
-	root_tag.style_properties["color"] = "FFFFFF";
-	m_tag_stack.push_back(root_tag);
+	root_tag.link = "";
+	root_tag.style["fontsize"] = "12";
+	root_tag.style["fontstyle"] = "normal";
+	root_tag.style["halign"] = "left";
+	root_tag.style["color"] = "FFFFFF";
+	m_tags.push_back(root_tag);
+	m_active_tag_ids.push_front(0);
 	update_style();
 
-	m_current_fragment.ended = true;
-	m_current_word.ended = true;
-	m_current_paragraph.ended = true;
+	m_parsed_text.paragraphs.clear();
+	m_current_fragment = NULL;
+	m_current_word = NULL;
+	m_current_paragraph = NULL;
 
 	u32 cursor = 0;
 	bool escape = false;
