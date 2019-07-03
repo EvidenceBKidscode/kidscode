@@ -242,23 +242,6 @@ bool ScriptApiClient::on_inventory_open(Inventory *inventory)
 	return readParam<bool>(L, -1);
 }
 
-void ScriptApiClient::on_particle_overlay_spec(const ParticleOverlaySpec &poSpec)
-{
-	SCRIPTAPI_PRECHECKHEADER
-
-	lua_getglobal(L, "core");
-	lua_getfield(L, -1, "registered_on_particle_overlay_spec");
-
-	lua_pushstring(L, poSpec.name.c_str());
-	lua_pushboolean(L, poSpec.enabled);
-	lua_pushnumber(L, poSpec.minpps);
-	lua_pushnumber(L, poSpec.maxpps);
-	push_v3f(L, poSpec.direction);
-	lua_pushnumber(L, poSpec.velocity);
-	lua_pushnumber(L, poSpec.gravity_factor);
-	runCallbacks(7, RUN_CALLBACKS_MODE_FIRST);
-}
-
 void ScriptApiClient::setEnv(ClientEnvironment *env)
 {
 	ScriptApiBase::setEnv(env);

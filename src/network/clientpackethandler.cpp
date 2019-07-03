@@ -17,7 +17,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
-#include <particleoverlay.h>
 #include "client.h"
 
 #include "util/base64.h"
@@ -1427,36 +1426,4 @@ void Client::handleCommand_ModChannelSignal(NetworkPacket *pkt)
 	// If signal is valid, forward it to client side mods
 	if (valid_signal)
 		m_script->on_modchannel_signal(channel, signal);
-}
-
-void Client::handleCommand_ParticleOverlay(NetworkPacket *pkt)
-{
-	std::string specName;
-	// Load spec name first to find the clientEnvironment spec associated
-	*pkt >> specName;
-
-	ParticleOverlaySpec *spec = m_env.getParticleSpecOverlay(specName);
-	spec->name = specName;
-	*pkt >> spec->texture_name >> spec->texture_scale_factor.Width
-		>> spec->texture_scale_factor.Height >> spec->minpps >> spec->maxpps
-		>> spec->direction >> spec->velocity >> spec->gravity_factor >> spec->enabled;
-
-	// Limit max PPS to prevent bad performance values
-#ifdef __ANDROID__
-	// Android devices are less powerful, lower the limits
-	if (spec->minpps > 5000)
-			spec->minpps = 5000;
-
-	if (spec->maxpps > 5000)
-		spec->maxpps = 5000;
-#else
-	if (spec->minpps > 20000)
-		spec->minpps = 20000;
-
-	if (spec->maxpps > 20000)
-		spec->maxpps = 20000;
-#endif
-
-	m_script->on_particle_overlay_spec(*spec);
-	// note: this is not sent anywhere because we just edited the environment object
 }

@@ -1889,21 +1889,6 @@ int ObjectRef::l_get_clouds(lua_State *L)
 }
 
 
-int ObjectRef::l_set_particle_overlay(lua_State *L)
-{
-	NO_MAP_LOCK_REQUIRED;
-	ObjectRef *ref = checkobject(L, 1);
-	RemotePlayer *player = getplayer(ref);
-	if (!player)
-		return 0;
-
-	getServer(L)->SendParticleOverlaySpec(player->getPeerId(),
-		readParam<ParticleOverlaySpec>(L, 2));
-	lua_pushboolean(L, true);
-	return 1;
-}
-
-
 // override_day_night_ratio(self, brightness=0...1)
 int ObjectRef::l_override_day_night_ratio(lua_State *L)
 {
@@ -2082,7 +2067,6 @@ const luaL_Reg ObjectRef::methods[] = {
 	luamethod(ObjectRef, get_sky),
 	luamethod(ObjectRef, set_clouds),
 	luamethod(ObjectRef, get_clouds),
-	luamethod(ObjectRef, set_particle_overlay),
 	luamethod(ObjectRef, override_day_night_ratio),
 	luamethod(ObjectRef, get_day_night_ratio),
 	luamethod(ObjectRef, set_local_animation),
