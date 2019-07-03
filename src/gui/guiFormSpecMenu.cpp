@@ -1383,11 +1383,12 @@ void GUIFormSpecMenu::parseField(parserData* data, const std::string &element,
 void GUIFormSpecMenu::parseText(parserData* data, const std::string &element)
 {
 	std::vector<std::string> parts = split(element,';');
-	if (parts.size() == 3)
+	if (parts.size() == 4)
 	{
 		std::vector<std::string> v_pos = split(parts[0],',');
 		std::vector<std::string> v_geom = split(parts[1],',');
-		std::string text = parts[2];
+		std::string name = parts[2];
+		std::string text = parts[3];
 
 		MY_CHECKPOS("text",0);
 		MY_CHECKGEOM("text",1);
@@ -1407,18 +1408,18 @@ void GUIFormSpecMenu::parseText(parserData* data, const std::string &element)
 			text = m_form_src->resolveText(text);
 
 		FieldSpec spec(
-			"",
+			name,
 			utf8_to_wide(unescape_string(text)),
-			utf8_to_wide(unescape_string(text)),
+			L"",
 			258+m_fields.size()
 		);
 
+		spec.ftype = f_Unknown;
 		GUIText *gui_text = new GUIText(
 			spec.flabel.c_str(), Environment, this, spec.fid, rect, m_client, m_tsrc);
 
 		m_fields.push_back(spec);
 
-// PYR//
 		return;
 	}
 	errorstream<< "Invalid text element(" << parts.size() << "): '" << element << "'"  << std::endl;
@@ -4300,6 +4301,11 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 					s.fdefault = L"Changed";
 					acceptInput(quit_mode_no);
 					s.fdefault = L"";
+				} else if ((s.ftype == f_Unknown) &&
+					(s.fid == event.GUIEvent.Caller->getID())) {
+						s.send = true;
+						acceptInput();
+						s.send = false;
 				}
 			}
 		}

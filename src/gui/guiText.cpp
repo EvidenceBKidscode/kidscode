@@ -32,7 +32,7 @@ GUIText::GUIText(
 		setDebugName("GUIText");
 	#endif
 
-	Text = text;
+	m_raw_text = text;
 
 	createVScrollBar();
 }
@@ -82,10 +82,19 @@ bool GUIText::OnEvent(const SEvent& event) {
 			m_text_scrollpos.Y = -m_vscrollbar->getPos();
 		} else if (event.MouseInput.Event == EMIE_LMOUSE_PRESSED_DOWN) {
 			GUIText::fragment * fragment = getFragmentAt(event.MouseInput.X,event.MouseInput.Y);
-			if (fragment)
-				printf("Fragment %ls\n", fragment->text.c_str());
-			else
-				printf("No fragment at %d, %d\n",event.MouseInput.X,event.MouseInput.Y);
+			if (fragment && fragment->linkid > -1) {
+				Text = std::wstring(m_links[fragment->linkid].begin(), m_links[fragment->linkid].end()).c_str();
+				Text = core::stringw(L"link:") + Text;
+				if (Parent)
+				{
+					SEvent newEvent;
+					newEvent.EventType = EET_GUI_EVENT;
+					newEvent.GUIEvent.Caller = this;
+					newEvent.GUIEvent.Element = 0;
+					newEvent.GUIEvent.EventType = EGET_BUTTON_CLICKED;
+					Parent->OnEvent(newEvent);
+				}
+			}
 		} else if (event.MouseInput.Event == EMIE_MOUSE_MOVED) {
 			GUIText::fragment * fragment = getFragmentAt(event.MouseInput.X,event.MouseInput.Y);
 			if (fragment)
@@ -608,7 +617,7 @@ void GUIText::push_char(wchar_t c)
 
 u32 GUIText::parse_tag(u32 cursor)
 {
-	u32 textsize = Text.size();
+	u32 textsize = m_raw_text.size();
 	bool tag_end = false;
 	bool tag_start = false;
 	std::string tag_name = "";
@@ -616,30 +625,30 @@ u32 GUIText::parse_tag(u32 cursor)
 	wchar_t c;
 
 	if (cursor >= textsize) return 0;
-	c = Text[cursor];
+	c = m_raw_text[cursor];
 
 	if (c == L'/') {
 		tag_end = true;
 		if (++cursor >= textsize) return 0;
-		c = Text[cursor];
+		c = m_raw_text[cursor];
 	}
 
 	while (c != ' ' && c != '>')
 	{
 		tag_name += (char)c;
 		if (++cursor >= textsize) return 0;
-		c = Text[cursor];
+		c = m_raw_text[cursor];
 	}
 
 	while (c == ' ') {
 		if (++cursor >= textsize) return 0;
-		c = Text[cursor];
+		c = m_raw_text[cursor];
 	}
 
 	while (c != '>') {
 		tag_param += (char)c;
 		if (++cursor >= textsize) return 0;
-		c = Text[cursor];
+		c = m_raw_text[cursor];
 	}
 
 	++cursor; // last '>'
@@ -822,14 +831,14 @@ void GUIText::parse()
 	u32 cursor = 0;
 	bool escape = false;
 	wchar_t c;
-	u32 textsize = Text.size();
+	u32 textsize = m_raw_text.size();
 	while (cursor < textsize)
 	{
-		c = Text[cursor];
+		c = m_raw_text[cursor];
 		cursor++;
 
 		if (c == L'\r') { // Mac or Windows breaks
-			if (cursor < textsize && Text[cursor] == L'\n')
+			if (cursor < textsize && m_raw_text[cursor] == L'\n')
 				cursor++;
 			end_paragraph();
 			escape = false;

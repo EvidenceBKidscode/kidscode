@@ -129,6 +129,7 @@ class GUIText : public gui::IGUIElement
 		word m_current_word;
 		paragraph m_current_paragraph;
 		text m_parsed_text;
+		core::stringw m_raw_text;
 
 		std::vector<core::rect<s32>> m_floating;
 		std::vector<std::string> m_links;
