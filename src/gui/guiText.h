@@ -111,7 +111,7 @@ class GUIText : public gui::IGUIElement
 		};
 
 		void size(GUIText::text &text);
-		void place(GUIText::text &text, core::rect<s32> & text_rect);
+		void place(GUIText::text & text,	s32 width);
 		void draw(GUIText::text &text, core::rect<s32> & text_rect);
 		GUIText::word* getWordAt(s32 X, s32 Y);
 		GUIText::fragment* getFragmentAt(s32 X, s32 Y);

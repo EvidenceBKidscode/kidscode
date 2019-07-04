@@ -166,7 +166,7 @@ void GUIText::draw()
 	m_display_text_rect.LowerRightCorner.Y --;
 	parse();
 	size(m_parsed_text);
-	place(m_parsed_text, m_display_text_rect);
+	place(m_parsed_text, m_display_text_rect.getWidth());
 
 	if (m_parsed_text.height > m_display_text_rect.getHeight()) {
 
@@ -175,7 +175,7 @@ void GUIText::draw()
 
 		core::rect<s32> smaller_rect = m_display_text_rect;
 		smaller_rect.LowerRightCorner.X -= m_scrollbar_width;
-		place(m_parsed_text, smaller_rect);
+		place(m_parsed_text, smaller_rect.getWidth());
 
 	} else {
 		// TODO: vertical adjust
@@ -198,13 +198,15 @@ void GUIText::draw(
 	GUIText::text & text,
 	core::rect<s32> & text_rect)
 {
+	core::position2d<s32> offset = text_rect.UpperLeftCorner + m_text_scrollpos;
+
 	for (auto & paragraph : text.paragraphs) {
 		for (auto & word : paragraph.words)
 		{
 			if (word.type == t_word) {
 				for (auto & fragment : word.fragments)
 				{
-					core::rect<s32> rect(fragment.position + m_text_scrollpos, fragment.dimension);
+					core::rect<s32> rect(fragment.position + offset, fragment.dimension);
 
 					irr::video::SColor color = fragment.color;
 					for (auto id:fragment.tag_ids) {
@@ -227,7 +229,7 @@ void GUIText::draw(
 				video::ITexture *texture = m_tsrc->getTexture(word.name);
 				if (texture != 0)
 				{
-					core::rect<s32> rect(word.position + m_text_scrollpos, word.dimension);
+					core::rect<s32> rect(word.position + offset, word.dimension);
 					if (rect.isRectCollided(text_rect))
 					{
 						Environment->getVideoDriver()->draw2DImage(texture,
@@ -239,7 +241,7 @@ void GUIText::draw(
 				} else printf("Texture %s not found!\n", word.name.c_str());
 
 			} else if (word.type == t_item) {
-				core::rect<s32> rect(word.position + m_text_scrollpos, word.dimension);
+				core::rect<s32> rect(word.position + offset, word.dimension);
 				if (rect.isRectCollided(text_rect))
 				{
 					IItemDefManager *idef = m_client->idef();
@@ -248,9 +250,7 @@ void GUIText::draw(
 
 					drawItemStack(
 							Environment->getVideoDriver(), g_fontengine->getFont(), item,
-							irr::core::rect<s32>(word.position + m_text_scrollpos, word.dimension),
-							&text_rect, m_client,
-							word.rotation);
+							rect, &text_rect, m_client, word.rotation);
 					// TODO: Add IT_ROT_SELECTED possibility
 				}
 			}
@@ -335,12 +335,13 @@ void GUIText::size(GUIText::text &text)
 	}
 }
 
+// Place text in width, with no text margin
 void GUIText::place(
 	GUIText::text & text,
-	core::rect<s32> & text_rect)
+	s32 width)
 {
 	m_floating.clear();
-	s32 y = text_rect.UpperLeftCorner.Y;
+	s32 y = 0;
 	s32 ymargin = text.margin;
 
 	for (auto & paragraph : text.paragraphs) {
@@ -350,12 +351,15 @@ void GUIText::place(
 		for (auto word = paragraph.words.begin(); word != paragraph.words.end();
 				++word) {
 			if (word->floating != floating_none) {
-				word->position.Y = y + std::max(ymargin, word->margin);
+				if (y)
+					word->position.Y = y + std::max(ymargin, word->margin);
+				else
+					word->position.Y = ymargin;
+
 				if (word->floating == floating_left)
-					word->position.X = text_rect.UpperLeftCorner.X + text.margin;
+					word->position.X = text.margin;
 				if (word->floating == floating_right)
-					word->position.X = text_rect.LowerRightCorner.X -
-							word->dimension.Width - text.margin;
+					word->position.X = width - word->dimension.Width - text.margin;
 
 				rect_with_margin floating;
 				floating.rect = core::rect<s32>(word->position, word->dimension);
@@ -364,6 +368,11 @@ void GUIText::place(
 				m_floating.push_back(floating);
 			}
 		}
+
+		if (y)
+			y = y + std::max(ymargin, paragraph.margin);
+
+		ymargin = paragraph.margin;
 
 		// Place non floating stuff
 		std::vector<GUIText::word>::iterator current_word = paragraph.words.begin();
@@ -377,8 +386,8 @@ void GUIText::place(
 				nexty = 0;
 
 				// Inner left & right
-				left = text_rect.UpperLeftCorner.X + text.margin;
-				right = text_rect.LowerRightCorner.X - text.margin;
+				left = text.margin;
+				right = width - text.margin;
 
 				for (auto floating : m_floating) {
 					// Is this floating rect interecting paragraph y line ?
@@ -386,8 +395,8 @@ void GUIText::place(
 							floating.rect.LowerRightCorner.Y + floating.margin >= y) {
 
 						// Next Y to try if no room left
-						if (!nexty || floating.rect.LowerRightCorner.Y + floating.margin < nexty)
-							nexty = floating.rect.LowerRightCorner.Y + floating.margin + 1;
+						if (!nexty || floating.rect.LowerRightCorner.Y + std::max(floating.margin, paragraph.margin) < nexty)
+							nexty = floating.rect.LowerRightCorner.Y + std::max(floating.margin, paragraph.margin) + 1;
 
 						if (floating.rect.UpperLeftCorner.X - floating.margin <= left &&
 								floating.rect.LowerRightCorner.X + floating.margin < right)
@@ -424,8 +433,8 @@ void GUIText::place(
 				current_word++;
 			}
 
-			s32 textwidth = 0;
-			s32 textheight = 0;
+			s32 charswidth = 0;
+			s32 charsheight = 0;
 			u32 wordcount = 0;
 
 			std::vector<GUIText::word>::iterator linestart = current_word;
@@ -433,7 +442,7 @@ void GUIText::place(
 
 			// First pass, find words fitting into line (or at least one world)
 			while(current_word != paragraph.words.end() &&
-					(textwidth == 0 || textwidth + current_word->dimension.Width <= linewidth))
+					(charswidth == 0 || charswidth + current_word->dimension.Width <= linewidth))
 			{
 				if (current_word->floating == floating_none)
 				{
@@ -442,7 +451,7 @@ void GUIText::place(
 						lineend = current_word;
 						wordcount++;
 					}
-					textwidth += current_word->dimension.Width;
+					charswidth += current_word->dimension.Width;
 				}
 				current_word++;
 			}
@@ -453,12 +462,12 @@ void GUIText::place(
 			lineend++; // Point to the first position outside line (may be end())
 
 			// Second pass, compute printable line width and adjustments
-			textwidth = 0;
+			charswidth = 0;
 			for(auto word = linestart; word != lineend; ++word) {
 				if (word->floating == floating_none) {
-					textwidth += word->dimension.Width;
-					if (textheight < word->dimension.Height)
-						textheight = word->dimension.Height;
+					charswidth += word->dimension.Width;
+					if (charsheight < word->dimension.Height)
+						charsheight = word->dimension.Height;
 				}
 			}
 
@@ -467,15 +476,15 @@ void GUIText::place(
 			switch(paragraph.halign)
 			{
 				case h_center:
-					x += (linewidth - textwidth) / 2;
+					x += (linewidth - charswidth) / 2;
 					break;
 				case h_justify:
 					if (wordcount > 1 && // Justification only if at least two words.
 						!(lineend == paragraph.words.end())) // Don't justify last line.
-						extraspace = ((float)(linewidth - textwidth)) / (wordcount - 1);
+						extraspace = ((float)(linewidth - charswidth)) / (wordcount - 1);
 					break;
 				case h_right:
-					x += linewidth - textwidth;
+					x += linewidth - charswidth;
 			}
 
 			// Third pass, actually place everything
@@ -489,7 +498,7 @@ void GUIText::place(
 					if (word->type == t_word || word->type == t_separator)
 					{
 
-						word->dimension.Height = textheight;
+						word->dimension.Height = charsheight;
 
 						for (auto fragment = word->fragments.begin();
 							fragment != word->fragments.end(); ++fragment)
@@ -502,10 +511,10 @@ void GUIText::place(
 									fragment->position.Y = y;
 									break;
 								case v_middle:
-									fragment->position.Y = y + (textheight - fragment->dimension.Height) / 2 ;
+									fragment->position.Y = y + (charsheight - fragment->dimension.Height) / 2 ;
 									break;
 								default:
-									fragment->position.Y = y + textheight - fragment->dimension.Height ;
+									fragment->position.Y = y + charsheight - fragment->dimension.Height ;
 							}
 							x += fragment->dimension.Width;
 						}
@@ -516,15 +525,18 @@ void GUIText::place(
 					}
 				}
 			}
-			paragraph.height += textheight;
-			y += textheight;
+			paragraph.height += charsheight;
+			y += charsheight;
 		}
-		// TODO: Paragraph spacing to be set in stye
-		// TODO: margin managment (overlapping)
-		y += 10;
 	}
-	text.height = y - text_rect.UpperLeftCorner.Y;
-	// TODO:check if floating goes under
+
+	// Check if float goes under paragraph
+	for (auto floating : m_floating) {
+		if (floating.rect.LowerRightCorner.Y >= y)
+			y = floating.rect.LowerRightCorner.Y;
+	}
+
+	text.height = y + text.margin;
 }
 
 // -----------------------------------------------------------------------------
