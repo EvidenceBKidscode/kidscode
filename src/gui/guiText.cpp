@@ -191,6 +191,7 @@ void GUIText::draw()
 // Drawing
 // -----------------------------------------------------------------------------
 
+//TODO:Have that in global style
 irr::video::SColor hovercolor(255, 255, 0, 0);
 irr::video::SColor linkcolor(255, 0, 0, 255);
 
@@ -577,6 +578,35 @@ char getwcharhexdigit(char c)
 	return 0;
 }
 
+bool format_color(std::string source, std::string &target) {
+	if (source[0] != '#') return false;
+	std::string color = "";
+	char c;
+	if (source.size() == 4) {
+			if (!(c = getwcharhexdigit(source[1]))) return false;
+			color += c; color += c;
+			if (!(c = getwcharhexdigit(source[2]))) return false;
+			color += c; color += c;
+			if (!(c = getwcharhexdigit(source[3]))) return false;
+			color += c; color += c;
+	} else if (source.size() == 7) {
+			if (!(c = getwcharhexdigit(source[1]))) return false;
+			color += c;
+			if (!(c = getwcharhexdigit(source[2]))) return false;
+			color += c;
+			if (!(c = getwcharhexdigit(source[3]))) return false;
+			color += c;
+			if (!(c = getwcharhexdigit(source[4]))) return false;
+			color += c;
+			if (!(c = getwcharhexdigit(source[5]))) return false;
+			color += c;
+			if (!(c = getwcharhexdigit(source[6]))) return false;
+			color += c;
+	} else return false;
+	target = color;
+	return true;
+}
+
 void GUIText::fragment::set_style(KeyValues &style) {
 	if (style["valign"] == "middle")
 		this->valign = v_middle;
@@ -799,67 +829,45 @@ u32 GUIText::parse_tag(u32 cursor)
 			tag_start = true;
 		}
 		end_paragraph();
-	} else if (tag.name == "small") {
+	} else if (tag.name == "normal") {
 		if (!tag_end) {
 			tag.style["fontsize"] = "16";
 			tag_start = true;
 		}
 		end_fragment();
-	} else if (tag.name == "medium") {
+	} else if (tag.name == "big") {
 		if (!tag_end) {
 			tag.style["fontsize"] = "24";
 			tag_start = true;
 		}
 		end_fragment();
-	} else if (tag.name == "large") {
+	} else if (tag.name == "bigger") {
 		if (!tag_end) {
 			tag.style["fontsize"] = "36";
 			tag_start = true;
 		}
 		end_fragment();
-	} else if (tag.name == "mono") {
+	} else if (tag.name == "style") {
 		if (!tag_end) {
-			tag.style["fontstyle"] = "mono";
-			tag_start = true;
-		}
-		end_fragment();
-	} else if (tag.name == "normal") {
-		if (!tag_end) {
-			tag.style["fontstyle"] = "normal";
-			tag_start = true;
-		}
-		end_fragment();
-	} else if (tag.name == "color") {
-		if (!tag_end) {
-			if (tag_param[0] == '#') {
-				std::string color = "";
-				char c;
-				if (tag_param.size() == 4) {
-					if (!(c = getwcharhexdigit(tag_param[1]))) return 0;
-					color += c; color += c;
-					if (!(c = getwcharhexdigit(tag_param[2]))) return 0;
-					color += c; color += c;
-					if (!(c = getwcharhexdigit(tag_param[3]))) return 0;
-					color += c; color += c;
-				} else if (tag_param.size() == 7) {
-					if (!(c = getwcharhexdigit(tag_param[1]))) return 0;
-					color += c;
-					if (!(c = getwcharhexdigit(tag_param[2]))) return 0;
-					color += c;
-					if (!(c = getwcharhexdigit(tag_param[3]))) return 0;
-					color += c;
-					if (!(c = getwcharhexdigit(tag_param[4]))) return 0;
-					color += c;
-					if (!(c = getwcharhexdigit(tag_param[5]))) return 0;
-					color += c;
-					if (!(c = getwcharhexdigit(tag_param[6]))) return 0;
-					color += c;
-				} else return 0;
+			if (tag.attrs.count("color")) {
+				std::string color;
+				if (!format_color(tag.attrs["color"], color)) return 0;
 				tag.style["color"] = color;
-				tag_start = true;
-			} else return 0;
-		end_fragment();
+			}
+			if (tag.attrs.count("font")) {
+				if (tag.attrs["font"] == "mono" || tag.attrs["font"] == "normal")
+					tag.style["fontstyle"] = tag.attrs["font"];
+				else
+					return 0;
+			}
+			if (tag.attrs.count("size")) {
+				int size = strtol(tag.attrs["size"].c_str(), NULL, 10);
+				if (size <= 0) return 0;
+				tag.style["fontsize"] = std::to_string(size);
+			}
+			tag_start = true;
 		}
+		end_fragment();
 	} else return 0; // Unknown tag
 
 	if (tag_start) {
@@ -891,7 +899,7 @@ void GUIText::parse()
 	markup_tag root_tag;
 	root_tag.name = "root";
 	root_tag.link = "";
-	root_tag.style["fontsize"] = "12";
+	root_tag.style["fontsize"] = "16";
 	root_tag.style["fontstyle"] = "normal";
 	root_tag.style["halign"] = "left";
 	root_tag.style["color"] = "FFFFFF";
