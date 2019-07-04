@@ -18,6 +18,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 */
 
 #include "IGUIEnvironment.h"
+#include "IGUIElement.h"
 #include "guiScrollBar.h"
 #include "IGUIFont.h"
 #include <vector>
@@ -25,13 +26,14 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <unordered_map>
 #include <cstdlib>
 using namespace irr::gui;
-#include "guiText.h"
 #include "fontengine.h"
 #include <SColor.h>
 #include "client/tile.h"
 #include "IVideoDriver.h"
 #include "client.h"
 #include "client/renderingengine.h"
+#include "hud.h"
+#include "guiText.h"
 
 //! constructor
 GUIText::GUIText(
@@ -243,11 +245,12 @@ void GUIText::draw(
 					IItemDefManager *idef = m_client->idef();
 					ItemStack item;
 					item.deSerialize(word.name, idef);
+
 					drawItemStack(
 							Environment->getVideoDriver(), g_fontengine->getFont(), item,
 							irr::core::rect<s32>(word.position + m_text_scrollpos, word.dimension),
-							&text_rect, m_client, IT_ROT_NONE);
-							// There is a bug in drawItemStack: no clip when drawing 3D block
+							&text_rect, m_client,
+							word.rotation);
 					// TODO: Add IT_ROT_SELECTED possibility
 				}
 			}
@@ -338,6 +341,7 @@ void GUIText::place(
 {
 	m_floating.clear();
 	s32 y = text_rect.UpperLeftCorner.Y;
+	s32 ymargin = text.margin;
 
 	for (auto & paragraph : text.paragraphs) {
 		paragraph.height = 0;
@@ -346,14 +350,18 @@ void GUIText::place(
 		for (auto word = paragraph.words.begin(); word != paragraph.words.end();
 				++word) {
 			if (word->floating != floating_none) {
-				word->position.Y = y;
+				word->position.Y = y + std::max(ymargin, word->margin);
 				if (word->floating == floating_left)
-					word->position.X = text_rect.UpperLeftCorner.X;
+					word->position.X = text_rect.UpperLeftCorner.X + text.margin;
 				if (word->floating == floating_right)
 					word->position.X = text_rect.LowerRightCorner.X -
-							word->dimension.Width;
+							word->dimension.Width - text.margin;
 
-				m_floating.push_back(core::rect<s32>(word->position, word->dimension));
+				rect_with_margin floating;
+				floating.rect = core::rect<s32>(word->position, word->dimension);
+				floating.margin = word->margin;
+
+				m_floating.push_back(floating);
 			}
 		}
 
@@ -362,38 +370,54 @@ void GUIText::place(
 		while (current_word != paragraph.words.end())
 	 	{
 			// Determine line width and y pos
-			s32 xmin, xmax;
+			s32 left, right;
 			s32 nexty = y;
 			do {
 				y = nexty;
 				nexty = 0;
 
-				xmin = text_rect.UpperLeftCorner.X;
-				xmax = text_rect.LowerRightCorner.X;
-				for (auto rect : m_floating) {
-					if (rect.UpperLeftCorner.Y <= y && rect.LowerRightCorner.Y >= y) {
-						if (!nexty || rect.LowerRightCorner.Y < nexty)
-							nexty = rect.LowerRightCorner.Y + 1;
-						if (rect.UpperLeftCorner.X <= xmin && rect.LowerRightCorner.X < xmax)
+				// Inner left & right
+				left = text_rect.UpperLeftCorner.X + text.margin;
+				right = text_rect.LowerRightCorner.X - text.margin;
+
+				for (auto floating : m_floating) {
+					// Is this floating rect interecting paragraph y line ?
+					if (floating.rect.UpperLeftCorner.Y - floating.margin <= y &&
+							floating.rect.LowerRightCorner.Y + floating.margin >= y) {
+
+						// Next Y to try if no room left
+						if (!nexty || floating.rect.LowerRightCorner.Y + floating.margin < nexty)
+							nexty = floating.rect.LowerRightCorner.Y + floating.margin + 1;
+
+						if (floating.rect.UpperLeftCorner.X - floating.margin <= left &&
+								floating.rect.LowerRightCorner.X + floating.margin < right)
 						{ // float on left
-							if (rect.LowerRightCorner.X > xmin)
-								xmin = rect.LowerRightCorner.X;
-						} else if (rect.LowerRightCorner.X >= xmax && rect.UpperLeftCorner.X > xmin)
+							if (floating.rect.LowerRightCorner.X +
+									std::max(floating.margin, paragraph.margin) > left)
+								left = floating.rect.LowerRightCorner.X +
+										std::max(floating.margin, paragraph.margin);
+
+						} else if (floating.rect.LowerRightCorner.X + floating.margin >= right &&
+								floating.rect.UpperLeftCorner.X - floating.margin > left)
 						{ // float on right
-							if (rect.UpperLeftCorner.X < xmax)
-								xmax = rect.UpperLeftCorner.X;
-						} else if (rect.UpperLeftCorner.X <= xmin && rect.LowerRightCorner.X >= xmax)
+							if (floating.rect.UpperLeftCorner.X -
+									std::max(floating.margin, paragraph.margin) < right)
+								right = floating.rect.UpperLeftCorner.X -
+										std::max(floating.margin, paragraph.margin);
+
+						} else if (floating.rect.UpperLeftCorner.X - floating.margin <= left &&
+							 floating.rect.LowerRightCorner.X + floating.margin >= right)
 						{ // float taking all space
-							xmin = xmax;
+							left = right;
+
 						} else { // float in the middle -- should not occure yet, see that later
 						}
 					}
 				}
-			}
-			while (nexty && xmax <= xmin);
+			} while (nexty && right <= left);
 
-			u32 linewidth = xmax - xmin;
-			float x = xmin;
+			u32 linewidth = right - left;
+			float x = left;
 
 			while(current_word != paragraph.words.end() &&
 					current_word->type == t_separator) {
@@ -719,6 +743,10 @@ u32 GUIText::parse_tag(u32 cursor)
 		if (tag.attrs.count("float")) {
 			if (tag.attrs["float"] == "left") m_current_word->floating = floating_left;
 			if (tag.attrs["float"] == "right") m_current_word->floating = floating_right;
+		}
+
+		if (tag.attrs.count("rotate")) {
+			 if (tag.attrs["rotate"] == "yes") m_current_word->rotation = IT_ROT_SELECTED;
 		}
 
 		if (tag.attrs.count("width")) {

@@ -20,8 +20,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #ifndef GUITEXT_HEADER
 #define GUITEXT_HEADER
 
-#include "IGUIElement.h"
-
 using namespace irr;
 
 class ISimpleTextureSource;
@@ -74,9 +72,15 @@ class GUIText : public gui::IGUIElement
 			wordtype type;
 			core::dimension2d<u32> dimension;
 			core::position2d<s32> position;
+
+			// word & separator specific attributes
 			std::vector<fragment> fragments;
+
+			// img & item specific attributes
 			std::string name;
+			ItemRotationKind rotation = IT_ROT_NONE;
 			floating_type floating = floating_none;
+			s32 margin = 10;
 		};
 
 		struct paragraph {
@@ -84,11 +88,13 @@ class GUIText : public gui::IGUIElement
 			halign_type halign;
 			u32 height;
 			void set_style(KeyValues &style);
+			s32 margin = 10;
 		};
 
 		struct text {
 			std::vector<paragraph> paragraphs;
 			u32 height;
+			s32 margin = 5;
 		};
 
 		struct markup_tag {
@@ -97,6 +103,11 @@ class GUIText : public gui::IGUIElement
 			KeyValues style;
 			std::vector<fragment *> fragments;
 			std::string link;
+		};
+
+		struct rect_with_margin {
+			core::rect<s32> rect;
+			s32 margin;
 		};
 
 		void size(GUIText::text &text);
@@ -137,7 +148,7 @@ class GUIText : public gui::IGUIElement
 		// Parsed text broke down into paragraphs / words / fragments + layout info
 		text m_parsed_text;
 
-		std::vector<core::rect<s32>> m_floating;
+		std::vector<rect_with_margin> m_floating;
 		std::vector<markup_tag> m_tags;
 
 		// Parser vars
