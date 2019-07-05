@@ -25,10 +25,117 @@ using namespace irr;
 class ISimpleTextureSource;
 class Client;
 
+class ParsedText
+{
+	public:
+		ParsedText(const wchar_t* text);
+		~ParsedText();
+
+		enum ElementType { TYPE_TEXT, TYPE_SEPARATOR, TYPE_IMAGE, TYPE_ITEM };
+		enum FloatType { FLOAT_NONE, FLOAT_RIGHT, FLOAT_LEFT };
+		enum HalignType { HALIGN_CENTER, HALIGN_LEFT, HALIGN_RIGHT, HALIGN_JUSTIFY };
+		enum ValignType { VALIGN_MIDDLE, VALIGN_TOP, VALIGN_BOTTOM };
+
+		typedef std::unordered_map<std::string, std::string> StyleList;
+		typedef std::unordered_map<std::string, std::string> AttrsList;
+
+		struct Tag {
+			std::string name;
+			AttrsList attrs;
+			StyleList style;
+		};
+
+		struct Element {
+			std::list<Tag*> tags;
+			ElementType type;
+			core::stringw text;
+
+			core::dimension2d<u32> dim;
+			core::position2d<s32> pos;
+			FloatType floating = FLOAT_NONE;
+
+			ValignType valign;
+			gui::IGUIFont* font;
+			irr::video::SColor color;
+			irr::video::SColor hovercolor;
+
+			// img & item specific attributes
+			std::string name;
+			ItemRotationKind rotation = IT_ROT_NONE;
+			s32 margin = 10;
+
+			void setStyle(StyleList &style);
+		};
+
+		struct Paragraph {
+			std::vector<Element> elements;
+			HalignType halign;
+			s32 margin = 10;
+
+			void setStyle(StyleList &style);
+		};
+
+		std::vector<Paragraph> m_paragraphs;
+
+		s32 margin = 3;
+
+	protected:
+
+		// Parser functions
+		void globalTag(ParsedText::AttrsList& attrs);
+		void enterElement(ElementType type);
+		void endElement();
+		void enterParagraph();
+		void endParagraph();
+		void pushChar(wchar_t c);
+		ParsedText::Tag* newTag(std::string name, AttrsList attrs);
+		ParsedText::Tag* openTag(std::string, AttrsList attrs);
+		bool closeTag(std::string name);
+		u32 parseTag(const wchar_t* text, u32 cursor);
+		void parse(const wchar_t* text);
+
+		std::vector<Tag *> m_tags;
+		std::list<Tag *> m_active_tags;
+
+		// Current values
+		StyleList m_style;
+		Element* m_element;
+		Paragraph* m_paragraph;
+};
+
+
+class TextDrawer
+{
+	public:
+		TextDrawer(
+			const wchar_t* text,
+			Client *client,
+			gui::IGUIEnvironment* environment,
+			ISimpleTextureSource *tsrc);
+		void place(s32 width);
+		inline s32 getHeight() { return m_height; };
+		void draw(core::rect<s32> dest_rect, core::position2d<s32> dest_offset);
+		ParsedText::Element* getElementAt(core::position2d<s32> pos);
+		ParsedText::Tag* m_hovertag;
+
+	protected:
+
+		struct RectWithMargin {
+			core::rect<s32> rect;
+			s32 margin;
+		};
+
+		ParsedText m_text;
+		Client *m_client;
+		gui::IGUIEnvironment* m_environment;
+		s32 m_height;
+		std::vector<RectWithMargin> m_floating;
+
+};
+
 class GUIText : public gui::IGUIElement
 {
 	public:
-
 		//! constructor
 		GUIText(
 			const wchar_t* text,
@@ -49,116 +156,18 @@ class GUIText : public gui::IGUIElement
 
 	protected:
 
-		enum halign_type { h_center, h_left, h_right, h_justify };
-		enum valign_type { v_middle, v_top, v_bottom };
-		enum wordtype { t_word, t_separator, t_image, t_item };
-		enum floating_type { floating_none, floating_right, floating_left };
-		typedef std::unordered_map<std::string, std::string> KeyValues;
-
-		struct markup_tag;
-
-		struct fragment {
-			core::dimension2d<u32> dimension;
-			core::position2d<s32> position;
-			core::stringw text;
-			valign_type valign;
-			gui::IGUIFont* font;
-			irr::video::SColor color;
-			std::list<s32> tag_ids;
-			void set_style(KeyValues &style);
-		};
-
-		struct word {
-			wordtype type;
-			core::dimension2d<u32> dimension;
-			core::position2d<s32> position;
-
-			// word & separator specific attributes
-			std::vector<fragment> fragments;
-
-			// img & item specific attributes
-			std::string name;
-			ItemRotationKind rotation = IT_ROT_NONE;
-			floating_type floating = floating_none;
-			s32 margin = 10;
-		};
-
-		struct paragraph {
-			std::vector<word> words;
-			halign_type halign;
-			u32 height;
-			void set_style(KeyValues &style);
-			s32 margin = 10;
-		};
-
-		struct text {
-			std::vector<paragraph> paragraphs;
-			u32 height;
-			s32 margin = 5;
-		};
-
-		struct markup_tag {
-			std::string name;
-			KeyValues attrs;
-			KeyValues style;
-			std::vector<fragment *> fragments;
-			std::string link;
-		};
-
-		struct rect_with_margin {
-			core::rect<s32> rect;
-			s32 margin;
-		};
-
-		void size(GUIText::text &text);
-		void place(GUIText::text & text,	s32 width);
-		void draw(GUIText::text &text, core::rect<s32> & text_rect);
-		GUIText::word* getWordAt(s32 X, s32 Y);
-		GUIText::fragment* getFragmentAt(s32 X, s32 Y);
-		void checkHover(s32 X, s32 Y);
-
-		// Parser functions
-		void update_style();
-		void enter_fragment(wordtype type);
-		void end_fragment();
-		void enter_word(wordtype type);
-		void end_word();
-		void enter_paragraph();
-		void end_paragraph();
-		void push_char(wchar_t c);
-		u32 parse_tag(u32 cursor);
-		KeyValues get_attributes(std::string const& s);
-		void parse();
-		markup_tag* get_tag_for_fragment(std::string tag_name);
-
 		// GUI members
-		ISimpleTextureSource *m_tsrc;
 		Client *m_client;
 		GUIScrollBar *m_vscrollbar;
+		TextDrawer m_drawer;
 
 		// Positionning
 		u32 m_scrollbar_width;
 		core::rect<s32> m_display_text_rect;
 		core::position2d<s32> m_text_scrollpos;
-		s32 m_hover_tag_id = 0;
 
-		// Raw unparsed text in a single string
-		core::stringw m_raw_text;
-
-		// Parsed text broke down into paragraphs / words / fragments + layout info
-		text m_parsed_text;
-
-		std::vector<rect_with_margin> m_floating;
-		std::vector<markup_tag> m_tags;
-
-		// Parser vars
-		std::list<s32> m_active_tag_ids;
-		KeyValues m_current_style;
-
-		fragment * m_current_fragment = 0;
-		word * m_current_word = 0;
-		paragraph * m_current_paragraph = 0;
+		ParsedText::Element *getElementAt(s32 X, s32 Y);
+		void checkHover(s32 X, s32 Y);
 };
-
 
 #endif // GUITEXT_HEADER
