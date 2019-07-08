@@ -262,10 +262,20 @@ void ParsedText::globalTag(AttrsList &attrs)
 {
 	for (auto const& attr : attrs)
 	{
-		// TODO: Test what happens if negative or huge margin value is given
+		// Only page level style
 		if (attr.first == "margin" && check_integer(attr.second))
 			margin = strtol(attr.second.c_str(), NULL, 10);
 
+		if (attr.first == "valign") {
+			if (attr.second == "top")
+				valign = ParsedText::VALIGN_TOP;
+			if (attr.second == "bottom")
+				valign = ParsedText::VALIGN_BOTTOM;
+			if (attr.second == "middle")
+				valign = ParsedText::VALIGN_MIDDLE;
+		}
+
+		// inheriting style
 		if (attr.first == "color" &&  check_color(attr.second))
 			m_root_tag.style["color"] = attr.second;
 
@@ -461,20 +471,6 @@ u32 ParsedText::parseTag(const wchar_t* text, u32 cursor)
 	return cursor;
 }
 
-// Get element at given coordinates. Coordinates are inner coordinates (starting
-// at 0,0).
-ParsedText::Element* TextDrawer::getElementAt(core::position2d<s32> pos)
-{
-	for (auto & p : m_text.m_paragraphs) {
-		for (auto & el : p.elements) {
-			core::rect<s32> rect(el.pos, el.dim);
-			if (rect.isPointInside(pos))
-				return &el;
-		}
-	}
-	return 0;
-}
-
 // -----------------------------------------------------------------------------
 // Text Drawer
 
@@ -523,6 +519,20 @@ TextDrawer::TextDrawer(
 			}
 		}
 	}
+}
+
+// Get element at given coordinates. Coordinates are inner coordinates (starting
+// at 0,0).
+ParsedText::Element* TextDrawer::getElementAt(core::position2d<s32> pos)
+{
+	for (auto & p : m_text.m_paragraphs) {
+		for (auto & el : p.elements) {
+			core::rect<s32> rect(el.pos, el.dim);
+			if (rect.isPointInside(pos))
+			return &el;
+		}
+	}
+	return 0;
 }
 
 void TextDrawer::place(s32 width)
@@ -729,6 +739,23 @@ void TextDrawer::place(s32 width)
 	m_height = y + m_text.margin;
 }
 
+// Get vertical offset according to valign
+s32 TextDrawer::getVoffset(s32 height)
+{
+	switch(m_text.valign)
+	{
+		case ParsedText::VALIGN_BOTTOM:
+			return height - m_height;
+		case ParsedText::VALIGN_MIDDLE:
+			return (height - m_height) / 2;
+		case ParsedText::VALIGN_TOP:
+		default:
+			return 0;
+	}
+}
+
+// Draw text in a rectangle with a given offset. Items are actually placed in
+// relative (to upper left corner) coordinates.
 void TextDrawer::draw(
 	core::rect<s32> dest_rect,
 	core::position2d<s32> dest_offset)
@@ -945,12 +972,15 @@ void GUIText::draw()
 		core::rect<s32> smaller_rect = m_display_text_rect;
 		smaller_rect.LowerRightCorner.X -= m_scrollbar_width;
 		m_drawer.place(smaller_rect.getWidth());
+		m_drawer.draw(m_display_text_rect, m_text_scrollpos);
 
 	} else {
-		// TODO: vertical adjust
+		core::position2d<s32> offset =
+			{ 0, m_drawer.getVoffset(m_display_text_rect.getHeight())};
+
+		m_drawer.draw(m_display_text_rect, offset);
 		m_vscrollbar->setVisible(false);
 	}
-	m_drawer.draw(m_display_text_rect, m_text_scrollpos);
 
 	// draw children
 	IGUIElement::draw();
