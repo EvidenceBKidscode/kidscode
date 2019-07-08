@@ -2033,6 +2033,12 @@ examples.
 * Same as fields above, but with an optional vertical scrollbar
 * if <scrollbar> is true an auto vertical scrollbar is added
 
+#### `text`[<X>,<Y>;<W>,<H>;<name>;<text>]`
+* Displays a static formated text with hyperlinks.
+* `x`, `y`, `w` and `h` work as per field
+* `name` is the name of the field as returned in fields to `on_receive_fields` in case of link selection
+* `text` is the formatted text using `markup language` described below.
+
 #### `label[<X>,<Y>;<label>]`
 * `x` and `y` work as per field
 * `label` is the text on the label
@@ -2203,6 +2209,81 @@ examples.
 **Note**: do _not_ use a element name starting with `key_`; those names are reserved to
 pass key press events to formspec!
 
+Markup language
+---------------
+Markup language used in text[] elements uses tag that look like HTML tags. Some
+tags can enclose text, they open with <tagname> and close with </tagname>.
+Tags can have attributes, in that case, attributes are in the openning tag in
+form of a key/value separated with equal signs. Attribute values should not be quotted.
+
+`<big>...</big>`: Big text
+
+`<bigger>...</bigger>`: Bigger text
+
+`<normal>...</normal>`: Normal size text
+
+`<center>...</center>`: Centered text
+
+`<left>...</left>`: Left aligned text
+
+`<right>...</right>`: Right aligned text
+
+`<justify>...</justify>`: Justified text
+
+`<link name=...>...</link>`
+
+Make that text a clickable link.
+
+* `name`: Name of the link (mandatory).
+
+When clicked, the formspec is send to the server. The value of the text field
+sent to `on_player_receive_fields` will be "link:" concatenated to the link name.
+
+`<img name=... float=... width=... height=...>`
+
+Draws an image. Image must be in game media.
+
+* `name`: Name of the texture (mandatory).
+* `float`: If present, makes the image floating (`left` or `right`).
+* `width`: Force image width instead of taking texture width.
+* `height`: Force image height instead of taking texture height.
+
+If only width or height given, texture aspect is kept.
+
+`<item name=... float=... width=... height=... rotate=...>`
+
+Draws an item image.
+
+* `name`: Item string of the item to draw (mandatory).
+* `float`: If present, makes the image floating (`left` or `right`).
+* `width`: Item image width.
+* `height`: Item image height.
+* `rotate`: Rotate item image if set to `yes`.
+
+`<style color=... font=... size=...>...</style>`
+
+Changes the style of the text.
+
+* `color`: Text color. Given color is a `colorspec`.
+* `size`: Text size.
+* `font`: Text font (`mono` or `normal`).
+
+`<global margin=... color=... linkcolor=... hovercolor=... size=... font=... haling=...>`
+
+Sets global style.
+
+* `margin`: Page margins in pixel.
+* `color`: Default text color. Given color is a `colorspec`.
+* `linkcolor`: Color of <link> tags.
+* `hovercolor`: Color of <link> tags when mouse is over.
+* `size`: Default text font size.
+* `font`: Default text font (`mono` or `normal`).
+* `halign`: Default text horizontal alignment (`left`, `right`, `center`, `justify`).
+
+This tag needs to be placed only once as it changes the global settings of the
+text. Anyway, if several tags are placed, each changed will be made in the order
+tags appear.
+
 Inventory locations
 -------------------
 * `"context"`: Selected node metadata (deprecated: `"current_name"`)
@@ -2217,6 +2298,17 @@ Player Inventory lists
 * `craft`: list containing the craft input
 * `craftpreview`: list containing the craft output
 * `hand`: list containing an override for the empty hand
+
+Formatted Text Format
+---------------------
+
+Formatted text format is similar to, but much simpler than, HTML.
+
+Available tags are:
+`<style color=... size=... font=... >`
+`<image name=... width=..>`
+`<item name=...>`
+
 
 `ColorString`
 -------------
