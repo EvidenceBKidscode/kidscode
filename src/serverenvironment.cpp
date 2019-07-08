@@ -374,6 +374,9 @@ void ActiveBlockList::update(std::vector<PlayerSAO*> &active_players,
 	ServerEnvironment
 */
 
+// Random device to seed pseudo random generators.
+static std::random_device seed;
+
 ServerEnvironment::ServerEnvironment(ServerMap *map,
 	ServerScripting *scriptIface, Server *server,
 	const std::string &path_world):
@@ -381,7 +384,8 @@ ServerEnvironment::ServerEnvironment(ServerMap *map,
 	m_map(map),
 	m_script(scriptIface),
 	m_server(server),
-	m_path_world(path_world)
+	m_path_world(path_world),
+	m_rgen(seed())
 {
 	// Determine which database backend to use
 	std::string conf_path = path_world + DIR_DELIM + "world.mt";
@@ -788,10 +792,30 @@ public:
 		return active_object_count;
 
 	}
-	void apply(MapBlock *block)
+	void apply(MapBlock *block, int &blocks_scanned, int &abms_run, int &blocks_cached)
 	{
 		if(m_aabms.empty() || block->isDummy())
 			return;
+
+		// Check the content type cache first
+		// to see whether there are any ABMs
+		// to be run at all for this block.
+		if (block->contents_cached) {
+			blocks_cached++;
+			bool run_abms = false;
+			for (content_t c : block->contents) {
+				if (c < m_aabms.size() && m_aabms[c]) {
+					run_abms = true;
+					break;
+				}
+			}
+			if (!run_abms)
+				return;
+		} else {
+			// Clear any caching
+			block->contents.clear();
+		}
+		blocks_scanned++;
 
 		ServerMap *map = &m_env->getServerMap();
 
@@ -806,6 +830,15 @@ public:
 		{
 			const MapNode &n = block->getNodeUnsafe(p0);
 			content_t c = n.getContent();
+			// Cache content types as we go
+			if (!block->contents_cached && !block->do_not_cache_contents) {
+				block->contents.insert(c);
+				if (block->contents.size() > 64) {
+					// Too many different nodes... don't try to cache
+					block->do_not_cache_contents = true;
+					block->contents.clear();
+				}
+			}
 
 			if (c >= m_aabms.size() || !m_aabms[c])
 				continue;
@@ -843,6 +876,7 @@ public:
 				}
 				neighbor_found:
 
+				abms_run++;
 				// Call all the trigger variations
 				aabm.abm->trigger(m_env, p, n);
 				aabm.abm->trigger(m_env, p, n,
@@ -855,6 +889,7 @@ public:
 				}
 			}
 		}
+		block->contents_cached = !block->do_not_cache_contents;
 	}
 };
 
@@ -1272,40 +1307,56 @@ void ServerEnvironment::step(float dtime)
 		}
 	}
 
-	if (m_active_block_modifier_interval.step(dtime, m_cache_abm_interval))
-		do { // breakable
-			if (m_active_block_interval_overload_skip > 0) {
-				ScopeProfiler sp(g_profiler, "SEnv: ABM overload skips");
-				m_active_block_interval_overload_skip--;
+	if (m_active_block_modifier_interval.step(dtime, m_cache_abm_interval)) {
+		ScopeProfiler sp(g_profiler, "SEnv: modify in blocks avg per interval", SPT_AVG);
+		TimeTaker timer("modify in active blocks per interval");
+
+		// Initialize handling of ActiveBlockModifiers
+		ABMHandler abmhandler(m_abms, m_cache_abm_interval, this, true);
+
+		int blocks_scanned = 0;
+		int abms_run = 0;
+		int blocks_cached = 0;
+
+		std::vector<v3s16> output(m_active_blocks.m_abm_list.size());
+
+		// Shuffle the active blocks so that each block gets an equal chance
+		// of having its ABMs run.
+		std::copy(m_active_blocks.m_abm_list.begin(), m_active_blocks.m_abm_list.end(), output.begin());
+		std::shuffle(output.begin(), output.end(), m_rgen);
+
+		int i = 0;
+		// The time budget for ABMs is 20%.
+		u32 max_time_ms = m_cache_abm_interval * 1000 / 5;
+		for (const v3s16 &p : output) {
+			MapBlock *block = m_map->getBlockNoCreateNoEx(p);
+			if (!block)
+				continue;
+
+			i++;
+
+			// Set current time as timestamp
+			block->setTimestampNoChangedFlag(m_game_time);
+
+			/* Handle ActiveBlockModifiers */
+			abmhandler.apply(block, blocks_scanned, abms_run, blocks_cached);
+
+			u32 time_ms = timer.getTimerTime();
+
+			if (time_ms > max_time_ms) {
+				warningstream << "active block modifiers took "
+					  << time_ms << "ms (processed " << i << " of "
+					  << output.size() << " active blocks)" << std::endl;
 				break;
 			}
-			ScopeProfiler sp(g_profiler, "SEnv: modify in blocks avg per interval", SPT_AVG);
-			TimeTaker timer("modify in active blocks per interval");
+		}
+		g_profiler->avg("SEnv: active blocks", m_active_blocks.m_abm_list.size());
+		g_profiler->avg("SEnv: active blocks cached", blocks_cached);
+		g_profiler->avg("SEnv: active blocks scanned for ABMs", blocks_scanned);
+		g_profiler->avg("SEnv: ABMs run", abms_run);
 
-			// Initialize handling of ActiveBlockModifiers
-			ABMHandler abmhandler(m_abms, m_cache_abm_interval, this, true);
-
-			for (const v3s16 &p : m_active_blocks.m_abm_list) {
-				MapBlock *block = m_map->getBlockNoCreateNoEx(p);
-				if (!block)
-					continue;
-
-				// Set current time as timestamp
-				block->setTimestampNoChangedFlag(m_game_time);
-
-				/* Handle ActiveBlockModifiers */
-				abmhandler.apply(block);
-			}
-
-			u32 time_ms = timer.stop(true);
-			u32 max_time_ms = 200;
-			if (time_ms > max_time_ms) {
-				warningstream<<"active block modifiers took "
-					<<time_ms<<"ms (longer than "
-					<<max_time_ms<<"ms)"<<std::endl;
-				m_active_block_interval_overload_skip = (time_ms / max_time_ms) + 1;
-			}
-		}while(0);
+		timer.stop(true);
+	}
 
 	/*
 		Step script environment (run global on_step())
