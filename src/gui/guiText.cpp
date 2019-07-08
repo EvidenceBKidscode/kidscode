@@ -275,9 +275,6 @@ void ParsedText::globalTag(AttrsList &attrs)
 		if (attr.first == "hovercolor" &&  check_color(attr.second))
 			m_root_tag.style["hovercolor"] = attr.second;
 
-		if (attr.first == "hovercolor" &&  check_color(attr.second))
-			m_root_tag.style["hovercolor"] = attr.second;
-
 		if (attr.first == "size" && strtol(attr.second.c_str(), NULL, 10) > 0)
 			m_root_tag.style["fontsize"] = attr.second;
 
