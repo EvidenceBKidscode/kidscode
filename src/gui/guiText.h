@@ -32,6 +32,7 @@ class ParsedText
 		~ParsedText();
 
 		enum ElementType { TYPE_TEXT, TYPE_SEPARATOR, TYPE_IMAGE, TYPE_ITEM };
+		enum BackgroundType { BACKGROUND_NONE, BACKGROUND_COLOR };
 		enum FloatType { FLOAT_NONE, FLOAT_RIGHT, FLOAT_LEFT };
 		enum HalignType { HALIGN_CENTER, HALIGN_LEFT, HALIGN_RIGHT, HALIGN_JUSTIFY };
 		enum ValignType { VALIGN_MIDDLE, VALIGN_TOP, VALIGN_BOTTOM };
@@ -80,6 +81,9 @@ class ParsedText
 		// Element style
 		s32 margin = 3;
 		ValignType valign = VALIGN_TOP;
+		BackgroundType background_type = BACKGROUND_NONE;
+		irr::video::SColor background_color;
+
 		Tag m_root_tag;
 
 	protected:

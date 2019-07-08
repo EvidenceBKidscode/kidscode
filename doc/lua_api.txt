@@ -2272,7 +2272,12 @@ Changes the style of the text.
 
 Sets global style.
 
+Global only styles:
 * `margin`: Page margins in pixel.
+* `valign`: Text vertical alignment (`top`, `middle`, `bottom`).
+* `background`: Text background, a `colorspec` or `none`.
+
+Inheriting styles (affects child elements):
 * `color`: Default text color. Given color is a `colorspec`.
 * `linkcolor`: Color of <link> tags.
 * `hovercolor`: Color of <link> tags when mouse is over.

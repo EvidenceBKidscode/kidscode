@@ -275,6 +275,16 @@ void ParsedText::globalTag(AttrsList &attrs)
 				valign = ParsedText::VALIGN_MIDDLE;
 		}
 
+		if (attr.first == "background") {
+			irr::video::SColor color;
+			if (attr.second == "none")
+				background_type = BACKGROUND_NONE;
+			else if (parseColorString(attr.second, color, false)) {
+				background_type = BACKGROUND_COLOR;
+				background_color = color;
+			}
+		}
+
 		// inheriting style
 		if (attr.first == "color" &&  check_color(attr.second))
 			m_root_tag.style["color"] = attr.second;
@@ -297,6 +307,7 @@ void ParsedText::globalTag(AttrsList &attrs)
 			attr.second == "right" || attr.second == "justify"))
 			m_root_tag.style["halign"] = attr.second;
 	}
+
 }
 
 u32 ParsedText::parseTag(const wchar_t* text, u32 cursor)
@@ -762,6 +773,10 @@ void TextDrawer::draw(
 {
 	core::position2d<s32> offset = dest_rect.UpperLeftCorner + dest_offset;
 
+	if (m_text.background_type == ParsedText::BACKGROUND_COLOR)
+		m_environment->getVideoDriver()->draw2DRectangle(
+			m_text.background_color, dest_rect);
+
 	for (auto & p : m_text.m_paragraphs) {
 		for (auto & el : p.elements) {
 			core::rect<s32> rect(el.pos + offset, el.dim);
@@ -950,7 +965,6 @@ void GUIText::draw()
 	if (skin)
 		skin->draw3DSunkenPane(this, video::SColor(0), false, false,
 				AbsoluteRect, &AbsoluteClippingRect);
-
 
 	// Text
 	m_display_text_rect = AbsoluteRect;
