@@ -77,7 +77,9 @@ class ParsedText
 
 		std::vector<Paragraph> m_paragraphs;
 
+		// Element style
 		s32 margin = 3;
+		Tag m_root_tag;
 
 	protected:
 

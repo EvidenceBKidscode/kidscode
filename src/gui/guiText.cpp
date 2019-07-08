@@ -53,6 +53,18 @@ irr::core::stringw strtostrw(std::string str)
   return text;
 }
 
+bool check_color(std::string str) {
+	irr::video::SColor color;
+	return parseColorString(str, color, false);
+}
+
+bool check_integer(std::string str) {
+	long int strtol(const char *nptr, char **endptr, int base);
+	char *endptr = NULL;
+	strtol(str.c_str(), &endptr, 10);
+	return endptr == NULL;
+}
+
 // -----------------------------------------------------------------------------
 // ParsedText - A text parser
 
@@ -97,17 +109,16 @@ void ParsedText::Paragraph::setStyle(StyleList &style)
 
 ParsedText::ParsedText(const wchar_t* text)
 {
-	Tag* root_tag = new Tag();
-	root_tag->name = "root";
-	root_tag->style["fontsize"] = "16";
-	root_tag->style["fontstyle"] = "normal";
-	root_tag->style["halign"] = "left";
-	root_tag->style["color"] = "#FFFFFF";
-	root_tag->style["hovercolor"] = "#FF0000";
-	root_tag->style["linkcolor"] = "#00FF00";
+	m_root_tag.name = "root";
+	m_root_tag.style["fontsize"] = "16";
+	m_root_tag.style["fontstyle"] = "normal";
+	m_root_tag.style["halign"] = "left";
+	m_root_tag.style["color"] = "#FFFFFF";
+	m_root_tag.style["hovercolor"] = "#FF0000";
+	m_root_tag.style["linkcolor"] = "#00FF00";
 
-	m_tags.push_back(root_tag);
-	m_active_tags.push_front(root_tag);
+	m_tags.push_back(&m_root_tag);
+	m_active_tags.push_front(&m_root_tag);
 	//	update_style();
 
 	m_element = NULL;
@@ -251,22 +262,34 @@ void ParsedText::globalTag(AttrsList &attrs)
 	for (auto const& attr : attrs)
 	{
 		// TODO: Test what happens if negative or huge margin value is given
-		if (attr.first == "margin")
+		if (attr.first == "margin" && check_integer(attr.second))
 			margin = strtol(attr.second.c_str(), NULL, 10);
-/*
-		if (attr.fisrt == "bgcolor")
-		if (attr.fisrt == "fgcolor")
-		if (attr.fisrt == "linkcolor")
-		if (attr.fisrt == "linkhovercolor")
-		if (attr.fisrt == "haling")
-		if (attr.fisrt == "valing")
-		if (attr.fisrt == "fontsize")
-		if (attr.fisrt == "fontstyle")
-		if (attr.fisrt == "itemsize")
-*/
+
+		if (attr.first == "color" &&  check_color(attr.second))
+			m_root_tag.style["color"] = attr.second;
+
+		if (attr.first == "linkcolor" &&  check_color(attr.second))
+			m_root_tag.style["linkcolor"] = attr.second;
+
+		if (attr.first == "hovercolor" &&  check_color(attr.second))
+			m_root_tag.style["hovercolor"] = attr.second;
+
+		if (attr.first == "hovercolor" &&  check_color(attr.second))
+			m_root_tag.style["hovercolor"] = attr.second;
+
+		if (attr.first == "size" && strtol(attr.second.c_str(), NULL, 10) > 0)
+			m_root_tag.style["fontsize"] = attr.second;
+
+		if (attr.first == "font" &&
+			(attr.second == "mono" || attr.second == "normal"))
+			m_root_tag.style["fontstyle"] = attr.second;
+
+		if (attr.first == "halign" &&
+			(attr.second == "left" || attr.second == "center" ||
+			attr.second == "right" || attr.second == "justify"))
+			m_root_tag.style["halign"] = attr.second;
 	}
 }
-
 
 u32 ParsedText::parseTag(const wchar_t* text, u32 cursor)
 {
@@ -416,20 +439,16 @@ u32 ParsedText::parseTag(const wchar_t* text, u32 cursor)
 		if (end)
 			closeTag(name);
 		else {
-			if (attrs.count("color")) {
-				irr::video::SColor color;
-				if (parseColorString(attrs["color"], color, false))
-					style["color"] = attrs["color"];
-			}
-			if (attrs.count("font")) {
-				if (attrs["font"] == "mono" || attrs["font"] == "normal")
-					style["fontstyle"] = attrs["font"];
-			}
-			if (attrs.count("size")) {
-				int size = strtol(attrs["size"].c_str(), NULL, 10);
-				if (size > 0)
-					style["fontsize"] = std::to_string(size);
-			}
+			if (attrs.count("color") && check_color(attrs["color"]))
+				style["color"] = attrs["color"];
+
+			if (attrs.count("font") &&
+				(attrs["font"] == "mono" || attrs["font"] == "normal"))
+				style["fontstyle"] = attrs["font"];
+
+			if (attrs.count("size") && strtol(attrs["size"].c_str(), NULL, 10) > 0)
+				style["fontsize"] = attrs["size"];
+
 			openTag(name, attrs)->style = style;
 		}
 		endElement();
@@ -711,10 +730,6 @@ void TextDrawer::place(s32 width)
 
 	m_height = y + m_text.margin;
 }
-
-//TODO:Have that in global style
-irr::video::SColor hovercolor(255, 255, 0, 0);
-irr::video::SColor linkcolor(255, 0, 0, 255);
 
 void TextDrawer::draw(
 	core::rect<s32> dest_rect,
