@@ -56,43 +56,6 @@ irr::core::stringw strtostrw(std::string str)
 // -----------------------------------------------------------------------------
 // ParsedText - A text parser
 
-char getwcharhexdigit(char c)
-{
-	if ((c >= L'0' && c <= L'9') || (c >= L'A' && c <= L'F')) return c;
-	if (c >= L'a' && c <= L'f') return (c - 32);
-	return 0;
-}
-
-bool format_color(std::string source, std::string &target)
-{
-	if (source[0] != '#') return false;
-	std::string color = "";
-	char c;
-	if (source.size() == 4) {
-			if (!(c = getwcharhexdigit(source[1]))) return false;
-			color += c; color += c;
-			if (!(c = getwcharhexdigit(source[2]))) return false;
-			color += c; color += c;
-			if (!(c = getwcharhexdigit(source[3]))) return false;
-			color += c; color += c;
-	} else if (source.size() == 7) {
-			if (!(c = getwcharhexdigit(source[1]))) return false;
-			color += c;
-			if (!(c = getwcharhexdigit(source[2]))) return false;
-			color += c;
-			if (!(c = getwcharhexdigit(source[3]))) return false;
-			color += c;
-			if (!(c = getwcharhexdigit(source[4]))) return false;
-			color += c;
-			if (!(c = getwcharhexdigit(source[5]))) return false;
-			color += c;
-			if (!(c = getwcharhexdigit(source[6]))) return false;
-			color += c;
-	} else return false;
-	target = color;
-	return true;
-}
-
 void ParsedText::Element::setStyle(StyleList &style)
 {
 	if (style["valign"] == "middle")
@@ -102,11 +65,11 @@ void ParsedText::Element::setStyle(StyleList &style)
 	else
 		this->valign = VALIGN_BOTTOM;
 
-	int r, g, b;
-	sscanf(style["color"].c_str(),"%2x%2x%2x", &r, &g, &b);
-	this->color = irr::video::SColor(255, r, g, b);
-	sscanf(style["hovercolor"].c_str(),"%2x%2x%2x", &r, &g, &b);
-	this->hovercolor = irr::video::SColor(255, r, g, b);
+	irr:video::SColor color;
+	if (parseColorString(style["color"], color, false))
+		this->color = color;
+	if (parseColorString(style["hovercolor"], color, false))
+		this->hovercolor = color;
 
 	unsigned int font_size = std::atoi(style["fontsize"].c_str());
 	FontMode font_mode = FM_Standard;
@@ -139,9 +102,9 @@ ParsedText::ParsedText(const wchar_t* text)
 	root_tag->style["fontsize"] = "16";
 	root_tag->style["fontstyle"] = "normal";
 	root_tag->style["halign"] = "left";
-	root_tag->style["color"] = "FFFFFF";
-	root_tag->style["hovercolor"] = "FF0000";
-	root_tag->style["linkcolor"] = "00FF00";
+	root_tag->style["color"] = "#FFFFFF";
+	root_tag->style["hovercolor"] = "#FF0000";
+	root_tag->style["linkcolor"] = "#00FF00";
 
 	m_tags.push_back(root_tag);
 	m_active_tags.push_front(root_tag);
@@ -454,9 +417,9 @@ u32 ParsedText::parseTag(const wchar_t* text, u32 cursor)
 			closeTag(name);
 		else {
 			if (attrs.count("color")) {
-				std::string color;
-				if (format_color(attrs["color"], color))
-					style["color"] = color;
+				irr::video::SColor color;
+				if (parseColorString(attrs["color"], color, false))
+					style["color"] = attrs["color"];
 			}
 			if (attrs.count("font")) {
 				if (attrs["font"] == "mono" || attrs["font"] == "normal")
