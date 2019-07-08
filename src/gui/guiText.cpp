@@ -59,10 +59,11 @@ bool check_color(std::string str) {
 }
 
 bool check_integer(std::string str) {
-	long int strtol(const char *nptr, char **endptr, int base);
+	if (str == "")
+		return false;
 	char *endptr = NULL;
 	strtol(str.c_str(), &endptr, 10);
-	return endptr == NULL;
+	return *endptr == '\0';
 }
 
 // -----------------------------------------------------------------------------
@@ -89,7 +90,7 @@ void ParsedText::Element::setStyle(StyleList &style)
 		font_mode = FM_Mono;
 
 	// TODO: find a way to check font validity
-
+	// Build a new fontengine ?
 	this->font = g_fontengine->getFont(font_size, font_mode);
 	if (!this->font)
 		printf("No font found ! Size=%d, mode=%d\n", font_size, font_mode);
@@ -119,7 +120,7 @@ ParsedText::ParsedText(const wchar_t* text)
 
 	m_tags.push_back(&m_root_tag);
 	m_active_tags.push_front(&m_root_tag);
-	//	update_style();
+	m_style = m_root_tag.style;
 
 	m_element = NULL;
 	m_paragraph = NULL;
