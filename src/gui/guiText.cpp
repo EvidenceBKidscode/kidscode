@@ -222,9 +222,9 @@ void ParsedText::pushChar(wchar_t c)
 {
 	// New word if needed
 	if (c == L' ' || c == L'\t')
-		enterElement(TYPE_SEPARATOR);
+		enterElement(ELEMENT_SEPARATOR);
 	else
-		enterElement(TYPE_TEXT);
+		enterElement(ELEMENT_TEXT);
 
 	m_element->text += c;
 }
@@ -394,9 +394,9 @@ u32 ParsedText::parseTag(const wchar_t* text, u32 cursor)
 		newTag(name, attrs);
 
 		if (name == "img")
-			enterElement(TYPE_IMAGE);
+			enterElement(ELEMENT_IMAGE);
 		else
-			enterElement(TYPE_ITEM);
+			enterElement(ELEMENT_ITEM);
 
 		m_element->text = strtostrw(attrs["name"]);
 
@@ -497,22 +497,22 @@ TextDrawer::TextDrawer(
 	// Size all elements
 	for (auto & p : m_text.m_paragraphs) {
 		for (auto & e : p.elements) {
-			if (e.type == ParsedText::TYPE_SEPARATOR ||
-				e.type == ParsedText::TYPE_TEXT)
+			if (e.type == ParsedText::ELEMENT_SEPARATOR ||
+				e.type == ParsedText::ELEMENT_TEXT)
 			{
 				if (e.font)
 					e.dim = e.font->getDimension(e.text.c_str());
 				else
 					e.dim = {0, 0};
 			}
-			else if (e.type == ParsedText::TYPE_IMAGE ||
-				e.type == ParsedText::TYPE_ITEM)
+			else if (e.type == ParsedText::ELEMENT_IMAGE ||
+				e.type == ParsedText::ELEMENT_ITEM)
 			{
 				// Dont resize already sized items (sized by another mechanism)
 				if (e.dim.Height == 0 || e.dim.Width == 0) {
 					core::dimension2d<u32> dim(80, 80); // Default image and item size
 
-					if (e.type == ParsedText::TYPE_IMAGE) {
+					if (e.type == ParsedText::ELEMENT_IMAGE) {
 						video::ITexture *texture = m_client->getTextureSource()->
 							getTexture(strwtostr(e.text));
 						if (texture != 0)
@@ -638,7 +638,7 @@ void TextDrawer::place(s32 width)
 			float x = left;
 
 			// Skip begining of line separators
-			while(el != p.elements.end() && el->type == ParsedText::TYPE_SEPARATOR)
+			while(el != p.elements.end() && el->type == ParsedText::ELEMENT_SEPARATOR)
 				el++;
 
 			s32 charswidth = 0;
@@ -654,7 +654,7 @@ void TextDrawer::place(s32 width)
 			{
 				if (el->floating == ParsedText::FLOAT_NONE)
 				{
-					if (el->type != ParsedText::TYPE_SEPARATOR)
+					if (el->type != ParsedText::ELEMENT_SEPARATOR)
 					{
 						lineend = el;
 						wordcount++;
@@ -707,8 +707,8 @@ void TextDrawer::place(s32 width)
 					e->pos.Y = y;
 
 					switch(e->type) {
-						case ParsedText::TYPE_TEXT:
-						case ParsedText::TYPE_SEPARATOR:
+						case ParsedText::ELEMENT_TEXT:
+						case ParsedText::ELEMENT_SEPARATOR:
 							e->dim.Height = charsheight;
 							e->pos.X = x;
 
@@ -725,12 +725,12 @@ void TextDrawer::place(s32 width)
 									e->pos.Y = y + charsheight - e->dim.Height ;
 							}
 							x += e->dim.Width;
-							if (e->type == ParsedText::TYPE_SEPARATOR)
+							if (e->type == ParsedText::ELEMENT_SEPARATOR)
 								x += extraspace;
 							break;
 
-						case ParsedText::TYPE_IMAGE:
-						case ParsedText::TYPE_ITEM:
+						case ParsedText::ELEMENT_IMAGE:
+						case ParsedText::ELEMENT_ITEM:
 							x += e->dim.Width;
 							break;
 					}
@@ -783,7 +783,7 @@ void TextDrawer::draw(
 			if (rect.isRectCollided(dest_rect)) {
 
 				switch(el.type) {
-					case ParsedText::TYPE_TEXT:
+					case ParsedText::ELEMENT_TEXT:
 						{
 							irr::video::SColor color = el.color;
 
@@ -796,10 +796,10 @@ void TextDrawer::draw(
 						}
 						break;
 
-					case ParsedText::TYPE_SEPARATOR:
+					case ParsedText::ELEMENT_SEPARATOR:
 						break;
 
-					case ParsedText::TYPE_IMAGE:
+					case ParsedText::ELEMENT_IMAGE:
 						{
 							video::ITexture *texture =
 								m_client->getTextureSource()->getTexture(strwtostr(el.text));
@@ -814,7 +814,7 @@ void TextDrawer::draw(
 						}
 						break;
 
-					case ParsedText::TYPE_ITEM:
+					case ParsedText::ELEMENT_ITEM:
 						{
 							IItemDefManager *idef = m_client->idef();
 							ItemStack item;

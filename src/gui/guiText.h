@@ -31,7 +31,7 @@ class ParsedText
 		ParsedText(const wchar_t* text);
 		~ParsedText();
 
-		enum ElementType { TYPE_TEXT, TYPE_SEPARATOR, TYPE_IMAGE, TYPE_ITEM };
+		enum ElementType { ELEMENT_TEXT, ELEMENT_SEPARATOR, ELEMENT_IMAGE, ELEMENT_ITEM };
 		enum BackgroundType { BACKGROUND_NONE, BACKGROUND_COLOR };
 		enum FloatType { FLOAT_NONE, FLOAT_RIGHT, FLOAT_LEFT };
 		enum HalignType { HALIGN_CENTER, HALIGN_LEFT, HALIGN_RIGHT, HALIGN_JUSTIFY };
