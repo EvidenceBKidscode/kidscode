@@ -649,7 +649,7 @@ void Hud::resizeHotbar() {
 
 struct MeshTimeInfo {
 	u64 time;
-	scene::IMesh *mesh;
+	scene::IMesh *mesh = NULL;
 };
 
 void drawItemStack(video::IVideoDriver *driver,
@@ -665,7 +665,7 @@ void drawItemStack(video::IVideoDriver *driver,
 		g_settings->getBool("inventory_items_animations");
 
 	if (item.empty()) {
-		if (rotation_kind < IT_ROT_NONE) {
+		if (rotation_kind < IT_ROT_NONE && rotation_kind != IT_ROT_OTHER) {
 			rotation_time_infos[rotation_kind].mesh = NULL;
 		}
 		return;
@@ -680,7 +680,7 @@ void drawItemStack(video::IVideoDriver *driver,
 		s32 delta = 0;
 		if (rotation_kind < IT_ROT_NONE) {
 			MeshTimeInfo &ti = rotation_time_infos[rotation_kind];
-			if (mesh != ti.mesh) {
+			if (mesh != ti.mesh && rotation_kind != IT_ROT_OTHER) {
 				ti.mesh = mesh;
 				ti.time = porting::getTimeMs();
 			} else {

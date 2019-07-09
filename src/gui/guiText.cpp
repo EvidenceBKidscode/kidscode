@@ -401,23 +401,24 @@ u32 ParsedText::parseTag(const wchar_t* text, u32 cursor)
 		m_element->text = strtostrw(attrs["name"]);
 
 		if (attrs.count("float")) {
-			if (attrs["float"] == "left") m_element->floating = FLOAT_LEFT;
-			if (attrs["float"] == "right") m_element->floating = FLOAT_RIGHT;
+			if (attrs["float"] == "left")
+				m_element->floating = FLOAT_LEFT;
+			if (attrs["float"] == "right")
+				m_element->floating = FLOAT_RIGHT;
 		}
 
-		if (attrs.count("rotate")) {
-			 if (attrs["rotate"] == "yes") m_element->rotation = IT_ROT_SELECTED;
-		}
+		if (attrs.count("rotate") && attrs["rotate"] == "yes")
+			m_element->rotation = IT_ROT_OTHER;
 
 		if (attrs.count("width")) {
 			int width = strtol(attrs["width"].c_str(), NULL, 10);
-			if (width)
+			if (width > 0)
 				m_element->dim.Width = width;
 		}
 
 		if (attrs.count("height")) {
 			int height = strtol(attrs["height"].c_str(), NULL, 10);
-			if (height)
+			if (height > 0)
 				m_element->dim.Height = height;
 		}
 		endElement();
