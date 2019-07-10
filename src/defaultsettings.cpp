@@ -189,7 +189,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("formspec_default_bg_opacity", "200");
 	settings->setDefault("selectionbox_color", "(0,0,0)");
 	settings->setDefault("selectionbox_width", "2");
-	settings->setDefault("node_highlighting", "halo");
+	settings->setDefault("node_highlighting", "box");
 	settings->setDefault("crosshair_color", "(255,255,255)");
 	settings->setDefault("crosshair_alpha", "255");
 	settings->setDefault("recent_chat_messages", "6");
