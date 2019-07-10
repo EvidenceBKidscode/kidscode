@@ -13,6 +13,7 @@ set(gui_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/guiScrollBar.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/guiSkin.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/guiTable.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/guiText.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/guiVolumeChange.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/intlGUIEditBox.cpp
 	PARENT_SCOPE
