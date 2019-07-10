@@ -503,6 +503,7 @@ private:
 	void parseSimpleField(parserData* data,std::vector<std::string> &parts);
 	void parseTextArea(parserData* data,std::vector<std::string>& parts,
 			const std::string &type);
+	void parseText(parserData* data, const std::string &element);
 	void parseLabel(parserData* data, const std::string &element);
 	void parseVertLabel(parserData* data, const std::string &element);
 	void parseImageButton(parserData* data, const std::string &element,

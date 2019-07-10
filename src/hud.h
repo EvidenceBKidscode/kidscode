@@ -194,6 +194,7 @@ enum ItemRotationKind {
 	IT_ROT_SELECTED,
 	IT_ROT_HOVERED,
 	IT_ROT_DRAGGED,
+	IT_ROT_OTHER,
 	IT_ROT_NONE, // Must be last, also serves as number
 };
 

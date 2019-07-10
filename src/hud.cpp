@@ -649,7 +649,7 @@ void Hud::resizeHotbar() {
 
 struct MeshTimeInfo {
 	u64 time;
-	scene::IMesh *mesh;
+	scene::IMesh *mesh = NULL;
 };
 
 void drawItemStack(video::IVideoDriver *driver,
@@ -665,7 +665,7 @@ void drawItemStack(video::IVideoDriver *driver,
 		g_settings->getBool("inventory_items_animations");
 
 	if (item.empty()) {
-		if (rotation_kind < IT_ROT_NONE) {
+		if (rotation_kind < IT_ROT_NONE && rotation_kind != IT_ROT_OTHER) {
 			rotation_time_infos[rotation_kind].mesh = NULL;
 		}
 		return;
@@ -680,7 +680,7 @@ void drawItemStack(video::IVideoDriver *driver,
 		s32 delta = 0;
 		if (rotation_kind < IT_ROT_NONE) {
 			MeshTimeInfo &ti = rotation_time_infos[rotation_kind];
-			if (mesh != ti.mesh) {
+			if (mesh != ti.mesh && rotation_kind != IT_ROT_OTHER) {
 				ti.mesh = mesh;
 				ti.time = porting::getTimeMs();
 			} else {
@@ -690,10 +690,25 @@ void drawItemStack(video::IVideoDriver *driver,
 		core::rect<s32> oldViewPort = driver->getViewPort();
 		core::matrix4 oldProjMat = driver->getTransform(video::ETS_PROJECTION);
 		core::matrix4 oldViewMat = driver->getTransform(video::ETS_VIEW);
+		core::rect<s32> viewrect = rect;
+		if (clip) viewrect.clipAgainst(*clip);
 		core::matrix4 ProjMatrix;
+		core::matrix4 ViewMatrix;
+		ViewMatrix.buildProjectionMatrixOrthoLH(
+			2.0 * viewrect.getWidth() / rect.getWidth(),
+			2.0 * viewrect.getHeight() / rect.getHeight(),
+			-1, 100);
+		ViewMatrix.setTranslation(core::vector3df(
+			1.0 * (rect.LowerRightCorner.X + rect.UpperLeftCorner.X -
+					viewrect.LowerRightCorner.X - viewrect.UpperLeftCorner.X) /
+					viewrect.getWidth(),
+			1.0 * (viewrect.LowerRightCorner.Y + viewrect.UpperLeftCorner.Y -
+					rect.LowerRightCorner.Y - rect.UpperLeftCorner.Y) /
+					viewrect.getHeight(), 0));
+
 		ProjMatrix.buildProjectionMatrixOrthoLH(2, 2, -1, 100);
 		driver->setTransform(video::ETS_PROJECTION, ProjMatrix);
-		driver->setTransform(video::ETS_VIEW, ProjMatrix);
+		driver->setTransform(video::ETS_VIEW, ViewMatrix);
 		core::matrix4 matrix;
 		matrix.makeIdentity();
 
@@ -703,7 +718,7 @@ void drawItemStack(video::IVideoDriver *driver,
 		}
 
 		driver->setTransform(video::ETS_WORLD, matrix);
-		driver->setViewPort(rect);
+		driver->setViewPort(viewrect);
 
 		video::SColor basecolor =
 			client->idef()->getItemstackColor(item, client);
