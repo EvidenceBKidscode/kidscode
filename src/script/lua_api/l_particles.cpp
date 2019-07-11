@@ -23,7 +23,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "common/c_converter.h"
 #include "common/c_content.h"
 #include "server.h"
-#include "particles.h"
+#include "client/particles.h"
 
 // add_particle({pos=, velocity=, acceleration=, expirationtime=,
 // 		size=, collisiondetection=, collision_removal=, vertical=,
@@ -277,4 +277,3 @@ void ModApiParticles::Initialize(lua_State *L, int top)
 	API_FCT(add_particlespawner);
 	API_FCT(delete_particlespawner);
 }
-

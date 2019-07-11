@@ -17,21 +17,22 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
-#include "client.h"
+#include "client/client.h"
 
 #include "util/base64.h"
 #include "chatmessage.h"
-#include "clientmedia.h"
+#include "client/clientmedia.h"
 #include "log.h"
 #include "map.h"
 #include "mapsector.h"
-#include "minimap.h"
+#include "client/minimap.h"
 #include "modchannels.h"
 #include "nodedef.h"
 #include "serialization.h"
 #include "server.h"
 #include "util/strfnd.h"
 #include "client/clientevent.h"
+#include "client/sound.h"
 #include "network/clientopcodes.h"
 #include "network/connection.h"
 #include "script/scripting_client.h"

@@ -41,7 +41,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "remoteplayer.h"
 #include "map.h"
 #ifndef SERVER
-#include "client.h"
+#include "client/client.h"
 #endif
 
 struct EnumString ModApiEnvMod::es_ClearObjectsMode[] =

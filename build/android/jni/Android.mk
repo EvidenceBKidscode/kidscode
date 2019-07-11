@@ -113,20 +113,20 @@ LOCAL_C_INCLUDES := \
 
 LOCAL_SRC_FILES := \
 		jni/src/ban.cpp                           \
-		jni/src/camera.cpp                        \
+		jni/src/client/camera.cpp                 \
 		jni/src/mapgen/cavegen.cpp                \
 		jni/src/chat.cpp                          \
-		jni/src/client.cpp                        \
-		jni/src/clientenvironment.cpp             \
+		jni/src/client/client.cpp                 \
+		jni/src/client/clientenvironment.cpp      \
 		jni/src/clientiface.cpp                   \
-		jni/src/clientmap.cpp                     \
-		jni/src/clientmedia.cpp                   \
-		jni/src/clientobject.cpp                  \
-		jni/src/clouds.cpp                        \
+		jni/src/client/clientmap.cpp              \
+		jni/src/client/clientmedia.cpp            \
+		jni/src/client/clientobject.cpp           \
+		jni/src/client/clouds.cpp                 \
 		jni/src/collision.cpp                     \
-		jni/src/content_cao.cpp                   \
-		jni/src/content_cso.cpp                   \
-		jni/src/content_mapblock.cpp              \
+		jni/src/client/content_cao.cpp            \
+		jni/src/client/content_cso.cpp            \
+		jni/src/client/content_mapblock.cpp       \
 		jni/src/content_mapnode.cpp               \
 		jni/src/content_nodemeta.cpp              \
 		jni/src/content_sao.cpp                   \
@@ -142,10 +142,10 @@ LOCAL_SRC_FILES := \
 		jni/src/emerge.cpp                        \
 		jni/src/environment.cpp                   \
 		jni/src/face_position_cache.cpp           \
-		jni/src/filecache.cpp                     \
+		jni/src/client/filecache.cpp              \
 		jni/src/filesys.cpp                       \
-		jni/src/fontengine.cpp                    \
-		jni/src/game.cpp                          \
+		jni/src/client/fontengine.cpp             \
+		jni/src/client/game.cpp                   \
 		jni/src/genericobject.cpp                 \
 		jni/src/gettext.cpp                       \
 		jni/src/gui/guiChatConsole.cpp            \
@@ -158,25 +158,25 @@ LOCAL_SRC_FILES := \
 		jni/src/gui/guiPasswordChange.cpp         \
 		jni/src/guiListBox.cpp                    \
 		jni/src/gui/guiTable.cpp                  \
-		jni/src/guiscalingfilter.cpp              \
+		jni/src/client/guiscalingfilter.cpp       \
 		jni/src/gui/guiVolumeChange.cpp           \
 		jni/src/httpfetch.cpp                     \
 		jni/src/hud.cpp                           \
-		jni/src/imagefilters.cpp                  \
+		jni/src/client/imagefilters.cpp           \
 		jni/src/gui/intlGUIEditBox.cpp            \
 		jni/src/inventory.cpp                     \
 		jni/src/inventorymanager.cpp              \
 		jni/src/itemdef.cpp                       \
 		jni/src/itemstackmetadata.cpp             \
-		jni/src/keycode.cpp                       \
+		jni/src/client/keycode.cpp                \
 		jni/src/light.cpp                         \
-		jni/src/localplayer.cpp                   \
+		jni/src/client/localplayer.cpp            \
 		jni/src/log.cpp                           \
 		jni/src/main.cpp                          \
 		jni/src/map.cpp                           \
 		jni/src/map_settings_manager.cpp          \
 		jni/src/mapblock.cpp                      \
-		jni/src/mapblock_mesh.cpp                 \
+		jni/src/client/mapblock_mesh.cpp          \
 		jni/src/mapgen/mapgen.cpp                 \
 		jni/src/mapgen/mapgen_carpathian.cpp      \
 		jni/src/mapgen/mapgen_flat.cpp            \
@@ -188,8 +188,8 @@ LOCAL_SRC_FILES := \
 		jni/src/mapgen/mapgen_valleys.cpp         \
 		jni/src/mapnode.cpp                       \
 		jni/src/mapsector.cpp                     \
-		jni/src/mesh.cpp                          \
-		jni/src/mesh_generator_thread.cpp         \
+		jni/src/client/mesh.cpp                   \
+		jni/src/client/mesh_generator_thread.cpp  \
 		jni/src/metadata.cpp                      \
 		jni/src/mapgen/mg_biome.cpp               \
 		jni/src/mapgen/mg_decoration.cpp          \
@@ -204,7 +204,7 @@ LOCAL_SRC_FILES := \
 		jni/src/noise.cpp                         \
 		jni/src/objdef.cpp                        \
 		jni/src/object_properties.cpp             \
-		jni/src/particles.cpp                     \
+		jni/src/client/particles.cpp              \
 		jni/src/pathfinder.cpp                    \
 		jni/src/player.cpp                        \
 		jni/src/porting_android.cpp               \
@@ -221,8 +221,8 @@ LOCAL_SRC_FILES := \
 		jni/src/serverenvironment.cpp             \
 		jni/src/serverlist.cpp                    \
 		jni/src/serverobject.cpp                  \
-		jni/src/shader.cpp                        \
-		jni/src/sky.cpp                           \
+		jni/src/client/shader.cpp                 \
+		jni/src/client/sky.cpp                    \
 		jni/src/socket.cpp                        \
 		jni/src/sound.cpp                         \
 		jni/src/sound_openal.cpp                  \
@@ -270,7 +270,7 @@ LOCAL_SRC_FILES := \
 		jni/src/touchscreengui.cpp                \
 		jni/src/database-leveldb.cpp              \
 		jni/src/settings.cpp                      \
-		jni/src/wieldmesh.cpp                     \
+		jni/src/client/wieldmesh.cpp              \
 		jni/src/client/clientlauncher.cpp         \
 		jni/src/client/inputhandler.cpp           \
 		jni/src/client/renderingengine.cpp        \
