@@ -608,6 +608,10 @@ void Minimap::updateActiveMarkers()
 		{
 			pos.X = ((float)pos.X / data->map_size) * MINIMAP_MAX_SX;
 			pos.Z = ((float)pos.Z / data->map_size) * MINIMAP_MAX_SY;
+			const video::SColor &mask_col = minimap_mask->getPixel(pos.X, pos.Z);
+			if (!mask_col.getAlpha()) {
+				continue;
+			}
 
 			MinimapMarker marker;
 			marker.pos.X = (float)pos.X / (float)MINIMAP_MAX_SX - 0.5;
