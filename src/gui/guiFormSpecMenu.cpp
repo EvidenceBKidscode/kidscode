@@ -27,7 +27,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "guiTable.h"
 #include "constants.h"
 #include "gamedef.h"
-#include "keycode.h"
+#include "client/keycode.h"
 #include "util/strfnd.h"
 #include <IGUICheckBox.h>
 #include <IGUIEditBox.h>
@@ -46,13 +46,13 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "scripting_server.h"
 #include "porting.h"
 #include "settings.h"
-#include "client.h"
-#include "fontengine.h"
+#include "client/client.h"
+#include "client/fontengine.h"
 #include "util/hex.h"
 #include "util/numeric.h"
 #include "util/string.h" // for parseColorString()
 #include "irrlicht_changes/static_text.h"
-#include "guiscalingfilter.h"
+#include "client/guiscalingfilter.h"
 #include "guiEditBoxWithScrollbar.h"
 #include "guiComboBox.h"
 #include "guiScrollBar.h"

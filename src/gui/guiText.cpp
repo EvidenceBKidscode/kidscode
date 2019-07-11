@@ -27,11 +27,11 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <cstdlib>
 #include <cwchar>
 using namespace irr::gui;
-#include "fontengine.h"
+#include "client/fontengine.h"
 #include <SColor.h>
 #include "client/tile.h"
 #include "IVideoDriver.h"
-#include "client.h"
+#include "client/client.h"
 #include "client/renderingengine.h"
 #include "hud.h"
 #include "guiText.h"

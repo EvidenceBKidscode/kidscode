@@ -1,9 +1,9 @@
 #include "script/common/c_converter.h"
 #include "l_camera.h"
 #include "l_internal.h"
-#include "content_cao.h"
-#include "camera.h"
-#include "client.h"
+#include "client/content_cao.h"
+#include "client/camera.h"
+#include "client/client.h"
 
 LuaCamera::LuaCamera(Camera *m) : m_camera(m)
 {

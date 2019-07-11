@@ -31,12 +31,12 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "settings.h"
 #include "guiMainMenu.h"
 #include "sound.h"
-#include "sound_openal.h"
-#include "clouds.h"
+#include "client/sound_openal.h"
+#include "client/clouds.h"
 #include "httpfetch.h"
 #include "log.h"
-#include "fontengine.h"
-#include "guiscalingfilter.h"
+#include "client/fontengine.h"
+#include "client/guiscalingfilter.h"
 #include "irrlicht_changes/static_text.h"
 
 #ifdef __ANDROID__
@@ -584,4 +584,3 @@ unsigned int GUIEngine::queueAsync(const std::string &serialized_func,
 {
 	return m_script->queueAsync(serialized_func, serialized_params);
 }
-
