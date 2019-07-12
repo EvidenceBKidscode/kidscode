@@ -66,6 +66,7 @@ struct MinimapPixel {
 struct MinimapSymbol {
 	v3s16 pos;
 	std::string texture;
+	std::string text;
 };
 
 struct MinimapMapblock {
@@ -125,6 +126,7 @@ private:
 struct MinimapMarker {
 	v2f pos;
 	video::ITexture *texture;
+	core::stringw text;
 };
 
 class Minimap {
@@ -162,7 +164,11 @@ public:
 	Client* client;
 	MinimapData *data;
 
+protected:
+	void addMarker(v3s16 pos, std::string texture, std::string text);
+
 private:
+
 	ITextureSource *m_tsrc;
 	IShaderSource *m_shdrsrc;
 	const NodeDefManager *m_ndef;
