@@ -166,6 +166,7 @@ public:
 
 protected:
 	void addMarker(v3s16 pos, std::string texture, std::string text);
+	gui::IGUIFont *m_font;
 
 private:
 

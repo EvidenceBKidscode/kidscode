@@ -214,6 +214,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("enable_minimap", "true");
 	settings->setDefault("minimap_shape_round", "false");
 	settings->setDefault("minimap_double_scan_height", "true");
+	settings->setDefault("minimap_font_size", "10");
 
 	// Effects
 	settings->setDefault("directional_colored_fog", "true");
@@ -288,7 +289,6 @@ void set_default_settings(Settings *settings)
 #endif
 	settings->setDefault("font_size", font_size_str);
 	settings->setDefault("mono_font_size", std::to_string(TTF_DEFAULT_FONT_SIZE + 2));
-
 
 	// Server
 	settings->setDefault("disable_escape_sequences", "false");
