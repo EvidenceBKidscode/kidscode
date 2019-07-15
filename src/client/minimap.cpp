@@ -551,15 +551,19 @@ void Minimap::drawMinimap()
 
 		driver->draw2DImage(marker.texture, dest_rect, img_rect, &clip_rect, 0, true);
 
-		gui::IGUIFont *font = g_fontengine->getFont(10, FM_Standard);
-		core::dimension2d<u32> font_dim = font->getDimension(marker.text.c_str());
-		core::rect<s32> font_rect(
-			s_pos.X + posf.X - font_dim.Width/2,
-			s_pos.Y + posf.Y - font_dim.Height*2,
-			s_pos.X + posf.X + font_dim.Width/2,
-			s_pos.Y + posf.Y);
+		// Draw text only if square shape, cannot clip if round
+		if (!data->minimap_shape_round)
+		{
+			gui::IGUIFont *font = g_fontengine->getFont(10, FM_Standard);
+			core::dimension2d<u32> font_dim = font->getDimension(marker.text.c_str());
+			core::rect<s32> font_rect(
+				s_pos.X + posf.X - font_dim.Width/2,
+				s_pos.Y + posf.Y - font_dim.Height*2,
+				s_pos.X + posf.X + font_dim.Width/2,
+				s_pos.Y + posf.Y);
 
-		font->draw(marker.text, font_rect, col, false, true, &clip_rect);
+			font->draw(marker.text, font_rect, col, false, true, &clip_rect);
+		}
 	}
 
 	// Draw overlay
