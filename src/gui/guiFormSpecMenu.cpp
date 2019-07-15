@@ -1415,8 +1415,7 @@ void GUIFormSpecMenu::parseText(parserData* data, const std::string &element)
 		);
 
 		spec.ftype = f_Unknown;
-		GUIText *gui_text = new GUIText(
-			spec.flabel.c_str(), Environment, this, spec.fid, rect, m_client, m_tsrc);
+		new GUIText(spec.flabel.c_str(), Environment, this, spec.fid, rect, m_client, m_tsrc);
 
 		m_fields.push_back(spec);
 

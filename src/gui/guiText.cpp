@@ -36,33 +36,34 @@ using namespace irr::gui;
 #include "hud.h"
 #include "guiText.h"
 
-std::string strwtostr(irr::core::stringw str)
-{
-  std::string text = core::stringc(str.c_str()).c_str();
-  return text;
-}
-irr::core::stringw strtostrw(std::string str)
-{
-  size_t size = str.size();
-  wchar_t *text = new wchar_t[size+sizeof(wchar_t)]; //s.size() doesn't include NULL terminator
-  const char *data = &str[0];
-
-  mbsrtowcs(text, &data, size, NULL);
-
-  text[size] = L'\0';
-  return text;
+std::string strwtostr(const core::stringw &str) {
+	std::string text = core::stringc(str.c_str()).c_str();
+	return text;
 }
 
-bool check_color(std::string str) {
+irr::core::stringw strtostrw(const std::string &str) {
+	size_t size = str.size();
+	wchar_t *text = new wchar_t[size + sizeof(wchar_t)]; //s.size() doesn't include NULL terminator
+	const char *data = &str[0];
+
+	mbsrtowcs(text, &data, size, NULL);
+
+	text[size] = L'\0';
+	return text;
+}
+
+bool check_color(const std::string &str) {
 	irr::video::SColor color;
 	return parseColorString(str, color, false);
 }
 
-bool check_integer(std::string str) {
+bool check_integer(const std::string &str) {
 	if (str == "")
 		return false;
-	char *endptr = NULL;
+
+	char *endptr = nullptr;
 	strtol(str.c_str(), &endptr, 10);
+
 	return *endptr == '\0';
 }
 
@@ -78,7 +79,7 @@ void ParsedText::Element::setStyle(StyleList &style)
 	else
 		this->valign = VALIGN_BOTTOM;
 
-	irr:video::SColor color;
+	video::SColor color;
 	if (parseColorString(style["color"], color, false))
 		this->color = color;
 	if (parseColorString(style["hovercolor"], color, false))
@@ -190,7 +191,8 @@ void ParsedText::endElement()
 
 void ParsedText::endParagraph()
 {
-	if (!m_paragraph) return;
+	if (!m_paragraph)
+		return;
 	endElement();
 	m_paragraph = NULL;
 }
@@ -675,7 +677,7 @@ void TextDrawer::place(s32 width)
 			for(auto e = linestart; e != lineend; ++e) {
 				if (e->floating == ParsedText::FLOAT_NONE) {
 					charswidth += e->dim.Width;
-					if (charsheight < e->dim.Height)
+					if (charsheight < (s32)e->dim.Height)
 						charsheight = e->dim.Height;
 				}
 			}
@@ -845,7 +847,7 @@ GUIText::GUIText(
 	ISimpleTextureSource *tsrc) :
 	IGUIElement(EGUIET_ELEMENT, environment, parent, id, rectangle),
 	m_client(client),
-	m_vscrollbar(NULL),
+	m_vscrollbar(nullptr),
 	m_text_scrollpos(0, 0),
 	m_drawer(text, client, environment, tsrc)
 {
@@ -859,20 +861,16 @@ GUIText::GUIText(
 
 	m_scrollbar_width = skin ? skin->getSize(gui::EGDS_SCROLLBAR_SIZE) : 16;
 
-	m_vscrollbar = new GUIScrollBar(Environment, false, this, -1,
+	core::rect<s32> rect =
 		irr::core::rect<s32>(
 			RelativeRect.getWidth() - m_scrollbar_width,
 			0,
 			RelativeRect.getWidth(),
 			RelativeRect.getHeight()
-		)
-	);
+		);
 
+	m_vscrollbar = Environment->addScrollBar(false, rect, this, -1);
 	m_vscrollbar->setVisible(false);
-	m_vscrollbar->setSmallStep(1);
-	m_vscrollbar->setLargeStep(100);
-	m_vscrollbar->setPos(0);
-	m_vscrollbar->setMax(1);
 }
 
 //! destructor

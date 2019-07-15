@@ -17,8 +17,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
-#ifndef GUITEXT_HEADER
-#define GUITEXT_HEADER
+#pragma once
 
 using namespace irr;
 
@@ -119,6 +118,7 @@ class TextDrawer
 			Client *client,
 			gui::IGUIEnvironment* environment,
 			ISimpleTextureSource *tsrc);
+
 		void place(s32 width);
 		inline s32 getHeight() { return m_height; };
 		s32 getVoffset(s32 height);
@@ -166,7 +166,7 @@ class GUIText : public gui::IGUIElement
 
 		// GUI members
 		Client *m_client;
-		GUIScrollBar *m_vscrollbar;
+		gui::IGUIScrollBar *m_vscrollbar;
 		TextDrawer m_drawer;
 
 		// Positionning
@@ -177,5 +177,3 @@ class GUIText : public gui::IGUIElement
 		ParsedText::Element *getElementAt(s32 X, s32 Y);
 		void checkHover(s32 X, s32 Y);
 };
-
-#endif // GUITEXT_HEADER
