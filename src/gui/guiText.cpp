@@ -644,8 +644,8 @@ void TextDrawer::place(s32 width)
 			while(el != p.elements.end() && el->type == ParsedText::ELEMENT_SEPARATOR)
 				el++;
 
-			s32 charswidth = 0;
-			s32 charsheight = 0;
+			u32 charswidth = 0;
+			u32 charsheight = 0;
 			u32 wordcount = 0;
 
 			std::vector<ParsedText::Element>::iterator linestart = el;
@@ -677,7 +677,7 @@ void TextDrawer::place(s32 width)
 			for(auto e = linestart; e != lineend; ++e) {
 				if (e->floating == ParsedText::FLOAT_NONE) {
 					charswidth += e->dim.Width;
-					if (charsheight < (s32)e->dim.Height)
+					if (charsheight < e->dim.Height)
 						charsheight = e->dim.Height;
 				}
 			}
@@ -848,8 +848,8 @@ GUIText::GUIText(
 	IGUIElement(EGUIET_ELEMENT, environment, parent, id, rectangle),
 	m_client(client),
 	m_vscrollbar(nullptr),
-	m_text_scrollpos(0, 0),
-	m_drawer(text, client, environment, tsrc)
+	m_drawer(text, client, environment, tsrc),
+	m_text_scrollpos(0, 0)
 {
 	#ifdef _DEBUG
 		setDebugName("GUIText");
