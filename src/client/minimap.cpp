@@ -222,11 +222,6 @@ Minimap::Minimap(Client *client)
 	// Create mesh buffer for minimap
 	m_meshbuffer = getMinimapMeshBuffer();
 
-	// Font for text rendering
-	u32 font_size = g_settings->getU32("minimap_font_size");
-	font_size = rangelim(font_size, 2, 72);
-	m_font = g_fontengine->getFont(font_size, FM_Standard);
-
 	// Initialize and start thread
 	m_minimap_update_thread = new MinimapUpdateThread();
 	m_minimap_update_thread->data = data;
@@ -238,7 +233,6 @@ Minimap::~Minimap()
 	m_minimap_update_thread->stop();
 	m_minimap_update_thread->wait();
 
-	m_font->drop();
 	m_meshbuffer->drop();
 
 	data->minimap_mask_round->drop();
@@ -471,6 +465,11 @@ scene::SMeshBuffer *Minimap::getMinimapMeshBuffer()
 
 void Minimap::drawMinimap()
 {
+
+	// Font has to be fetched here because fontengine could have changed it
+	// if GUI settings have changed
+	gui::IGUIFont *font = nullptr;
+
 	video::ITexture *minimap_texture = getMinimapTexture();
 	if (!minimap_texture)
 		return;
@@ -558,16 +557,22 @@ void Minimap::drawMinimap()
 		driver->draw2DImage(marker.texture, dest_rect, img_rect, &clip_rect, 0, true);
 
 		// Draw text only if square shape, cannot clip if round
-		if (!data->minimap_shape_round)
+		if (!data->minimap_shape_round && marker.text != "")
 		{
-			core::dimension2d<u32> font_dim = m_font->getDimension(marker.text.c_str());
-			core::rect<s32> font_rect(
-				s_pos.X + posf.X - font_dim.Width/2,
-				s_pos.Y + posf.Y - font_dim.Height - 10,
-				s_pos.X + posf.X + font_dim.Width/2,
+			if (!font) {
+				u32 font_size = g_settings->getU32("minimap_font_size");
+				font_size = rangelim(font_size, 2, 72);
+				font = g_fontengine->getFont(font_size, FM_Standard);
+			}
+
+			core::dimension2d<u32> text_dim = font->getDimension(marker.text.c_str());
+			core::rect<s32> text_rect(
+				s_pos.X + posf.X - text_dim.Width/2,
+				s_pos.Y + posf.Y - text_dim.Height - 10,
+				s_pos.X + posf.X + text_dim.Width/2,
 				s_pos.Y + posf.Y);
 
-			m_font->draw(marker.text, font_rect, col, false, true, &clip_rect);
+			font->draw(marker.text, text_rect, col, false, true, &clip_rect);
 		}
 	}
 
