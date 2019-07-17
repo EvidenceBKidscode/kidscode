@@ -959,17 +959,8 @@ void GUIText::draw()
 	if (!IsVisible)
 		return;
 
-	// Frame
-	IGUISkin *skin = Environment->getSkin();
-
-	skin->draw2DRectangle(this, video::SColor(0), AbsoluteRect, &AbsoluteClippingRect); 
-
 	// Text
 	m_display_text_rect = AbsoluteRect;
-	m_display_text_rect.UpperLeftCorner.X++;
-	m_display_text_rect.UpperLeftCorner.Y++;
-	m_display_text_rect.LowerRightCorner.X--;
-	m_display_text_rect.LowerRightCorner.Y--;
 
 	m_drawer.place(m_display_text_rect.getWidth());
 
