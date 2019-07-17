@@ -465,6 +465,11 @@ scene::SMeshBuffer *Minimap::getMinimapMeshBuffer()
 
 void Minimap::drawMinimap()
 {
+
+	// Font has to be fetched here because fontengine could have changed it
+	// if GUI settings have changed
+	gui::IGUIFont *font = nullptr;
+
 	video::ITexture *minimap_texture = getMinimapTexture();
 	if (!minimap_texture)
 		return;
@@ -552,17 +557,22 @@ void Minimap::drawMinimap()
 		driver->draw2DImage(marker.texture, dest_rect, img_rect, &clip_rect, 0, true);
 
 		// Draw text only if square shape, cannot clip if round
-		if (!data->minimap_shape_round)
+		if (!data->minimap_shape_round && marker.text != "")
 		{
-			gui::IGUIFont *font = g_fontengine->getFont(10, FM_Standard);
-			core::dimension2d<u32> font_dim = font->getDimension(marker.text.c_str());
-			core::rect<s32> font_rect(
-				s_pos.X + posf.X - font_dim.Width/2,
-				s_pos.Y + posf.Y - font_dim.Height*2,
-				s_pos.X + posf.X + font_dim.Width/2,
+			if (!font) {
+				u32 font_size = g_settings->getU32("minimap_font_size");
+				font_size = rangelim(font_size, 2, 72);
+				font = g_fontengine->getFont(font_size, FM_Standard);
+			}
+
+			core::dimension2d<u32> text_dim = font->getDimension(marker.text.c_str());
+			core::rect<s32> text_rect(
+				s_pos.X + posf.X - text_dim.Width/2,
+				s_pos.Y + posf.Y - text_dim.Height - 10,
+				s_pos.X + posf.X + text_dim.Width/2,
 				s_pos.Y + posf.Y);
 
-			font->draw(marker.text, font_rect, col, false, true, &clip_rect);
+			font->draw(marker.text, text_rect, col, false, true, &clip_rect);
 		}
 	}
 

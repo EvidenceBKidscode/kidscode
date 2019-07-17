@@ -314,6 +314,11 @@ void FontEngine::initFont(unsigned int basesize, FontMode mode)
 		}
 		unsigned int size = floor(RenderingEngine::getDisplayDensity() *
 				m_settings->getFloat("gui_scaling") * basesize);
+
+		// Avoid crash if size = 0
+		if (size < 1)
+			size = 1;
+
 		u32 font_shadow       = 0;
 		u32 font_shadow_alpha = 0;
 
