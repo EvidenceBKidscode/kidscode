@@ -117,7 +117,7 @@ ParsedText::ParsedText(const wchar_t* text)
 	m_root_tag.style["halign"] = "left";
 	m_root_tag.style["color"] = "#FFFFFF";
 	m_root_tag.style["hovercolor"] = "#FF0000";
-	m_root_tag.style["linkcolor"] = "#00FF00";
+	m_root_tag.style["actioncolor"] = "#00FF00";
 
 	m_tags.push_back(&m_root_tag);
 	m_active_tags.push_front(&m_root_tag);
@@ -291,8 +291,8 @@ void ParsedText::globalTag(AttrsList &attrs)
 		if (attr.first == "color" &&  check_color(attr.second))
 			m_root_tag.style["color"] = attr.second;
 
-		if (attr.first == "linkcolor" &&  check_color(attr.second))
-			m_root_tag.style["linkcolor"] = attr.second;
+		if (attr.first == "actioncolor" &&  check_color(attr.second))
+			m_root_tag.style["actioncolor"] = attr.second;
 
 		if (attr.first == "hovercolor" &&  check_color(attr.second))
 			m_root_tag.style["hovercolor"] = attr.second;
@@ -425,13 +425,13 @@ u32 ParsedText::parseTag(const wchar_t* text, u32 cursor)
 		}
 		endElement();
 
-	} else if (name == "link") {
+	} else if (name == "action") {
 		if (end)
 			closeTag(name);
 		else {
 			if (!attrs.count("name"))
 				return 0;
-			openTag(name, attrs)->style["color"] = m_style["linkcolor"];
+			openTag(name, attrs)->style["color"] = m_style["actioncolor"];
 		}
 	} else if (name == "center" || name == "justify" || name == "left" || name == "right") {
 		if (end)
@@ -894,7 +894,7 @@ void GUIHyperText::checkHover(s32 X, s32 Y) {
 
 	if (element)
 		for (auto & tag : element->tags)
-			if (tag->name == "link") {
+			if (tag->name == "action") {
 				m_drawer.m_hovertag = tag;
 				break;
 		}
@@ -929,8 +929,8 @@ bool GUIHyperText::OnEvent(const SEvent& event) {
 
 			if (element) {
 				for (auto & tag : element->tags) {
-					if (tag->name == "link") {
-						Text = core::stringw(L"link:") + strtostrw(tag->attrs["name"]);
+					if (tag->name == "action") {
+						Text = core::stringw(L"action:") + strtostrw(tag->attrs["name"]);
 						if (Parent)
 						{
 							SEvent newEvent;

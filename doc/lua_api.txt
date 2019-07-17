@@ -2033,10 +2033,10 @@ examples.
 * Same as fields above, but with an optional vertical scrollbar
 * if <scrollbar> is true an auto vertical scrollbar is added
 
-#### `text`[<X>,<Y>;<W>,<H>;<name>;<text>]`
-* Displays a static formated text with hyperlinks.
+#### `hypertext`[<X>,<Y>;<W>,<H>;<name>;<text>]`
+* Displays a static formated text.
 * `x`, `y`, `w` and `h` work as per field
-* `name` is the name of the field as returned in fields to `on_receive_fields` in case of link selection
+* `name` is the name of the field as returned in fields to `on_receive_fields` in case of action in text.
 * `text` is the formatted text using `markup language` described below.
 
 #### `label[<X>,<Y>;<label>]`
@@ -2211,7 +2211,7 @@ pass key press events to formspec!
 
 Markup language
 ---------------
-Markup language used in text[] elements uses tag that look like HTML tags. Some
+Markup language used in hypertext[] elements uses tag that look like HTML tags. Some
 tags can enclose text, they open with <tagname> and close with </tagname>.
 Tags can have attributes, in that case, attributes are in the openning tag in
 form of a key/value separated with equal signs. Attribute values should not be quotted.
@@ -2230,14 +2230,15 @@ form of a key/value separated with equal signs. Attribute values should not be q
 
 `<justify>...</justify>`: Justified text
 
-`<link name=...>...</link>`
+`<action name=...>...</action>`
 
-Make that text a clickable link.
+Make that text a clickable text triggering an action.
 
-* `name`: Name of the link (mandatory).
+* `name`: Name of the action (mandatory).
 
 When clicked, the formspec is send to the server. The value of the text field
-sent to `on_player_receive_fields` will be "link:" concatenated to the link name.
+sent to `on_player_receive_fields` will be "action:" concatenated to the action
+name.
 
 `<img name=... float=... width=... height=...>`
 
@@ -2268,7 +2269,7 @@ Changes the style of the text.
 * `size`: Text size.
 * `font`: Text font (`mono` or `normal`).
 
-`<global margin=... color=... linkcolor=... hovercolor=... size=... font=... haling=...>`
+`<global margin=... color=... actioncolor=... hovercolor=... size=... font=... haling=...>`
 
 Sets global style.
 
@@ -2279,8 +2280,8 @@ Global only styles:
 
 Inheriting styles (affects child elements):
 * `color`: Default text color. Given color is a `colorspec`.
-* `linkcolor`: Color of <link> tags.
-* `hovercolor`: Color of <link> tags when mouse is over.
+* `actioncolor`: Color of <action> tags.
+* `hovercolor`: Color of <action> tags when mouse is over.
 * `size`: Default text font size.
 * `font`: Default text font (`mono` or `normal`).
 * `halign`: Default text horizontal alignment (`left`, `right`, `center`, `justify`).
