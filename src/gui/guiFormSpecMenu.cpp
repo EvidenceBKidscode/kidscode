@@ -57,7 +57,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "guiComboBox.h"
 #include "guiScrollBar.h"
 #include "guiImageTabControl.h"
-#include "guiText.h"
+#include "guiHyperText.h"
 
 #if USE_FREETYPE && IRRLICHT_VERSION_MAJOR == 1 && IRRLICHT_VERSION_MINOR < 9
 #include "intlGUIEditBox.h"
@@ -1380,7 +1380,7 @@ void GUIFormSpecMenu::parseField(parserData* data, const std::string &element,
 	errorstream<< "Invalid field element(" << parts.size() << "): '" << element << "'"  << std::endl;
 }
 
-void GUIFormSpecMenu::parseText(parserData* data, const std::string &element)
+void GUIFormSpecMenu::parseHyperText(parserData* data, const std::string &element)
 {
 	std::vector<std::string> parts = split(element,';');
 	if (parts.size() == 4)
@@ -1415,7 +1415,7 @@ void GUIFormSpecMenu::parseText(parserData* data, const std::string &element)
 		);
 
 		spec.ftype = f_Unknown;
-		new GUIText(spec.flabel.c_str(), Environment, this, spec.fid, rect, m_client, m_tsrc);
+		new GUIHyperText(spec.flabel.c_str(), Environment, this, spec.fid, rect, m_client, m_tsrc);
 
 		m_fields.push_back(spec);
 
@@ -2371,8 +2371,8 @@ void GUIFormSpecMenu::parseElement(parserData* data, const std::string &element)
 		return;
 	}
 
-	if (type == "text") {
-		parseText(data,description);
+	if (type == "hypertext") {
+		parseHyperText(data,description);
 		return;
 	}
 

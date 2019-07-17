@@ -140,11 +140,11 @@ protected:
 	std::vector<RectWithMargin> m_floating;
 };
 
-class GUIText : public gui::IGUIElement
+class GUIHyperText : public gui::IGUIElement
 {
 public:
 	//! constructor
-	GUIText(
+	GUIHyperText(
 		const wchar_t* text,
 		gui::IGUIEnvironment* environment,
 		gui::IGUIElement* parent,
@@ -154,7 +154,7 @@ public:
 		ISimpleTextureSource *tsrc);
 
 	//! destructor
-	virtual ~GUIText();
+	virtual ~GUIHyperText();
 
 	//! draws the element and its children
 	virtual void draw();

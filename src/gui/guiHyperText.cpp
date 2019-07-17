@@ -34,7 +34,7 @@ using namespace irr::gui;
 #include "client/client.h"
 #include "client/renderingengine.h"
 #include "hud.h"
-#include "guiText.h"
+#include "guiHyperText.h"
 
 std::string strwtostr(const core::stringw &str) {
 	std::string text = core::stringc(str.c_str()).c_str();
@@ -835,10 +835,10 @@ void TextDrawer::draw(
 }
 
 // -----------------------------------------------------------------------------
-// GUIText - The formated text area formspec item
+// GUIHyperText - The formated text area formspec item
 
 //! constructor
-GUIText::GUIText(
+GUIHyperText::GUIHyperText(
 	const wchar_t* text,
 	IGUIEnvironment* environment,
 	IGUIElement* parent, s32 id,
@@ -852,7 +852,7 @@ GUIText::GUIText(
 	m_text_scrollpos(0, 0)
 {
 	#ifdef _DEBUG
-		setDebugName("GUIText");
+		setDebugName("GUIHyperText");
 	#endif
 
 	IGUISkin *skin = 0;
@@ -874,19 +874,19 @@ GUIText::GUIText(
 }
 
 //! destructor
-GUIText::~GUIText()
+GUIHyperText::~GUIHyperText()
 {
 	m_vscrollbar->remove();
 }
 
-ParsedText::Element *GUIText::getElementAt(s32 X, s32 Y) {
+ParsedText::Element *GUIHyperText::getElementAt(s32 X, s32 Y) {
 	core::position2d<s32> pos = {X, Y};
 	pos -= m_display_text_rect.UpperLeftCorner;
 	pos -= m_text_scrollpos;
 	return m_drawer.getElementAt(pos);
 }
 
-void GUIText::checkHover(s32 X, s32 Y) {
+void GUIHyperText::checkHover(s32 X, s32 Y) {
 
 	ParsedText::Element* element = getElementAt(X, Y);
 
@@ -905,7 +905,7 @@ void GUIText::checkHover(s32 X, s32 Y) {
 		RenderingEngine::get_raw_device()->getCursorControl()->setActiveIcon(gui::ECI_NORMAL);
 }
 
-bool GUIText::OnEvent(const SEvent& event) {
+bool GUIHyperText::OnEvent(const SEvent& event) {
 	if (event.EventType == EET_GUI_EVENT) {
 		if (event.GUIEvent.EventType == EGET_SCROLL_BAR_CHANGED)
 			if (event.GUIEvent.Caller == m_vscrollbar)
@@ -954,7 +954,7 @@ bool GUIText::OnEvent(const SEvent& event) {
 }
 
 //! draws the element and its children
-void GUIText::draw()
+void GUIHyperText::draw()
 {
 	if (!IsVisible)
 		return;
