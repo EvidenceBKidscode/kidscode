@@ -630,7 +630,7 @@ void Hud::resizeHotbar() {
 
 struct MeshTimeInfo {
 	u64 time;
-	scene::IMesh *mesh = NULL;
+	scene::IMesh *mesh = nullptr;
 };
 
 void drawItemStack(video::IVideoDriver *driver,

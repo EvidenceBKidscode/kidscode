@@ -1299,7 +1299,7 @@ void GUIFormSpecMenu::parseTextArea(parserData* data, std::vector<std::string>& 
 		if (g_settings->getBool("freetype")) {
 			gui::intlGUIEditBox *intl_gui_editbox =
 				new gui::intlGUIEditBox(text, true,
-				Environment, this, spec.fid, rect, is_editable, has_vscrollbar);
+					Environment, this, spec.fid, rect, is_editable, has_vscrollbar);
 
 			if (has_bg_color) {
 				intl_gui_editbox->setBackgroundColor(bg_color);
