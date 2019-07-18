@@ -888,16 +888,19 @@ ParsedText::Element *GUIHyperText::getElementAt(s32 X, s32 Y) {
 
 void GUIHyperText::checkHover(s32 X, s32 Y) {
 
-	ParsedText::Element* element = getElementAt(X, Y);
-
 	m_drawer.m_hovertag = NULL;
 
-	if (element)
-		for (auto & tag : element->tags)
-			if (tag->name == "action") {
-				m_drawer.m_hovertag = tag;
-				break;
-		}
+	if (AbsoluteRect.isPointInside(core::position2d<s32>(X, Y)))
+	{
+		ParsedText::Element* element = getElementAt(X, Y);
+
+		if (element)
+			for (auto & tag : element->tags)
+				if (tag->name == "action") {
+					m_drawer.m_hovertag = tag;
+					break;
+			}
+	}
 
 	if (m_drawer.m_hovertag)
 		RenderingEngine::get_raw_device()->getCursorControl()->setActiveIcon(gui::ECI_HAND);
@@ -914,6 +917,17 @@ bool GUIHyperText::OnEvent(const SEvent& event) {
 
 	if (event.EventType == EET_MOUSE_INPUT_EVENT)
 	{
+		// TODO: Does not receive event if not foccused
+		if (event.MouseInput.Event == EMIE_MOUSE_MOVED)
+			checkHover(event.MouseInput.X, event.MouseInput.Y);
+
+		// Reject events outside element
+		if (!AbsoluteRect.isPointInside(
+				core::position2d<s32>(event.MouseInput.X,event.MouseInput.Y)))
+			return false;
+
+		printf("MouseEvent %d\n", event.MouseInput.Event);
+
 		if (event.MouseInput.Event == EMIE_MOUSE_WHEEL)
 		{
 			m_vscrollbar->setPos(m_vscrollbar->getPos() -
@@ -944,12 +958,9 @@ bool GUIHyperText::OnEvent(const SEvent& event) {
 					}
 				}
 			}
-			// TODO: Does not receive event if not foccused
-		} else if (event.MouseInput.Event == EMIE_MOUSE_MOVED) {
-			checkHover(event.MouseInput.X, event.MouseInput.Y);
 		}
 	}
-
+//	return false;
 	return IGUIElement::OnEvent(event);
 }
 

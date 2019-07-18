@@ -3527,9 +3527,11 @@ bool GUIFormSpecMenu::preprocessEvent(const SEvent& event)
 			}
 		}
 	}
+
+
 	// Mouse wheel events: send to hovered element instead of focused
 	if(event.EventType==EET_MOUSE_INPUT_EVENT
-			&& event.MouseInput.Event == EMIE_MOUSE_WHEEL) {
+			&& (event.MouseInput.Event == EMIE_MOUSE_WHEEL || event.MouseInput.Event == EMIE_MOUSE_MOVED)) {
 		s32 x = event.MouseInput.X;
 		s32 y = event.MouseInput.Y;
 		gui::IGUIElement *hovered =
@@ -4213,6 +4215,7 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 		}
 		m_old_pointer = m_pointer;
 	}
+
 	if (event.EventType == EET_GUI_EVENT) {
 
 		if (event.GUIEvent.EventType == gui::EGET_TAB_CHANGED
