@@ -3528,10 +3528,10 @@ bool GUIFormSpecMenu::preprocessEvent(const SEvent& event)
 		}
 	}
 
-
-	// Mouse wheel events: send to hovered element instead of focused
-	if(event.EventType==EET_MOUSE_INPUT_EVENT
-			&& (event.MouseInput.Event == EMIE_MOUSE_WHEEL || event.MouseInput.Event == EMIE_MOUSE_MOVED)) {
+	// Mouse wheel and move events: send to hovered element instead of focused
+	if(event.EventType==EET_MOUSE_INPUT_EVENT &&
+		(event.MouseInput.Event == EMIE_MOUSE_WHEEL ||
+			event.MouseInput.Event == EMIE_MOUSE_MOVED)) {
 		s32 x = event.MouseInput.X;
 		s32 y = event.MouseInput.Y;
 		gui::IGUIElement *hovered =
@@ -3539,7 +3539,7 @@ bool GUIFormSpecMenu::preprocessEvent(const SEvent& event)
 				core::position2d<s32>(x, y));
 		if (hovered && isMyChild(hovered)) {
 			hovered->OnEvent(event);
-			return true;
+			return event.MouseInput.Event == EMIE_MOUSE_WHEEL;
 		}
 	}
 

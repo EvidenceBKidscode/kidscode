@@ -888,7 +888,7 @@ ParsedText::Element *GUIHyperText::getElementAt(s32 X, s32 Y) {
 
 void GUIHyperText::checkHover(s32 X, s32 Y) {
 
-	m_drawer.m_hovertag = NULL;
+	m_drawer.m_hovertag = nullptr;
 
 	if (AbsoluteRect.isPointInside(core::position2d<s32>(X, Y)))
 	{
@@ -903,30 +903,33 @@ void GUIHyperText::checkHover(s32 X, s32 Y) {
 	}
 
 	if (m_drawer.m_hovertag)
-		RenderingEngine::get_raw_device()->getCursorControl()->setActiveIcon(gui::ECI_HAND);
+		RenderingEngine::get_raw_device()->getCursorControl()->
+			setActiveIcon(gui::ECI_HAND);
 	else
-		RenderingEngine::get_raw_device()->getCursorControl()->setActiveIcon(gui::ECI_NORMAL);
+		RenderingEngine::get_raw_device()->getCursorControl()->
+			setActiveIcon(gui::ECI_NORMAL);
 }
 
 bool GUIHyperText::OnEvent(const SEvent& event) {
-	if (event.EventType == EET_GUI_EVENT) {
-		if (event.GUIEvent.EventType == EGET_SCROLL_BAR_CHANGED)
-			if (event.GUIEvent.Caller == m_vscrollbar)
-				m_text_scrollpos.Y = -m_vscrollbar->getPos();
+	// Scroll bar
+	if (event.EventType == EET_GUI_EVENT &&
+		event.GUIEvent.EventType == EGET_SCROLL_BAR_CHANGED &&
+		event.GUIEvent.Caller == m_vscrollbar) {
+		m_text_scrollpos.Y = -m_vscrollbar->getPos();
+	}
+
+	// Reset hover if element left
+	if (event.EventType == EET_GUI_EVENT &&
+		event.GUIEvent.EventType == EGET_ELEMENT_LEFT) {
+		m_drawer.m_hovertag = nullptr;
+		RenderingEngine::get_raw_device()->getCursorControl()->
+			setActiveIcon(gui::ECI_NORMAL);
 	}
 
 	if (event.EventType == EET_MOUSE_INPUT_EVENT)
 	{
-		// TODO: Does not receive event if not foccused
 		if (event.MouseInput.Event == EMIE_MOUSE_MOVED)
 			checkHover(event.MouseInput.X, event.MouseInput.Y);
-
-		// Reject events outside element
-		if (!AbsoluteRect.isPointInside(
-				core::position2d<s32>(event.MouseInput.X,event.MouseInput.Y)))
-			return false;
-
-		printf("MouseEvent %d\n", event.MouseInput.Event);
 
 		if (event.MouseInput.Event == EMIE_MOUSE_WHEEL)
 		{
