@@ -111,17 +111,67 @@ void ParsedText::Paragraph::setStyle(StyleList &style)
 
 ParsedText::ParsedText(const wchar_t* text)
 {
+	// Default style
+
 	m_root_tag.name = "root";
 	m_root_tag.style["fontsize"] = "16";
 	m_root_tag.style["fontstyle"] = "normal";
 	m_root_tag.style["halign"] = "left";
-	m_root_tag.style["color"] = "#FFFFFF";
-	m_root_tag.style["hovercolor"] = "#FF0000";
-	m_root_tag.style["actioncolor"] = "#00FF00";
+	m_root_tag.style["color"] = "#EEEEEE";
+	m_root_tag.style["hovercolor"] = m_root_tag.style["color"];
 
 	m_tags.push_back(&m_root_tag);
 	m_active_tags.push_front(&m_root_tag);
 	m_style = m_root_tag.style;
+
+	// Default simple tags definitions
+
+	StyleList style;
+
+	style["hovercolor"] = "#FF0000";
+	style["color"] = "#00FF00";
+	m_elementtags["action"] = style;
+	style.clear();
+
+	style["color"] = "#FFFFFF";
+	m_elementtags["b"] = style;
+	style.clear();
+
+	style["color"] = "#CCCCCC";
+	m_elementtags["i"] = style;
+	style.clear();
+
+	style["fontstyle"] = "mono";
+	m_elementtags["mono"] = style;
+	style.clear();
+
+	style["fontsize"] = m_root_tag.style["fontsize"];
+	m_elementtags["normal"] = style;
+	style.clear();
+
+	style["fontsize"] = "24";
+	m_elementtags["big"] = style;
+	style.clear();
+
+	style["fontsize"] = "36";
+	m_elementtags["bigger"] = style;
+	style.clear();
+
+	style["halign"] = "center";
+	m_paragraphtags["center"] = style;
+	style.clear();
+
+	style["halign"] = "justify";
+	m_paragraphtags["justify"] = style;
+	style.clear();
+
+	style["halign"] = "left";
+	m_paragraphtags["left"] = style;
+	style.clear();
+
+	style["halign"] = "right";
+	m_paragraphtags["right"] = style;
+	style.clear();
 
 	m_element = NULL;
 	m_paragraph = NULL;
@@ -312,6 +362,22 @@ void ParsedText::globalTag(AttrsList &attrs)
 
 }
 
+void ParsedText::parseStyles(AttrsList &attrs, StyleList &style)
+{
+	if (attrs.count("color") && check_color(attrs["color"]))
+		style["color"] = attrs["color"];
+
+	if (attrs.count("hovercolor") && check_color(attrs["hovercolor"]))
+		style["hovercolor"] = attrs["hovercolor"];
+
+	if (attrs.count("font") &&
+		(attrs["font"] == "mono" || attrs["font"] == "normal"))
+		style["fontstyle"] = attrs["font"];
+
+	if (attrs.count("size") && strtol(attrs["size"].c_str(), NULL, 10) > 0)
+		style["fontsize"] = attrs["size"];
+}
+
 u32 ParsedText::parseTag(const wchar_t* text, u32 cursor)
 {
 	// Tag name
@@ -385,6 +451,14 @@ u32 ParsedText::parseTag(const wchar_t* text, u32 cursor)
 			return 0;
 		globalTag(attrs);
 
+	} else if (name == "style") {
+		if (end)
+			closeTag(name);
+		else {
+			parseStyles(attrs, style);
+			openTag(name, attrs)->style = style;
+		}
+		endElement();
 	} else if (name == "img" || name == "item") {
 		if (end)
 			return 0;
@@ -424,57 +498,40 @@ u32 ParsedText::parseTag(const wchar_t* text, u32 cursor)
 				m_element->dim.Height = height;
 		}
 		endElement();
+	} else if (name == "tag") {
+		// Required attributes
+		if (!attrs.count("name"))
+			return 0;
 
+		StyleList tagstyle;
+		parseStyles(attrs, tagstyle);
+
+		if (attrs["paragraph"] == "true")
+			m_paragraphtags[attrs["name"]] = tagstyle;
+		else
+			m_elementtags[attrs["name"]] = tagstyle;
 	} else if (name == "action") {
 		if (end)
 			closeTag(name);
 		else {
 			if (!attrs.count("name"))
 				return 0;
-			openTag(name, attrs)->style["color"] = m_style["actioncolor"];
+			openTag(name, attrs)->style = m_elementtags["action"];
 		}
-	} else if (name == "center" || name == "justify" || name == "left" || name == "right") {
+	} else if (m_elementtags.count(name)) {
 		if (end)
 			closeTag(name);
 		else
-			openTag(name, attrs)->style["halign"] = name;
+			openTag(name, attrs)->style = m_elementtags[name];
+		endElement();
+	} else if (m_paragraphtags.count(name)) {
+		if (end)
+			closeTag(name);
+		else
+			openTag(name, attrs)->style = m_paragraphtags[name];
 		endParagraph();
-	} else if (name == "normal") {
-		if (end)
-			closeTag(name);
-		else
-			openTag(name, attrs)->style["fontsize"] = "16";
-		endElement();
-	} else if (name == "big") {
-		if (end)
-			closeTag(name);
-		else
-			openTag(name, attrs)->style["fontsize"] = "24";
-		endElement();
-	} else if (name == "bigger") {
-		if (end)
-			closeTag(name);
-		else
-			openTag(name, attrs)->style["fontsize"] = "36";
-		endElement();
-	} else if (name == "style") {
-		if (end)
-			closeTag(name);
-		else {
-			if (attrs.count("color") && check_color(attrs["color"]))
-				style["color"] = attrs["color"];
-
-			if (attrs.count("font") &&
-				(attrs["font"] == "mono" || attrs["font"] == "normal"))
-				style["fontstyle"] = attrs["font"];
-
-			if (attrs.count("size") && strtol(attrs["size"].c_str(), NULL, 10) > 0)
-				style["fontsize"] = attrs["size"];
-
-			openTag(name, attrs)->style = style;
-		}
-		endElement();
-	} else return 0; // Unknown tag
+	} else
+		return 0; // Unknown tag
 
 	// Update styles accordingly
 	m_style.clear();

@@ -88,7 +88,6 @@ public:
 protected:
 
 	// Parser functions
-	void globalTag(ParsedText::AttrsList& attrs);
 	void enterElement(ElementType type);
 	void endElement();
 	void enterParagraph();
@@ -97,8 +96,13 @@ protected:
 	ParsedText::Tag* newTag(std::string name, AttrsList attrs);
 	ParsedText::Tag* openTag(std::string, AttrsList attrs);
 	bool closeTag(std::string name);
+	void globalTag(ParsedText::AttrsList& attrs);
+	void parseStyles(AttrsList &attrs, StyleList &style);
 	u32 parseTag(const wchar_t* text, u32 cursor);
 	void parse(const wchar_t* text);
+
+	std::unordered_map<std::string, StyleList> m_elementtags;
+	std::unordered_map<std::string, StyleList> m_paragraphtags;
 
 	std::vector<Tag *> m_tags;
 	std::list<Tag *> m_active_tags;

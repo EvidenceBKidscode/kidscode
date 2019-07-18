@@ -2216,11 +2216,52 @@ tags can enclose text, they open with <tagname> and close with </tagname>.
 Tags can have attributes, in that case, attributes are in the openning tag in
 form of a key/value separated with equal signs. Attribute values should not be quotted.
 
+These are the technically basic tags but see below for usual tags. Base tags are:
+
+`<style color=... font=... size=...>...</style>`
+
+Changes the style of the text.
+
+* `color`: Text color. Given color is a `colorspec`.
+* `size`: Text size.
+* `font`: Text font (`mono` or `normal`).
+
+`<global background=... margin=... valign=... color=... hovercolor=... size=... font=... halign=... >`
+
+Sets global style.
+
+Global only styles:
+* `background`: Text background, a `colorspec` or `none`.
+* `margin`: Page margins in pixel.
+* `valign`: Text vertical alignment (`top`, `middle`, `bottom`).
+
+Inheriting styles (affects child elements):
+* `color`: Default text color. Given color is a `colorspec`.
+* `hovercolor`: Color of <action> tags when mouse is over.
+* `size`: Default text size.
+* `font`: Default text font (`mono` or `normal`).
+* `halign`: Default text horizontal alignment (`left`, `right`, `center`, `justify`).
+
+This tag needs to be placed only once as it changes the global settings of the
+text. Anyway, if several tags are placed, each changed will be made in the order
+tags appear.
+
+`<tag name=... color=... hovercolor=... font=... size=...>`
+
+Defines or redefines tag style. This can be used to define new tags.
+* `name`: Name of the tag to define or change.
+* `color`: Text color. Given color is a `colorspec`.
+* `hovercolor`: Text color when element hovered (only for `action` tags). Given color is a `colorspec`.
+* `size`: Text size.
+* `font`: Text font (`mono` or `normal`).
+
+Following tags are the usual tags for text layout. They are defined by default. Other tags can be added using `tag` tag.
+
+`<normal>...</normal>`: Normal size text
+
 `<big>...</big>`: Big text
 
 `<bigger>...</bigger>`: Bigger text
-
-`<normal>...</normal>`: Normal size text
 
 `<center>...</center>`: Centered text
 
@@ -2229,6 +2270,10 @@ form of a key/value separated with equal signs. Attribute values should not be q
 `<right>...</right>`: Right aligned text
 
 `<justify>...</justify>`: Justified text
+
+`<mono>...</mono>`: Monospaced font
+
+`<b>...</b>`, `<i>...</i>`: Supposed to be bold and italic font but actually a text with different color.
 
 `<action name=...>...</action>`
 
@@ -2261,35 +2306,6 @@ Draws an item image.
 * `height`: Item image height.
 * `rotate`: Rotate item image if set to `yes`.
 
-`<style color=... font=... size=...>...</style>`
-
-Changes the style of the text.
-
-* `color`: Text color. Given color is a `colorspec`.
-* `size`: Text size.
-* `font`: Text font (`mono` or `normal`).
-
-`<global margin=... color=... actioncolor=... hovercolor=... size=... font=... haling=...>`
-
-Sets global style.
-
-Global only styles:
-* `margin`: Page margins in pixel.
-* `valign`: Text vertical alignment (`top`, `middle`, `bottom`).
-* `background`: Text background, a `colorspec` or `none`.
-
-Inheriting styles (affects child elements):
-* `color`: Default text color. Given color is a `colorspec`.
-* `actioncolor`: Color of <action> tags.
-* `hovercolor`: Color of <action> tags when mouse is over.
-* `size`: Default text font size.
-* `font`: Default text font (`mono` or `normal`).
-* `halign`: Default text horizontal alignment (`left`, `right`, `center`, `justify`).
-
-This tag needs to be placed only once as it changes the global settings of the
-text. Anyway, if several tags are placed, each changed will be made in the order
-tags appear.
-
 Inventory locations
 -------------------
 * `"context"`: Selected node metadata (deprecated: `"current_name"`)
@@ -2304,17 +2320,6 @@ Player Inventory lists
 * `craft`: list containing the craft input
 * `craftpreview`: list containing the craft output
 * `hand`: list containing an override for the empty hand
-
-Formatted Text Format
----------------------
-
-Formatted text format is similar to, but much simpler than, HTML.
-
-Available tags are:
-`<style color=... size=... font=... >`
-`<image name=... width=..>`
-`<item name=...>`
-
 
 `ColorString`
 -------------
