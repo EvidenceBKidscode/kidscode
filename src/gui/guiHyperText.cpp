@@ -197,15 +197,21 @@ void ParsedText::parse(const wchar_t *text)
 		if (c == L'\r') { // Mac or Windows breaks
 			if (text[cursor] == L'\n')
 				cursor++;
-			endParagraph();
-			enterElement(ELEMENT_SEPARATOR);
+			// If text has begun, don't skip empty line
+			if (m_paragraph) {
+				endParagraph();
+				enterElement(ELEMENT_SEPARATOR);
+			}
 			escape = false;
 			continue;
 		}
 
 		if (c == L'\n') { // Unix breaks
-			endParagraph();
-			enterElement(ELEMENT_SEPARATOR);
+			// If text has begun, don't skip empty line
+			if (m_paragraph) {
+				endParagraph();
+				enterElement(ELEMENT_SEPARATOR);
+			}
 			escape = false;
 			continue;
 		}
@@ -880,9 +886,6 @@ void TextDrawer::draw(
 										core::position2d<s32>(0, 0),
 										texture->getOriginalSize()),
 								&dest_rect, 0, true);
-					else
-						printf("Texture \"%s\" not found!\n",
-							el.name.c_str());
 				} break;
 
 				case ParsedText::ELEMENT_ITEM: {
