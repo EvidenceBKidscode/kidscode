@@ -789,7 +789,6 @@ void TextDrawer::place(s32 width)
 				switch(e->type) {
 				case ParsedText::ELEMENT_TEXT:
 				case ParsedText::ELEMENT_SEPARATOR:
-					e->dim.Height = charsheight;
 					e->pos.X = x;
 
 					switch(e->valign) {
