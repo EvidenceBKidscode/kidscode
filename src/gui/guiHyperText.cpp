@@ -991,8 +991,11 @@ bool GUIHyperText::OnEvent(const SEvent &event) {
 	}
 
 	if (event.EventType == EET_MOUSE_INPUT_EVENT) {
-		if (event.MouseInput.Event == EMIE_MOUSE_MOVED)
-			checkHover(event.MouseInput.X, event.MouseInput.Y);
+		if (event.MouseInput.Event == EMIE_MOUSE_MOVED) {
+			if (AbsoluteRect.isPointInside(core::position2d<s32>(
+					event.MouseInput.X, event.MouseInput.Y)))
+				checkHover(event.MouseInput.X, event.MouseInput.Y);
+		}
 
 		if (event.MouseInput.Event == EMIE_MOUSE_WHEEL) {
 			m_vscrollbar->setPos(m_vscrollbar->getPos() -
