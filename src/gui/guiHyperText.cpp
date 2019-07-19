@@ -109,7 +109,7 @@ void ParsedText::Paragraph::setStyle(StyleList &style)
 		this->halign = HALIGN_LEFT;
 }
 
-ParsedText::ParsedText(const wchar_t* text)
+ParsedText::ParsedText(const wchar_t *text)
 {
 	// Default style
 
@@ -185,25 +185,27 @@ ParsedText::~ParsedText()
 		delete tag;
 }
 
-void ParsedText::parse(const wchar_t* text)
+void ParsedText::parse(const wchar_t *text)
 {
 	wchar_t c;
 	u32 cursor = 0;
 	bool escape = false;
-	while ((c = text[cursor]) != L'\0')
-	{
+	while ((c = text[cursor]) != L'\0') {
+
 		cursor++;
 
 		if (c == L'\r') { // Mac or Windows breaks
 			if (text[cursor] == L'\n')
 				cursor++;
 			endParagraph();
+			enterElement(ELEMENT_SEPARATOR);
 			escape = false;
 			continue;
 		}
 
 		if (c == L'\n') { // Unix breaks
 			endParagraph();
+			enterElement(ELEMENT_SEPARATOR);
 			escape = false;
 			continue;
 		}
@@ -243,6 +245,7 @@ void ParsedText::endParagraph()
 {
 	if (!m_paragraph)
 		return;
+
 	endElement();
 	m_paragraph = NULL;
 }
@@ -251,7 +254,7 @@ void ParsedText::enterParagraph()
 {
 	if (!m_paragraph) {
 		m_paragraphs.emplace_back();
-		m_paragraph = & m_paragraphs.back();
+		m_paragraph = &m_paragraphs.back();
 		m_paragraph->setStyle(m_style);
 	}
 }
@@ -260,10 +263,9 @@ void ParsedText::enterElement(ElementType type)
 {
 	enterParagraph();
 
-	if (!m_element || m_element->type != type)
-	{
+	if (!m_element || m_element->type != type) {
 		m_paragraph->elements.emplace_back();
-		m_element = & m_paragraph->elements.back();
+		m_element = &m_paragraph->elements.back();
 		m_element->type = type;
 		m_element->tags = m_active_tags;
 		m_element->setStyle(m_style);
@@ -281,19 +283,19 @@ void ParsedText::pushChar(wchar_t c)
 	m_element->text += c;
 }
 
-ParsedText::Tag* ParsedText::newTag(std::string name, AttrsList attrs)
+ParsedText::Tag *ParsedText::newTag(std::string name, AttrsList attrs)
 {
 	endElement();
-	Tag* newtag = new Tag();
+	Tag *newtag = new Tag();
 	newtag->name = name;
 	newtag->attrs = attrs;
 	m_tags.push_back(newtag);
 	return newtag;
 }
 
-ParsedText::Tag* ParsedText::openTag(std::string name, AttrsList attrs)
+ParsedText::Tag *ParsedText::openTag(std::string name, AttrsList attrs)
 {
-	Tag* newtag = newTag(name, attrs);
+	Tag *newtag = newTag(name, attrs);
 	m_active_tags.push_front(newtag);
 	return newtag;
 }
@@ -312,8 +314,7 @@ bool ParsedText::closeTag(std::string name)
 
 void ParsedText::globalTag(AttrsList &attrs)
 {
-	for (auto const& attr : attrs)
-	{
+	for (auto const& attr : attrs) {
 		// Only page level style
 		if (attr.first == "margin" && check_integer(attr.second))
 			margin = strtol(attr.second.c_str(), NULL, 10);
@@ -338,25 +339,25 @@ void ParsedText::globalTag(AttrsList &attrs)
 		}
 
 		// inheriting style
-		if (attr.first == "color" &&  check_color(attr.second))
+		if (attr.first == "color" && check_color(attr.second))
 			m_root_tag.style["color"] = attr.second;
 
-		if (attr.first == "actioncolor" &&  check_color(attr.second))
+		if (attr.first == "actioncolor" && check_color(attr.second))
 			m_root_tag.style["actioncolor"] = attr.second;
 
-		if (attr.first == "hovercolor" &&  check_color(attr.second))
+		if (attr.first == "hovercolor" && check_color(attr.second))
 			m_root_tag.style["hovercolor"] = attr.second;
 
 		if (attr.first == "size" && strtol(attr.second.c_str(), NULL, 10) > 0)
 			m_root_tag.style["fontsize"] = attr.second;
 
 		if (attr.first == "font" &&
-			(attr.second == "mono" || attr.second == "normal"))
+				(attr.second == "mono" || attr.second == "normal"))
 			m_root_tag.style["fontstyle"] = attr.second;
 
 		if (attr.first == "halign" &&
-			(attr.second == "left" || attr.second == "center" ||
-			attr.second == "right" || attr.second == "justify"))
+				(attr.second == "left" || attr.second == "center" ||
+						attr.second == "right" || attr.second == "justify"))
 			m_root_tag.style["halign"] = attr.second;
 	}
 
@@ -378,7 +379,7 @@ void ParsedText::parseStyles(AttrsList &attrs, StyleList &style)
 		style["fontsize"] = attrs["size"];
 }
 
-u32 ParsedText::parseTag(const wchar_t* text, u32 cursor)
+u32 ParsedText::parseTag(const wchar_t *text, u32 cursor)
 {
 	// Tag name
 	bool end = false;
@@ -392,8 +393,7 @@ u32 ParsedText::parseTag(const wchar_t* text, u32 cursor)
 			return 0;
 	}
 
-	while (c != ' ' && c != '>')
-	{
+	while (c != ' ' && c != '>') {
 		name += c;
 		c = text[++cursor];
 		if (c == L'\0')
@@ -498,6 +498,7 @@ u32 ParsedText::parseTag(const wchar_t* text, u32 cursor)
 				m_element->dim.Height = height;
 		}
 		endElement();
+
 	} else if (name == "tag") {
 		// Required attributes
 		if (!attrs.count("name"))
@@ -510,6 +511,7 @@ u32 ParsedText::parseTag(const wchar_t* text, u32 cursor)
 			m_paragraphtags[attrs["name"]] = tagstyle;
 		else
 			m_elementtags[attrs["name"]] = tagstyle;
+
 	} else if (name == "action") {
 		if (end)
 			closeTag(name);
@@ -518,25 +520,28 @@ u32 ParsedText::parseTag(const wchar_t* text, u32 cursor)
 				return 0;
 			openTag(name, attrs)->style = m_elementtags["action"];
 		}
+
 	} else if (m_elementtags.count(name)) {
 		if (end)
 			closeTag(name);
 		else
 			openTag(name, attrs)->style = m_elementtags[name];
 		endElement();
+
 	} else if (m_paragraphtags.count(name)) {
 		if (end)
 			closeTag(name);
 		else
 			openTag(name, attrs)->style = m_paragraphtags[name];
 		endParagraph();
+
 	} else
 		return 0; // Unknown tag
 
 	// Update styles accordingly
 	m_style.clear();
  	for (auto tag = m_active_tags.crbegin(); tag != m_active_tags.crend(); ++tag)
-		for (auto const& prop : (*tag)->style)
+		for (auto const &prop : (*tag)->style)
 			m_style[prop.first] = prop.second;
 
 	return cursor;
@@ -546,37 +551,36 @@ u32 ParsedText::parseTag(const wchar_t* text, u32 cursor)
 // Text Drawer
 
 TextDrawer::TextDrawer(
-	const wchar_t* text,
-	Client* client,
-	gui::IGUIEnvironment* environment,
-	ISimpleTextureSource *tsrc):
-	m_text(text),
-	m_client(client),
-	m_environment(environment)
+		const wchar_t* text,
+		Client* client,
+		gui::IGUIEnvironment* environment,
+		ISimpleTextureSource *tsrc) :
+		m_text(text), m_client(client), m_environment(environment)
 {
 	// Size all elements
-	for (auto & p : m_text.m_paragraphs) {
-		for (auto & e : p.elements) {
+	for (auto &p : m_text.m_paragraphs) {
+		for (auto &e : p.elements) {
 			if (e.type == ParsedText::ELEMENT_SEPARATOR ||
-				e.type == ParsedText::ELEMENT_TEXT)
-			{
-				if (e.font)
-					e.dim = e.font->getDimension(e.text.c_str());
-				else
+					e.type == ParsedText::ELEMENT_TEXT) {
+				if (e.font) {
+					e.dim.Width = e.font->getDimension(e.text.c_str()).Width;
+					e.dim.Height = e.font->getDimension(L"Yy").Height;
+				} else
 					e.dim = {0, 0};
-			}
-			else if (e.type == ParsedText::ELEMENT_IMAGE ||
-				e.type == ParsedText::ELEMENT_ITEM)
-			{
+
+			} else if (e.type == ParsedText::ELEMENT_IMAGE ||
+					e.type == ParsedText::ELEMENT_ITEM) {
 				// Dont resize already sized items (sized by another mechanism)
 				if (e.dim.Height == 0 || e.dim.Width == 0) {
-					core::dimension2d<u32> dim(80, 80); // Default image and item size
+					// Default image and item size
+					core::dimension2d<u32> dim(80, 80);
 
 					if (e.type == ParsedText::ELEMENT_IMAGE) {
-						video::ITexture *texture = m_client->getTextureSource()->
-							getTexture(strwtostr(e.text));
-						if (texture != 0)
-								dim = texture->getOriginalSize();
+						video::ITexture *texture =
+							m_client->getTextureSource()->
+								getTexture(strwtostr(e.text));
+						if (texture)
+							dim = texture->getOriginalSize();
 					}
 
 					if (e.dim.Height == 0)
@@ -596,11 +600,11 @@ TextDrawer::TextDrawer(
 // at 0,0).
 ParsedText::Element* TextDrawer::getElementAt(core::position2d<s32> pos)
 {
-	for (auto & p : m_text.m_paragraphs) {
-		for (auto & el : p.elements) {
+	for (auto &p : m_text.m_paragraphs) {
+		for (auto &el : p.elements) {
 			core::rect<s32> rect(el.pos, el.dim);
 			if (rect.isPointInside(pos))
-			return &el;
+				return &el;
 		}
 	}
 	return 0;
@@ -617,11 +621,10 @@ void TextDrawer::place(s32 width)
 	// el - Current element, walked only once
 	// e and f - local element and floating operators
 
-	for (auto & p : m_text.m_paragraphs) {
+	for (auto &p : m_text.m_paragraphs) {
 
 		// Find and place floating stuff in paragraph
-		for (auto e = p.elements.begin(); e != p.elements.end(); ++e)
-		{
+		for (auto e = p.elements.begin(); e != p.elements.end(); ++e) {
 			if (e->floating != ParsedText::FLOAT_NONE) {
 				if (y)
 					e->pos.Y = y + std::max(ymargin, e->margin);
@@ -648,8 +651,7 @@ void TextDrawer::place(s32 width)
 
 		// Place non floating stuff
 		std::vector<ParsedText::Element>::iterator el = p.elements.begin();
-		while (el != p.elements.end())
-	 	{
+		while (el != p.elements.end()) {
 			// Determine line width and y pos
 			s32 left, right;
 			s32 nexty = y;
@@ -667,21 +669,26 @@ void TextDrawer::place(s32 width)
 						f.rect.LowerRightCorner.Y + f.margin >= y) {
 
 						// Next Y to try if no room left
-						if (!nexty ||
-							f.rect.LowerRightCorner.Y + std::max(f.margin, p.margin) < nexty)
-							nexty = f.rect.LowerRightCorner.Y + std::max(f.margin, p.margin) + 1;
+						if (!nexty || f.rect.LowerRightCorner.Y +
+									std::max(f.margin, p.margin) < nexty)
+							nexty = f.rect.LowerRightCorner.Y +
+									std::max(f.margin, p.margin) + 1;
 
 						if (f.rect.UpperLeftCorner.X - f.margin <= left &&
 							f.rect.LowerRightCorner.X + f.margin < right)
 						{ // float on left
-							if (f.rect.LowerRightCorner.X + std::max(f.margin, p.margin) > left)
-								left = f.rect.LowerRightCorner.X + std::max(f.margin, p.margin);
+							if (f.rect.LowerRightCorner.X +
+										std::max(f.margin, p.margin) > left)
+								left = f.rect.LowerRightCorner.X +
+										std::max(f.margin, p.margin);
 
 						} else if (f.rect.LowerRightCorner.X + f.margin >= right &&
 								f.rect.UpperLeftCorner.X - f.margin > left)
 						{ // float on right
-							if (f.rect.UpperLeftCorner.X - std::max(f.margin, p.margin) < right)
-								right = f.rect.UpperLeftCorner.X - std::max(f.margin, p.margin);
+							if (f.rect.UpperLeftCorner.X -
+										std::max(f.margin, p.margin) < right)
+								right = f.rect.UpperLeftCorner.X -
+										std::max(f.margin, p.margin);
 
 						} else if (f.rect.UpperLeftCorner.X - f.margin <= left &&
 							 f.rect.LowerRightCorner.X + f.margin >= right)
@@ -697,103 +704,109 @@ void TextDrawer::place(s32 width)
 			u32 linewidth = right - left;
 			float x = left;
 
-			// Skip begining of line separators
-			while(el != p.elements.end() && el->type == ParsedText::ELEMENT_SEPARATOR)
-				el++;
-
-			u32 charswidth = 0;
 			u32 charsheight = 0;
+			u32 charswidth = 0;
 			u32 wordcount = 0;
+
+			// Skip begining of line separators but include them in height
+			// computation.
+			while(el != p.elements.end() &&
+				el->type == ParsedText::ELEMENT_SEPARATOR) {
+				if (el->floating == ParsedText::FLOAT_NONE &&
+					charsheight < el->dim.Height)
+					charsheight = el->dim.Height;
+				el++;
+			}
 
 			std::vector<ParsedText::Element>::iterator linestart = el;
 			std::vector<ParsedText::Element>::iterator lineend = p.elements.end();
 
-			// First pass, find elements fitting into line (or at least one element)
-			while(el != p.elements.end() &&
-					(charswidth == 0 || charswidth + el->dim.Width <= linewidth))
-			{
-				if (el->floating == ParsedText::FLOAT_NONE)
-				{
-					if (el->type != ParsedText::ELEMENT_SEPARATOR)
-					{
+			// First pass, find elements fitting into line
+			// (or at least one element)
+			while(el != p.elements.end() && (charswidth == 0 ||
+						charswidth + el->dim.Width <= linewidth)) {
+				if (el->floating == ParsedText::FLOAT_NONE) {
+					if (el->type != ParsedText::ELEMENT_SEPARATOR) {
 						lineend = el;
 						wordcount++;
 					}
 					charswidth += el->dim.Width;
+					if (charsheight < el->dim.Height)
+						charsheight = el->dim.Height;
 				}
 				el++;
 			}
 
-			// Empty line, nothing to place or draw
-			if (lineend == p.elements.end()) continue;
+			// Empty line, nothing to place only go down line height
+			if (lineend == p.elements.end()) {
+				y += charsheight;
+				continue;
+			}
 
-			lineend++; // Point to the first position outside line (may be end())
+			// Point to the first position outside line (may be end())
+			lineend++;
 
 			// Second pass, compute printable line width and adjustments
 			charswidth = 0;
-			for(auto e = linestart; e != lineend; ++e) {
-				if (e->floating == ParsedText::FLOAT_NONE) {
+			for (auto e = linestart; e != lineend; ++e) {
+				if (e->floating == ParsedText::FLOAT_NONE)
 					charswidth += e->dim.Width;
-					if (charsheight < e->dim.Height)
-						charsheight = e->dim.Height;
-				}
 			}
 
 			float extraspace = 0;
 
-			switch(p.halign)
-			{
-				case ParsedText::HALIGN_CENTER:
-					x += (linewidth - charswidth) / 2;
-					break;
-				case ParsedText::HALIGN_JUSTIFY:
-					if (wordcount > 1 && // Justification only if at least two words.
-						!(lineend == p.elements.end())) // Don't justify last line.
-						extraspace = ((float)(linewidth - charswidth)) / (wordcount - 1);
-					break;
-				case ParsedText::HALIGN_RIGHT:
-					x += linewidth - charswidth;
-					break;
-				case ParsedText::HALIGN_LEFT:
-					break;
+			switch(p.halign) {
+			case ParsedText::HALIGN_CENTER:
+				x += (linewidth - charswidth) / 2;
+				break;
+			case ParsedText::HALIGN_JUSTIFY:
+				if (wordcount > 1 && // Justification only if at least two words.
+					!(lineend == p.elements.end())) // Don't justify last line.
+					extraspace = ((float)(linewidth - charswidth)) / (wordcount - 1);
+				break;
+			case ParsedText::HALIGN_RIGHT:
+				x += linewidth - charswidth;
+				break;
+			case ParsedText::HALIGN_LEFT:
+				break;
 			}
 
 			// Third pass, actually place everything
-			for(auto e = linestart; e != lineend; ++e)
-			{
-				if (e->floating == ParsedText::FLOAT_NONE)
-				{
+			for (auto e = linestart; e != lineend; ++e) {
+
+				if (e->floating != ParsedText::FLOAT_NONE)
+					continue;
+
+				e->pos.X = x;
+				e->pos.Y = y;
+
+				switch(e->type) {
+				case ParsedText::ELEMENT_TEXT:
+				case ParsedText::ELEMENT_SEPARATOR:
+					e->dim.Height = charsheight;
 					e->pos.X = x;
-					e->pos.Y = y;
 
-					switch(e->type) {
-						case ParsedText::ELEMENT_TEXT:
-						case ParsedText::ELEMENT_SEPARATOR:
-							e->dim.Height = charsheight;
-							e->pos.X = x;
-
-							switch(e->valign)
-							{
-								case ParsedText::VALIGN_TOP:
-									e->pos.Y = y;
-									break;
-								case ParsedText::VALIGN_MIDDLE:
-									e->pos.Y = y + (charsheight - e->dim.Height) / 2 ;
-									break;
-								case ParsedText::VALIGN_BOTTOM:
-								default:
-									e->pos.Y = y + charsheight - e->dim.Height ;
-							}
-							x += e->dim.Width;
-							if (e->type == ParsedText::ELEMENT_SEPARATOR)
-								x += extraspace;
-							break;
-
-						case ParsedText::ELEMENT_IMAGE:
-						case ParsedText::ELEMENT_ITEM:
-							x += e->dim.Width;
-							break;
+					switch(e->valign) {
+					case ParsedText::VALIGN_TOP:
+						e->pos.Y = y;
+						break;
+					case ParsedText::VALIGN_MIDDLE:
+						e->pos.Y = y + (charsheight - e->dim.Height) / 2 ;
+						break;
+					case ParsedText::VALIGN_BOTTOM:
+					default:
+						e->pos.Y = y + charsheight - e->dim.Height ;
 					}
+
+					x += e->dim.Width;
+					if (e->type == ParsedText::ELEMENT_SEPARATOR)
+						x += extraspace;
+					break;
+
+				case ParsedText::ELEMENT_IMAGE:
+				case ParsedText::ELEMENT_ITEM:
+					x += e->dim.Width;
+					break;
 				}
 			}
 			y += charsheight;
@@ -813,15 +826,14 @@ void TextDrawer::place(s32 width)
 // Get vertical offset according to valign
 s32 TextDrawer::getVoffset(s32 height)
 {
-	switch(m_text.valign)
-	{
-		case ParsedText::VALIGN_BOTTOM:
-			return height - m_height;
-		case ParsedText::VALIGN_MIDDLE:
-			return (height - m_height) / 2;
-		case ParsedText::VALIGN_TOP:
-		default:
-			return 0;
+	switch(m_text.valign) {
+	case ParsedText::VALIGN_BOTTOM:
+		return height - m_height;
+	case ParsedText::VALIGN_MIDDLE:
+		return (height - m_height) / 2;
+	case ParsedText::VALIGN_TOP:
+	default:
+		return 0;
 	}
 }
 
@@ -835,56 +847,54 @@ void TextDrawer::draw(
 
 	if (m_text.background_type == ParsedText::BACKGROUND_COLOR)
 		m_environment->getVideoDriver()->draw2DRectangle(
-			m_text.background_color, dest_rect);
+				m_text.background_color, dest_rect);
 
-	for (auto & p : m_text.m_paragraphs) {
-		for (auto & el : p.elements) {
+	for (auto &p : m_text.m_paragraphs) {
+		for (auto &el : p.elements) {
 			core::rect<s32> rect(el.pos + offset, el.dim);
 			if (rect.isRectCollided(dest_rect)) {
 
 				switch(el.type) {
-					case ParsedText::ELEMENT_TEXT:
-						{
-							irr::video::SColor color = el.color;
+				case ParsedText::ELEMENT_TEXT: {
+					irr::video::SColor color = el.color;
 
-							for (auto tag : el.tags)
-								if (&(*tag) == m_hovertag)
-									color = el.hovercolor;
+					for (auto tag : el.tags)
+						if (&(*tag) == m_hovertag)
+							color = el.hovercolor;
 
-							if (el.font)
-								el.font->draw(el.text, rect, color, false, true, &dest_rect);
-						}
-						break;
+					if (el.font)
+						el.font->draw(el.text, rect, color, false, true, &dest_rect);
+				} break;
 
-					case ParsedText::ELEMENT_SEPARATOR:
-						break;
+				case ParsedText::ELEMENT_SEPARATOR:
+					break;
 
-					case ParsedText::ELEMENT_IMAGE:
-						{
-							video::ITexture *texture =
-								m_client->getTextureSource()->getTexture(strwtostr(el.text));
-							if (texture != 0)
-								m_environment->getVideoDriver()->draw2DImage(texture,
-									rect, // Dest rect
-									irr::core::rect<s32>(core::position2d<s32>(0, 0), texture->getOriginalSize()), // Source rect
-									&dest_rect, // Clip rect
-									0, true); // Colors, use alpha
-							else
-								printf("Texture %s not found!\n", el.name.c_str());
-						}
-						break;
+				case ParsedText::ELEMENT_IMAGE: {
+					video::ITexture *texture =
+						m_client->getTextureSource()->getTexture(
+									strwtostr(el.text));
+					if (texture != 0)
+						m_environment->getVideoDriver()->draw2DImage(
+								texture, rect,
+								irr::core::rect<s32>(
+										core::position2d<s32>(0, 0),
+										texture->getOriginalSize()),
+								&dest_rect, 0, true);
+					else
+						printf("Texture \"%s\" not found!\n",
+							el.name.c_str());
+				} break;
 
-					case ParsedText::ELEMENT_ITEM:
-						{
-							IItemDefManager *idef = m_client->idef();
-							ItemStack item;
-							item.deSerialize(strwtostr(el.text), idef);
+				case ParsedText::ELEMENT_ITEM: {
+					IItemDefManager *idef = m_client->idef();
+					ItemStack item;
+					item.deSerialize(strwtostr(el.text), idef);
 
-							drawItemStack(
-									m_environment->getVideoDriver(), g_fontengine->getFont(), item,
-									rect, &dest_rect, m_client, el.rotation);
-						}
-						break;
+					drawItemStack(
+							m_environment->getVideoDriver(),
+							g_fontengine->getFont(), item, rect, &dest_rect,
+							m_client, el.rotation);
+				} break;
 				}
 			}
 		}
@@ -903,14 +913,12 @@ GUIHyperText::GUIHyperText(
 	Client *client,
 	ISimpleTextureSource *tsrc) :
 	IGUIElement(EGUIET_ELEMENT, environment, parent, id, rectangle),
-	m_client(client),
-	m_vscrollbar(nullptr),
-	m_drawer(text, client, environment, tsrc),
-	m_text_scrollpos(0, 0)
+	m_client(client), m_vscrollbar(nullptr),
+	m_drawer(text, client, environment, tsrc), m_text_scrollpos(0, 0)
 {
-	#ifdef _DEBUG
-		setDebugName("GUIHyperText");
-	#endif
+#ifdef _DEBUG
+	setDebugName("GUIHyperText");
+#endif
 
 	IGUISkin *skin = 0;
 	if (Environment)
@@ -918,13 +926,9 @@ GUIHyperText::GUIHyperText(
 
 	m_scrollbar_width = skin ? skin->getSize(gui::EGDS_SCROLLBAR_SIZE) : 16;
 
-	core::rect<s32> rect =
-		irr::core::rect<s32>(
-			RelativeRect.getWidth() - m_scrollbar_width,
-			0,
-			RelativeRect.getWidth(),
-			RelativeRect.getHeight()
-		);
+	core::rect<s32> rect = irr::core::rect<s32>(
+			RelativeRect.getWidth() - m_scrollbar_width, 0,
+			RelativeRect.getWidth(), RelativeRect.getHeight());
 
 	m_vscrollbar = Environment->addScrollBar(false, rect, this, -1);
 	m_vscrollbar->setVisible(false);
@@ -936,27 +940,28 @@ GUIHyperText::~GUIHyperText()
 	m_vscrollbar->remove();
 }
 
-ParsedText::Element *GUIHyperText::getElementAt(s32 X, s32 Y) {
+ParsedText::Element *GUIHyperText::getElementAt(s32 X, s32 Y)
+{
 	core::position2d<s32> pos = {X, Y};
 	pos -= m_display_text_rect.UpperLeftCorner;
 	pos -= m_text_scrollpos;
 	return m_drawer.getElementAt(pos);
 }
 
-void GUIHyperText::checkHover(s32 X, s32 Y) {
-
+void GUIHyperText::checkHover(s32 X, s32 Y)
+{
 	m_drawer.m_hovertag = nullptr;
 
 	if (AbsoluteRect.isPointInside(core::position2d<s32>(X, Y)))
 	{
-		ParsedText::Element* element = getElementAt(X, Y);
+		ParsedText::Element *element = getElementAt(X, Y);
 
 		if (element)
-			for (auto & tag : element->tags)
+			for (auto &tag : element->tags)
 				if (tag->name == "action") {
 					m_drawer.m_hovertag = tag;
 					break;
-			}
+				}
 	}
 
 	if (m_drawer.m_hovertag)
@@ -967,7 +972,7 @@ void GUIHyperText::checkHover(s32 X, s32 Y) {
 			setActiveIcon(gui::ECI_NORMAL);
 }
 
-bool GUIHyperText::OnEvent(const SEvent& event) {
+bool GUIHyperText::OnEvent(const SEvent &event) {
 	// Scroll bar
 	if (event.EventType == EET_GUI_EVENT &&
 		event.GUIEvent.EventType == EGET_SCROLL_BAR_CHANGED &&
@@ -983,30 +988,27 @@ bool GUIHyperText::OnEvent(const SEvent& event) {
 			setActiveIcon(gui::ECI_NORMAL);
 	}
 
-	if (event.EventType == EET_MOUSE_INPUT_EVENT)
-	{
+	if (event.EventType == EET_MOUSE_INPUT_EVENT) {
 		if (event.MouseInput.Event == EMIE_MOUSE_MOVED)
 			checkHover(event.MouseInput.X, event.MouseInput.Y);
 
-		if (event.MouseInput.Event == EMIE_MOUSE_WHEEL)
-		{
+		if (event.MouseInput.Event == EMIE_MOUSE_WHEEL) {
 			m_vscrollbar->setPos(m_vscrollbar->getPos() -
 					event.MouseInput.Wheel * m_vscrollbar->getSmallStep());
 			m_text_scrollpos.Y = -m_vscrollbar->getPos();
 			m_drawer.draw(m_display_text_rect, m_text_scrollpos);
 			checkHover(event.MouseInput.X,event.MouseInput.Y);
-		}
-		else if (event.MouseInput.Event == EMIE_LMOUSE_PRESSED_DOWN)
-		{
+
+		} else if (event.MouseInput.Event == EMIE_LMOUSE_PRESSED_DOWN) {
 			ParsedText::Element* element =
 				getElementAt(event.MouseInput.X, event.MouseInput.Y);
 
 			if (element) {
 				for (auto & tag : element->tags) {
 					if (tag->name == "action") {
-						Text = core::stringw(L"action:") + strtostrw(tag->attrs["name"]);
-						if (Parent)
-						{
+						Text = core::stringw(L"action:") +
+								strtostrw(tag->attrs["name"]);
+						if (Parent) {
 							SEvent newEvent;
 							newEvent.EventType = EET_GUI_EVENT;
 							newEvent.GUIEvent.Caller = this;
@@ -1020,7 +1022,7 @@ bool GUIHyperText::OnEvent(const SEvent& event) {
 			}
 		}
 	}
-//	return false;
+
 	return IGUIElement::OnEvent(event);
 }
 
@@ -1037,10 +1039,12 @@ void GUIHyperText::draw()
 
 	if (m_drawer.getHeight() > m_display_text_rect.getHeight()) {
 
-		m_vscrollbar->setSmallStep(m_display_text_rect.getWidth()/10);
-		m_vscrollbar->setLargeStep(m_display_text_rect.getWidth()/2);
+		m_vscrollbar->setSmallStep(m_display_text_rect.getWidth() * 0.1f);
+		m_vscrollbar->setLargeStep(m_display_text_rect.getWidth() * 0.5f);
 
-		m_vscrollbar->setMax(m_drawer.getHeight() - m_display_text_rect.getHeight());
+		m_vscrollbar->setMax(m_drawer.getHeight() -
+				m_display_text_rect.getHeight());
+
 		m_vscrollbar->setVisible(true);
 
 		core::rect<s32> smaller_rect = m_display_text_rect;
@@ -1049,8 +1053,8 @@ void GUIHyperText::draw()
 		m_drawer.draw(m_display_text_rect, m_text_scrollpos);
 
 	} else {
-		core::position2d<s32> offset =
-			{ 0, m_drawer.getVoffset(m_display_text_rect.getHeight())};
+		core::position2d<s32> offset = {
+				0, m_drawer.getVoffset(m_display_text_rect.getHeight())};
 
 		m_drawer.draw(m_display_text_rect, offset);
 		m_vscrollbar->setVisible(false);

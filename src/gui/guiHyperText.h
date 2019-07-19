@@ -48,7 +48,7 @@ public:
 	struct Element {
 		std::list<Tag*> tags;
 		ElementType type;
-		core::stringw text;
+		core::stringw text = "";
 
 		core::dimension2d<u32> dim;
 		core::position2d<s32> pos;
