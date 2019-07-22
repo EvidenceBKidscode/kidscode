@@ -87,7 +87,7 @@ git_hash=$(git rev-parse --short HEAD)
 # Get minetest_game
 cd games
 if [ "x$NO_MINETEST_GAME" = "x" ]; then
-	[ -d $GAME_NAME ] && (cd $GAME_NAME && git pull) || (git clone -b $GAME_BRANCH $GAME_GIT)
+	[ -d $GAME_NAME ] && (cd $GAME_NAME && git pull) || (git clone --recursive -b $GAME_BRANCH $GAME_GIT)
 fi
 cd ../..
 
