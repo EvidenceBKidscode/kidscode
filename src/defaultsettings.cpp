@@ -214,7 +214,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("enable_minimap", "true");
 	settings->setDefault("minimap_shape_round", "false");
 	settings->setDefault("minimap_double_scan_height", "true");
-	settings->setDefault("minimap_font_size", "10");
+	settings->setDefault("minimap_font_size", "15");
 
 	// Effects
 	settings->setDefault("directional_colored_fog", "true");
