@@ -95,6 +95,10 @@ void KeyCache::populate()
 
 bool MyEventReceiver::OnEvent(const SEvent &event)
 {
+	if (event.EventType == irr::EET_MOUSE_INPUT_EVENT)
+		if (event.MouseInput.Event == EMIE_MOUSE_MOVED)
+			mousemoved = true;
+
 	/*
 		React to nothing here if a menu is active
 	*/
@@ -136,6 +140,7 @@ bool MyEventReceiver::OnEvent(const SEvent &event)
 		*/
 		return joystick->handleEvent(event.JoystickEvent);
 	}
+
 	// handle mouse events
 	if (event.EventType == irr::EET_MOUSE_INPUT_EVENT) {
 		if (isMenuActive()) {

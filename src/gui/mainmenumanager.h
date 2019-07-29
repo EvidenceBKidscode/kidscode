@@ -34,6 +34,7 @@ public:
 	virtual void disconnect() = 0;
 	virtual void changePassword() = 0;
 	virtual void changeVolume() = 0;
+	virtual void showOptions() = 0;
 
 	virtual void signalKeyConfigChange() = 0;
 };
@@ -129,6 +130,11 @@ public:
 		changevolume_requested = true;
 	}
 
+	virtual void showOptions()
+	{
+		options_requested = true;
+	}
+
 	virtual void keyConfig()
 	{
 		keyconfig_requested = true;
@@ -144,9 +150,9 @@ public:
 	bool changepassword_requested = false;
 	bool changevolume_requested = false;
 	bool keyconfig_requested = false;
-	bool shutdown_requested = false;
-
 	bool keyconfig_changed = false;
+	bool shutdown_requested = false;
+	bool options_requested = false;
 };
 
 extern MainGameCallback *g_gamecallback;

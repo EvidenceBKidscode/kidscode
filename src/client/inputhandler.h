@@ -193,6 +193,8 @@ public:
 	bool middle_active = false;
 	bool right_active = false;
 
+	bool mousemoved = false;
+
 	s32 mouse_wheel = 0;
 
 	JoystickController *joystick = nullptr;
@@ -255,6 +257,9 @@ public:
 	virtual void resetMiddleReleased() = 0; // KIDSCODE
 	virtual void resetRightReleased() = 0;
 
+	virtual bool getMouseMoved() = 0;
+	virtual void resetMouseMoved() = 0;
+
 	virtual s32 getMouseWheel() = 0;
 
 	virtual void step(float dtime) {}
@@ -305,10 +310,10 @@ public:
 
 	virtual void setMousePos(s32 x, s32 y)
 	{
-		if (RenderingEngine::get_raw_device()->getCursorControl()) {
-			RenderingEngine::get_raw_device()
-					->getCursorControl()
-					->setPosition(x, y);
+		auto cursor = RenderingEngine::get_raw_device()->getCursorControl();
+		if (cursor) {
+			if (x != m_mousepos.X || y != m_mousepos.Y)
+				cursor->setPosition(x, y);
 		} else {
 			m_mousepos = v2s32(x, y);
 		}
@@ -391,6 +396,9 @@ public:
 		joystick.clearWasKeyReleased(KeyType::MOUSE_R);
 	}
 
+	virtual bool getMouseMoved() { return m_receiver->mousemoved; }
+	virtual void resetMouseMoved() { m_receiver->mousemoved = false; }
+
 	virtual s32 getMouseWheel() { return m_receiver->getMouseWheel(); }
 
 	void clear()
@@ -435,6 +443,9 @@ public:
 	virtual void resetMiddleReleased() { middlereleased = false; } // KIDSCODE
 	virtual void resetRightReleased() { rightreleased = false; }
 
+	virtual bool getMouseMoved() { return mousemoved; }
+	virtual void resetMouseMoved() { mousemoved = false; }
+
 	virtual s32 getMouseWheel() { return 0; }
 
 	virtual void step(float dtime);
@@ -454,4 +465,5 @@ private:
 	bool leftreleased = false;
 	bool middlereleased = false; // KIDSCODE
 	bool rightreleased = false;
+	bool mousemoved = false;
 };

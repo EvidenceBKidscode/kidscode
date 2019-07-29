@@ -45,7 +45,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "gui/guiConfirmRegistration.h"
 #include "gui/guiFormSpecMenu.h"
 #include "gui/guiKeyChangeMenu.h"
-//#include "gui/guiPasswordChange.h"
+#include "gui/guiOptions.h"
 #include "gui/guiVolumeChange.h"
 #include "gui/mainmenumanager.h"
 #include "gui/profilergraph.h"
@@ -77,6 +77,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #else
 	#include "client/sound.h"
 #endif
+
+#define PAUSE_TIMER_LIMIT 10.f
+
 /*
 	Text input system
 */
@@ -143,13 +146,8 @@ struct LocalFormspecHandler : public TextDest
 	void gotText(const StringMap &fields)
 	{
 		if (m_formname == "MT_PAUSE_MENU") {
-			if (fields.find("btn_sound") != fields.end()) {
-				g_gamecallback->changeVolume();
-				return;
-			}
-
-			if (fields.find("btn_key_config") != fields.end()) {
-				g_gamecallback->keyConfig();
+			if (fields.find("btn_options") != fields.end()) {
+				g_gamecallback->showOptions();
 				return;
 			}
 
@@ -685,6 +683,7 @@ public:
 #define SIZE_TAG "size[4.5,9.5,true]" // Fixed size on desktop
 #endif
 
+
 /****************************************************************************
 
  ****************************************************************************/
@@ -725,6 +724,7 @@ struct GameRunData {
 	float update_draw_list_timer;
 
 	f32 fog_range;
+	float pause_timer = 0.f;
 
 	v3f update_draw_list_last_cam_dir;
 
@@ -892,7 +892,7 @@ private:
 	};
 
 	void showDeathFormspec();
-	void showPauseMenu();
+	void showPauseMenu(bool empty);
 
 	// ClientEvent handlers
 	void handleClientEvent_None(ClientEvent *event, CameraOrientation *cam);
@@ -1248,7 +1248,7 @@ void Game::run()
 		m_game_ui->m_flags.show_minimap &= client->shouldShowMinimap();
 
 		if (m_does_lost_focus_pause_game && !device->isWindowFocused() && !isMenuActive()) {
-			showPauseMenu();
+			showPauseMenu(false);
 		}
 	}
 }
@@ -1810,17 +1810,27 @@ inline bool Game::checkConnection()
 inline bool Game::handleCallbacks()
 {
 	if (g_gamecallback->disconnect_requested) {
+		runData.pause_timer = 0.f;
 		g_gamecallback->disconnect_requested = false;
 		return false;
 	}
 
+	if (g_gamecallback->options_requested) {
+		runData.pause_timer = 0.f;
+		(new GUIOptions(guienv, guiroot, -1, &g_menumgr))->drop();
+		g_gamecallback->options_requested = false;
+
+	}
+
 	if (g_gamecallback->changevolume_requested) {
+		runData.pause_timer = 0.f;
 		(new GUIVolumeChange(guienv, guiroot, -1,
 				     &g_menumgr))->drop();
 		g_gamecallback->changevolume_requested = false;
 	}
 
 	if (g_gamecallback->keyconfig_requested) {
+		runData.pause_timer = 0.f;
 		(new GUIKeyChangeMenu(guienv, guiroot, -1,
 				      &g_menumgr))->drop();
 		g_gamecallback->keyconfig_requested = false;
@@ -1828,7 +1838,12 @@ inline bool Game::handleCallbacks()
 
 	if (g_gamecallback->keyconfig_changed) {
 		input->keycache.populate(); // update the cache with new settings
+		runData.pause_timer = 0.f;
 		g_gamecallback->keyconfig_changed = false;
+	}
+
+	if (g_gamecallback->changepassword_requested) {
+		runData.pause_timer = 0.f;
 	}
 
 	return true;
@@ -1985,7 +2000,7 @@ void Game::processKeyInput()
 		m_android_chat_open = false;
 #endif
 		if (!gui_chat_console->isOpenInhibited()) {
-			showPauseMenu();
+			showPauseMenu(false);
 		}
 	} else if (wasKeyDown(KeyType::CHAT)) {
 		openConsole(0.2, L"");
@@ -2607,8 +2622,28 @@ void Game::updatePlayerControl(const CameraOrientation &cam)
 
 inline void Game::step(f32 *dtime)
 {
-	bool can_be_and_is_paused =
-			(simple_singleplayer_mode && g_menumgr.pausesGame());
+	bool is_paused = g_menumgr.pausesGame();
+	bool can_be_and_is_paused = (simple_singleplayer_mode && is_paused);
+
+	//std::cout << runData.pause_timer << std::endl;
+
+	if (is_paused) {
+		bool mouse_moved = input->getMouseMoved();
+		input->resetMouseMoved();
+
+		runData.pause_timer += *dtime;
+
+		if (runData.pause_timer > PAUSE_TIMER_LIMIT) {
+			if (mouse_moved) {
+				runData.pause_timer = 0.f;
+				showPauseMenu(false);
+			} else {
+				showPauseMenu(true);
+			}
+		}
+	} else {
+		runData.pause_timer = 0.f;
+	}
 
 	if (can_be_and_is_paused) { // This is for a singleplayer server
 		*dtime = 0;             // No time passes
@@ -4159,7 +4194,7 @@ void Game::showDeathFormspec()
 }
 
 #define GET_KEY_NAME(KEY) gettext(getKeySetting(#KEY).name())
-void Game::showPauseMenu()
+void Game::showPauseMenu(bool empty)
 {
 // >> KIDSCODE
 /*
@@ -4214,43 +4249,28 @@ void Game::showPauseMenu()
 */
 // << KISCODE
 
-	float ypos = 0.8f;
 	std::ostringstream os;
 
-	os << "formspec_version[1]" << SIZE_TAG;
+	if (!empty) {
+		os << "formspec_version[1]" << "size[5.6,1.1,true]";
 
-	ypos += 0.2f;
+		f32 xpos = -0.15f;
 
-	os << "button_exit[0.3," << (ypos++) << ";4,0.5;btn_continue;"
-	   << strgettext("Continue") << "]";
+		os << "button_exit[" << (xpos) << ",0;3,0.5;btn_continue;"
+		   << strgettext("Continue") << "]";
 
-	os << "label[0.3," << ypos << ";" << strgettext("Mouse sensitivity") << "]";
-	ypos += 0.5f;
-	std::string mouse_sensitivity = std::to_string(g_settings->getFloat("mouse_sensitivity") * 500.0f);
-	os << "scrollbar[0.3," << (ypos++) << ";3.8,0.6;horizontal;sbr_mouse_sensitivity;" << mouse_sensitivity << "]";
+		os << "button_exit[" << (xpos) << ",0.8;3,0.5;btn_options;"
+		   << strgettext("Options") << "]";
 
-	os << "label[0.3," << (ypos -= 0.2f) << ";" << strgettext("Viewing range") << "]";
-	ypos += 0.5f;
-	std::string viewing_range = std::to_string((g_settings->getFloat("viewing_range") / 100.0f) * 250.0f);
-	os << "scrollbar[0.3," << (ypos++) << ";3.8,0.6;horizontal;sbr_viewing_range;" << viewing_range << "]";
+		os << "button_exit[" << (xpos+=2.9f) << ",0;3,0.5;btn_exit_menu;"
+		   << strgettext("Exit to Menu") << "]";
 
-	os << "label[0.3," << (ypos -= 0.2f) << ";" << strgettext("GUI scaling") << "]";
-	ypos += 0.5f;
-	std::string gui_scaling = std::to_string(g_settings->getFloat("gui_scaling") * 500.0f);
-	os << "scrollbar[0.3," << (ypos++) << ";3.8,0.6;horizontal;sbr_gui_scaling;" << gui_scaling << "]";
-
-	os << "field[1.2,0;5,1.5;;" << strgettext("Game paused") << ";]";
-
-#ifndef __ANDROID__
-	os		<< "button_exit[0.3," << (ypos++) << ";4,0.5;btn_sound;"
-		<< strgettext("Sound Volume") << "]";
-	os		<< "button_exit[0.3," << (ypos++) << ";4,0.5;btn_key_config;"
-		<< strgettext("Change Keys")  << "]";
-#endif
-	      os << "button_exit[0.3," << (ypos++) << ";4,0.5;btn_exit_menu;"
-		 << strgettext("Exit to Menu") << "]";
-	      os << "button_exit[0.3," << (ypos++) << ";4,0.5;btn_exit_os;"
-		 << strgettext("Exit to OS")   << "];";
+		os << "button_exit[" << (xpos) << ",0.8;3,0.5;btn_exit_os;"
+		   << strgettext("Exit to OS") << "]";
+	} else {
+		os << "formspec_version[1]" << "size[0,0,true]";
+		os << "bgcolor[#00000000;true]";
+	}
 
 	/* Create menu */
 	/* Note: FormspecFormSource and LocalFormspecHandler  *
