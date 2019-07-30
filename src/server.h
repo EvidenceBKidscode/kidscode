@@ -224,8 +224,8 @@ public:
 	void spawnParticle(const std::string &playername,
 		v3f pos, v3f velocity, v3f acceleration,
 		float expirationtime, float size,
-		bool collisiondetection, bool collision_removal,
-		bool vertical, const std::string &texture,
+		bool collisiondetection, bool collision_removal, bool object_collision,
+		f32 bounce_fraction, f32 bounce_threshold, const std::string &texture,
 		const struct TileAnimationParams &animation, u8 glow);
 
 	u32 addParticleSpawner(u16 amount, float spawntime,
@@ -234,10 +234,10 @@ public:
 		v3f minacc, v3f maxacc,
 		float minexptime, float maxexptime,
 		float minsize, float maxsize,
-		bool collisiondetection, bool collision_removal,
-		ServerActiveObject *attached,
-		bool vertical, const std::string &texture,
-		const std::string &playername, const struct TileAnimationParams &animation,
+		bool collisiondetection, bool collision_removal, bool object_collision,
+		f32 bounce_fraction, f32 bounce_threshold, ServerActiveObject *attached,
+		const std::string &texture, const std::string &playername,
+		const struct TileAnimationParams &animation,
 		u8 glow);
 
 	void deleteParticleSpawner(const std::string &playername, u32 id);
@@ -437,9 +437,9 @@ private:
 		v3f minacc, v3f maxacc,
 		float minexptime, float maxexptime,
 		float minsize, float maxsize,
-		bool collisiondetection, bool collision_removal,
-		u16 attached_id,
-		bool vertical, const std::string &texture, u32 id,
+		bool collisiondetection, bool collision_removal, bool object_collision,
+		f32 bounce_fraction, f32 bounce_threshold, u16 attached_id,
+		const std::string &texture, u32 id,
 		const struct TileAnimationParams &animation, u8 glow);
 
 	void SendDeleteParticleSpawner(session_t peer_id, u32 id);
@@ -448,8 +448,8 @@ private:
 	void SendSpawnParticle(session_t peer_id, u16 protocol_version,
 		v3f pos, v3f velocity, v3f acceleration,
 		float expirationtime, float size,
-		bool collisiondetection, bool collision_removal,
-		bool vertical, const std::string &texture,
+		bool collisiondetection, bool collision_removal, bool object_collision,
+		f32 bounce_fraction, f32 bounce_threshold, const std::string &texture,
 		const struct TileAnimationParams &animation, u8 glow);
 
 	u32 SendActiveObjectRemoveAdd(session_t peer_id, const std::string &datas);

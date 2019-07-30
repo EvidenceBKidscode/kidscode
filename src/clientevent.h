@@ -110,7 +110,7 @@ struct ClientEvent
 			f32 bounce_threshold;
 			u16 attached_id;
 			std::string *texture;
-			u32 id;
+			u64 id;
 			struct TileAnimationParams animation;
 			u8 glow;
 		} add_particlespawner;
@@ -120,7 +120,7 @@ struct ClientEvent
 		} delete_particlespawner;
 		struct
 		{
-			u32 id;
+			u32 server_id;
 			u8 type;
 			v2f *pos;
 			std::string *name;
@@ -133,7 +133,6 @@ struct ClientEvent
 			v2f *offset;
 			v3f *world_pos;
 			v2s32 *size;
-			u32 font_size;
 		} hudadd;
 		struct
 		{
