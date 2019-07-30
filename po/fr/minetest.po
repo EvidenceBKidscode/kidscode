@@ -541,7 +541,7 @@ msgstr "Placage de relief"
 
 #: builtin/mainmenu/tab_settings.lua
 msgid "Change keys"
-msgstr "Changer les touches"
+msgstr "Config. clavier"
 
 #: builtin/mainmenu/tab_settings.lua
 msgid "Connected Glass"
@@ -865,7 +865,7 @@ msgstr ""
 
 #: src/game.cpp
 msgid "Exit to Menu"
-msgstr "Quitter vers le menu"
+msgstr "Menu principal"
 
 #: src/game.cpp
 msgid "Exit to OS"
@@ -2606,7 +2606,7 @@ msgstr "Mode plein écran."
 
 #: src/settings_translation_file.cpp
 msgid "GUI scaling"
-msgstr "Echelle du GUI"
+msgstr "Echelle GUI"
 
 #: src/settings_translation_file.cpp
 msgid "GUI scaling filter"
@@ -4047,7 +4047,7 @@ msgstr "Bruit pour les montagnes"
 
 #: src/settings_translation_file.cpp
 msgid "Mouse sensitivity"
-msgstr "Sensibilité de la souris"
+msgstr "Sensibilité souris"
 
 #: src/settings_translation_file.cpp
 msgid "Mouse sensitivity multiplier."
