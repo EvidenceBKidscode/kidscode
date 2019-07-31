@@ -795,7 +795,7 @@ msgstr "- Nom du serveur : "
 
 #: src/game.cpp
 msgid "Change Keys"
-msgstr "Changer les touches"
+msgstr "Config. clavier"
 
 #: src/game.cpp
 msgid "Change Password"
@@ -960,7 +960,7 @@ msgstr "Reculer"
 #: src/guiKeyChangeMenu.cpp
 #, fuzzy
 msgid "Change camera"
-msgstr "Changer les touches"
+msgstr "Changer de caméra"
 
 #: src/guiKeyChangeMenu.cpp
 msgid "Chat"
