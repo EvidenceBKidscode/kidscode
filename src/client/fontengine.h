@@ -31,6 +31,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 enum FontMode {
 	FM_Standard = 0,
+	FM_Bold,
+	FM_Italic,
 	FM_Mono,
 	FM_Fallback,
 	FM_Simple,

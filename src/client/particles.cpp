@@ -138,12 +138,12 @@ void Particle::step(float dtime)
 			m_gamedef, BS * 0.5, box, 0, dtime, &p_pos,
 			&p_velocity, m_acceleration * BS);
 		if (r.collides) {
-			p_velocity = {0.f, 0.f, 0.f};
+			p_velocity = {0.f, p_velocity.Y, 0.f};
 		}
 
 		if (m_collision_removal && r.collides) {
 			// force expiration of the particle
-			m_expiration = -1.0;
+			m_expiration = -1.f;
 		} else {
 			m_pos = p_pos / BS;
 			m_velocity = p_velocity / BS;
@@ -158,7 +158,7 @@ void Particle::step(float dtime)
 		m_animation.determineParams(
 				m_material.getTexture(0)->getSize(),
 				&frame_count, &frame_length_i, NULL);
-		float frame_length = frame_length_i / 1000.0;
+		float frame_length = frame_length_i / 1000.f;
 		while (m_animation_time > frame_length) {
 			m_animation_frame++;
 			m_animation_time -= frame_length;

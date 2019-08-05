@@ -87,8 +87,13 @@ void ParsedText::Element::setStyle(StyleList &style)
 
 	unsigned int font_size = std::atoi(style["fontsize"].c_str());
 	FontMode font_mode = FM_Standard;
-	if (style["fontstyle"] == "mono")
+
+	if (style["fontstyle"] == "mono") 
 		font_mode = FM_Mono;
+	else if (style["fontstyle"] == "italic")
+		font_mode = FM_Italic;
+	else if (style["fontstyle"] == "bold")
+		font_mode = FM_Bold;
 
 	// TODO: find a way to check font validity
 	// Build a new fontengine ?
@@ -143,6 +148,14 @@ ParsedText::ParsedText(const wchar_t *text)
 
 	style["fontstyle"] = "mono";
 	m_elementtags["mono"] = style;
+	style.clear();
+
+	style["fontstyle"] = "italic";
+	m_elementtags["italic"] = style;
+	style.clear();
+
+	style["fontstyle"] = "bold";
+	m_elementtags["bold"] = style;
 	style.clear();
 
 	style["fontsize"] = m_root_tag.style["fontsize"];
@@ -358,7 +371,8 @@ void ParsedText::globalTag(AttrsList &attrs)
 			m_root_tag.style["fontsize"] = attr.second;
 
 		if (attr.first == "font" &&
-				(attr.second == "mono" || attr.second == "normal"))
+				(attr.second == "mono" || attr.second == "normal" ||
+				 attr.second == "italic" || attr.second == "bold"))
 			m_root_tag.style["fontstyle"] = attr.second;
 
 		if (attr.first == "halign" &&
@@ -378,7 +392,8 @@ void ParsedText::parseStyles(AttrsList &attrs, StyleList &style)
 		style["hovercolor"] = attrs["hovercolor"];
 
 	if (attrs.count("font") &&
-		(attrs["font"] == "mono" || attrs["font"] == "normal"))
+			(attrs["font"] == "mono" || attrs["font"] == "normal" ||
+			 attrs["font"] == "bold" || attrs["font"] == "italic"))
 		style["fontstyle"] = attrs["font"];
 
 	if (attrs.count("size") && strtol(attrs["size"].c_str(), NULL, 10) > 0)

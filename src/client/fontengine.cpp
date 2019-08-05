@@ -213,6 +213,9 @@ void FontEngine::readSettings()
 #if USE_FREETYPE
 	if (g_settings->getBool("freetype")) {
 		m_default_size[FM_Standard] = m_settings->getU16("font_size");
+		m_default_size[FM_Bold]     = m_settings->getU16("font_size");
+		m_default_size[FM_Italic]   = m_settings->getU16("font_size");
+
 		m_default_size[FM_Fallback] = m_settings->getU16("fallback_font_size");
 		m_default_size[FM_Mono]     = m_settings->getU16("mono_font_size");
 
@@ -270,7 +273,7 @@ void FontEngine::updateFontCache()
 /******************************************************************************/
 void FontEngine::initFont(unsigned int basesize, FontMode mode)
 {
-
+	std::cout << mode << std::endl;
 	std::string font_config_prefix;
 
 	if (mode == FM_Unspecified) {
@@ -331,7 +334,17 @@ void FontEngine::initFont(unsigned int basesize, FontMode mode)
 					g_settings->getU16(font_config_prefix + "font_shadow_alpha");
 		} catch (SettingNotFoundException&) {}
 
-		std::string font_path = g_settings->get(font_config_prefix + "font_path");
+		std::string font_path;
+
+		if (mode == FM_Bold) {
+			font_path = g_settings->get(font_config_prefix + "font_path_bold");
+		} else if (mode == FM_Italic) {
+			font_path = g_settings->get(font_config_prefix + "font_path_italic");
+		} else {
+			font_path = g_settings->get(font_config_prefix + "font_path");
+		}
+
+		std::cout << font_path.c_str() << std::endl;
 
 		irr::gui::IGUIFont* font = gui::CGUITTFont::createTTFont(m_env,
 				font_path.c_str(), size, true, true, font_shadow,
