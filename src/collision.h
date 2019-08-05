@@ -41,6 +41,7 @@ struct CollisionInfo
 	v3s16 node_p = v3s16(-32768,-32768,-32768); // COLLISION_NODE
 	v3f old_speed;
 	v3f new_speed;
+	int plane = -1;
 };
 
 struct collisionMoveResult
@@ -54,11 +55,17 @@ struct collisionMoveResult
 };
 
 // Moves using a single iteration; speed should not exceed pos_max_d/dtime
-collisionMoveResult collisionMoveSimple(Environment *env,IGameDef *gamedef,
+collisionMoveResult collisionMoveSimple(Environment *env, IGameDef *gamedef,
 		f32 pos_max_d, const aabb3f &box_0,
 		f32 stepheight, f32 dtime,
 		v3f *pos_f, v3f *speed_f,
-		v3f accel_f, ActiveObject *self=NULL,
+		v3f accel_f, ActiveObject *self=nullptr,
+		bool collideWithObjects=true);
+
+collisionMoveResult collisionMovePoint(Environment *env, IGameDef *gamedef,
+		f32 pos_max_d, f32 dtime, v3f *pos_f, v3f *speed_f,
+		v3f accel_f, ActiveObject *self=nullptr,
+		f32 bounce_fraction=0.f, f32 bounce_threshold = 0.f,
 		bool collideWithObjects=true);
 
 // Helper function:
