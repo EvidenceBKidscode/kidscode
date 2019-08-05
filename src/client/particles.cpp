@@ -137,6 +137,10 @@ void Particle::step(float dtime)
 		collisionMoveResult r = collisionMoveSimple(m_env,
 			m_gamedef, BS * 0.5, box, 0, dtime, &p_pos,
 			&p_velocity, m_acceleration * BS);
+		if (r.collides) {
+			p_velocity = {0.f, 0.f, 0.f};
+		}
+
 		if (m_collision_removal && r.collides) {
 			// force expiration of the particle
 			m_expiration = -1.0;
