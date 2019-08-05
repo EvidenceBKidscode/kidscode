@@ -458,42 +458,47 @@ public:
 		}
 
 		emitting_time += timeSinceLastCall * 1e-3f;
-		if (emitting_time >= time_for_particle) {
-			emitting_time = 0.f;
-			p.color = video::SColor(0xFFFFFFFF);
-			p.startColor = p.color;
+		s32 count = remaining_amount;
+		if (count * time_for_particle > emitting_time)
+			count = emitting_time / time_for_particle;
 
-			p.pos = random_v3f(minrelpos, maxrelpos);
-			v3f vel = random_v3f(minvel, maxvel);
-			if (attached_id != 0) {
-				ClientActiveObject *attached =
-					m_env->getActiveObject(attached_id);
-				if (attached) {
-					vel.rotateXZBy(attached->getYaw());
-					p.pos.rotateXZBy(attached->getYaw());
-					p.pos += attached->getPosition();
-				} else {
-					return 0;
+		if (count) {
+			outArray = new irr::scene::SParticle[count];
+			for (s32 i = 0; i < count; i++) {
+				irr::scene::SParticle *p = &outArray[i];
+				p->color = video::SColor(0xFFFFFFFF);
+				p->startColor = p->color;
+
+				p->pos = random_v3f(minrelpos, maxrelpos);
+				v3f vel = random_v3f(minvel, maxvel);
+				if (attached_id != 0) {
+					ClientActiveObject *attached =
+						m_env->getActiveObject(attached_id);
+					if (attached) {
+						vel.rotateXZBy(attached->getYaw());
+						p->pos.rotateXZBy(attached->getYaw());
+						p->pos += attached->getPosition();
+					} else {
+						return 0;
+					}
 				}
-			}
 
-			// Velocity per millisecond
-			p.startVector = p.vector = random_v3f(minvel, maxvel) * BS * 1e-3f;
-			float size = minsize + (float) rand() / (float) RAND_MAX *
-				(maxsize - minsize);
-			p.size = core::dimension2df(size,size);
+				// Velocity per millisecond
+				p->startVector = p->vector = random_v3f(minvel, maxvel) * BS * 1e-3f;
+				float size = minsize + (float) rand() / (float) RAND_MAX *
+					(maxsize - minsize);
+				p->size = core::dimension2df(size,size);
 
-			p.startTime = now;
-			p.endTime = now + (u32) ((minexptime +
-				(float) rand() / (float) RAND_MAX *
-				(maxexptime - minexptime)) * 1e3f);
+				p->startTime = now;
+				p->endTime = now + (u32) ((minexptime +
+					(float) rand() / (float) RAND_MAX *
+					(maxexptime - minexptime)) * 1e3f);
 
-			if (remaining_amount > 0)
+				emitting_time -= time_for_particle;
 				--remaining_amount;
-			outArray = &p;
-			return 1;
+			}
 		}
-		return 0;
+		return count;
 	}
 
 	void stop()
