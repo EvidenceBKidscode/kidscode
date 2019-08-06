@@ -226,6 +226,7 @@ public:
 				if (collision_removal) {
 					p.endTime = 0;
 				} else {
+					velocity = {0.f, 0.f, 0.f};
 					p.pos = position - camera_offset;
 					p.vector = velocity * 1e-3f;
 				}
