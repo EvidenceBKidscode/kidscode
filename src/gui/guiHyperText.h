@@ -107,9 +107,9 @@ protected:
 	void enterParagraph();
 	void endParagraph();
 	void pushChar(wchar_t c);
-	ParsedText::Tag* newTag(std::string name, AttrsList attrs);
-	ParsedText::Tag* openTag(std::string, AttrsList attrs);
-	bool closeTag(std::string name);
+	ParsedText::Tag *newTag(const std::string &name, const AttrsList &attrs);
+	ParsedText::Tag *openTag(const std::string &name, const AttrsList &attrs);
+	bool closeTag(const std::string &name);
 	void globalTag(ParsedText::AttrsList& attrs);
 	void parseStyles(AttrsList &attrs, StyleList &style);
 	u32 parseTag(const wchar_t* text, u32 cursor);
@@ -140,8 +140,12 @@ public:
 	void place(s32 width);
 	inline s32 getHeight() { return m_height; };
 	s32 getVoffset(s32 height);
-	void draw(core::rect<s32> dest_rect, core::position2d<s32> dest_offset);
-	ParsedText::Element* getElementAt(core::position2d<s32> pos);
+
+	void draw(
+		const core::rect<s32> &dest_rect,
+		const core::position2d<s32> &dest_offset);
+
+	ParsedText::Element* getElementAt(const core::position2d<s32> &pos);
 	ParsedText::Tag* m_hovertag;
 
 protected:

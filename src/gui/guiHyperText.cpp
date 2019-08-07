@@ -58,7 +58,7 @@ bool check_color(const std::string &str) {
 }
 
 bool check_integer(const std::string &str) {
-	if (str == "")
+	if (str.empty())
 		return false;
 
 	char *endptr = nullptr;
@@ -88,7 +88,7 @@ void ParsedText::Element::setStyle(StyleList &style)
 	unsigned int font_size = std::atoi(style["fontsize"].c_str());
 	FontMode font_mode = FM_Standard;
 
-	if (style["fontstyle"] == "mono") 
+	if (style["fontstyle"] == "mono")
 		font_mode = FM_Mono;
 	else if (style["fontstyle"] == "italic")
 		font_mode = FM_Italic;
@@ -307,7 +307,7 @@ void ParsedText::pushChar(wchar_t c)
 	m_element->text += c;
 }
 
-ParsedText::Tag *ParsedText::newTag(std::string name, AttrsList attrs)
+ParsedText::Tag *ParsedText::newTag(const std::string &name, const AttrsList &attrs)
 {
 	endElement();
 	Tag *newtag = new Tag();
@@ -317,14 +317,14 @@ ParsedText::Tag *ParsedText::newTag(std::string name, AttrsList attrs)
 	return newtag;
 }
 
-ParsedText::Tag *ParsedText::openTag(std::string name, AttrsList attrs)
+ParsedText::Tag *ParsedText::openTag(const std::string &name, const AttrsList &attrs)
 {
 	Tag *newtag = newTag(name, attrs);
 	m_active_tags.push_front(newtag);
 	return newtag;
 }
 
-bool ParsedText::closeTag(std::string name)
+bool ParsedText::closeTag(const std::string &name)
 {
 	bool found = false;
 	for (auto id = m_active_tags.begin(); id != m_active_tags.end(); ++id)
@@ -627,7 +627,7 @@ TextDrawer::TextDrawer(
 
 // Get element at given coordinates. Coordinates are inner coordinates (starting
 // at 0,0).
-ParsedText::Element* TextDrawer::getElementAt(core::position2d<s32> pos)
+ParsedText::Element* TextDrawer::getElementAt(const core::position2d<s32> &pos)
 {
 	for (auto &p : m_text.m_paragraphs) {
 		for (auto &el : p.elements) {
@@ -866,8 +866,8 @@ s32 TextDrawer::getVoffset(s32 height)
 // Draw text in a rectangle with a given offset. Items are actually placed in
 // relative (to upper left corner) coordinates.
 void TextDrawer::draw(
-	core::rect<s32> dest_rect,
-	core::position2d<s32> dest_offset)
+	const core::rect<s32> &dest_rect,
+	const core::position2d<s32> &dest_offset)
 {
 	core::position2d<s32> offset = dest_rect.UpperLeftCorner + dest_offset;
 
@@ -878,47 +878,47 @@ void TextDrawer::draw(
 	for (auto &p : m_text.m_paragraphs) {
 		for (auto &el : p.elements) {
 			core::rect<s32> rect(el.pos + offset, el.dim);
-			if (rect.isRectCollided(dest_rect)) {
+			if (!rect.isRectCollided(dest_rect))
+				continue;
 
-				switch(el.type) {
-				case ParsedText::ELEMENT_TEXT: {
-					irr::video::SColor color = el.color;
+			switch(el.type) {
+			case ParsedText::ELEMENT_TEXT: {
+				irr::video::SColor color = el.color;
 
-					for (auto tag : el.tags)
-						if (&(*tag) == m_hovertag)
-							color = el.hovercolor;
+				for (auto tag : el.tags)
+					if (&(*tag) == m_hovertag)
+						color = el.hovercolor;
 
-					if (el.font)
-						el.font->draw(el.text, rect, color, false, true, &dest_rect);
-				} break;
+				if (el.font)
+					el.font->draw(el.text, rect, color, false, true, &dest_rect);
+			} break;
 
-				case ParsedText::ELEMENT_SEPARATOR:
-					break;
+			case ParsedText::ELEMENT_SEPARATOR:
+				break;
 
-				case ParsedText::ELEMENT_IMAGE: {
-					video::ITexture *texture =
-						m_client->getTextureSource()->getTexture(
-									strwtostr(el.text));
-					if (texture != 0)
-						m_environment->getVideoDriver()->draw2DImage(
-								texture, rect,
-								irr::core::rect<s32>(
-										core::position2d<s32>(0, 0),
-										texture->getOriginalSize()),
-								&dest_rect, 0, true);
-				} break;
+			case ParsedText::ELEMENT_IMAGE: {
+				video::ITexture *texture =
+					m_client->getTextureSource()->getTexture(
+								strwtostr(el.text));
+				if (texture != 0)
+					m_environment->getVideoDriver()->draw2DImage(
+							texture, rect,
+							irr::core::rect<s32>(
+									core::position2d<s32>(0, 0),
+									texture->getOriginalSize()),
+							&dest_rect, 0, true);
+			} break;
 
-				case ParsedText::ELEMENT_ITEM: {
-					IItemDefManager *idef = m_client->idef();
-					ItemStack item;
-					item.deSerialize(strwtostr(el.text), idef);
+			case ParsedText::ELEMENT_ITEM: {
+				IItemDefManager *idef = m_client->idef();
+				ItemStack item;
+				item.deSerialize(strwtostr(el.text), idef);
 
-					drawItemStack(
-							m_environment->getVideoDriver(),
-							g_fontengine->getFont(), item, rect, &dest_rect,
-							m_client, el.rotation);
-				} break;
-				}
+				drawItemStack(
+						m_environment->getVideoDriver(),
+						g_fontengine->getFont(), item, rect, &dest_rect,
+						m_client, el.rotation);
+			} break;
 			}
 		}
 	}
