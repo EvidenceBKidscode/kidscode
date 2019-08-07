@@ -439,7 +439,6 @@ void Client::step(float dtime)
 	*/
 	{
 		int num_processed_meshes = 0;
-		std::vector<v3s16> blocks_to_ack;
 		while (!m_mesh_update_thread.m_queue_out.empty())
 		{
 			num_processed_meshes++;
@@ -478,18 +477,13 @@ void Client::step(float dtime)
 				m_minimap->addBlock(r.p, minimap_mapblock);
 
 			if (r.ack_block_to_server) {
-				if (blocks_to_ack.size() == 255) {
-					sendGotBlocks(blocks_to_ack);
-					blocks_to_ack.clear();
-				}
-
-				blocks_to_ack.emplace_back(r.p);
+				/*
+					Acknowledge block
+					[0] u8 count
+					[1] v3s16 pos_0
+				*/
+				sendGotBlocks(r.p);
 			}
-		}
-
-		if (blocks_to_ack.size() > 0) {
-				// Acknowledge block(s)
-				sendGotBlocks(blocks_to_ack);
 		}
 
 		if (num_processed_meshes > 0)
@@ -1030,12 +1024,11 @@ void Client::sendDeletedBlocks(std::vector<v3s16> &blocks)
 	Send(&pkt);
 }
 
-void Client::sendGotBlocks(const std::vector<v3s16> &blocks)
+void Client::sendGotBlocks(v3s16 block)
 {
-	NetworkPacket pkt(TOSERVER_GOTBLOCKS, 1 + 6 * blocks.size());
-	pkt << (u8) blocks.size();
-	for (const v3s16 &block : blocks)
-		pkt << block;
+	NetworkPacket pkt(TOSERVER_GOTBLOCKS, 1 + 6);
+	pkt << (u8) 1 << block;
+	Send(&pkt);
 }
 
 void Client::sendRemovedSounds(std::vector<s32> &soundList)
