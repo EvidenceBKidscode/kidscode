@@ -639,6 +639,15 @@ ParsedText::Element* TextDrawer::getElementAt(const core::position2d<s32> &pos)
 	return 0;
 }
 
+/*
+	This function places all elements according to given width. Elements have
+	been previously sized by constructor and will be later drawed by draw.
+	It may be called each time width changes and resulting height is stored
+	in m_height. See GUIHyperText constructor, it uses it once to test if
+	text fits in window and eventually another time if width is reduced because
+	of scrollbar added.
+*/
+
 void TextDrawer::place(s32 width)
 {
 	m_floating.clear();
