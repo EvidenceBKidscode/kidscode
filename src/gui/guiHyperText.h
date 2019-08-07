@@ -110,7 +110,7 @@ protected:
 	ParsedText::Tag *newTag(const std::string &name, const AttrsList &attrs);
 	ParsedText::Tag *openTag(const std::string &name, const AttrsList &attrs);
 	bool closeTag(const std::string &name);
-	void globalTag(ParsedText::AttrsList& attrs);
+	void globalTag(const ParsedText::AttrsList& attrs);
 	void parseStyles(AttrsList &attrs, StyleList &style);
 	u32 parseTag(const wchar_t* text, u32 cursor);
 	void parse(const wchar_t* text);

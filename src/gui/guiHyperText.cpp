@@ -336,9 +336,9 @@ bool ParsedText::closeTag(const std::string &name)
 	return found;
 }
 
-void ParsedText::globalTag(AttrsList &attrs)
+void ParsedText::globalTag(const AttrsList &attrs)
 {
-	for (auto const& attr : attrs) {
+	for (auto const &attr : attrs) {
 		// Only page level style
 		if (attr.first == "margin" && check_integer(attr.second))
 			margin = strtol(attr.second.c_str(), NULL, 10);
@@ -478,9 +478,9 @@ u32 ParsedText::parseTag(const wchar_t *text, u32 cursor)
 		globalTag(attrs);
 
 	} else if (name == "style") {
-		if (end)
+		if (end) {
 			closeTag(name);
-		else {
+		} else {
 			parseStyles(attrs, style);
 			openTag(name, attrs)->style = style;
 		}
@@ -612,13 +612,14 @@ TextDrawer::TextDrawer(
 							dim = texture->getOriginalSize();
 					}
 
-					if (e.dim.Height == 0)
+					if (e.dim.Height == 0) {
 						if (e.dim.Width == 0)
 							e.dim = dim;
 						else
 							e.dim.Height = dim.Height * e.dim.Width / dim.Width;
-					else
+					} else {
 						e.dim.Width = dim.Width * e.dim.Height / dim.Height;
+					}
 				}
 			}
 		}
@@ -642,10 +643,10 @@ ParsedText::Element* TextDrawer::getElementAt(const core::position2d<s32> &pos)
 /*
 	This function places all elements according to given width. Elements have
 	been previously sized by constructor and will be later drawed by draw.
-	It may be called each time width changes and resulting height is stored
-	in m_height. See GUIHyperText constructor, it uses it once to test if
-	text fits in window and eventually another time if width is reduced because
-	of scrollbar added.
+	It may be called each time width changes and resulting height can be
+	retrieved using getHeight. See GUIHyperText constructor, it uses it once to
+	test if text fits in window and eventually another time if width is reduced
+	because of scrollbar added.
 */
 
 void TextDrawer::place(s32 width)
@@ -701,7 +702,7 @@ void TextDrawer::place(s32 width)
 				left = m_text.margin;
 				right = width - m_text.margin;
 
-				for (auto f : m_floating) {
+				for (const auto &f : m_floating) {
 					// Is this floating rect interecting paragraph y line ?
 					if (f.rect.UpperLeftCorner.Y - f.margin <= y &&
 						f.rect.LowerRightCorner.Y + f.margin >= y) {
@@ -713,27 +714,27 @@ void TextDrawer::place(s32 width)
 									std::max(f.margin, p.margin) + 1;
 
 						if (f.rect.UpperLeftCorner.X - f.margin <= left &&
-							f.rect.LowerRightCorner.X + f.margin < right)
-						{ // float on left
+							f.rect.LowerRightCorner.X + f.margin < right) {
+							// float on left
 							if (f.rect.LowerRightCorner.X +
 										std::max(f.margin, p.margin) > left)
 								left = f.rect.LowerRightCorner.X +
 										std::max(f.margin, p.margin);
 
 						} else if (f.rect.LowerRightCorner.X + f.margin >= right &&
-								f.rect.UpperLeftCorner.X - f.margin > left)
-						{ // float on right
+								f.rect.UpperLeftCorner.X - f.margin > left) {
+							// float on right
 							if (f.rect.UpperLeftCorner.X -
 										std::max(f.margin, p.margin) < right)
 								right = f.rect.UpperLeftCorner.X -
 										std::max(f.margin, p.margin);
 
 						} else if (f.rect.UpperLeftCorner.X - f.margin <= left &&
-							 f.rect.LowerRightCorner.X + f.margin >= right)
-						{ // float taking all space
+							 f.rect.LowerRightCorner.X + f.margin >= right) {
+							// float taking all space
 							left = right;
-						} else
-						{ // float in the middle -- should not occure yet, see that later
+						} else {
+							// float in the middle -- should not occure yet, see that later
 						}
 					}
 				}
@@ -748,7 +749,7 @@ void TextDrawer::place(s32 width)
 
 			// Skip begining of line separators but include them in height
 			// computation.
-			while(el != p.elements.end() &&
+			while (el != p.elements.end() &&
 				el->type == ParsedText::ELEMENT_SEPARATOR) {
 				if (el->floating == ParsedText::FLOAT_NONE &&
 					charsheight < el->dim.Height)
@@ -761,7 +762,7 @@ void TextDrawer::place(s32 width)
 
 			// First pass, find elements fitting into line
 			// (or at least one element)
-			while(el != p.elements.end() && (charswidth == 0 ||
+			while (el != p.elements.end() && (charswidth == 0 ||
 						charswidth + el->dim.Width <= linewidth)) {
 				if (el->floating == ParsedText::FLOAT_NONE) {
 					if (el->type != ParsedText::ELEMENT_SEPARATOR) {
@@ -800,7 +801,7 @@ void TextDrawer::place(s32 width)
 			}
 			float extraspace = 0;
 
-			switch(p.halign) {
+			switch (p.halign) {
 			case ParsedText::HALIGN_CENTER:
 				x += (linewidth - charswidth) / 2;
 				break;
@@ -825,7 +826,7 @@ void TextDrawer::place(s32 width)
 				e->pos.X = x;
 				e->pos.Y = y;
 
-				switch(e->type) {
+				switch (e->type) {
 				case ParsedText::ELEMENT_TEXT:
 				case ParsedText::ELEMENT_SEPARATOR:
 					e->pos.X = x;
@@ -861,7 +862,7 @@ void TextDrawer::place(s32 width)
 // Get vertical offset according to valign
 s32 TextDrawer::getVoffset(s32 height)
 {
-	switch(m_text.valign) {
+	switch (m_text.valign) {
 	case ParsedText::VALIGN_BOTTOM:
 		return height - m_height;
 	case ParsedText::VALIGN_MIDDLE:
@@ -884,13 +885,13 @@ void TextDrawer::draw(
 		m_environment->getVideoDriver()->draw2DRectangle(
 				m_text.background_color, dest_rect);
 
-	for (auto &p : m_text.m_paragraphs) {
-		for (auto &el : p.elements) {
+	for (const auto &p : m_text.m_paragraphs) {
+		for (const auto &el : p.elements) {
 			core::rect<s32> rect(el.pos + offset, el.dim);
 			if (!rect.isRectCollided(dest_rect))
 				continue;
 
-			switch(el.type) {
+			switch (el.type) {
 			case ParsedText::ELEMENT_TEXT: {
 				irr::video::SColor color = el.color;
 
@@ -984,12 +985,11 @@ void GUIHyperText::checkHover(s32 X, s32 Y)
 {
 	m_drawer.m_hovertag = nullptr;
 
-	if (AbsoluteRect.isPointInside(core::position2d<s32>(X, Y)))
-	{
+	if (AbsoluteRect.isPointInside(core::position2d<s32>(X, Y))) {
 		ParsedText::Element *element = getElementAt(X, Y);
 
 		if (element)
-			for (auto &tag : element->tags)
+			for (auto tag : element->tags)
 				if (tag->name == "action") {
 					m_drawer.m_hovertag = tag;
 					break;
@@ -1039,7 +1039,7 @@ bool GUIHyperText::OnEvent(const SEvent &event) {
 				getElementAt(event.MouseInput.X, event.MouseInput.Y);
 
 			if (element) {
-				for (auto & tag : element->tags) {
+				for (auto tag : element->tags) {
 					if (tag->name == "action") {
 						Text = core::stringw(L"action:") +
 								strtostrw(tag->attrs["name"]);
