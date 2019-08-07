@@ -97,7 +97,12 @@ void ParsedText::Element::setStyle(StyleList &style)
 
 	// TODO: find a way to check font validity
 	// Build a new fontengine ?
-	this->font = g_fontengine->getFont(font_size, font_mode);
+	this->font =
+#if USE_FREETYPE
+		(gui::CGUITTFont *)
+#endif
+		g_fontengine->getFont(font_size, font_mode);
+
 	if (!this->font)
 		printf("No font found ! Size=%d, mode=%d\n", font_size, font_mode);
 }
@@ -586,6 +591,9 @@ TextDrawer::TextDrawer(
 				if (e.font) {
 					e.dim.Width = e.font->getDimension(e.text.c_str()).Width;
 					e.dim.Height = e.font->getDimension(L"Yy").Height;
+#if USE_FREETYPE
+					e.baseline = e.dim.Height - 1 - e.font->getAscender()/64;
+#endif
 				} else
 					e.dim = {0, 0};
 
@@ -769,11 +777,18 @@ void TextDrawer::place(s32 width)
 
 			// Second pass, compute printable line width and adjustments
 			charswidth = 0;
-			for (auto e = linestart; e != lineend; ++e) {
-				if (e->floating == ParsedText::FLOAT_NONE)
-					charswidth += e->dim.Width;
-			}
+			s32 top = 0;
+			s32 bottom = 0;
 
+			for (auto e = linestart; e != lineend; ++e) {
+				if (e->floating == ParsedText::FLOAT_NONE) {
+					charswidth += e->dim.Width;
+					if (top < e->dim.Height - e->baseline)
+						top = e->dim.Height - e->baseline;
+					if (bottom < e->baseline)
+						bottom = e->baseline;
+				}
+			}
 			float extraspace = 0;
 
 			switch(p.halign) {
@@ -806,17 +821,8 @@ void TextDrawer::place(s32 width)
 				case ParsedText::ELEMENT_SEPARATOR:
 					e->pos.X = x;
 
-					switch(e->valign) {
-					case ParsedText::VALIGN_TOP:
-						e->pos.Y = y;
-						break;
-					case ParsedText::VALIGN_MIDDLE:
-						e->pos.Y = y + (charsheight - e->dim.Height) / 2 ;
-						break;
-					case ParsedText::VALIGN_BOTTOM:
-					default:
-						e->pos.Y = y + charsheight - e->dim.Height ;
-					}
+					// Align char baselines
+					e->pos.Y = y + top + e->baseline - e->dim.Height;
 
 					x += e->dim.Width;
 					if (e->type == ParsedText::ELEMENT_SEPARATOR)

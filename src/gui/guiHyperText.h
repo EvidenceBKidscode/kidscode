@@ -19,10 +19,16 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #pragma once
 
+#include "config.h" // for USE_FREETYPE
+
 using namespace irr;
 
 class ISimpleTextureSource;
 class Client;
+
+#if USE_FREETYPE
+#include "irrlicht_changes/CGUITTFont.h"
+#endif
 
 class ParsedText
 {
@@ -55,9 +61,17 @@ public:
 		FloatType floating = FLOAT_NONE;
 
 		ValignType valign;
+
+#if USE_FREETYPE
+		gui::CGUITTFont* font;
+#else
 		gui::IGUIFont* font;
+#endif
+
 		irr::video::SColor color;
 		irr::video::SColor hovercolor;
+
+		s32 baseline = 0;
 
 		// img & item specific attributes
 		std::string name;
