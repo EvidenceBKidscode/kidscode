@@ -193,4 +193,3 @@ bool GUIVolumeChange::OnEvent(const SEvent& event)
 
 	return Parent ? Parent->OnEvent(event) : false;
 }
-

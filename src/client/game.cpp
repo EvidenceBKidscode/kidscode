@@ -45,6 +45,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "gui/guiFormSpecMenu.h"
 #include "gui/guiKeyChangeMenu.h"
 #include "gui/guiListBox.h"
+#include "gui/guiOptions.h"
 #include "gui/guiVolumeChange.h"
 #include "gui/mainmenumanager.h"
 #include "mapblock.h"
@@ -141,6 +142,7 @@ struct LocalFormspecHandler : public TextDest
 	void gotText(const StringMap &fields)
 	{
 		if (m_formname == "MT_PAUSE_MENU") {
+			/*
 			if (fields.find("btn_sound") != fields.end()) {
 				g_gamecallback->changeVolume();
 				return;
@@ -148,6 +150,12 @@ struct LocalFormspecHandler : public TextDest
 
 			if (fields.find("btn_key_config") != fields.end()) {
 				g_gamecallback->keyConfig();
+				return;
+			}
+			*/
+
+			if (fields.find("btn_options") != fields.end()) {
+				g_gamecallback->showOptions();
 				return;
 			}
 
@@ -1041,14 +1049,7 @@ static inline void create_formspec_menu(GUIFormSpecMenu **cur_formspec,
 		(*cur_formspec)->setFormSource(fs_src);
 		(*cur_formspec)->setTextDest(txt_dest);
 	}
-
 }
-
-#ifdef __ANDROID__
-#define SIZE_TAG "size[11,5.5]"
-#else
-#define SIZE_TAG "size[18.2,1.1,true]" // Fixed size on desktop
-#endif
 
 /******************************************************************************/
 static void updateChat(Client &client, f32 dtime, bool show_debug,
@@ -2471,6 +2472,11 @@ inline bool Game::handleCallbacks()
 	if (g_gamecallback->disconnect_requested) {
 		g_gamecallback->disconnect_requested = false;
 		return false;
+	}
+
+	if (g_gamecallback->options_requested) {
+		(new GUIOptions(guienv, guiroot, -1, &g_menumgr))->drop();
+		g_gamecallback->options_requested = false;
 	}
 
 	if (g_gamecallback->changevolume_requested) {
@@ -4861,23 +4867,25 @@ void Game::showPauseMenu()
 {
 	std::ostringstream os;
 
-	os << FORMSPEC_VERSION_STRING << SIZE_TAG;
+	os << FORMSPEC_VERSION_STRING << "size[5.6,1.1,true]";
 
-	f32 xpos = 0.0f;
+	f32 xpos = -0.15f;
 
 	os << "anchor[0.5,4.4]";
 
-	os << "label[1,0;" << strgettext("PAUSE") << "]";
-
-	os << "button_exit[" << (xpos) << ",0.8;3,0.5;btn_continue;"
+	os << "button_exit[" << (xpos) << ",0;3,0.5;btn_continue;"
 	   << strgettext("Continue") << "]";
 
-	os << "button_exit[" << (xpos+=2.9f) << ",0.8;3,0.5;btn_exit_menu;"
+	os << "button_exit[" << (xpos) << ",0.8;3,0.5;btn_options;"
+	   << strgettext("Options") << "]";
+
+	os << "button_exit[" << (xpos+=2.9f) << ",0;3,0.5;btn_exit_menu;"
 	   << strgettext("Exit to Menu") << "]";
 
-	os << "button_exit[" << (xpos+=2.9f) << ",0.8;3,0.5;btn_exit_os;"
-	   << strgettext("Exit to OS")   << "]";
+	os << "button_exit[" << (xpos) << ",0.8;3,0.5;btn_exit_os;"
+	   << strgettext("Exit to OS") << "]";	
 
+/*
 	os << "button_exit["<< (xpos=2.9f) << ",0;3,0.5;btn_sound;"
 	   << strgettext("Sound Volume") << "]";
 
@@ -4895,6 +4903,7 @@ void Game::showPauseMenu()
 	std::string gui_scaling = std::to_string(g_settings->getFloat("gui_scaling") * 500.0f);
 	os << "scrollbar[" << (xpos+=3.f) << ",0.67;3,0.7;horizontal;sbr_gui_scaling;" << gui_scaling << "]";
 	os << "label[" << (xpos+=.1f) << ",0;" << strgettext("GUI scaling") << "]";
+*/
 
 	/* Create menu */
 	/* Note: FormspecFormSource and LocalFormspecHandler  *

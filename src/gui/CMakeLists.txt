@@ -8,6 +8,7 @@ set(gui_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/guiImageTabControl.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/guiKeyChangeMenu.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/guiListBox.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/guiOptions.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/guiPasswordChange.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/guiPathSelectMenu.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/guiScrollBar.cpp
