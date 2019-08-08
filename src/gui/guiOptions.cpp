@@ -1,8 +1,5 @@
 /*
-Part of Minetest
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-Copyright (C) 2013 Ciaran Gultnieks <ciaran@ciarang.com>
-Copyright (C) 2013 RealBadAngel, Maciej Kasatkin <mk@realbadangel.pl>
+Copyright (C) 2019 Kidscode
 
 Permission to use, copy, modify, and distribute this software for any
 purpose with or without fee is hereby granted, provided that the above
@@ -54,7 +51,23 @@ GUIOptions::~GUIOptions()
 
 void GUIOptions::removeChildren()
 {
-	
+	if (gui::IGUIElement *e = getElementFromId(ID_soundButton))
+		e->remove();
+
+	if (gui::IGUIElement *e = getElementFromId(ID_keysButton))
+		e->remove();
+
+	if (gui::IGUIElement *e = getElementFromId(ID_exitButton))
+		e->remove();
+
+	if (gui::IGUIElement *e = getElementFromId(ID_mouseSB))
+		e->remove();
+
+	if (gui::IGUIElement *e = getElementFromId(ID_viewrangeSB))
+		e->remove();
+
+	if (gui::IGUIElement *e = getElementFromId(ID_guiscalingSB))
+		e->remove();
 }
 
 void GUIOptions::regenerateGui(v2u32 screensize)
