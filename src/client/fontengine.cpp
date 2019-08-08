@@ -312,7 +312,6 @@ void FontEngine::updateFontCache()
 void FontEngine::initFont(unsigned int basesize, FontMode mode,
 	bool bold, bool italic)
 {
-	std::cout << mode << std::endl;
 	std::string font_config_prefix;
 	std::string font_config_suffix;
 

@@ -20,7 +20,6 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "debug.h"
 #include "serialization.h"
 #include <string>
-#include <IGUICheckBox.h>
 #include <IGUIButton.h>
 #include <IGUIScrollBar.h>
 #include <IGUIStaticText.h>
@@ -82,9 +81,9 @@ void GUIOptions::regenerateGui(v2u32 screensize)
 	*/
 	DesiredRect = core::rect<s32>(
 		screensize.X / 2 - 380 / 2,
-		screensize.Y / 8 - 200 / 2,
+		screensize.Y / 2 - 200 / 2,
 		screensize.X / 2 + 380 / 2,
-		screensize.Y / 8 + 200 / 2
+		screensize.Y / 2 + 200 / 2
 	);
 	recalculateAbsolutePosition(false);
 

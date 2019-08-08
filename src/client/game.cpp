@@ -4871,8 +4871,6 @@ void Game::showPauseMenu()
 
 	f32 xpos = -0.15f;
 
-	os << "anchor[0.5,4.4]";
-
 	os << "button_exit[" << (xpos) << ",0;3,0.5;btn_continue;"
 	   << strgettext("Continue") << "]";
 
@@ -4883,27 +4881,7 @@ void Game::showPauseMenu()
 	   << strgettext("Exit to Menu") << "]";
 
 	os << "button_exit[" << (xpos) << ",0.8;3,0.5;btn_exit_os;"
-	   << strgettext("Exit to OS") << "]";	
-
-/*
-	os << "button_exit["<< (xpos=2.9f) << ",0;3,0.5;btn_sound;"
-	   << strgettext("Sound Volume") << "]";
-
-	os << "button_exit["<< (xpos+=2.9f) << ",0;3,0.5;btn_key_config;"
-	   << strgettext("Change Keys")  << "]";
-
-	std::string mouse_sensitivity = std::to_string(g_settings->getFloat("mouse_sensitivity") * 500.0f);
-	os << "scrollbar[" << (xpos+=3.f) << ",0.67;3,0.7;horizontal;sbr_mouse_sensitivity;" << mouse_sensitivity << "]";
-	os << "label[" << (xpos+=.1f) << ",0;" << strgettext("Mouse sensitivity") << "]";
-
-	std::string viewing_range = std::to_string((g_settings->getFloat("viewing_range") / 100.0f) * 250.0f);
-	os << "scrollbar[" << (xpos+=3.f) << ",0.67;3,0.7;horizontal;sbr_viewing_range;" << viewing_range << "]";
-	os << "label[" << (xpos+=.1f) << ",0;" << strgettext("Viewing range") << "]";
-
-	std::string gui_scaling = std::to_string(g_settings->getFloat("gui_scaling") * 500.0f);
-	os << "scrollbar[" << (xpos+=3.f) << ",0.67;3,0.7;horizontal;sbr_gui_scaling;" << gui_scaling << "]";
-	os << "label[" << (xpos+=.1f) << ",0;" << strgettext("GUI scaling") << "]";
-*/
+	   << strgettext("Exit to OS") << "]";
 
 	/* Create menu */
 	/* Note: FormspecFormSource and LocalFormspecHandler  *
