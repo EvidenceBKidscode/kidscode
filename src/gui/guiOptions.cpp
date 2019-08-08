@@ -31,9 +31,14 @@ const int ID_soundButton = 364;
 const int ID_keysButton = 365;
 const int ID_exitButton = 366;
 
-const int ID_mouseSB = 367;
+const int ID_mouseText = 365;
+const int ID_mouseSB = 366;
+
+const int ID_viewrangeText = 367;
 const int ID_viewrangeSB = 368;
-const int ID_guiscalingSB = 369;
+
+const int ID_guiscalingText = 369;
+const int ID_guiscalingSB = 370;
 
 GUIOptions::GUIOptions(gui::IGUIEnvironment* env,
 		gui::IGUIElement* parent, s32 id,
@@ -59,10 +64,19 @@ void GUIOptions::removeChildren()
 	if (gui::IGUIElement *e = getElementFromId(ID_exitButton))
 		e->remove();
 
+	if (gui::IGUIElement *e = getElementFromId(ID_mouseText))
+		e->remove();
+
 	if (gui::IGUIElement *e = getElementFromId(ID_mouseSB))
 		e->remove();
 
+	if (gui::IGUIElement *e = getElementFromId(ID_viewrangeText))
+		e->remove();
+
 	if (gui::IGUIElement *e = getElementFromId(ID_viewrangeSB))
+		e->remove();
+
+	if (gui::IGUIElement *e = getElementFromId(ID_guiscalingText))
 		e->remove();
 
 	if (gui::IGUIElement *e = getElementFromId(ID_guiscalingSB))
@@ -121,11 +135,8 @@ void GUIOptions::regenerateGui(v2u32 screensize)
 		rect += v2s32(size.X / 2 + 25, size.Y / 2 - 80);
 
 		const wchar_t *text = wgettext("Mouse sensitivity:");
-		core::stringw mouse_sens = text;
-		delete [] text;
-
-		Environment->addStaticText(mouse_sens.c_str(), rect, false,
-				true, this, 0);
+		Environment->addStaticText(text, rect, false, true, this, ID_mouseText);
+		delete[] text;
 	}
 
 	{
@@ -145,11 +156,8 @@ void GUIOptions::regenerateGui(v2u32 screensize)
 		rect += v2s32(size.X / 2 + 25, size.Y / 2 - 25);
 
 		const wchar_t *text = wgettext("Viewing range:");
-		core::stringw mouse_sens = text;
-		delete [] text;
-
-		Environment->addStaticText(mouse_sens.c_str(), rect, false,
-				true, this, 0);
+		Environment->addStaticText(text, rect, false, true, this, ID_viewrangeText);
+		delete[] text;
 	}
 
 	{
@@ -169,18 +177,14 @@ void GUIOptions::regenerateGui(v2u32 screensize)
 		rect += v2s32(size.X / 2 + 25, size.Y / 2 + 30);
 
 		const wchar_t *text = wgettext("GUI scaling:");
-		core::stringw mouse_sens = text;
-		delete [] text;
-
-		Environment->addStaticText(mouse_sens.c_str(), rect, false,
-				true, this, 0);
+		Environment->addStaticText(text, rect, false, true, this, ID_guiscalingText);
+		delete[] text;
 	}
 
 	{
 		core::rect<s32> rect(0, 0, 180, 20);
 		rect = rect + v2s32(size.X / 2 - 5, size.Y / 2 + 55);
-		gui::IGUIScrollBar *e = Environment->addScrollBar(true,
-			rect, this, ID_guiscalingSB);
+		gui::IGUIScrollBar *e = Environment->addScrollBar(true, rect, this, ID_guiscalingSB);
 		e->setMin(0);
 		e->setMax(200);
 		e->setSmallStep(10);
