@@ -763,10 +763,9 @@ tooltip_append_itemname (Append item name) bool false
 #    Whether freetype fonts are used, requires freetype support to be compiled in.
 freetype (Freetype fonts) bool true
 
-#    Path to TrueTypeFont or bitmap.
-font_path (Font path) filepath fonts/liberationsans.ttf
+font_bold (Font bold by default) bool true
 
-font_size (Font size) int 16
+font_italic (Font italic by default) bool false
 
 #    Font shadow offset, if 0 then shadow will not be drawn.
 font_shadow (Font shadow) int 1
@@ -774,9 +773,21 @@ font_shadow (Font shadow) int 1
 #    Font shadow alpha (opaqueness, between 0 and 255).
 font_shadow_alpha (Font shadow alpha) int 127 0 255
 
-mono_font_path (Monospace font path) filepath fonts/liberationmono.ttf
+#    Path to TrueTypeFont or bitmap.
+font_size (Regular font size) int 16
 
+font_path (Regular font path) filepath fonts/LiberationSans-Regular.ttf
+font_path_bold (Bold font path) filepath fonts/LiberationSans-Bold.ttf
+font_path_italic (Italic font path) filepath fonts/LiberationSans-Italic.ttf
+font_path_bolditalic (Bold and italic font path) filepath fonts/LiberationSans-BoldItalic.ttf
+
+#	Monospace fonts
 mono_font_size (Monospace font size) int 15
+
+mono_font_path (Monospace font path) filepath fonts/LiberationMono.ttf
+mono_font_path_bold (Bold monospace font path) filepath fonts/LiberationMono-Bold.ttf
+mono_font_path_italic (Italic monospace font path) filepath fonts/LiberationMono-Italic.ttf
+mono_font_path_bolditalic (Bold and italic monospace font path) filepath fonts/LiberationMono-BoldItalic.ttf
 
 #    Formspec full-screen background opacity (between 0 and 255).
 formspec_fullscreen_bg_opacity (Formspec Full-Screen Background Opacity) int 140 0 255

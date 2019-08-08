@@ -327,7 +327,7 @@ namespace gui
 				(const wchar_t* text, scene::ISceneManager* smgr, scene::ISceneNode* parent = 0,
 				 const video::SColor& color = video::SColor(255, 0, 0, 0), bool center = false );
 
-			inline s32 getAscender() { return font_metrics.ascender; };
+			s32 getAscender() const { return font_metrics.ascender; }
 
 		protected:
 			bool use_monochrome;

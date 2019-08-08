@@ -40,14 +40,18 @@ static void font_setting_changed(const std::string &name, void *userdata)
 	g_fontengine->readSettings();
 }
 
+unsigned int get_font_cache_index(FontMode mode, bool bold=false, bool italic=false)
+{
+	return (mode << 2) | (bold << 1) | italic;
+}
+
 /******************************************************************************/
 FontEngine::FontEngine(Settings* main_settings, gui::IGUIEnvironment* env) :
 	m_settings(main_settings),
 	m_env(env)
 {
-
 	for (u32 &i : m_default_size) {
-		i = (FontMode) FONT_SIZE_UNSPECIFIED;
+		i = (unsigned int) FONT_SIZE_UNSPECIFIED;
 	}
 
 	assert(m_settings != NULL); // pre-condition
@@ -68,6 +72,18 @@ FontEngine::FontEngine(Settings* main_settings, gui::IGUIEnvironment* env) :
 		else {
 			m_currentMode = FM_Standard;
 		}
+
+		try {
+			m_default_bold = m_settings->getBool("font_bold");
+		} catch (SettingNotFoundException&) {
+			m_default_bold = false;
+		}
+
+		try {
+			m_default_italic = m_settings->getBool("font_italic");
+		} catch (SettingNotFoundException&) {
+			m_default_italic = false;
+		}
 	}
 
 	// having freetype but not using it is quite a strange case so we need to do
@@ -87,7 +103,12 @@ FontEngine::FontEngine(Settings* main_settings, gui::IGUIEnvironment* env) :
 
 	if (m_currentMode == FM_Standard) {
 		m_settings->registerChangedCallback("font_size", font_setting_changed, NULL);
+		m_settings->registerChangedCallback("font_bold", font_setting_changed, NULL);
+		m_settings->registerChangedCallback("font_italic", font_setting_changed, NULL);
 		m_settings->registerChangedCallback("font_path", font_setting_changed, NULL);
+		m_settings->registerChangedCallback("font_path_bold", font_setting_changed, NULL);
+		m_settings->registerChangedCallback("font_path_italic", font_setting_changed, NULL);
+		m_settings->registerChangedCallback("font_path_bolditalic", font_setting_changed, NULL);
 		m_settings->registerChangedCallback("font_shadow", font_setting_changed, NULL);
 		m_settings->registerChangedCallback("font_shadow_alpha", font_setting_changed, NULL);
 	}
@@ -124,7 +145,8 @@ void FontEngine::cleanCache()
 }
 
 /******************************************************************************/
-irr::gui::IGUIFont* FontEngine::getFont(unsigned int font_size, FontMode mode)
+irr::gui::IGUIFont* FontEngine::getFont(unsigned int font_size, FontMode mode,
+	bool bold, bool italic)
 {
 	if (mode == FM_Unspecified) {
 		mode = m_currentMode;
@@ -137,29 +159,33 @@ irr::gui::IGUIFont* FontEngine::getFont(unsigned int font_size, FontMode mode)
 		font_size = m_default_size[mode];
 	}
 
-	if ((font_size == m_lastSize) && (mode == m_lastMode)) {
+	if ((font_size == m_lastSize) && (mode == m_lastMode) &&
+			(bold == m_lastBold) && (italic == m_lastItalic)) {
 		return m_lastFont;
 	}
 
-	if (m_font_cache[mode].find(font_size) == m_font_cache[mode].end()) {
-		initFont(font_size, mode);
-	}
+	unsigned int cache_ix = get_font_cache_index(mode, bold, italic);
 
-	if (m_font_cache[mode].find(font_size) == m_font_cache[mode].end()) {
+	if (m_font_cache[cache_ix].find(font_size) == m_font_cache[cache_ix].end())
+		initFont(font_size, mode, bold, italic);
+
+	if (m_font_cache[cache_ix].find(font_size) == m_font_cache[cache_ix].end())
 		return NULL;
-	}
 
 	m_lastSize = font_size;
 	m_lastMode = mode;
-	m_lastFont = m_font_cache[mode][font_size];
+	m_lastBold = bold;
+	m_lastItalic = italic;
+	m_lastFont = m_font_cache[cache_ix][font_size];
 
-	return m_font_cache[mode][font_size];
+	return m_font_cache[cache_ix][font_size];
 }
 
 /******************************************************************************/
-unsigned int FontEngine::getTextHeight(unsigned int font_size, FontMode mode)
+unsigned int FontEngine::getTextHeight(unsigned int font_size, FontMode mode,
+	bool bold, bool italic)
 {
-	irr::gui::IGUIFont* font = getFont(font_size, mode);
+	irr::gui::IGUIFont* font = getFont(font_size, mode, bold, italic);
 
 	// use current skin font as fallback
 	if (font == NULL) {
@@ -172,9 +198,9 @@ unsigned int FontEngine::getTextHeight(unsigned int font_size, FontMode mode)
 
 /******************************************************************************/
 unsigned int FontEngine::getTextWidth(const std::wstring& text,
-		unsigned int font_size, FontMode mode)
+		unsigned int font_size, FontMode mode, bool bold, bool italic)
 {
-	irr::gui::IGUIFont* font = getFont(font_size, mode);
+	irr::gui::IGUIFont* font = getFont(font_size, mode, bold, italic);
 
 	// use current skin font as fallback
 	if (font == NULL) {
@@ -187,9 +213,10 @@ unsigned int FontEngine::getTextWidth(const std::wstring& text,
 
 
 /** get line height for a specific font (including empty room between lines) */
-unsigned int FontEngine::getLineHeight(unsigned int font_size, FontMode mode)
+unsigned int FontEngine::getLineHeight(unsigned int font_size, FontMode mode,
+	bool bold, bool italic)
 {
-	irr::gui::IGUIFont* font = getFont(font_size, mode);
+	irr::gui::IGUIFont* font = getFont(font_size, mode, bold, italic);
 
 	// use current skin font as fallback
 	if (font == NULL) {
@@ -213,9 +240,6 @@ void FontEngine::readSettings()
 #if USE_FREETYPE
 	if (g_settings->getBool("freetype")) {
 		m_default_size[FM_Standard] = m_settings->getU16("font_size");
-		m_default_size[FM_Bold]     = m_settings->getU16("font_size");
-		m_default_size[FM_Italic]   = m_settings->getU16("font_size");
-
 		m_default_size[FM_Fallback] = m_settings->getU16("fallback_font_size");
 		m_default_size[FM_Mono]     = m_settings->getU16("mono_font_size");
 
@@ -225,7 +249,20 @@ void FontEngine::readSettings()
 		else {
 			m_currentMode = FM_Standard;
 		}
+
+		try {
+			m_default_bold = m_settings->getBool("font_bold");
+		} catch (SettingNotFoundException&) {
+			m_default_bold = false;
+		}
+
+		try {
+			m_default_italic = m_settings->getBool("font_italic");
+		} catch (SettingNotFoundException&) {
+			m_default_italic = false;
+		}
 	}
+
 #endif
 	m_default_size[FM_Simple]       = m_settings->getU16("font_size");
 	m_default_size[FM_SimpleMono]   = m_settings->getU16("mono_font_size");
@@ -262,7 +299,8 @@ void FontEngine::updateFontCache()
 {
 	/* the only font to be initialized is default one,
 	 * all others are re-initialized on demand */
-	initFont(m_default_size[m_currentMode], m_currentMode);
+	initFont(m_default_size[m_currentMode], m_currentMode, m_default_bold,
+			m_default_italic);
 
 	/* reset font quick access */
 	m_lastMode = FM_Unspecified;
@@ -271,20 +309,20 @@ void FontEngine::updateFontCache()
 }
 
 /******************************************************************************/
-void FontEngine::initFont(unsigned int basesize, FontMode mode)
+void FontEngine::initFont(unsigned int basesize, FontMode mode,
+	bool bold, bool italic)
 {
 	std::cout << mode << std::endl;
 	std::string font_config_prefix;
+	std::string font_config_suffix;
 
 	if (mode == FM_Unspecified) {
 		mode = m_currentMode;
 	}
 
-	switch (mode) {
+	font_config_prefix = "";
 
-		case FM_Standard:
-			font_config_prefix = "";
-			break;
+	switch (mode) {
 
 		case FM_Fallback:
 			font_config_prefix = "fallback_";
@@ -300,10 +338,23 @@ void FontEngine::initFont(unsigned int basesize, FontMode mode)
 		case FM_SimpleMono: /* Fallthrough */
 		default:
 			font_config_prefix = "";
-
 	}
 
-	if (m_font_cache[mode].find(basesize) != m_font_cache[mode].end())
+	if (bold) {
+		if (italic)
+			font_config_suffix = "_bold_italic";
+		else
+			font_config_suffix = "_bold";
+	} else {
+		if (italic)
+			font_config_suffix = "_italic";
+		else
+			font_config_suffix = "";
+	}
+
+	int cache_ix = get_font_cache_index(mode, bold, italic);
+
+	if (m_font_cache[cache_ix].find(basesize) != m_font_cache[cache_ix].end())
 		return;
 
 	if ((mode == FM_Simple) || (mode == FM_SimpleMono)) {
@@ -336,22 +387,19 @@ void FontEngine::initFont(unsigned int basesize, FontMode mode)
 
 		std::string font_path;
 
-		if (mode == FM_Bold) {
-			font_path = g_settings->get(font_config_prefix + "font_path_bold");
-		} else if (mode == FM_Italic) {
-			font_path = g_settings->get(font_config_prefix + "font_path_italic");
-		} else {
+		try {
+			font_path = g_settings->get(font_config_prefix + "font_path" +
+					font_config_suffix);
+		} catch (SettingNotFoundException&) {
 			font_path = g_settings->get(font_config_prefix + "font_path");
 		}
-
-		std::cout << font_path.c_str() << std::endl;
 
 		irr::gui::IGUIFont* font = gui::CGUITTFont::createTTFont(m_env,
 				font_path.c_str(), size, true, true, font_shadow,
 				font_shadow_alpha);
 
 		if (font) {
-			m_font_cache[mode][basesize] = font;
+			m_font_cache[cache_ix][basesize] = font;
 			return;
 		}
 
@@ -369,7 +417,7 @@ void FontEngine::initFont(unsigned int basesize, FontMode mode)
 					font_shadow, font_shadow_alpha);
 
 				if (font) {
-					m_font_cache[mode][basesize] = font;
+					m_font_cache[cache_ix][basesize] = font;
 					return;
 				}
 			}
@@ -385,7 +433,7 @@ void FontEngine::initFont(unsigned int basesize, FontMode mode)
 				font_shadow_alpha);
 
 			if (font) {
-				m_font_cache[mode][basesize] = font;
+				m_font_cache[cache_ix][basesize] = font;
 				return;
 			}
 
@@ -402,7 +450,7 @@ void FontEngine::initFont(unsigned int basesize, FontMode mode)
 					font_shadow, font_shadow_alpha);
 
 				if (font) {
-					m_font_cache[mode][basesize] = font;
+					m_font_cache[cache_ix][basesize] = font;
 					return;
 				}
 			}
@@ -517,6 +565,6 @@ void FontEngine::initSimpleFont(unsigned int basesize, FontMode mode)
 
 	if (font) {
 		font->grab();
-		m_font_cache[mode][basesize] = font;
+		m_font_cache[get_font_cache_index(mode)][basesize] = font;
 	}
 }
