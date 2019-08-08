@@ -67,6 +67,10 @@ bool check_integer(const std::string &str) {
 	return *endptr == '\0';
 }
 
+bool check_bool(const std::string &str) {
+	return str == "true" || str == "false";
+}
+
 // -----------------------------------------------------------------------------
 // ParsedText - A text parser
 
@@ -90,10 +94,6 @@ void ParsedText::Element::setStyle(StyleList &style)
 
 	if (style["fontstyle"] == "mono")
 		font_mode = FM_Mono;
-	else if (style["fontstyle"] == "italic")
-		font_mode = FM_Italic;
-	else if (style["fontstyle"] == "bold")
-		font_mode = FM_Bold;
 
 	// TODO: find a way to check font validity
 	// Build a new fontengine ?
@@ -101,10 +101,11 @@ void ParsedText::Element::setStyle(StyleList &style)
 #if USE_FREETYPE
 		(gui::CGUITTFont *)
 #endif
-		g_fontengine->getFont(font_size, font_mode);
+		g_fontengine->getFont(font_size, font_mode, style["bold"] == "true", style["italic"] == "true");
 
 	if (!this->font)
-		printf("No font found ! Size=%d, mode=%d\n", font_size, font_mode);
+		printf("No font found ! Size=%d, mode=%d, bold=%s, italic=%s\n",
+			font_size, font_mode, style["bold"].c_str(), style["italic"].c_str());
 }
 
 void ParsedText::Paragraph::setStyle(StyleList &style)
@@ -126,6 +127,8 @@ ParsedText::ParsedText(const wchar_t *text)
 	m_root_tag.name = "root";
 	m_root_tag.style["fontsize"] = "16";
 	m_root_tag.style["fontstyle"] = "normal";
+	m_root_tag.style["bold"] = "false";
+	m_root_tag.style["italic"] = "false";
 	m_root_tag.style["halign"] = "left";
 	m_root_tag.style["color"] = "#EEEEEE";
 	m_root_tag.style["hovercolor"] = m_root_tag.style["color"];
@@ -143,24 +146,16 @@ ParsedText::ParsedText(const wchar_t *text)
 	m_elementtags["action"] = style;
 	style.clear();
 
-	style["color"] = "#FFFFFF";
+	style["bold"] = "true";
 	m_elementtags["b"] = style;
 	style.clear();
 
-	style["color"] = "#CCCCCC";
+	style["italic"] = "true";
 	m_elementtags["i"] = style;
 	style.clear();
 
 	style["fontstyle"] = "mono";
 	m_elementtags["mono"] = style;
-	style.clear();
-
-	style["fontstyle"] = "italic";
-	m_elementtags["italic"] = style;
-	style.clear();
-
-	style["fontstyle"] = "bold";
-	m_elementtags["bold"] = style;
 	style.clear();
 
 	style["fontsize"] = m_root_tag.style["fontsize"];
@@ -397,12 +392,18 @@ void ParsedText::parseStyles(AttrsList &attrs, StyleList &style)
 		style["hovercolor"] = attrs["hovercolor"];
 
 	if (attrs.count("font") &&
-			(attrs["font"] == "mono" || attrs["font"] == "normal" ||
-			 attrs["font"] == "bold" || attrs["font"] == "italic"))
+			(attrs["font"] == "mono" || attrs["font"] == "normal"))
 		style["fontstyle"] = attrs["font"];
 
 	if (attrs.count("size") && strtol(attrs["size"].c_str(), NULL, 10) > 0)
 		style["fontsize"] = attrs["size"];
+
+	if (attrs.count("bold") && check_bool(attrs["bold"]))
+		style["bold"] = attrs["bold"];
+
+	if (attrs.count("italic") && check_bool(attrs["italic"]))
+		style["italic"] = attrs["italic"];
+
 }
 
 u32 ParsedText::parseTag(const wchar_t *text, u32 cursor)
