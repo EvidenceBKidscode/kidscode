@@ -372,13 +372,13 @@ void ParsedText::parseStyles(AttrsList &attrs, StyleList &style)
 
 void ParsedText::globalTag(const AttrsList &attrs)
 {
-	for (auto const &attr : attrs) {
+	for (const auto &attr : attrs) {
 
 		// Only page level style
 
 		if (attr.first == "margin") {
 			if (check_integer(attr.second))
-				margin = strtol(attr.second.c_str(), NULL, 10);
+				margin = stoi(attr.second.c_str());
 
 		} else if (attr.first == "valign") {
 			if (attr.second == "top")
@@ -518,14 +518,14 @@ u32 ParsedText::parseTag(const wchar_t *text, u32 cursor)
 		if (attrs.count("rotate") && attrs["rotate"] == "yes")
 			m_element->rotation = IT_ROT_OTHER;
 
-		if (attrs.count("width")) {
-			int width = strtol(attrs["width"].c_str(), NULL, 10);
+		if (attrs.count("width") && check_integer(attrs["width"])) {
+			int width = stoi(attrs["width"].c_str());
 			if (width > 0)
 				m_element->dim.Width = width;
 		}
 
-		if (attrs.count("height")) {
-			int height = strtol(attrs["height"].c_str(), NULL, 10);
+		if (attrs.count("height") && check_integer(attrs["height"])) {
+			int height = stoi(attrs["height"].c_str());
 			if (height > 0)
 				m_element->dim.Height = height;
 		}
@@ -573,7 +573,7 @@ u32 ParsedText::parseTag(const wchar_t *text, u32 cursor)
 	// Update styles accordingly
 	m_style.clear();
  	for (auto tag = m_active_tags.crbegin(); tag != m_active_tags.crend(); ++tag)
-		for (auto const &prop : (*tag)->style)
+		for (const auto &prop : (*tag)->style)
 			m_style[prop.first] = prop.second;
 
 	return cursor;
