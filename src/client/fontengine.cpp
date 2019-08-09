@@ -339,17 +339,9 @@ void FontEngine::initFont(unsigned int basesize, FontMode mode,
 			font_config_prefix = "";
 	}
 
-	if (bold) {
-		if (italic)
-			font_config_suffix = "_bold_italic";
-		else
-			font_config_suffix = "_bold";
-	} else {
-		if (italic)
-			font_config_suffix = "_italic";
-		else
-			font_config_suffix = "";
-	}
+	font_config_suffix =  (bold) ?
+			((italic) ? "_bold_italic" : "_bold") :
+			((italic) ? "_italic" : "");
 
 	int cache_ix = get_font_cache_index(mode, bold, italic);
 

@@ -83,6 +83,8 @@ void ParsedText::Element::setStyle(StyleList &style)
 	else
 		this->valign = VALIGN_BOTTOM;
 
+	this->underline = (style["underline"] == "true");
+
 	video::SColor color;
 	if (parseColorString(style["color"], color, false))
 		this->color = color;
@@ -129,6 +131,7 @@ ParsedText::ParsedText(const wchar_t *text)
 	m_root_tag.style["fontstyle"] = "normal";
 	m_root_tag.style["bold"] = "false";
 	m_root_tag.style["italic"] = "false";
+	m_root_tag.style["underline"] = "false";
 	m_root_tag.style["halign"] = "left";
 	m_root_tag.style["color"] = "#EEEEEE";
 	m_root_tag.style["hovercolor"] = m_root_tag.style["color"];
@@ -142,7 +145,8 @@ ParsedText::ParsedText(const wchar_t *text)
 	StyleList style;
 
 	style["hovercolor"] = "#FF0000";
-	style["color"] = "#00FF00";
+	style["color"] = "#0000FF";
+	style["underline"] = "true";
 	m_elementtags["action"] = style;
 	style.clear();
 
@@ -152,6 +156,10 @@ ParsedText::ParsedText(const wchar_t *text)
 
 	style["italic"] = "true";
 	m_elementtags["i"] = style;
+	style.clear();
+
+	style["underline"] = "true";
+	m_elementtags["u"] = style;
 	style.clear();
 
 	style["fontstyle"] = "mono";
@@ -331,23 +339,55 @@ bool ParsedText::closeTag(const std::string &name)
 	return found;
 }
 
+void ParsedText::parseGenericStyleAttr(
+		const std::string &name,
+		const std::string &value,
+		StyleList &style)
+{
+	// Color styles
+	if (name == "color" || name == "hovercolor") {
+		if (check_color(value))
+			style[name] = value;
+
+	// Boolean styles
+	} else if (name == "bold" || name == "italic" || name == "underline") {
+		if (check_bool(value))
+			style[name] = value;
+
+	} else if (name == "size") {
+		if (check_integer(value))
+			style["fontsize"] = value;
+
+	} else if (name == "font") {
+		if (value == "mono" || value == "normal")
+			style["fontstyle"] = value;
+	}
+}
+
+void ParsedText::parseStyles(AttrsList &attrs, StyleList &style)
+{
+	for (auto const &attr : attrs)
+		parseGenericStyleAttr(attr.first, attr.second, style);
+}
+
 void ParsedText::globalTag(const AttrsList &attrs)
 {
 	for (auto const &attr : attrs) {
-		// Only page level style
-		if (attr.first == "margin" && check_integer(attr.second))
-			margin = strtol(attr.second.c_str(), NULL, 10);
 
-		if (attr.first == "valign") {
+		// Only page level style
+
+		if (attr.first == "margin") {
+			if (check_integer(attr.second))
+				margin = strtol(attr.second.c_str(), NULL, 10);
+
+		} else if (attr.first == "valign") {
 			if (attr.second == "top")
 				valign = ParsedText::VALIGN_TOP;
-			if (attr.second == "bottom")
+			else if (attr.second == "bottom")
 				valign = ParsedText::VALIGN_BOTTOM;
-			if (attr.second == "middle")
+			else if (attr.second == "middle")
 				valign = ParsedText::VALIGN_MIDDLE;
-		}
-
-		if (attr.first == "background") {
+		} else if (attr.first == "background") {
 			irr::video::SColor color;
 			if (attr.second == "none")
 				background_type = BACKGROUND_NONE;
@@ -355,55 +395,20 @@ void ParsedText::globalTag(const AttrsList &attrs)
 				background_type = BACKGROUND_COLOR;
 				background_color = color;
 			}
+
+		// Inheriting styles
+
+		} else if (attr.first == "halign") {
+			if (attr.second == "left" || attr.second == "center" ||
+					attr.second == "right" || attr.second == "justify")
+				m_root_tag.style["halign"] = attr.second;
+
+		// Generic default styles
+
+		} else {
+			parseGenericStyleAttr(attr.first, attr.second, m_root_tag.style);
 		}
-
-		// inheriting style
-		if (attr.first == "color" && check_color(attr.second))
-			m_root_tag.style["color"] = attr.second;
-
-		if (attr.first == "actioncolor" && check_color(attr.second))
-			m_root_tag.style["actioncolor"] = attr.second;
-
-		if (attr.first == "hovercolor" && check_color(attr.second))
-			m_root_tag.style["hovercolor"] = attr.second;
-
-		if (attr.first == "size" && strtol(attr.second.c_str(), NULL, 10) > 0)
-			m_root_tag.style["fontsize"] = attr.second;
-
-		if (attr.first == "font" &&
-				(attr.second == "mono" || attr.second == "normal" ||
-				 attr.second == "italic" || attr.second == "bold"))
-			m_root_tag.style["fontstyle"] = attr.second;
-
-		if (attr.first == "halign" &&
-				(attr.second == "left" || attr.second == "center" ||
-						attr.second == "right" || attr.second == "justify"))
-			m_root_tag.style["halign"] = attr.second;
 	}
-
-}
-
-void ParsedText::parseStyles(AttrsList &attrs, StyleList &style)
-{
-	if (attrs.count("color") && check_color(attrs["color"]))
-		style["color"] = attrs["color"];
-
-	if (attrs.count("hovercolor") && check_color(attrs["hovercolor"]))
-		style["hovercolor"] = attrs["hovercolor"];
-
-	if (attrs.count("font") &&
-			(attrs["font"] == "mono" || attrs["font"] == "normal"))
-		style["fontstyle"] = attrs["font"];
-
-	if (attrs.count("size") && strtol(attrs["size"].c_str(), NULL, 10) > 0)
-		style["fontsize"] = attrs["size"];
-
-	if (attrs.count("bold") && check_bool(attrs["bold"]))
-		style["bold"] = attrs["bold"];
-
-	if (attrs.count("italic") && check_bool(attrs["italic"]))
-		style["italic"] = attrs["italic"];
-
 }
 
 u32 ParsedText::parseTag(const wchar_t *text, u32 cursor)
@@ -752,9 +757,11 @@ void TextDrawer::place(s32 width)
 			// computation.
 			while (el != p.elements.end() &&
 				el->type == ParsedText::ELEMENT_SEPARATOR) {
-				if (el->floating == ParsedText::FLOAT_NONE &&
-					charsheight < el->dim.Height)
-					charsheight = el->dim.Height;
+				if (el->floating == ParsedText::FLOAT_NONE) {
+					el->drawwidth = 0;
+					if (charsheight < el->dim.Height)
+						charsheight = el->dim.Height;
+				}
 				el++;
 			}
 
@@ -845,6 +852,10 @@ void TextDrawer::place(s32 width)
 					x += e->dim.Width;
 					break;
 				}
+
+				// Draw width for separator can be different than element width.
+				// This will be important for char effects like underline.
+				e->drawwidth = x - e->pos.X;
 			}
 			y += charsheight;
 
@@ -880,11 +891,11 @@ void TextDrawer::draw(
 	const core::rect<s32> &dest_rect,
 	const core::position2d<s32> &dest_offset)
 {
+	irr::video::IVideoDriver *driver = m_environment->getVideoDriver();
 	core::position2d<s32> offset = dest_rect.UpperLeftCorner + dest_offset;
 
 	if (m_text.background_type == ParsedText::BACKGROUND_COLOR)
-		m_environment->getVideoDriver()->draw2DRectangle(
-				m_text.background_color, dest_rect);
+		driver->draw2DRectangle(m_text.background_color, dest_rect);
 
 	for (const auto &p : m_text.m_paragraphs) {
 		for (const auto &el : p.elements) {
@@ -893,6 +904,8 @@ void TextDrawer::draw(
 				continue;
 
 			switch (el.type) {
+
+			case ParsedText::ELEMENT_SEPARATOR:
 			case ParsedText::ELEMENT_TEXT: {
 				irr::video::SColor color = el.color;
 
@@ -900,12 +913,26 @@ void TextDrawer::draw(
 					if (&(*tag) == m_hovertag)
 						color = el.hovercolor;
 
-				if (el.font)
-					el.font->draw(el.text, rect, color, false, true, &dest_rect);
-			} break;
+				if (! el.font)
+					break;
 
-			case ParsedText::ELEMENT_SEPARATOR:
-				break;
+				if (el.type == ParsedText::ELEMENT_TEXT)
+					el.font->draw(el.text, rect, color, false, true,
+							&dest_rect);
+
+				if (el.underline &&  el.drawwidth) {
+					s32 linepos = el.pos.Y + offset.Y + el.dim.Height -
+							(el.baseline >> 1);
+
+					core::rect<s32> linerect(
+						el.pos.X + offset.X,
+						linepos - (el.baseline >> 3) - 1,
+						el.pos.X + offset.X + el.drawwidth,
+						linepos + (el.baseline >> 3));
+
+					driver->draw2DRectangle(color, linerect ,&dest_rect);
+				}
+			} break;
 
 			case ParsedText::ELEMENT_IMAGE: {
 				video::ITexture *texture =
