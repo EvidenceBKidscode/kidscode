@@ -220,18 +220,31 @@ class PurgeDataSQLite3Thread : public Thread
 public:
 	PurgeDataSQLite3Thread(sqlite3 *database):
 		m_database(database)
-	{}
+	{
+		time(&m_lastpurge);
+	}
 
 	void *run();
 
 private:
 	sqlite3 *m_database;
+	time_t m_lastpurge;
 };
 
 void *PurgeDataSQLite3Thread::run() {
 	sqlite3_stmt * stmt;
 
 	while (!stopRequested()) {
+
+		// This is done to avoid waiting end of sleep time in case of thread
+		// stop. Max wait in that case is 100ms, but purge atempts still occure
+		// max each seconds.
+		if (difftime(time(nullptr), m_lastpurge) < 1.0f) {
+			sleep_ms(100);
+			continue;
+		}
+		// Make sure to advance last purge time
+		time(&m_lastpurge);
 
 		// Mark for purge deleted versions with no child
 		SQLOK(sqlite3_exec(m_database,
@@ -258,7 +271,6 @@ void *PurgeDataSQLite3Thread::run() {
 		int res = sqlite3_step(stmt);
 		if (res == SQLITE_DONE) {
 			sqlite3_finalize(stmt);
-			sleep_ms(1000);
 			continue; // Nothing to do for now
 		}
 		if (res != SQLITE_ROW) {
@@ -290,7 +302,9 @@ void *PurgeDataSQLite3Thread::run() {
 				std::string(sqlite3_errmsg(m_database)));
 		}
 		sqlite3_finalize(stmt);
-		sleep_ms(1000);
+
+		// Actually count purge time in last purge time
+		time(&m_lastpurge);
 	}
 
 	return nullptr;
