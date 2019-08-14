@@ -17,14 +17,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
-/*
-SQLite format specification:
-	blocks:
-		(PK) INT id
-		BLOB data
-*/
-
-
 #include "database-sqlite3.h"
 
 #include "log.h"
@@ -33,6 +25,7 @@ SQLite format specification:
 #include "settings.h"
 #include "porting.h"
 #include "util/string.h"
+#include "util/thread.h"
 #include "content_sao.h"
 #include "remoteplayer.h"
 
@@ -211,6 +204,125 @@ bool Database_SQLite3::tableExists(const std::string &table_name)
 }
 
 /*
+ * Map data purge thread
+ */
+
+class PurgeDataSQLite3Thread : public Thread
+{
+public:
+	PurgeDataSQLite3Thread(sqlite3 *database):
+		m_database(database)
+	{
+		time(&m_lastpurge);
+	}
+
+	void *run();
+
+private:
+	sqlite3 *m_database;
+	time_t m_lastpurge;
+};
+
+void *PurgeDataSQLite3Thread::run() {
+	sqlite3_stmt * stmt;
+	int res;
+
+	while (!stopRequested()) {
+
+		// This is done to avoid waiting end of sleep time in case of thread
+		// stop. Max wait in that case is 100ms, but purge atempts still occure
+		// max each seconds.
+		if (difftime(time(nullptr), m_lastpurge) < 1.0f) {
+			sleep_ms(100);
+			continue;
+		}
+		// Make sure to advance last purge time
+		time(&m_lastpurge);
+
+		// Mark for purge deleted versions with no child
+		res = sqlite3_exec(m_database,
+			"UPDATE versions SET status = 'P' WHERE status = 'D'"
+				" AND NOT EXISTS (SELECT 1 FROM versions AS v"
+				"  WHERE v.status <> 'P' and v.parent_id = versions.id);",
+			NULL, NULL, NULL);
+
+		if (res == SQLITE_BUSY) {
+			sleep_ms(100);
+			continue;
+		} else if (res != SQLITE_OK ) {
+			throw DatabaseException(
+					std::string("purgeDataThread:Failed to mark versions for purge: ") +
+					sqlite3_errmsg(m_database));
+		}
+
+		// Delete already purged versions
+		res = sqlite3_exec(m_database,
+			"DELETE FROM versions WHERE status = 'P'"
+				" AND NOT EXISTS (SELECT 1 FROM versioned_blocks"
+				"  WHERE versioned_blocks.version_id = versions.id);",
+			NULL, NULL, NULL);
+
+		if (res == SQLITE_BUSY) {
+			sleep_ms(100);
+			continue;
+		} else if (res != SQLITE_OK ) {
+			throw DatabaseException(
+					std::string("purgeDataThread:Failed to clean up versions table: ") +
+					sqlite3_errmsg(m_database));
+		}
+
+		// Get first version to purge
+		SQLOK(sqlite3_prepare_v2(m_database,
+			"SELECT id FROM versions WHERE status = 'P' LIMIT 1",
+			-1, &stmt, NULL),
+			"purgeDataThread: Failed to find version to purge (prepare)");
+
+		res = sqlite3_step(stmt);
+		if (res == SQLITE_DONE) {
+			sqlite3_finalize(stmt);
+			continue; // Nothing to do for now
+		}
+		if (res != SQLITE_ROW) {
+			sqlite3_finalize(stmt);
+			throw DatabaseException(
+				std::string("purgeDataThread: Failed to find version to purge (step): ") +
+				std::string(sqlite3_errmsg(m_database)));
+		}
+		int version =  sqlite3_column_int(stmt, 0);
+		sqlite3_finalize(stmt);
+
+		SQLOK(sqlite3_prepare_v2(m_database,
+			"DELETE FROM versioned_blocks WHERE version_id = ? "
+			"  AND pos IN (SELECT pos FROM versioned_blocks"
+			"    WHERE version_id = ? LIMIT 10000)",
+			-1, &stmt, NULL),
+				"purgeDataThread: Failed to delete blocks (prepare)");
+		SQLOK(sqlite3_bind_int(stmt, 1, version),
+			"purgeDataThread: Failed to delete blocks (bind 1)");
+		SQLOK(sqlite3_bind_int(stmt, 2, version),
+			"purgeDataThread: Failed to delete blocks (bind 2)");
+
+		res = sqlite3_step(stmt);
+		if (res == SQLITE_BUSY) {
+			sqlite3_finalize(stmt);
+			sleep_ms(100);
+			continue;
+		} else if (res != SQLITE_DONE ) {
+			sqlite3_finalize(stmt);
+			throw DatabaseException(
+				"purgeDataThread: Failed to delete blocks (step): " +
+				std::string(sqlite3_errmsg(m_database)));
+		}
+		sqlite3_finalize(stmt);
+
+		// Actually count purge time in last purge time
+		time(&m_lastpurge);
+	}
+
+	return nullptr;
+}
+
+/*
  * Map database
  */
 
@@ -222,7 +334,13 @@ MapDatabaseSQLite3::MapDatabaseSQLite3(const std::string &savedir):
 
 MapDatabaseSQLite3::~MapDatabaseSQLite3()
 {
-	m_thread_stop = true;
+
+	infostream<<"Sqlite3: Stopping and waiting purge thread"<<std::endl;
+	m_purgethread->stop();
+	m_purgethread->wait();
+	delete m_purgethread;
+	infostream<<"Sqlite3: Purge thread stopped"<<std::endl;
+
 	FINALIZE_STATEMENT(m_stmt_read)
 	FINALIZE_STATEMENT(m_stmt_write)
 	FINALIZE_STATEMENT(m_stmt_list)
@@ -234,124 +352,94 @@ void MapDatabaseSQLite3::upgradeDatabaseStructure()
 {
 	assert(m_database);
 
-	bool blocks_exists = tableExists("blocks");
+	// Rely on this clue to determine if the database have been upgraded to
+	// versioned blocks version.
+	if (tableExists("versioned_blocks"))
+		return;
 
-	SQLOK(sqlite3_exec(m_database,
-		"CREATE TABLE IF NOT EXISTS blocks ("
-			" pos INT,"
-			" version_id INT,"
-			" data BLOB,"
-			" PRIMARY KEY(pos, version_id)"
-			");", NULL, NULL, NULL),
-		"Failed to create blocks table");
+	printf("Starting database migration. This may take some time.\n");
 
-	if (!tableExists("versions"))
-	{
-		SQLOK(sqlite3_exec(m_database,
-			"CREATE TABLE versions ("
-				" id INT PRIMARY KEY,"
-				" status CHAR(1),"
-				" name VARCHAR(50),"
-				" parent_id INT"
-				");", NULL, NULL, NULL),
-			"Failed to create versions table");
-			SQLOK(sqlite3_exec(m_database,
-				"INSERT INTO versions VALUES (0, '0', '.origin', NULL);", NULL, NULL, NULL),
-				"Failed to insert first version");
-			SQLOK(sqlite3_exec(m_database,
-				"INSERT INTO versions VALUES (1, 'A', '.init', 0);", NULL, NULL, NULL),
-				"Failed to insert INIT version");
-		if (blocks_exists) // Blocks needs update
-		{
-			printf("Blocks table have to be updated. This may take some time.\n");
-			SQLOK(sqlite3_exec(m_database,
-				"CREATE TABLE blocks_ ("
-				" pos INT,"
-				" version_id INT,"
-				" data BLOB,"
-				" PRIMARY KEY(pos, version_id)"
-				");", NULL, NULL, NULL),
-			"Failed to create new version of blocks table");
-			SQLOK(sqlite3_exec(m_database,
-				"INSERT INTO blocks_ SELECT pos, 0, data FROM blocks;",
-				NULL, NULL, NULL),
-			"Failed to copy blocks data to new version of table");
-			SQLOK(sqlite3_exec(m_database, "DROP TABLE blocks;", NULL, NULL, NULL),
-				"Failed to drop old blocks table");
-			SQLOK(sqlite3_exec(m_database,
-				"ALTER TABLE blocks_ RENAME TO blocks;", NULL, NULL, NULL),
-				"Failed to rename new blocks table");
-			printf("Blocks table update done.\n");
-		}
-		setCurrentVersion(1);
-	}
-}
+	SQLOK(sqlite3_exec(m_database, R""""(
+		CREATE TABLE versioned_blocks (
+		  pos INT,
+		  version_id INT,
+			visible BOOLEAN,
+			mtime INT,
+		  data BLOB,
+		  PRIMARY KEY(pos, version_id)
+		);
 
-// Cleans up unused blocks and versions
-void purgeDataThread(bool *stopflag, sqlite3 *m_database)
-{
+		CREATE INDEX versioned_blocks_mtime_ix ON versioned_blocks(mtime);
+		CREATE INDEX versioned_blocks_version_id_ix ON versioned_blocks(version_id);
 
-	sqlite3_stmt * stmt;
-	while (!*stopflag) {
-		// Mark for purge deleted versions with no child
-		SQLOK(sqlite3_exec(m_database,
-			"UPDATE versions SET status = 'P' WHERE status = 'D'"
-				" AND NOT EXISTS (SELECT 1 FROM versions AS v"
-				"  WHERE v.status <> 'P' and v.parent_id = versions.id);",
-			NULL, NULL, NULL),
-			"purgeDataThread:Failed to mark versions for purge");
+		CREATE TABLE versions (
+		  id INT PRIMARY KEY,
+		  status CHAR(1),
+		  name VARCHAR(50),
+		  parent_id INT
+		);
 
-		// Delete already purged versions
-		SQLOK(sqlite3_exec(m_database,
-			"DELETE FROM versions WHERE status = 'P'"
-				" AND NOT EXISTS (SELECT 1 FROM blocks"
-				"  WHERE blocks.version_id = versions.id);",
-			NULL, NULL, NULL),
-			"purgeDataThread:Failed to clean up versions table");
+		INSERT INTO versions VALUES (0, '0', '.origin', NULL);
+		INSERT INTO versions VALUES (1, 'A', '.init', 0);
 
-		// Get first version to purge
-		SQLOK(sqlite3_prepare_v2(m_database,
-			"SELECT id FROM versions WHERE status = 'P' LIMIT 1",
-			-1, &stmt, NULL),
-			"purgeDataThread: Failed to find version to purge (prepare)");
+		CREATE VIEW version_tree AS
+		  WITH RECURSIVE r(id, parent_id, start_status, start_id) AS (
+		    SELECT id, parent_id, status, id FROM versions
+		     WHERE status IN ('0', 'A', 'C', 'D')
+		    UNION ALL
+		    SELECT v.id, v.parent_id, r.start_status, r.start_id FROM r, versions v
+		     WHERE r.parent_id = v.id AND status IN ('0', 'A', 'C', 'D'))
+		  SELECT * FROM r;
 
-		int res = sqlite3_step(stmt);
-		if (res == SQLITE_DONE) {
-			sqlite3_finalize(stmt);
-			sleep(1);
-			continue; // Nothing to do for now
-		}
-		if (res != SQLITE_ROW) {
-			sqlite3_finalize(stmt);
-			throw DatabaseException(
-				"purgeDataThread: Failed to delete blocks (step): " +
-				std::string(sqlite3_errmsg(m_database)));
-		}
-		int version =  sqlite3_column_int(stmt, 0);
-		sqlite3_finalize(stmt);
+		CREATE TABLE current_versions AS
+		  SELECT * FROM version_tree WHERE start_status = 'C';
 
-		SQLOK(sqlite3_prepare_v2(m_database,
-			"DELETE FROM blocks WHERE version_id = ? "
-			"  AND pos IN (SELECT pos FROM blocks"
-			"    WHERE version_id = ? LIMIT 10000)",
-			-1, &stmt, NULL),
-				"purgeDataThread: Failed to delete blocks (prepare)");
-			SQLOK(sqlite3_bind_int(stmt, 1, version),
-				"purgeDataThread: Failed to delete blocks (bind 1)");
-			SQLOK(sqlite3_bind_int(stmt, 2, version),
-				"purgeDataThread: Failed to delete blocks (bind 2)");
+		-- Migration if already populated map
+		CREATE TABLE IF NOT EXISTS blocks(pos INT, data BLOB);
+		INSERT INTO versioned_blocks SELECT pos, 0, 0, 0, data FROM blocks;
+		DROP TABLE blocks;
 
-		res = sqlite3_step(stmt);
-		if (res != SQLITE_DONE)
-		{
-			sqlite3_finalize(stmt);
-			throw DatabaseException(
-				"purgeDataThread: Failed to delete blocks (step): " +
-				std::string(sqlite3_errmsg(m_database)));
-		}
-		sqlite3_finalize(stmt);
-		sleep(1);
-	}
+		CREATE VIEW blocks AS
+		  SELECT pos, data, mtime
+		    FROM versioned_blocks
+		   WHERE visible = 1;
+
+
+		CREATE TRIGGER blocks_insert INSTEAD OF INSERT ON blocks FOR EACH ROW
+		BEGIN
+		  INSERT OR REPLACE INTO versioned_blocks(pos, version_id, visible, mtime, data)
+		    SELECT new.pos, id, 1, strftime('%s', 'now'), new.data
+		      FROM versions WHERE status = 'C';
+		  UPDATE versioned_blocks SET visible = 0
+		   WHERE pos = new.pos
+		     AND version_id <> (SELECT id FROM versions WHERE status = 'C');
+		END;
+
+		CREATE TRIGGER blocks_update INSTEAD OF UPDATE ON blocks FOR EACH ROW
+		BEGIN
+		  INSERT OR REPLACE INTO versioned_blocks(pos, version_id, visible, mtime, data)
+		    SELECT new.pos, id, 1, strftime('%s', 'now'), new.data
+		      FROM versions WHERE status = 'C';
+		  UPDATE versioned_blocks SET visible = 0
+		   WHERE pos = new.pos
+		  AND version_id <> (SELECT id FROM versions WHERE status = 'C');
+		END;
+
+		CREATE TRIGGER blocks_delete INSTEAD OF DELETE ON blocks FOR EACH ROW
+		BEGIN
+		  -- Not properly managed. Actually versionning cant "remove" a block from
+		  -- a version without showing the previous one. So we delete all in all versions
+		   DELETE FROM versioned_blocks WHERE pos = old.pos;
+		END;
+		)"""", NULL, NULL, NULL),
+		"Unable to upgrade database");
+
+	printf("Database migration: create first version.\n");
+
+	setCurrentVersion(1);
+
+	printf("Database migration done.\n");
+
 }
 
 void MapDatabaseSQLite3::createDatabase()
@@ -364,33 +452,20 @@ void MapDatabaseSQLite3::initStatements()
 	// May be not the best place but it will be ok for now
 	upgradeDatabaseStructure();
 
-	PREPARE_STATEMENT(read,
-		"SELECT data FROM blocks WHERE pos = ? AND version_id IN ("
-		" WITH RECURSIVE r(id, parent_id) AS ("
-		" SELECT id, parent_id FROM versions WHERE status='C' UNION ALL"
-		" SELECT v.id, v.parent_id FROM r, versions v"
-		" WHERE r.parent_id = v.id) SELECT id FROM r)"
-		" ORDER BY version_id DESC LIMIT 1");
+	PREPARE_STATEMENT(read, "SELECT `data` FROM `blocks` WHERE `pos` = ? LIMIT 1");
 #ifdef __ANDROID__
-	// TODO: TO BE UPGRADED AND TESTED, WONT WORK WITH 'versions' TABLE
-	PREPARE_STATEMENT(write, "INSERT INTO `blocks` (`pos`, `data`) VALUES (?, ?)");
+	PREPARE_STATEMENT(write,  "INSERT INTO `blocks` (`pos`, `data`) VALUES (?, ?)");
 #else
-	PREPARE_STATEMENT(write,
-		"INSERT OR REPLACE INTO blocks"
-		" SELECT ?, id, ? FROM versions WHERE status = 'C'");
+	PREPARE_STATEMENT(write, "REPLACE INTO `blocks` (`pos`, `data`) VALUES (?, ?)");
 #endif
-	// TODO: See for what purpose this statement is used
 	PREPARE_STATEMENT(delete, "DELETE FROM `blocks` WHERE `pos` = ?");
-
-	PREPARE_STATEMENT(list, "SELECT distinct b.pos FROM blocks b, versions v "
-		" WHERE b.version_id = v.id AND v.status in ('0', 'A', 'C', 'D')");
+	PREPARE_STATEMENT(list, "SELECT `pos` FROM `blocks`");
 
 	verbosestream << "ServerMap: SQLite3 database opened." << std::endl;
 
-	// Clean up thread
-	m_thread_stop = false;
-	m_thread = std::thread(purgeDataThread, &m_thread_stop, m_database);
-	m_thread.detach();
+	// Map data purge thread
+	m_purgethread = new PurgeDataSQLite3Thread(m_database);
+	m_purgethread->start();
 }
 
 inline void MapDatabaseSQLite3::bindPos(sqlite3_stmt *stmt, const v3s16 &pos, int index)
@@ -482,20 +557,53 @@ void MapDatabaseSQLite3::setCurrentVersion(int id)
 	// Mark old current for purge
 	SQLOK(sqlite3_exec(m_database,
 		"UPDATE versions SET status = 'P' WHERE status = 'C'", NULL, NULL, NULL),
-		"newCurrentVersion: Failed to mark old current for purge");
+		"setCurrentVersion: Failed to mark old current for purge");
 
 	// Create new current
 	SQLOK(sqlite3_prepare_v2(m_database,
 		"INSERT INTO versions SELECT MAX(id)+1, 'C', '.current', ? FROM versions",
 		-1, &stmt, NULL),
-		"newCurrentVersion: Failed to create new current version (prepare)");
+		"setCurrentVersion: Failed to create new current version (prepare)");
 	int_to_sqlite(stmt, 1, id);
 	if (sqlite3_step(stmt) != SQLITE_DONE) {
 		sqlite3_finalize(stmt);
 		throw DatabaseException(
-			"newCurrentVersion: Failed to create new current version (step): " +
+			"setCurrentVersion: Failed to create new current version (step): " +
 			std::string(sqlite3_errmsg(m_database)));
 	}
+
+	// Rebuild current_versions table
+	SQLOK(sqlite3_exec(m_database,
+		"DELETE FROM current_versions", NULL, NULL, NULL),
+		"setCurrentVersion: Rebuild current_versions table (delete)");
+
+	SQLOK(sqlite3_exec(m_database,
+		"INSERT INTO current_versions SELECT * FROM version_tree "
+		"WHERE start_status = 'C'", NULL, NULL, NULL),
+		"setCurrentVersion: Rebuild current_versions table (insert)");
+
+	// Update blocks visibility
+	SQLOK(sqlite3_exec(m_database,
+		"UPDATE versioned_blocks SET visible = 1, mtime = strftime('%s', 'now')"
+		" WHERE visible = 0 AND version_id = ("
+		"      SELECT version_id FROM versioned_blocks b, current_versions v"
+		"       WHERE v.id = b.version_id AND b.pos = versioned_blocks.pos"
+		"       ORDER BY b.version_id DESC LIMIT 1)", NULL, NULL, NULL),
+		"setCurrentVersion: Unable to update blocks to invisible");
+
+	SQLOK(sqlite3_exec(m_database,
+		"UPDATE versioned_blocks SET visible = 0"
+		" WHERE visible = 1 AND version_id NOT IN( "
+		"  SELECT version_id FROM current_versions)", NULL, NULL, NULL),
+		"setCurrentVersion: Unable to update blocks to visible");
+
+	SQLOK(sqlite3_exec(m_database,
+		"UPDATE versioned_blocks SET visible = 0"
+		" WHERE visible = 1 AND version_id <> ("
+		"      SELECT version_id FROM versioned_blocks b, current_versions v"
+		"       WHERE v.id = b.version_id AND b.pos = versioned_blocks.pos"
+		"       ORDER BY b.version_id DESC LIMIT 1)", NULL, NULL, NULL),
+		"setCurrentVersion: Unable to update blocks to visible");
 
 	sqlite3_finalize(stmt);
 }
