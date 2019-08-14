@@ -75,6 +75,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 	#include "sound_openal.h"
 #endif
 
+#define PAUSE_TIMER_LIMIT 10.f
+
 
 /*
 	Text input system
@@ -877,7 +879,6 @@ public:
 	}
 };
 
-
 bool nodePlacementPrediction(Client &client, const ItemDefinition &playeritem_def,
 	const ItemStack &playeritem, v3s16 nodepos, v3s16 neighbourpos)
 {
@@ -1260,6 +1261,7 @@ struct GameRunData {
 	float statustext_time;
 
 	f32 fog_range;
+	float pause_timer = 0.f;
 
 	v3f update_draw_list_last_cam_dir;
 
@@ -1486,7 +1488,7 @@ protected:
 #endif
 
 private:
-	void showPauseMenu();
+	void showPauseMenu(bool empty);
 
 	// ClientEvent handlers
 	void handleClientEvent_None(ClientEvent *event, CameraOrientation *cam);
@@ -2656,7 +2658,7 @@ void Game::processKeyInput()
 		openInventory();
 	} else if (wasKeyDown(KeyType::ESC) || input->wasKeyDown(CancelKey)) {
 		if (!gui_chat_console->isOpenInhibited()) {
-			showPauseMenu();
+			showPauseMenu(false);
 		}
 	} else if (wasKeyDown(KeyType::CHAT)) {
 		openConsole(0.2, L"");
@@ -3314,8 +3316,24 @@ void Game::updatePlayerControl(const CameraOrientation &cam)
 
 inline void Game::step(f32 *dtime)
 {
-	bool can_be_and_is_paused =
-			(simple_singleplayer_mode && g_menumgr.pausesGame());
+	bool is_paused = g_menumgr.pausesGame();
+	bool can_be_and_is_paused = (simple_singleplayer_mode && is_paused);
+
+	if (is_paused) {
+		bool mouse_moved = input->getMouseMoved();
+		input->resetMouseMoved();
+	
+		runData.pause_timer += *dtime;
+
+		if (runData.pause_timer > PAUSE_TIMER_LIMIT) {
+			if (mouse_moved) {
+				runData.pause_timer = 0.f;
+				showPauseMenu(false);
+			} else {
+				showPauseMenu(true);
+			}
+		}
+	}
 
 	if (can_be_and_is_paused) {	// This is for a singleplayer server
 		*dtime = 0;             // No time passes
@@ -4807,8 +4825,8 @@ void Game::readSettings()
 	m_cache_enable_particles             = g_settings->getBool("enable_particles");
 	m_cache_enable_fog                   = g_settings->getBool("enable_fog");
 	m_cache_mouse_sensitivity            = g_settings->getFloat("mouse_sensitivity");
-	m_cache_mouse_dampening_influence 	 = g_settings->getFloat("mouse_dampening_influence");
-	m_cache_mouse_dampening_speed 	 	 = g_settings->getFloat("mouse_dampening_speed");
+	m_cache_mouse_dampening_influence    = g_settings->getFloat("mouse_dampening_influence");
+	m_cache_mouse_dampening_speed 	     = g_settings->getFloat("mouse_dampening_speed");
 	m_cache_joystick_frustum_sensitivity = g_settings->getFloat("joystick_frustum_sensitivity");
 	m_repeat_right_click_time            = g_settings->getFloat("repeat_rightclick_time");
 
@@ -4863,25 +4881,30 @@ void Game::extendedResourceCleanup()
 }
 
 #define GET_KEY_NAME(KEY) gettext(getKeySetting(#KEY).name())
-void Game::showPauseMenu()
+void Game::showPauseMenu(bool empty)
 {
 	std::ostringstream os;
 
-	os << FORMSPEC_VERSION_STRING << "size[5.6,1.1,true]";
+	if (!empty) {
+		os << FORMSPEC_VERSION_STRING << "size[5.6,1.1,true]";
 
-	f32 xpos = -0.15f;
+		f32 xpos = -0.15f;
 
-	os << "button_exit[" << (xpos) << ",0;3,0.5;btn_continue;"
-	   << strgettext("Continue") << "]";
+		os << "button_exit[" << (xpos) << ",0;3,0.5;btn_continue;"
+		   << strgettext("Continue") << "]";
 
-	os << "button_exit[" << (xpos) << ",0.8;3,0.5;btn_options;"
-	   << strgettext("Options") << "]";
+		os << "button_exit[" << (xpos) << ",0.8;3,0.5;btn_options;"
+		   << strgettext("Options") << "]";
 
-	os << "button_exit[" << (xpos+=2.9f) << ",0;3,0.5;btn_exit_menu;"
-	   << strgettext("Exit to Menu") << "]";
+		os << "button_exit[" << (xpos+=2.9f) << ",0;3,0.5;btn_exit_menu;"
+		   << strgettext("Exit to Menu") << "]";
 
-	os << "button_exit[" << (xpos) << ",0.8;3,0.5;btn_exit_os;"
-	   << strgettext("Exit to OS") << "]";
+		os << "button_exit[" << (xpos) << ",0.8;3,0.5;btn_exit_os;"
+		   << strgettext("Exit to OS") << "]";
+	} else {
+		os << FORMSPEC_VERSION_STRING << "size[0,0,true]";
+		os << "bgcolor[#00000000;true]";
+	}
 
 	/* Create menu */
 	/* Note: FormspecFormSource and LocalFormspecHandler  *
