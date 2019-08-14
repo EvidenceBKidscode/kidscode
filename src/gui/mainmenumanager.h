@@ -164,10 +164,9 @@ public:
 	bool changepassword_requested = false;
 	bool changevolume_requested = false;
 	bool keyconfig_requested = false;
+	bool keyconfig_changed = false;
 	bool shutdown_requested = false;
 	bool options_requested = false;
-
-	bool keyconfig_changed = false;
 };
 
 extern MainGameCallback *g_gamecallback;

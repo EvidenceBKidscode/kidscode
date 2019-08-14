@@ -144,18 +144,6 @@ struct LocalFormspecHandler : public TextDest
 	void gotText(const StringMap &fields)
 	{
 		if (m_formname == "MT_PAUSE_MENU") {
-			/*
-			if (fields.find("btn_sound") != fields.end()) {
-				g_gamecallback->changeVolume();
-				return;
-			}
-
-			if (fields.find("btn_key_config") != fields.end()) {
-				g_gamecallback->keyConfig();
-				return;
-			}
-			*/
-
 			if (fields.find("btn_options") != fields.end()) {
 				g_gamecallback->showOptions();
 				return;
@@ -2472,30 +2460,40 @@ inline bool Game::checkConnection()
 inline bool Game::handleCallbacks()
 {
 	if (g_gamecallback->disconnect_requested) {
+		runData.pause_timer = 0.f;
 		g_gamecallback->disconnect_requested = false;
 		return false;
 	}
 
 	if (g_gamecallback->options_requested) {
+		runData.pause_timer = 0.f;
 		(new GUIOptions(guienv, guiroot, -1, &g_menumgr))->drop();
 		g_gamecallback->options_requested = false;
+		
 	}
 
 	if (g_gamecallback->changevolume_requested) {
+		runData.pause_timer = 0.f;
 		(new GUIVolumeChange(guienv, guiroot, -1,
 				     &g_menumgr))->drop();
 		g_gamecallback->changevolume_requested = false;
 	}
 
 	if (g_gamecallback->keyconfig_requested) {
+		runData.pause_timer = 0.f;
 		(new GUIKeyChangeMenu(guienv, guiroot, -1,
 				      &g_menumgr))->drop();
 		g_gamecallback->keyconfig_requested = false;
 	}
 
 	if (g_gamecallback->keyconfig_changed) {
+		runData.pause_timer = 0.f;
 		keycache.populate(); // update the cache with new settings
 		g_gamecallback->keyconfig_changed = false;
+	}
+
+	if (g_gamecallback->changepassword_requested) {
+		runData.pause_timer = 0.f;
 	}
 
 	return true;
@@ -3319,6 +3317,8 @@ inline void Game::step(f32 *dtime)
 	bool is_paused = g_menumgr.pausesGame();
 	bool can_be_and_is_paused = (simple_singleplayer_mode && is_paused);
 
+	//std::cout << runData.pause_timer << std::endl;
+
 	if (is_paused) {
 		bool mouse_moved = input->getMouseMoved();
 		input->resetMouseMoved();
@@ -3333,6 +3333,8 @@ inline void Game::step(f32 *dtime)
 				showPauseMenu(true);
 			}
 		}
+	} else {
+		runData.pause_timer = 0.f;
 	}
 
 	if (can_be_and_is_paused) {	// This is for a singleplayer server
