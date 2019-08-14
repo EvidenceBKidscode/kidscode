@@ -33,11 +33,11 @@ SQLite format specification:
 #include "settings.h"
 #include "porting.h"
 #include "util/string.h"
+#include "util/thread.h"
 #include "content_sao.h"
 #include "remoteplayer.h"
 
 #include <cassert>
-#include <thread>
 
 // When to print messages when the database is being held locked by another process
 // Note: I've seen occasional delays of over 250ms while running minetestmapper.
@@ -212,6 +212,91 @@ bool Database_SQLite3::tableExists(const std::string &table_name)
 }
 
 /*
+ * Map data purge thread
+ */
+
+class PurgeDataSQLite3Thread : public Thread
+{
+public:
+	PurgeDataSQLite3Thread(sqlite3 *database):
+		m_database(database)
+	{}
+
+	void *run();
+
+private:
+	sqlite3 *m_database;
+};
+
+void *PurgeDataSQLite3Thread::run() {
+	sqlite3_stmt * stmt;
+
+	while (!stopRequested()) {
+
+		// Mark for purge deleted versions with no child
+		SQLOK(sqlite3_exec(m_database,
+			"UPDATE versions SET status = 'P' WHERE status = 'D'"
+				" AND NOT EXISTS (SELECT 1 FROM versions AS v"
+				"  WHERE v.status <> 'P' and v.parent_id = versions.id);",
+			NULL, NULL, NULL),
+			"purgeDataThread:Failed to mark versions for purge");
+
+		// Delete already purged versions
+		SQLOK(sqlite3_exec(m_database,
+			"DELETE FROM versions WHERE status = 'P'"
+				" AND NOT EXISTS (SELECT 1 FROM blocks"
+				"  WHERE blocks.version_id = versions.id);",
+			NULL, NULL, NULL),
+			"purgeDataThread:Failed to clean up versions table");
+
+		// Get first version to purge
+		SQLOK(sqlite3_prepare_v2(m_database,
+			"SELECT id FROM versions WHERE status = 'P' LIMIT 1",
+			-1, &stmt, NULL),
+			"purgeDataThread: Failed to find version to purge (prepare)");
+
+		int res = sqlite3_step(stmt);
+		if (res == SQLITE_DONE) {
+			sqlite3_finalize(stmt);
+			sleep_ms(1000);
+			continue; // Nothing to do for now
+		}
+		if (res != SQLITE_ROW) {
+			sqlite3_finalize(stmt);
+			throw DatabaseException(
+				"purgeDataThread: Failed to delete blocks (step): " +
+				std::string(sqlite3_errmsg(m_database)));
+		}
+		int version =  sqlite3_column_int(stmt, 0);
+		sqlite3_finalize(stmt);
+
+		SQLOK(sqlite3_prepare_v2(m_database,
+			"DELETE FROM blocks WHERE version_id = ? "
+			"  AND pos IN (SELECT pos FROM blocks"
+			"    WHERE version_id = ? LIMIT 10000)",
+			-1, &stmt, NULL),
+				"purgeDataThread: Failed to delete blocks (prepare)");
+			SQLOK(sqlite3_bind_int(stmt, 1, version),
+				"purgeDataThread: Failed to delete blocks (bind 1)");
+			SQLOK(sqlite3_bind_int(stmt, 2, version),
+				"purgeDataThread: Failed to delete blocks (bind 2)");
+
+		res = sqlite3_step(stmt);
+		if (res != SQLITE_DONE)
+		{
+			sqlite3_finalize(stmt);
+			throw DatabaseException(
+				"purgeDataThread: Failed to delete blocks (step): " +
+				std::string(sqlite3_errmsg(m_database)));
+		}
+		sqlite3_finalize(stmt);
+		sleep_ms(1000);
+	}
+
+	return nullptr;
+}
+
+/*
  * Map database
  */
 
@@ -223,7 +308,13 @@ MapDatabaseSQLite3::MapDatabaseSQLite3(const std::string &savedir):
 
 MapDatabaseSQLite3::~MapDatabaseSQLite3()
 {
-	m_thread_stop = true;
+
+	infostream<<"Sqlite3: Stopping and waiting purge thread"<<std::endl;
+	m_purgethread->stop();
+	m_purgethread->wait();
+	delete m_purgethread;
+	infostream<<"Sqlite3: Purge thread stopped"<<std::endl;
+
 	FINALIZE_STATEMENT(m_stmt_read)
 	FINALIZE_STATEMENT(m_stmt_write)
 	FINALIZE_STATEMENT(m_stmt_list)
@@ -288,73 +379,6 @@ void MapDatabaseSQLite3::upgradeDatabaseStructure()
 	}
 }
 
-// Cleans up unused blocks and versions
-void purgeDataThread(bool *stopflag, sqlite3 *m_database)
-{
-
-	sqlite3_stmt * stmt;
-	while (!*stopflag) {
-		// Mark for purge deleted versions with no child
-		SQLOK(sqlite3_exec(m_database,
-			"UPDATE versions SET status = 'P' WHERE status = 'D'"
-				" AND NOT EXISTS (SELECT 1 FROM versions AS v"
-				"  WHERE v.status <> 'P' and v.parent_id = versions.id);",
-			NULL, NULL, NULL),
-			"purgeDataThread:Failed to mark versions for purge");
-
-		// Delete already purged versions
-		SQLOK(sqlite3_exec(m_database,
-			"DELETE FROM versions WHERE status = 'P'"
-				" AND NOT EXISTS (SELECT 1 FROM blocks"
-				"  WHERE blocks.version_id = versions.id);",
-			NULL, NULL, NULL),
-			"purgeDataThread:Failed to clean up versions table");
-
-		// Get first version to purge
-		SQLOK(sqlite3_prepare_v2(m_database,
-			"SELECT id FROM versions WHERE status = 'P' LIMIT 1",
-			-1, &stmt, NULL),
-			"purgeDataThread: Failed to find version to purge (prepare)");
-
-		int res = sqlite3_step(stmt);
-		if (res == SQLITE_DONE) {
-			sqlite3_finalize(stmt);
-			std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-			continue; // Nothing to do for now
-		}
-		if (res != SQLITE_ROW) {
-			sqlite3_finalize(stmt);
-			throw DatabaseException(
-				"purgeDataThread: Failed to delete blocks (step): " +
-				std::string(sqlite3_errmsg(m_database)));
-		}
-		int version =  sqlite3_column_int(stmt, 0);
-		sqlite3_finalize(stmt);
-
-		SQLOK(sqlite3_prepare_v2(m_database,
-			"DELETE FROM blocks WHERE version_id = ? "
-			"  AND pos IN (SELECT pos FROM blocks"
-			"    WHERE version_id = ? LIMIT 10000)",
-			-1, &stmt, NULL),
-				"purgeDataThread: Failed to delete blocks (prepare)");
-			SQLOK(sqlite3_bind_int(stmt, 1, version),
-				"purgeDataThread: Failed to delete blocks (bind 1)");
-			SQLOK(sqlite3_bind_int(stmt, 2, version),
-				"purgeDataThread: Failed to delete blocks (bind 2)");
-
-		res = sqlite3_step(stmt);
-		if (res != SQLITE_DONE)
-		{
-			sqlite3_finalize(stmt);
-			throw DatabaseException(
-				"purgeDataThread: Failed to delete blocks (step): " +
-				std::string(sqlite3_errmsg(m_database)));
-		}
-		sqlite3_finalize(stmt);
-		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-	}
-}
-
 void MapDatabaseSQLite3::createDatabase()
 {
 	upgradeDatabaseStructure();
@@ -388,10 +412,9 @@ void MapDatabaseSQLite3::initStatements()
 
 	verbosestream << "ServerMap: SQLite3 database opened." << std::endl;
 
-	// Clean up thread
-	m_thread_stop = false;
-	m_thread = std::thread(purgeDataThread, &m_thread_stop, m_database);
-	m_thread.detach();
+	// Map data purge thread
+	m_purgethread = new PurgeDataSQLite3Thread(m_database);
+	m_purgethread->start();
 }
 
 inline void MapDatabaseSQLite3::bindPos(sqlite3_stmt *stmt, const v3s16 &pos, int index)

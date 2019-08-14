@@ -136,6 +136,8 @@ private:
 	static int busyHandler(void *data, int count);
 };
 
+class PurgeDataSQLite3Thread;
+
 class MapDatabaseSQLite3 : private Database_SQLite3, public MapDatabase
 {
 public:
@@ -160,8 +162,7 @@ protected:
 	virtual void createDatabase();
 	virtual void initStatements();
 	void upgradeDatabaseStructure();
-	bool m_thread_stop = true;
-	std::thread m_thread;
+	PurgeDataSQLite3Thread *m_purgethread;
 
 private:
 	void bindPos(sqlite3_stmt *stmt, const v3s16 &pos, int index = 1);
