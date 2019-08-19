@@ -19,7 +19,18 @@ builddir="$( cd "$builddir" && pwd )"
 packagedir=$builddir/packages
 libdir=$builddir/libs
 
-toolchain_file=$dir/toolchain_mingw.cmake
+# Test which win32 compiler is present
+which i586-mingw32msvc-windres > /dev/null 2>&1 && toolchain_file=$dir/toolchain_i586-mingw32msvc.cmake
+which i686-w64-mingw32-windres > /dev/null 2>&1 && toolchain_file=$dir/toolchain_i646-w64-mingw32.cmake
+
+if [ -z "$toolchain_file" ]
+then
+	echo "Unable to determine which mingw32 compiler to use"
+	exit 1
+else
+	echo "Using $toolchain_file"
+fi
+
 irrlicht_version=1.8.4
 ogg_version=1.3.2
 vorbis_version=1.3.5
@@ -97,10 +108,10 @@ cd $CORE_NAME
 mkdir _build
 cd _build
 cmake .. \
+	-DCMAKE_TOOLCHAIN_FILE=$toolchain_file \
 	-DCMAKE_INSTALL_PREFIX=/tmp \
 	-DVERSION_EXTRA=$git_hash \
 	-DBUILD_CLIENT=1 -DBUILD_SERVER=0 \
-	-DCMAKE_TOOLCHAIN_FILE=$toolchain_file \
 	\
 	-DENABLE_SOUND=1 \
 	-DENABLE_CURL=1 \
