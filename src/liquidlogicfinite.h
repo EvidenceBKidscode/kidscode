@@ -46,7 +46,6 @@ struct NodeInfo {
 	s8 space;
 	MapNode node;
 	bool flowing_down;
-	bool fillable;
 	bool wet;
 };
 
@@ -75,7 +74,7 @@ private:
 		std::map<v3s16, MapBlock*> &modified_blocks, ServerEnvironment *env);
 	void liquify_and_break(NodeInfo &info, s8 transfer, const LiquidInfo &liquid,
 		std::map<v3s16, MapBlock*> &modified_blocks, ServerEnvironment *env);
-	bool transfer(NodeInfo &source, NodeInfo &target,
+	s8 transfer(NodeInfo &source, NodeInfo &target,
 		const LiquidInfo &liquid, bool equalize,
 		std::map<v3s16, MapBlock*> &modified_blocks, ServerEnvironment *env);
 	void transform_node(v3s16 pos, u16 start,
