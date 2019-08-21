@@ -34,11 +34,16 @@ struct LiquidInfo {
 	content_t c_source;
 	content_t c_flowing;
 	content_t c_empty;
+	// Slide specific
+	content_t c_solid;
+	u8 blocks;
+	std::string group_name;
 };
 
 struct NodeInfo {
 	v3s16 pos;
 	s8 level;
+	s8 space;
 	MapNode node;
 	bool flowing_down;
 	bool fillable;
@@ -59,15 +64,24 @@ public:
 
 private:
 	LiquidInfo get_liquid_info(v3s16 pos);
-	NodeInfo get_node_info(v3s16 pos, LiquidInfo liquid);
-	void update_node(NodeInfo &info, LiquidInfo liquid,
+	NodeInfo get_node_info(v3s16 pos, const LiquidInfo &liquid);
+	void set_node(v3s16 pos, MapNode &node, std::map<v3s16,
+		MapBlock*> &modified_blocks);
+	void update_node(NodeInfo &info, const LiquidInfo &liquid,
+		std::map<v3s16, MapBlock*> &modified_blocks, ServerEnvironment *env);
+	void solidify(NodeInfo &info, const LiquidInfo &liquid,
+		std::map<v3s16, MapBlock*> &modified_blocks);
+	void try_liquidify(v3s16 pos, const LiquidInfo &liquid,
+		std::map<v3s16, MapBlock*> &modified_blocks, ServerEnvironment *env);
+	void liquify_and_break(NodeInfo &info, s8 transfer, const LiquidInfo &liquid,
 		std::map<v3s16, MapBlock*> &modified_blocks, ServerEnvironment *env);
 	bool transfer(NodeInfo &source, NodeInfo &target,
-		LiquidInfo liquid, bool equalize,
+		const LiquidInfo &liquid, bool equalize,
 		std::map<v3s16, MapBlock*> &modified_blocks, ServerEnvironment *env);
 	void transform_node(v3s16 pos, u16 start,
 		std::map<v3s16, MapBlock*> &modified_blocks,
 		ServerEnvironment *env);
+
 
 	UniqueQueue<v3s16> m_liquid_queue;
 	std::deque<v3s16> m_must_reflow;

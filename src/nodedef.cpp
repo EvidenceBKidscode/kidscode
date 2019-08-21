@@ -393,6 +393,8 @@ void ContentFeatures::reset()
 	liquid_type = LIQUID_NONE;
 	liquid_alternative_flowing = "";
 	liquid_alternative_source = "";
+	liquid_alternative_solid = "";
+	liquid_blocks_per_solid = 0;
 	liquid_viscosity = 0;
 	liquid_renewable = true;
 	liquid_range = LIQUID_LEVEL_MAX+1;
