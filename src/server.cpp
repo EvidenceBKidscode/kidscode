@@ -1750,32 +1750,64 @@ void Server::SendHUDSetParam(session_t peer_id, u16 param, const std::string &va
 	Send(&pkt);
 }
 
-void Server::SendSetSky(session_t peer_id, const video::SColor &bgcolor,
-		const std::string &type, const std::vector<std::string> &params,
-		bool &clouds)
+void Server::SendSetSky(session_t peer_id, const SkyboxParams &params)
 {
 	NetworkPacket pkt(TOCLIENT_SET_SKY, 0, peer_id);
-	pkt << bgcolor << type << (u16) params.size();
 
-	for (const std::string &param : params)
-		pkt << param;
-
-	pkt << clouds;
+	pkt << params.bgcolor << params.type
+		<< params.clouds;
+	
+	if (params.type == "skybox") {
+		pkt << (u16) params.params.size();
+		for (const std::string &texture : params.params)
+			pkt << texture;
+	} else if (params.type == "regular") {
+		pkt << params.day_sky << params.day_horizon
+			<< params.dawn_sky << params.dawn_horizon
+			<< params.night_sky << params.night_horizon
+			<< params.indoors;
+	}
+	
+	pkt << params.sun_tint << params.moon_tint << params.tint_type;
 
 	Send(&pkt);
 }
 
-void Server::SendCloudParams(session_t peer_id, float density,
-		const video::SColor &color_bright,
-		const video::SColor &color_ambient,
-		float height,
-		float thickness,
-		const v2f &speed)
+void Server::SendSetSun(session_t peer_id, const SunParams &params)
+{
+	NetworkPacket pkt(TOCLIENT_SET_SUN, 0, peer_id);
+	pkt << params.visible << params.texture
+		<< params.tonemap << params.sunrise
+		<< params.rotation << params.scale;
+
+	Send(&pkt);
+}
+void Server::SendSetMoon(session_t peer_id, const MoonParams &params)
+{
+	NetworkPacket pkt(TOCLIENT_SET_MOON, 0, peer_id);
+
+	pkt << params.visible << params.texture
+		<< params.tonemap << params.rotation
+		<< params.scale;
+		
+	Send(&pkt);
+}
+void Server::SendSetStars(session_t peer_id, const StarParams &params)
+{
+	NetworkPacket pkt(TOCLIENT_SET_STARS, 0, peer_id);
+
+	pkt << params.visible << params.count
+		<< params.starcolor << params.rotation
+		<< params.scale;
+
+	Send(&pkt);
+}
+
+void Server::SendCloudParams(session_t peer_id, const CloudParams &params)
 {
 	NetworkPacket pkt(TOCLIENT_CLOUD_PARAMS, 0, peer_id);
-	pkt << density << color_bright << color_ambient
-			<< height << thickness << speed;
-
+	pkt << params.density << params.color_bright << params.color_ambient
+			<< params.height << params.thickness << params.speed;
 	Send(&pkt);
 }
 
@@ -3138,32 +3170,39 @@ bool Server::setPlayerEyeOffset(RemotePlayer *player, v3f first, v3f third)
 	return true;
 }
 
-bool Server::setSky(RemotePlayer *player, const video::SColor &bgcolor,
-	const std::string &type, const std::vector<std::string> &params,
-	bool &clouds)
+void Server::setSky(RemotePlayer *player, const SkyboxParams &params)
 {
-	if (!player)
-		return false;
-
-	player->setSky(bgcolor, type, params, clouds);
-	SendSetSky(player->getPeerId(), bgcolor, type, params, clouds);
-	return true;
+	sanity_check(player);
+	player->setSky(params);
+	SendSetSky(player->getPeerId(), params);
 }
 
-bool Server::setClouds(RemotePlayer *player, float density,
-	const video::SColor &color_bright,
-	const video::SColor &color_ambient,
-	float height,
-	float thickness,
-	const v2f &speed)
+void Server::setSun(RemotePlayer *player, const SunParams &params)
 {
-	if (!player)
-		return false;
+	sanity_check(player);
+	player->setSun(params);
+	SendSetSun(player->getPeerId(), params);
+}
 
-	SendCloudParams(player->getPeerId(), density,
-			color_bright, color_ambient, height,
-			thickness, speed);
-	return true;
+void Server::setMoon(RemotePlayer *player, const MoonParams &params)
+{
+	sanity_check(player);
+	player->setMoon(params);
+	SendSetMoon(player->getPeerId(), params);
+}
+
+void Server::setStars(RemotePlayer *player, const StarParams &params)
+{
+	sanity_check(player);
+	player->setStars(params);
+	SendSetStars(player->getPeerId(), params);
+}
+
+void Server::setClouds(RemotePlayer *player, const CloudParams &params)
+{
+	sanity_check(player);
+	player->setCloudParams(params);
+	SendCloudParams(player->getPeerId(), params);
 }
 
 bool Server::overrideDayNightRatio(RemotePlayer *player, bool do_override,
