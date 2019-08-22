@@ -64,12 +64,10 @@ public:
 private:
 	LiquidInfo get_liquid_info(v3s16 pos);
 	NodeInfo get_node_info(v3s16 pos, const LiquidInfo &liquid);
-	void set_node(v3s16 pos, MapNode &node, std::map<v3s16,
-		MapBlock*> &modified_blocks);
 	void update_node(NodeInfo &info, const LiquidInfo &liquid,
 		std::map<v3s16, MapBlock*> &modified_blocks, ServerEnvironment *env);
 	void solidify(NodeInfo &info, const LiquidInfo &liquid,
-		std::map<v3s16, MapBlock*> &modified_blocks);
+		std::map<v3s16, MapBlock*> &modified_blocks, ServerEnvironment *env);
 	void try_liquidify(v3s16 pos, const LiquidInfo &liquid,
 		std::map<v3s16, MapBlock*> &modified_blocks, ServerEnvironment *env);
 	void liquify_and_break(NodeInfo &info, s8 transfer, const LiquidInfo &liquid,
@@ -77,7 +75,7 @@ private:
 	s8 transfer(NodeInfo &source, NodeInfo &target,
 		const LiquidInfo &liquid, bool equalize,
 		std::map<v3s16, MapBlock*> &modified_blocks, ServerEnvironment *env);
-	void transform_node(v3s16 pos, u16 start,
+	void transform_node(v3s16 pos,
 		std::map<v3s16, MapBlock*> &modified_blocks,
 		ServerEnvironment *env);
 
