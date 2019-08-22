@@ -661,6 +661,11 @@ ContentFeatures read_content_features(lua_State *L, int index)
 	getstringfield(L, index, "liquid_alternative_solid",
 			f.liquid_alternative_solid);
 
+			// If the content is a slide (snowslide, mudslide) this is the name of that
+			// slide type. It will be used for group names.
+	getstringfield(L, index, "liquid_slide_type_name",
+			f.liquid_slide_type_name);
+
 	// If the content is liquid and can freeze, this is number of liquid block per
 	// solid block
 	f.liquid_blocks_per_solid = getintfield_default(L, index,
@@ -869,6 +874,8 @@ void push_content_features(lua_State *L, const ContentFeatures &c)
 		lua_setfield(L, -2, "liquid_alternative_source");
 		lua_pushstring(L, c.liquid_alternative_solid.c_str());
 		lua_setfield(L, -2, "liquid_alternative_solid");
+		lua_pushstring(L, c.liquid_slide_type_name.c_str());
+		lua_setfield(L, -2, "liquid_slide_type_name");
 		lua_pushnumber(L, c.liquid_blocks_per_solid);
 		lua_setfield(L, -2, "liquid_blocks_per_solid");
 		lua_pushnumber(L, c.liquid_viscosity);

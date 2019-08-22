@@ -105,12 +105,26 @@ LiquidInfo LiquidLogicFinite::get_liquid_info(v3s16 pos) {
 	MapNode node = m_map->getNodeNoEx(pos);
 	const ContentFeatures &cf = m_ndef->get(node);
 	info.c_source = m_ndef->getId(cf.liquid_alternative_source);
-	info.c_flowing = m_ndef->getId(cf.liquid_alternative_flowing);
-	info.c_flowing = m_ndef->getId(cf.liquid_alternative_flowing);
-	info.c_solid = m_ndef->getId(cf.liquid_alternative_solid);
-	info.c_empty = CONTENT_AIR;
-	info.blocks = cf.liquid_blocks_per_solid;
-	info.group_name = cf.name;
+	if (info.c_source != CONTENT_IGNORE) {
+		info.c_flowing = m_ndef->getId(cf.liquid_alternative_flowing);
+		info.c_solid = m_ndef->getId(cf.liquid_alternative_solid);
+		info.c_empty = CONTENT_AIR;
+	} else {
+		info.c_flowing = CONTENT_IGNORE;
+		info.c_solid = CONTENT_IGNORE;
+		info.c_empty = CONTENT_AIR;
+	}
+
+	if (info.c_solid != CONTENT_IGNORE) {
+		info.blocks = cf.liquid_blocks_per_solid;
+		info.break_group = "broken_by_" + cf.liquid_slide_type_name ;
+		info.liquify_group = "liquified_by_" + cf.liquid_slide_type_name;
+	} else {
+		info.blocks = 0;
+		info.liquify_group = "";
+		info.break_group = "";
+	}
+
 	return info;
 }
 
@@ -149,6 +163,41 @@ NodeInfo LiquidLogicFinite::get_node_info(v3s16 pos, const LiquidInfo &liquid) {
 	}
 
 	return info;
+}
+
+u8 LiquidLogicFinite::evaluate_neighboor_liquid(v3s16 pos, const LiquidInfo &liquid)
+{
+	u8 volume = 0;
+	MapNode node;
+	for (s16 X = pos.X - 1; X <= pos.X + 1; X++)
+	for (s16 Y = pos.Y - 1; Y <= pos.Y + 1; Y++)
+	for (s16 Z = pos.Z - 1; Z <= pos.Z + 1; Z++)
+		if (X || Y || Z)
+		{
+			node = m_map->getNodeNoEx(v3s16(X, Y, Z));
+			if (node.getContent() == liquid.c_source)
+				volume += LIQUID_LEVEL_SOURCE;
+			else if (node.getContent() == liquid.c_flowing)
+				volume += node.param2 & LIQUID_LEVEL_MASK;
+		}
+	return volume;
+}
+
+u8 LiquidLogicFinite::count_neighboor_with_group(v3s16 pos, std::string group)
+{
+	u8 count = 0;
+	MapNode node;
+
+	for (s16 X = pos.X - 1; X <= pos.X + 1; X++)
+	for (s16 Y = pos.Y - 1; Y <= pos.Y + 1; Y++)
+	for (s16 Z = pos.Z - 1; Z <= pos.Z + 1; Z++)
+		if (X || Y || Z)
+		{
+			node = m_map->getNodeNoEx(v3s16(X, Y, Z));
+			if (m_ndef->get(node).getGroup(group) > 0)
+				count++;
+		}
+	return count;
 }
 
 void LiquidLogicFinite::update_node(NodeInfo &info, const LiquidInfo &liquid,
@@ -256,7 +305,8 @@ void LiquidLogicFinite::solidify(NodeInfo &info, const LiquidInfo &liquid,
 	MapNode nunder = m_map->getNodeNoEx(info.pos + down_dir);
 
 	// Never solidify above CONTENT_IGNORE
-	if (nunder.getContent() == CONTENT_IGNORE)
+	if (nunder.getContent() == CONTENT_IGNORE ||
+			nunder.getContent() == CONTENT_UNKNOWN)
 		return;
 
 	// Never solidify above a liquid
@@ -278,7 +328,7 @@ void LiquidLogicFinite::try_liquidify(v3s16 pos, const LiquidInfo &liquid,
 	std::map<v3s16, MapBlock*> &modified_blocks, ServerEnvironment *env)
 {
 	const ContentFeatures &cf = m_ndef->get(m_map->getNodeNoEx(pos));
-	if (cf.getGroup(liquid.group_name) == 0)
+	if (cf.getGroup(liquid.liquify_group) == 0)
 		return;
 
 	NodeInfo info;
@@ -331,6 +381,7 @@ void LiquidLogicFinite::try_liquidify(v3s16 pos, const LiquidInfo &liquid,
 	update_node(info, liquid, modified_blocks, env);
 }
 
+
 const v3s16 liquify_dirs[5] =
 {
 	v3s16( 0, -1,  0),
@@ -340,17 +391,30 @@ const v3s16 liquify_dirs[5] =
 	v3s16(-1,  0,  0)
 };
 
+void LiquidLogicFinite::try_break(v3s16 pos, s8 transfer,
+	const LiquidInfo &liquid, std::map<v3s16, MapBlock*> &modified_blocks,
+	ServerEnvironment *env)
+{
+	NodeInfo info = get_node_info(pos, liquid);
+	u8 group = m_ndef->get(info.node).getGroup(liquid.break_group);
+	if (group and std::rand() % 500 < group * transfer) {
+		info.level = -1;
+		update_node(info, liquid, modified_blocks, env);
+	}
+}
+
 // Slide specific method
 void LiquidLogicFinite::liquify_and_break(NodeInfo &info, s8 transfer,
 	const LiquidInfo &liquid, std::map<v3s16, MapBlock*> &modified_blocks,
 	ServerEnvironment *env)
 {
-	for (int i = 0; i < 5; i++)
-		if (std::rand() % 3 < transfer) {
-			try_liquidify(info.pos + liquify_dirs[i], liquid, modified_blocks, env);
-		}
+	u16 test = transfer * evaluate_neighboor_liquid(info.pos, liquid);
 
-	// TODO: manage break
+	for (int i = 0; i < 5; i++) {
+		if (std::rand() % 300 < test)
+			try_liquidify(info.pos + liquify_dirs[i], liquid, modified_blocks, env);
+		try_break(info.pos + liquify_dirs[i], transfer, liquid, modified_blocks, env);
+	}
 }
 
 s8 LiquidLogicFinite::transfer(NodeInfo &source, NodeInfo &target,
@@ -379,7 +443,6 @@ s8 LiquidLogicFinite::transfer(NodeInfo &source, NodeInfo &target,
 
 	return transfer;
 }
-
 
 void LiquidLogicFinite::transform_node(v3s16 pos,
 	std::map<v3s16, MapBlock*> &modified_blocks,
@@ -423,6 +486,12 @@ void LiquidLogicFinite::transform_node(v3s16 pos,
 
 		return;
 	}
+
+	if ((liquid.c_solid != CONTENT_IGNORE) &&
+			(std::rand()%6 > evaluate_neighboor_liquid(pos, liquid))) {
+			solidify(source, liquid, modified_blocks, env);
+			return;
+		}
 
 	// Blocks to fill in priority :
 	// 1 - Block under

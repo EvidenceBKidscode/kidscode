@@ -394,6 +394,7 @@ void ContentFeatures::reset()
 	liquid_alternative_flowing = "";
 	liquid_alternative_source = "";
 	liquid_alternative_solid = "";
+	liquid_slide_type_name = "";
 	liquid_blocks_per_solid = 0;
 	liquid_viscosity = 0;
 	liquid_renewable = true;

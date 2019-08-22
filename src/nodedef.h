@@ -369,6 +369,10 @@ struct ContentFeatures
 	// liquid
 	std::string liquid_alternative_solid;
 
+	// If the content is a slide (snowslide, mudslide) this is the name of that
+	// slide type. It will be used for group names.
+	std::string liquid_slide_type_name;
+	
 	// If the content is liquid and can freeze, this is number of liquid block per
 	// solid block
 	u8 liquid_blocks_per_solid;

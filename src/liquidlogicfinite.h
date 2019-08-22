@@ -37,7 +37,8 @@ struct LiquidInfo {
 	// Slide specific
 	content_t c_solid;
 	u8 blocks;
-	std::string group_name;
+	std::string break_group;
+	std::string liquify_group;
 };
 
 struct NodeInfo {
@@ -64,11 +65,15 @@ public:
 private:
 	LiquidInfo get_liquid_info(v3s16 pos);
 	NodeInfo get_node_info(v3s16 pos, const LiquidInfo &liquid);
+	u8 evaluate_neighboor_liquid(v3s16 pos, const LiquidInfo &liquid);
+	u8 count_neighboor_with_group(v3s16 pos, std::string group);
 	void update_node(NodeInfo &info, const LiquidInfo &liquid,
 		std::map<v3s16, MapBlock*> &modified_blocks, ServerEnvironment *env);
 	void solidify(NodeInfo &info, const LiquidInfo &liquid,
 		std::map<v3s16, MapBlock*> &modified_blocks, ServerEnvironment *env);
 	void try_liquidify(v3s16 pos, const LiquidInfo &liquid,
+		std::map<v3s16, MapBlock*> &modified_blocks, ServerEnvironment *env);
+	void try_break(v3s16 pos, s8 transfer, const LiquidInfo &liquid,
 		std::map<v3s16, MapBlock*> &modified_blocks, ServerEnvironment *env);
 	void liquify_and_break(NodeInfo &info, s8 transfer, const LiquidInfo &liquid,
 		std::map<v3s16, MapBlock*> &modified_blocks, ServerEnvironment *env);
