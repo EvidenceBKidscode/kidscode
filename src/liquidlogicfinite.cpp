@@ -45,10 +45,53 @@ const v3s16 side_4dirs[4] =
 
 const v3s16 down_dir = v3s16( 0,-1, 0);
 
+union pos_and_key
+{
+	s16 pos[4];
+	u64 key;
+};
+
+u64 pos_to_key(v3s16 pos)
+{
+	pos_and_key u;
+
+	u.pos[0] = pos.X;
+	u.pos[1] = pos.Y;
+	u.pos[2] = pos.Z;
+	u.pos[3] = 0;
+	return u.key;
+}
+
+v3s16 key_to_pos(u64 key)
+{
+	pos_and_key u;
+	u.key = key;
+	return v3s16(u.pos[0], u.pos[1], u.pos[2]);
+}
+
+/*
+u64 pos_to_key(v3s16 pos)
+{
+	s16 key16[4];
+	key16[0] = pos.X;
+	key16[1] = pos.Y;
+	key16[2] = pos.Z;
+	key16[3] = 0;
+
+	return *((u64 *)key16);
+}
+
+v3s16 key_to_pos(u64 key)
+{
+	s16 *key16 = *key;
+	return v3s16(key16[0], key16[1], key16[2]);
+}
+*/
 LiquidLogicFinite::LiquidLogicFinite(Map *map, IGameDef *gamedef) :
 	LiquidLogic(map, gamedef)
 {
 }
+
 
 void LiquidLogicFinite::addTransforming(v3s16 p) {
 	m_liquid_queue.push_back(p);
@@ -100,11 +143,37 @@ void LiquidLogicFinite::scanVoxelManip(MMVManip *vm, v3s16 nmin, v3s16 nmax)
 	scanVoxelManip(&m_liquid_queue, vm, nmin, nmax);
 }
 
-LiquidInfo LiquidLogicFinite::get_liquid_info(v3s16 pos) {
+void LiquidLogicFinite::add_flow(v3s16 pos, s8 amount,
+		const LiquidInfo &liquid)
+{
+	u64 key = pos_to_key(pos);
+	FlowInfo flow = m_flows[key];
+	if (flow.c_liquid_source != CONTENT_IGNORE &&
+			flow.c_liquid_source != liquid.c_source) {
+		printf("%d %d %d Flows cannot mix liquids %d and %d.\n",
+				pos.X, pos.Y, pos.Z, liquid.c_source, flow.c_liquid_source);
+		return;
+	}
+	flow.c_liquid_source = liquid.c_source;
+	flow.amount += amount;
+	m_flows[key] = flow;
+}
+
+LiquidInfo LiquidLogicFinite::get_liquid_info(content_t c_node) {
+	try {
+		return m_liquids_info.at(c_node);
+	} catch(std::out_of_range &e) {}
+
 	LiquidInfo info;
-	MapNode node = m_map->getNodeNoEx(pos);
-	const ContentFeatures &cf = m_ndef->get(node);
+
+	const ContentFeatures &cf = m_ndef->get(c_node);
 	info.c_source = m_ndef->getId(cf.liquid_alternative_source);
+	try {
+		info = m_liquids_info.at(info.c_source);
+		m_liquids_info[c_node] = info;
+		return info;
+	} catch(std::out_of_range &e) {}
+
 	if (info.c_source != CONTENT_IGNORE) {
 		info.c_flowing = m_ndef->getId(cf.liquid_alternative_flowing);
 		info.c_solid = m_ndef->getId(cf.liquid_alternative_solid);
@@ -125,9 +194,17 @@ LiquidInfo LiquidLogicFinite::get_liquid_info(v3s16 pos) {
 		info.break_group = "";
 	}
 
+	m_liquids_info[c_node] = info;
+
 	return info;
 }
 
+LiquidInfo LiquidLogicFinite::get_liquid_info(v3s16 pos) {
+	MapNode node = m_map->getNodeNoEx(pos);
+	return get_liquid_info(node.getContent());
+}
+
+// TODO: Could be improved by caching some node info in flows (level, space)
 NodeInfo LiquidLogicFinite::get_node_info(v3s16 pos, const LiquidInfo &liquid) {
 	NodeInfo info;
 	info.pos = pos;
@@ -143,28 +220,61 @@ NodeInfo LiquidLogicFinite::get_node_info(v3s16 pos, const LiquidInfo &liquid) {
 	switch (cf.liquid_type) {
 		case LIQUID_SOURCE:
 			if (m_ndef->getId(cf.liquid_alternative_source) == liquid.c_source) {
-				info.level =  LIQUID_LEVEL_SOURCE;
+				info.level = LIQUID_LEVEL_SOURCE;
 				info.wet = true;
 			}
 			break;
 		case LIQUID_FLOWING:
 			if (m_ndef->getId(cf.liquid_alternative_source) == liquid.c_source) {
 				info.level = info.node.param2 & LIQUID_LEVEL_MASK;
-				info.space = LIQUID_LEVEL_SOURCE - info.level;
 				info.wet = true;
 			}
 			break;
 		case LIQUID_NONE:
 			if (cf.floodable) {
 				info.level = 0;
-				info.space = LIQUID_LEVEL_SOURCE;
 			}
 			break;
 	}
 
+	// If liquid or fillable, test existing pending flow
+	if (info.level >= 0) {
+		FlowInfo flow;
+		try {
+			flow = m_flows.at(pos_to_key(pos));
+		} catch(std::out_of_range &e) {
+			info.space = LIQUID_LEVEL_SOURCE - info.level;
+			return info;
+		}
+
+		if (flow.c_liquid_source != liquid.c_source) {
+		 	if (info.level > 0) {
+				// Should never occur Could be an exception
+				printf("%d, %d, %d : mixed liquids %d and %d\n",
+					pos.X, pos.Y, pos.Z, liquid.c_source, flow.c_liquid_source);
+			}
+			info.level = -1; // Cannot fill, already filled with another liquid.
+			info.space = 0;
+			info.wet = false; // Not sure of this one
+			return info;
+		}
+
+		info.level += flow.amount;
+		if (info.level > LIQUID_LEVEL_SOURCE) {
+			printf("%d, %d, %d : overflow (level=%d, flow=%d)\n",
+					pos.X, pos.Y, pos.Z, info.level, flow.amount);
+			info.level = LIQUID_LEVEL_SOURCE;
+		} else if (info.level < 0) {
+			printf("%d, %d, %d : underflow (level=%d, flow=%d)\n",
+					pos.X, pos.Y, pos.Z, info.level, flow.amount);
+			info.level = 0;
+		}
+		info.space = LIQUID_LEVEL_SOURCE - info.level;
+	}
+
 	return info;
 }
-
+/*
 u8 LiquidLogicFinite::evaluate_neighboor_liquid(v3s16 pos, const LiquidInfo &liquid)
 {
 	u8 volume = 0;
@@ -199,101 +309,8 @@ u8 LiquidLogicFinite::count_neighboor_with_group(v3s16 pos, std::string group)
 		}
 	return count;
 }
-
-void LiquidLogicFinite::update_node(NodeInfo &info, const LiquidInfo &liquid,
-	std::map<v3s16, MapBlock*> &modified_blocks, ServerEnvironment *env) {
-
-	NodeInfo old = get_node_info(info.pos, liquid);
-
-	switch(info.level) {
-		case LIQUID_LEVEL_SOURCE:
-			info.node.setContent(liquid.c_source);
-			info.node.param2 = 0;
-			m_must_reflow.push_back(info.pos);
-			break;
-
-		// Level 0 nodes are kept as "wet" level 0 flowing liquides. To "dry" them,
-		// use level -1
-		case -1:
-			info.node.param2 = 0;
-			info.node.setContent(liquid.c_empty);
-			break;
-
-		// -2 is for solidify
-		case -2:
-			info.node.param2 = 0;
-			info.node.setContent(liquid.c_solid);
-			break;
-
-		default:
-			info.node.setContent(liquid.c_flowing);
-//			info.node.param2 = (info.flowing_down ? LIQUID_FLOW_DOWN_MASK : 0x00)
-//				| (info.level & LIQUID_LEVEL_MASK);
-			info.node.param2 = (info.level & LIQUID_LEVEL_MASK);
-			m_must_reflow.push_back(info.pos);
-	}
-
-	// No change, skip
-	if (old.node.getContent() == info.node.getContent()
-	 && old.node.param2 == info.node.param2)
-		return;
-
-	// Node has changed this turn, ignore it
-	m_skip.insert(info.pos);
-
-	old.level = (old.node.getContent() == liquid.c_source)?LIQUID_LEVEL_SOURCE:
-		old.node.param2&LIQUID_LEVEL_MASK; // Supose param2=0 for empty nodes
-
-	// Trigger liquid transform on side blocks if level has lowered
-	if (old.level > info.level) {
-		for (u16 i = 0; i < 4; i++)
-			m_must_reflow.push_back(info.pos + side_4dirs[i]);
-		m_must_reflow.push_back(info.pos - down_dir);
-	}
-
-	// on_flood() the node
-	const ContentFeatures &cf = m_ndef->get(old.node);
-	if (old.node.getContent() != CONTENT_AIR && cf.liquid_type == LIQUID_NONE) {
-		if (env->getScriptIface()->node_on_flood(info.pos, old.node, info.node))
-			return;
-	}
-
-	// TODO: add on_liquify
-
-	// Ignore light (because calling voxalgo::update_lighting_nodes)
-	info.node.setLight(LIGHTBANK_DAY, 0, m_ndef);
-	info.node.setLight(LIGHTBANK_NIGHT, 0, m_ndef);
-
-	// Find out whether there is a suspect for this action
-	std::string suspect;
-	if (m_gamedef->rollback())
-		suspect = m_gamedef->rollback()->getSuspect(info.pos, 83, 1);
-
-	if (m_gamedef->rollback() && !suspect.empty()) {
-		// Blame suspect
-		RollbackScopeActor rollback_scope(m_gamedef->rollback(), suspect, true);
-		// Get old node for rollback
-		RollbackNode rollback_oldnode(m_map, info.pos, m_gamedef);
-		// Set node
-		m_map->setNode(info.pos, info.node);
-		// Report
-		RollbackNode rollback_newnode(m_map, info.pos, m_gamedef);
-		RollbackAction action;
-		action.setSetNode(info.pos, rollback_oldnode, rollback_newnode);
-		m_gamedef->rollback()->reportAction(action);
-	} else {
-		// Set node
-		m_map->setNode(info.pos, info.node);
-	}
-
-	v3s16 blockpos = getNodeBlockPos(info.pos);
-	MapBlock *block = m_map->getBlockNoCreateNoEx(blockpos);
-	if (block != NULL) {
-		modified_blocks[blockpos] =  block;
-		m_changed_nodes.emplace_back(info.pos, old.node);
-	}
-}
-
+*/
+/*
 // Slide specific method
 void LiquidLogicFinite::solidify(NodeInfo &info, const LiquidInfo &liquid,
 	std::map<v3s16, MapBlock*> &modified_blocks, ServerEnvironment *env)
@@ -353,15 +370,8 @@ void LiquidLogicFinite::try_liquidify(v3s16 pos, const LiquidInfo &liquid,
 				space_needed -= info.space;
 				i++;
 			}
-		}/*
-		// And finaly above
-		if (space_needed > 0) {
-			info = get_node_info(pos - down_dir, liquid);
-			if (info.space)
-				spaces.push_back(info);
-			space_needed -= info.space;
 		}
-*/
+
 		if (space_needed > 0)
 			return; // Failed to expand solid node to enough liquid nodes
 
@@ -416,10 +426,10 @@ void LiquidLogicFinite::liquify_and_break(NodeInfo &info, s8 transfer,
 		try_break(info.pos + liquify_dirs[i], transfer, liquid, modified_blocks, env);
 	}
 }
+*/
 
 s8 LiquidLogicFinite::transfer(NodeInfo &source, NodeInfo &target,
-	const LiquidInfo &liquid, bool equalize,
-	std::map<v3s16, MapBlock*> &modified_blocks, ServerEnvironment *env)
+	const LiquidInfo &liquid, bool equalize)
 {
 	s8 transfer;
 	if (equalize)
@@ -435,18 +445,13 @@ s8 LiquidLogicFinite::transfer(NodeInfo &source, NodeInfo &target,
 	target.level+= transfer;
 	source.level-= transfer;
 
-	update_node(source, liquid, modified_blocks, env);
-	update_node(target, liquid, modified_blocks, env);
-
-	// Slide specific
-	liquify_and_break(target, transfer, liquid, modified_blocks, env);
+	add_flow(source.pos, -transfer, liquid);
+	add_flow(target.pos,  transfer, liquid);
 
 	return transfer;
 }
 
-void LiquidLogicFinite::transform_node(v3s16 pos,
-	std::map<v3s16, MapBlock*> &modified_blocks,
-	ServerEnvironment *env)
+void LiquidLogicFinite::compute_flow(v3s16 pos)
 {
 	// Get source node information
 	LiquidInfo liquid = get_liquid_info(pos);
@@ -454,55 +459,30 @@ void LiquidLogicFinite::transform_node(v3s16 pos,
 
 	if (!source.wet) return;
 
-	NodeInfo info;
-	s8 transfered = 0;
-	bool goahead = true;
-
-	// Level 0 flowing nodes are "wet" nodes. They make liquids follow the same
-	// path and avoid scattering.
-
-	// For level 0 flowing nodes, check if neighboors are level > 1
-	if (source.level == 0) {
-		source.level = -1;
-		for (u16 i = 0; i < 4; i++) {
-			v3s16 tgtpos = pos + side_4dirs[i];
-			info = get_node_info(tgtpos, liquid);
-			if (info.level > 0) {
-				m_must_reflow.push_back(source.pos);
-				source.level = 0;
-				break;
-			}
-		}
-
-		if (source.level == 0 && std::rand() % 10 == 0)
-			source.level = -1;
-
-		if (source.level == -1)
-			update_node(source, liquid, modified_blocks, env);
-		else
-			// Don't remove node from queue until it is solidified (if it can).
-			if (liquid.c_solid != CONTENT_IGNORE)
-				m_must_reflow.push_back(source.pos);
-
+	// Level 0 nodes have to be checked every turn for drying
+	if (!source.level) {
+		add_flow(source.pos, 0, liquid);
 		return;
 	}
 
+	NodeInfo info;
+	/*
 	if ((liquid.c_solid != CONTENT_IGNORE) &&
 			(std::rand()%6 > evaluate_neighboor_liquid(pos, liquid))) {
 			solidify(source, liquid, modified_blocks, env);
 			return;
 		}
-
+*/
 	// Blocks to fill in priority :
 	// 1 - Block under
 	// 2 - Blocks under flowable neighboors
 	// 3 - Side blocks
 
-
 	// Right under (1)
 	info = get_node_info(pos + down_dir, liquid);
+
 	if (info.space) {
-		transfered += transfer(source, info, liquid, false, modified_blocks, env);
+		transfer(source, info, liquid, false);
 		if (source.level <= 0)
 			return;
 	}
@@ -532,63 +512,132 @@ void LiquidLogicFinite::transform_node(v3s16 pos,
 	std::sort(under.begin(), under.end(), levelCompare);
 	std::sort(sides.begin(), sides.end(), levelCompare);
 
-	s8 t;
 	// Distribute under (2)
 	// First distribute to liquids
 	for (auto& target : under)
-		if (source.level > 0 && target.wet) {
-			t = transfer(source, target, liquid, false, modified_blocks, env);
-			if (source.level <= 0)
+		if (source.level > 0 && target.wet)
+			if (transfer(source, target, liquid, false))
 				return;
-			transfered += t;
-			if (t)
-				goahead = false;
-		}
 
 	// Then to others
-	if (goahead)
-		for (auto& target : under)
-			if (source.level > 0 && !target.wet) {
-				t = transfer(source, target, liquid, false, modified_blocks, env);
-				if (source.level <= 0)
-					return;
-				transfered += t;
-				if (t)
-					goahead = false;
-			}
+	for (auto& target : under)
+		if (source.level > 0 && !target.wet)
+			if (transfer(source, target, liquid, false))
+				return;
 
 	// Distribute to sides
 	// First distribute to liquids
-	if (goahead)
-		for (auto& target : sides)
-			if (source.level > 0 && target.wet) {
-				t = transfer(source, target, liquid, true, modified_blocks, env);
-				if (source.level <= 0)
-					return;
-				transfered += t;
-				if (t)
-					goahead = false;
-			}
+	for (auto& target : sides)
+		if (source.level > 0 && target.wet)
+			if (transfer(source, target, liquid, true))
+				return;
 
 	// Then to others
-	if (goahead)
-		for (auto& target : sides)
-			if (source.level > 1 && !target.wet) {
-				t = transfer(source, target, liquid, true, modified_blocks, env);
-				transfered += t;
-				if (source.level <= 0)
-					return;
-				transfered += t;
-			}
-	if (liquid.c_solid != CONTENT_IGNORE) {
-		if (std::rand() % 3 > transfered)
-			solidify(source, liquid, modified_blocks, env);
-		else
-			// Don't remove node from queue until it is solidified.
-			m_must_reflow.push_back(source.pos);
-	}
+	for (auto& target : sides)
+		if (source.level > 1 && !target.wet)
+			transfer(source, target, liquid, true);
 }
 
+void LiquidLogicFinite::apply_flow(v3s16 pos, FlowInfo flow,
+	std::map<v3s16, MapBlock*> &modified_blocks,
+	ServerEnvironment *env)
+{
+	LiquidInfo liquid = get_liquid_info(flow.c_liquid_source);
+	NodeInfo info = get_node_info(pos, liquid);
+	MapNode nold = info.node;
+
+	switch(info.level) {
+		case LIQUID_LEVEL_SOURCE:
+			info.node.setContent(liquid.c_source);
+			info.node.param2 = 0;
+			break;
+
+		// Level 0 nodes are kept "wet" for some times before being dried. This is
+		// used to have a realistic looking liquid path
+		case 0:
+			info.node.param2 = 0;
+			info.node.setContent(liquid.c_empty);
+
+			// Keep wet if neighboors are wet
+			for (u16 i = 0; i < 4; i++) {
+				MapNode node = m_map->getNodeNoEx(pos + side_4dirs[i]);
+				if (node.getContent() == liquid.c_source ||
+						(node.getContent() == liquid.c_flowing &&
+						node.param2 > 0))
+				{
+					info.node.setContent(liquid.c_flowing);
+					break;
+				}
+			}
+
+			// Sometimes, a wet node gets dried
+			if (info.node.getContent() == liquid.c_flowing && (std::rand() % 10 == 0))
+				info.node.setContent(liquid.c_empty);
+			break;
+
+		default:
+			info.node.setContent(liquid.c_flowing);
+			info.node.param2 = info.level & LIQUID_LEVEL_MASK;
+	}
+
+	// Put liquid nodes that level changed back to queue
+	if (info.node.getContent() == liquid.c_flowing ||
+			info.node.getContent() == liquid.c_source)
+		m_liquid_queue.push_back(pos);
+
+	// No change on map, skip
+	if (nold.getContent() == info.node.getContent()
+	 && nold.param2 == info.node.param2)
+		return;
+
+	// Trigger liquid transform on side blocks if level has lowered
+	if (flow.amount < 0) {
+		for (u16 i = 0; i < 4; i++)
+			m_liquid_queue.push_back(info.pos + side_4dirs[i]);
+		m_liquid_queue.push_back(info.pos - down_dir);
+	}
+
+	// on_flood() the node
+	// TODO: Check this, not sure of triggering conds
+	const ContentFeatures &cf = m_ndef->get(nold);
+	if (nold.getContent() != CONTENT_AIR && cf.liquid_type == LIQUID_NONE) {
+		if (env->getScriptIface()->node_on_flood(info.pos, nold, info.node))
+			return;
+	}
+
+	// Ignore light (because calling voxalgo::update_lighting_nodes)
+	info.node.setLight(LIGHTBANK_DAY, 0, m_ndef);
+	info.node.setLight(LIGHTBANK_NIGHT, 0, m_ndef);
+
+	// Find out whether there is a suspect for this action
+	std::string suspect;
+	if (m_gamedef->rollback())
+		suspect = m_gamedef->rollback()->getSuspect(info.pos, 83, 1);
+
+	if (m_gamedef->rollback() && !suspect.empty()) {
+		// Blame suspect
+		RollbackScopeActor rollback_scope(m_gamedef->rollback(), suspect, true);
+		// Get old node for rollback
+		RollbackNode rollback_oldnode(m_map, info.pos, m_gamedef);
+		// Set node
+		m_map->setNode(info.pos, info.node);
+		// Report
+		RollbackNode rollback_newnode(m_map, info.pos, m_gamedef);
+		RollbackAction action;
+		action.setSetNode(info.pos, rollback_oldnode, rollback_newnode);
+		m_gamedef->rollback()->reportAction(action);
+	} else {
+		// Set node
+		m_map->setNode(info.pos, info.node);
+	}
+
+	v3s16 blockpos = getNodeBlockPos(info.pos);
+	MapBlock *block = m_map->getBlockNoCreateNoEx(blockpos);
+	if (block != NULL) {
+		modified_blocks[blockpos] =  block;
+		m_changed_nodes.emplace_back(info.pos, nold);
+	}
+}
 
 void LiquidLogicFinite::transform(
 	std::map<v3s16, MapBlock*> &modified_blocks,
@@ -598,40 +647,39 @@ void LiquidLogicFinite::transform(
 	u32 initial_size = m_liquid_queue.size();
 	NodeInfo info;
 
-	m_must_reflow.clear();
 	m_changed_nodes.clear();
-	m_skip.clear();
+	m_flows.clear();
 
 	u32 liquid_loop_max = g_settings->getS32("liquid_loop_max");
 	u32 loop_max = liquid_loop_max;
 
-	printf("Liquid queue size = %d\n", m_liquid_queue.size() );
+//	printf("Liquid queue size = %d\n", m_liquid_queue.size());
 
-	while (m_liquid_queue.size() != 0)
-	{
+	// First compute flows from nodes to others
+	while (m_liquid_queue.size() != 0) {
 		// This should be done here so that it is done when continue is used
 		if (loopcount >= initial_size || loopcount >= loop_max)
 			break;
 		loopcount++;
 
-		/*
-			Get a queued transforming liquid node
-		*/
 		v3s16 pos = m_liquid_queue.front();
-
 		m_liquid_queue.pop_front();
-		if (m_skip.count(pos) > 0) continue;
+		compute_flow(pos);
+	}
+//	printf("Pending flow size = %ld\n", m_flows.size());
 
-		transform_node(pos, modified_blocks, env);
+	// Then apply flows. This will populate m_liquid_queue also for the next run
+	for (auto &it: m_flows) {
+		apply_flow(key_to_pos(it.first), it.second, modified_blocks, env);
 	}
 
 //	printf("liquid %d, solid %d, delta %d\n", dbg_liquid, dbg_solid, dbg_liquid - dbg_solid);
 
 	//infostream<<"Map::transformLiquids(): loopcount="<<loopcount<<std::endl;
-
+/* --> inutile, remplacé par apply_flow()
 	for (auto &iter : m_must_reflow)
 		m_liquid_queue.push_back(iter);
-
+*/
 	voxalgo::update_lighting_nodes(m_map, m_changed_nodes, modified_blocks);
 
 	/* ----------------------------------------------------------------------
@@ -682,3 +730,44 @@ void LiquidLogicFinite::transform(
 		m_unprocessed_count = m_liquid_queue.size();
 	}
 }
+
+/* LEVEL 0 MANAGEMENT
+	// Level 0 flowing nodes are "wet" nodes. They make liquids follow the same
+	// path and avoid scattering.
+
+	// For level 0 flowing nodes, check if neighboors are level > 1
+	if (source.level == 0) {
+		source.level = -1;
+		for (u16 i = 0; i < 4; i++) {
+			v3s16 tgtpos = pos + side_4dirs[i];
+			info = get_node_info(tgtpos, liquid);
+			if (info.level > 0) {
+				m_must_reflow.push_back(source.pos);
+				source.level = 0;
+				break;
+			}
+		}
+
+		if (source.level == 0 && std::rand() % 10 == 0)
+			source.level = -1;
+
+		if (source.level == -1)
+			update_node(source, liquid, modified_blocks, env);
+		else
+			// Don't remove node from queue until it is solidified (if it can).
+			if (liquid.c_solid != CONTENT_IGNORE)
+				m_must_reflow.push_back(source.pos);
+
+		return;
+	}
+*/
+
+/* SOLIDIFY
+	if (liquid.c_solid != CONTENT_IGNORE) {
+		if (std::rand() % 3 > transfered)
+			solidify(source, liquid, modified_blocks, env);
+		else
+			// Don't remove node from queue until it is solidified.
+			m_must_reflow.push_back(source.pos);
+	}
+*/

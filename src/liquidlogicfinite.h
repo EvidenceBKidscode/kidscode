@@ -50,6 +50,11 @@ struct NodeInfo {
 	bool wet;
 };
 
+struct FlowInfo {
+	s8 amount = 0;
+	content_t c_liquid_source = CONTENT_IGNORE;
+};
+
 class LiquidLogicFinite: public LiquidLogic {
 public:
 	LiquidLogicFinite(Map *map, IGameDef *gamedef);
@@ -64,7 +69,15 @@ public:
 
 private:
 	LiquidInfo get_liquid_info(v3s16 pos);
+	LiquidInfo get_liquid_info(content_t c_node);
 	NodeInfo get_node_info(v3s16 pos, const LiquidInfo &liquid);
+	void add_flow(v3s16 pos, s8 amount, const LiquidInfo &liquid);
+	s8 transfer(NodeInfo &source, NodeInfo &target,
+		const LiquidInfo &liquid, bool equalize);
+	void compute_flow(v3s16 pos);
+	void apply_flow(v3s16 pos, FlowInfo flow,
+		std::map<v3s16, MapBlock*> &modified_blocks, ServerEnvironment *env);
+/*
 	u8 evaluate_neighboor_liquid(v3s16 pos, const LiquidInfo &liquid);
 	u8 count_neighboor_with_group(v3s16 pos, std::string group);
 	void update_node(NodeInfo &info, const LiquidInfo &liquid,
@@ -77,17 +90,11 @@ private:
 		std::map<v3s16, MapBlock*> &modified_blocks, ServerEnvironment *env);
 	void liquify_and_break(NodeInfo &info, s8 transfer, const LiquidInfo &liquid,
 		std::map<v3s16, MapBlock*> &modified_blocks, ServerEnvironment *env);
-	s8 transfer(NodeInfo &source, NodeInfo &target,
-		const LiquidInfo &liquid, bool equalize,
-		std::map<v3s16, MapBlock*> &modified_blocks, ServerEnvironment *env);
-	void transform_node(v3s16 pos,
-		std::map<v3s16, MapBlock*> &modified_blocks,
-		ServerEnvironment *env);
+*/
 
-
+	std::unordered_map<content_t, LiquidInfo> m_liquids_info;
 	UniqueQueue<v3s16> m_liquid_queue;
-	std::deque<v3s16> m_must_reflow;
-	std::set<v3s16> m_skip;
+	std::unordered_map<u64, FlowInfo> m_flows;
 	std::vector<std::pair<v3s16, MapNode> > m_changed_nodes;
 	v3s16 m_block_pos, m_rel_block_pos;
 	u32 m_unprocessed_count = 0;
