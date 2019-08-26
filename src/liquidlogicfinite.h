@@ -72,17 +72,27 @@ private:
 	LiquidInfo get_liquid_info(v3s16 pos);
 	LiquidInfo get_liquid_info(content_t c_node);
 	NodeInfo get_node_info(v3s16 pos, const LiquidInfo &liquid);
+	void set_node(v3s16 pos, MapNode node,
+		std::map<v3s16, MapBlock*> &modified_blocks, ServerEnvironment *env);
 	void add_flow(v3s16 pos, s8 amount, const LiquidInfo &liquid);
 	s8 transfer(NodeInfo &source, NodeInfo &target,
 		const LiquidInfo &liquid, bool equalize);
 	void compute_flow(v3s16 pos);
-	void set_node(v3s16 pos, MapNode node,
-		std::map<v3s16, MapBlock*> &modified_blocks, ServerEnvironment *env);
 	void apply_flow(v3s16 pos, FlowInfo flow,
 		std::map<v3s16, MapBlock*> &modified_blocks, ServerEnvironment *env);
-/*
+
+	// slides specific methods
+	FlowInfo neighboor_flow(v3s16 pos, const LiquidInfo &liquid);
 	u8 evaluate_neighboor_liquid(v3s16 pos, const LiquidInfo &liquid);
 	u8 count_neighboor_with_group(v3s16 pos, std::string group);
+	bool solidify(NodeInfo &info, const LiquidInfo &liquid,
+		std::map<v3s16, MapBlock*> &modified_blocks, ServerEnvironment *env);
+	bool try_liquify(v3s16 pos, const LiquidInfo &liquid,
+		std::map<v3s16, MapBlock*> &modified_blocks, ServerEnvironment *env);
+	void liquify_and_break(v3s16 pos, const FlowInfo &flow,
+		const LiquidInfo &liquid, std::map<v3s16, MapBlock*> &modified_blocks,
+		ServerEnvironment *env);
+/*
 	void update_node(NodeInfo &info, const LiquidInfo &liquid,
 		std::map<v3s16, MapBlock*> &modified_blocks, ServerEnvironment *env);
 	void solidify(NodeInfo &info, const LiquidInfo &liquid,
