@@ -226,13 +226,14 @@ NodeInfo LiquidLogicFinite::get_node_info(v3s16 pos, const LiquidInfo &liquid) {
 
 	// If liquid or fillable, test existing pending flow
 	if (info.level >= 0) {
-		FlowInfo flow;
-		try {
-			flow = m_flows.at(pos_to_key(pos));
-		} catch(std::out_of_range &e) {
+
+		auto const &it = m_flows.find(pos_to_key(pos));
+		if (it == m_flows.end()) {
 			info.space = LIQUID_LEVEL_SOURCE - info.level;
 			return info;
 		}
+
+		FlowInfo flow = it->second;
 
 		if (flow.c_liquid_source != liquid.c_source) {
 		 	if (info.level > 0) {
@@ -309,25 +310,23 @@ void LiquidLogicFinite::set_node(v3s16 pos, MapNode node,
 FlowInfo LiquidLogicFinite::neighboor_flow(v3s16 pos,
 		const LiquidInfo &liquid)
 {
-	FlowInfo f, flow;
-	f.c_liquid_source = liquid.c_source;
+	FlowInfo result, flow;
+	result.c_liquid_source = liquid.c_source;
 	for (s16 X = pos.X - 1; X <= pos.X + 1; X++)
 	for (s16 Y = pos.Y - 1; Y <= pos.Y + 1; Y++)
 	for (s16 Z = pos.Z - 1; Z <= pos.Z + 1; Z++)
 		if (X || Y || Z)
 		{
-			try {
-				flow = m_flows.at(pos_to_key(v3s16(X,Y,Z)));
-			} catch(std::out_of_range &e) {
-				continue;
-			}
-
-			if (flow.c_liquid_source == f.c_liquid_source) {
-				f.in += flow.in;
-				f.out += flow.out;
+			auto const &it = m_flows.find(pos_to_key(v3s16(X,Y,Z)));
+			if (it != m_flows.end()) {
+				flow = it->second;
+				if (flow.c_liquid_source == result.c_liquid_source) {
+					result.in += flow.in;
+					result.out += flow.out;
+				}
 			}
 		}
-	return f;
+	return result;
 }
 
 u8 LiquidLogicFinite::evaluate_neighboor_liquid(v3s16 pos,
@@ -467,9 +466,8 @@ void LiquidLogicFinite::liquify_and_break(v3s16 pos, const FlowInfo &flow,
 	const LiquidInfo &liquid, std::map<v3s16, MapBlock*> &modified_blocks,
 	ServerEnvironment *env)
 {
-//		FlowInfo f = neighboor_flow(pos, liquid);
-//	u16 test = flow.in * 2 + f.in;
-u16 test = 50;
+	FlowInfo f = neighboor_flow(pos, liquid);
+	u16 test = flow.in * 2 + f.in;
 	for (int i = 0; i < 5; i++) {
 		v3s16 pos2 = pos + liquify_dirs[i];
 		// Liquify
@@ -693,10 +691,12 @@ void LiquidLogicFinite::transform(
 		compute_flow(pos);
 	}
 	auto end = std::chrono::steady_clock::now();
-	printf("Liquid move compute : %ld ms\n",
-			std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count());
 
 	printf("Liquify flow size = %ld\n", m_flows.size());
+
+	printf("Liquid move compute    : %ld ms\n",
+			std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count());
+
 
 	start = std::chrono::steady_clock::now();
 	// Liquify
@@ -707,7 +707,7 @@ void LiquidLogicFinite::transform(
 			liquify_and_break(pos, flow, get_liquid_info(pos), modified_blocks, env);
 	}
 	end = std::chrono::steady_clock::now();
-	printf("Liquidify : %ld ms\n",
+	printf("Liquidify              : %ld ms\n",
 			std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count());
 
 
@@ -717,7 +717,7 @@ void LiquidLogicFinite::transform(
 		apply_flow(key_to_pos(it.first), it.second, modified_blocks, env);
 
 	end = std::chrono::steady_clock::now();
-	printf("Apply moves : %ld ms\n",
+	printf("Apply moves            : %ld ms\n",
 			std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count());
 
 //	printf("liquid %d, solid %d, delta %d\n", dbg_liquid, dbg_solid, dbg_liquid - dbg_solid);
