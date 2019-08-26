@@ -51,7 +51,8 @@ struct NodeInfo {
 };
 
 struct FlowInfo {
-	s8 amount = 0;
+	s8 in = 0;
+	s8 out = 0;
 	content_t c_liquid_source = CONTENT_IGNORE;
 };
 
@@ -75,6 +76,8 @@ private:
 	s8 transfer(NodeInfo &source, NodeInfo &target,
 		const LiquidInfo &liquid, bool equalize);
 	void compute_flow(v3s16 pos);
+	void set_node(v3s16 pos, MapNode node,
+		std::map<v3s16, MapBlock*> &modified_blocks, ServerEnvironment *env);
 	void apply_flow(v3s16 pos, FlowInfo flow,
 		std::map<v3s16, MapBlock*> &modified_blocks, ServerEnvironment *env);
 /*
