@@ -462,23 +462,37 @@ const v3s16 liquify_dirs[5] =
 };
 
 // Slide specific method
-void LiquidLogicFinite::liquify_and_break(v3s16 pos, const FlowInfo &flow,
-	const LiquidInfo &liquid, std::map<v3s16, MapBlock*> &modified_blocks,
+void LiquidLogicFinite::transform_slide(v3s16 pos, const FlowInfo &flow,
+	std::map<v3s16, MapBlock*> &modified_blocks,
 	ServerEnvironment *env)
 {
+	LiquidInfo liquid = get_liquid_info(pos);
+
+	if (liquid.c_solid == CONTENT_IGNORE)
+		return; // Not a sliding liquid
+
 	FlowInfo f = neighboor_flow(pos, liquid);
-	u16 test = flow.in * 2 + f.in;
-	for (int i = 0; i < 5; i++) {
-		v3s16 pos2 = pos + liquify_dirs[i];
-		// Liquify
-		if (std::rand() % 100 < test)
-			if (try_liquify(pos2, liquid, modified_blocks, env))
-				continue;
-		// Break
-		u8 group = m_ndef->get(m_map->getNodeNoEx(pos)).getGroup(liquid.break_group);
-		if (group and std::rand() % 500 < group * flow.in)
-			set_node(pos2, MapNode(liquid.c_empty, 0, 0), modified_blocks, env);
-	}
+	NodeInfo info = get_node_info(pos, liquid);
+
+	// Solidify
+	if (flow.in <= flow.out)
+		if (std::rand()%50 > f.in)
+			if (solidify(info, liquid, modified_blocks, env))
+				return;
+
+	// Liquidify and break
+	if (flow.in > flow.out)
+		for (int i = 0; i < 5; i++) {
+			v3s16 pos2 = pos + liquify_dirs[i];
+			// Liquify
+			if (std::rand() % 10 < f.in)
+				if (try_liquify(pos2, liquid, modified_blocks, env))
+					continue;
+			// Break
+			u8 group = m_ndef->get(m_map->getNodeNoEx(pos)).getGroup(liquid.break_group);
+			if (group and std::rand() % 500 < group * flow.in)
+				set_node(pos2, MapNode(liquid.c_empty, 0, 0), modified_blocks, env);
+		}
 }
 
 s8 LiquidLogicFinite::transfer(NodeInfo &source, NodeInfo &target,
@@ -594,13 +608,6 @@ void LiquidLogicFinite::apply_flow(v3s16 pos, FlowInfo flow,
 	NodeInfo info = get_node_info(pos, liquid);
 	MapNode nold = info.node;
 
-	// Solidification
-	if (info.level > 0 && liquid.c_solid != CONTENT_IGNORE)
-		if (std::rand()%6 >
-				(flow.in + flow.out) * evaluate_neighboor_liquid(pos, liquid))
-			if (solidify(info, liquid, modified_blocks, env))
-				return;
-
 	switch(info.level) {
 		case LIQUID_LEVEL_SOURCE:
 			info.node.setContent(liquid.c_source);
@@ -703,8 +710,7 @@ void LiquidLogicFinite::transform(
 	for (auto &it : m_flows) {
 		v3s16 pos = key_to_pos(it.first);
 		FlowInfo &flow = it.second;
-		if (flow.in > flow.out)
-			liquify_and_break(pos, flow, get_liquid_info(pos), modified_blocks, env);
+		transform_slide(pos, flow, modified_blocks, env);
 	}
 	end = std::chrono::steady_clock::now();
 	printf("Liquidify              : %ld ms\n",
