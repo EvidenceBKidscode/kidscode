@@ -494,7 +494,7 @@ void LiquidLogicFinite::transform_slide(v3s16 pos, FlowInfo &flow,
 
 	// Because still
 	if (flow.in <= flow.out)
-		if (std::rand()%30 > f.in)
+		if (std::rand()%20 > f.in)
 			if (solidify(info, liquid, modified_blocks, env)) {
 				flow.in = 0;
 				flow.out = 0;
@@ -506,13 +506,13 @@ void LiquidLogicFinite::transform_slide(v3s16 pos, FlowInfo &flow,
 		for (int i = 0; i < 5; i++) {
 			v3s16 pos2 = pos + liquify_dirs[i];
 			// Liquify
-			if (std::rand() % 20 < (f.in*2 - f.out))
+			if (std::rand() % 40 < (f.in*2 - f.out))
 				if (try_liquify(pos2, liquid, modified_blocks, env))
 					continue;
 
 			// Break
 			u8 group = m_ndef->get(m_map->getNodeNoEx(pos2)).getGroup(liquid.break_group);
-			if (group and std::rand() % 1000 < (1 << group) * flow.in) {
+			if (group && std::rand() % 1000 < (1 << group) * flow.in) {
 				set_node(pos2, MapNode(liquid.c_empty, 0, 0), modified_blocks, env);
 			}
 		}
