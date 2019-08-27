@@ -39,6 +39,7 @@ struct LiquidInfo {
 	u8 blocks;
 	std::string break_group;
 	std::string liquify_group;
+	std::string stop_group;
 };
 
 struct NodeInfo {

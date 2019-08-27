@@ -31,7 +31,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <algorithm>
 #include <chrono>
 
-const v3s16 dbg_pos(-655, 1331, 929);
+const v3s16 dbg_pos(-10, 1068, 1542);
 
 u32 dbg_solid = 0;
 u32 dbg_liquid = 0;
@@ -175,10 +175,12 @@ LiquidInfo LiquidLogicFinite::get_liquid_info(content_t c_node) {
 		info.blocks = cf.liquid_blocks_per_solid;
 		info.break_group = "broken_by_" + cf.liquid_slide_type_name ;
 		info.liquify_group = "liquified_by_" + cf.liquid_slide_type_name;
+		info.stop_group = "stops_" + cf.liquid_slide_type_name;
 	} else {
 		info.blocks = 0;
 		info.liquify_group = "";
 		info.break_group = "";
+		info.stop_group = "";
 	}
 
 	m_liquids_info[c_node] = info;
@@ -481,6 +483,16 @@ void LiquidLogicFinite::transform_slide(v3s16 pos, FlowInfo &flow,
 	NodeInfo info = get_node_info(pos, liquid);
 
 	// Solidify
+	// Becose node around
+	u8 stops = count_neighboor_with_group(pos, liquid.stop_group);
+	if (std::rand()%3 < stops)
+		if (solidify(info, liquid, modified_blocks, env)) {
+			flow.in = 0;
+			flow.out = 0;
+			return;
+		}
+
+	// Because still
 	if (flow.in <= flow.out)
 		if (std::rand()%30 > f.in)
 			if (solidify(info, liquid, modified_blocks, env)) {
@@ -490,18 +502,21 @@ void LiquidLogicFinite::transform_slide(v3s16 pos, FlowInfo &flow,
 			}
 
 	// Liquidify and break
-	if (flow.in > flow.out)
+	if (flow.in > flow.out) {
 		for (int i = 0; i < 5; i++) {
 			v3s16 pos2 = pos + liquify_dirs[i];
 			// Liquify
-			if (std::rand() % 10 < f.in)
+			if (std::rand() % 20 < (f.in*2 - f.out))
 				if (try_liquify(pos2, liquid, modified_blocks, env))
 					continue;
+
 			// Break
-			u8 group = m_ndef->get(m_map->getNodeNoEx(pos)).getGroup(liquid.break_group);
-			if (group and std::rand() % 500 < group * flow.in)
+			u8 group = m_ndef->get(m_map->getNodeNoEx(pos2)).getGroup(liquid.break_group);
+			if (group and std::rand() % 1000 < (1 << group) * flow.in) {
 				set_node(pos2, MapNode(liquid.c_empty, 0, 0), modified_blocks, env);
+			}
 		}
+	}
 }
 
 s8 LiquidLogicFinite::transfer(NodeInfo &source, NodeInfo &target,
@@ -646,6 +661,10 @@ void LiquidLogicFinite::apply_flow(v3s16 pos, FlowInfo flow,
 				info.node.setContent(liquid.c_empty);
 
 			break;
+
+		case -1:
+			break;
+
 		default:
 			info.node.setContent(liquid.c_flowing);
 			info.node.param2 = info.level & LIQUID_LEVEL_MASK;
@@ -693,8 +712,12 @@ void LiquidLogicFinite::transform(
 	u32 liquid_loop_max = g_settings->getS32("liquid_loop_max");
 	u32 loop_max = liquid_loop_max;
 
-	printf("Liquid queue size = %d\n", m_liquid_queue.size());
+//	printf("Liquid queue size = %d\n", m_liquid_queue.size());
+
+#ifdef DEBUG_TIME
 	auto start = std::chrono::steady_clock::now();
+#endif
+
 	// First compute flows from nodes to others
 	while (m_liquid_queue.size() != 0) {
 		// This should be done here so that it is done when continue is used
@@ -706,32 +729,36 @@ void LiquidLogicFinite::transform(
 		m_liquid_queue.pop_front();
 		compute_flow(pos);
 	}
+
+//	printf("Liquify flow size = %ld\n", m_flows.size());
+
+#ifdef DEBUG_TIME
 	auto end = std::chrono::steady_clock::now();
-
-	printf("Liquify flow size = %ld\n", m_flows.size());
-
 	printf("Liquid move compute    : %ld ms\n",
 			std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count());
-
-
 	start = std::chrono::steady_clock::now();
+#endif
+
 	// Liquify
 	for (auto &it : m_flows)
 		transform_slide(key_to_pos(it.first), it.second, modified_blocks, env);
 
+#ifdef DEBUG_TIME
 	end = std::chrono::steady_clock::now();
-	printf("Liquidify              : %ld ms\n",
+	printf("Transform slides       : %ld ms\n",
 			std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count());
-
-
 	start = std::chrono::steady_clock::now();
+#endif
+
 	// Then apply flows. This will populate m_liquid_queue also for the next run
 	for (auto &it : m_flows)
 		apply_flow(key_to_pos(it.first), it.second, modified_blocks, env);
 
+#ifdef DEBUG_TIME
 	end = std::chrono::steady_clock::now();
 	printf("Apply moves            : %ld ms\n",
 			std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count());
+#endif
 
 //	printf("liquid %d, solid %d, delta %d\n", dbg_liquid, dbg_solid, dbg_liquid - dbg_solid);
 
@@ -787,14 +814,3 @@ void LiquidLogicFinite::transform(
 		m_unprocessed_count = m_liquid_queue.size();
 	}
 }
-
-
-/* SOLIDIFY
-	if (liquid.c_solid != CONTENT_IGNORE) {
-		if (std::rand() % 3 > transfered)
-			solidify(source, liquid, modified_blocks, env);
-		else
-			// Don't remove node from queue until it is solidified.
-			m_must_reflow.push_back(source.pos);
-	}
-*/
