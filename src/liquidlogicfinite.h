@@ -89,7 +89,7 @@ private:
 		std::map<v3s16, MapBlock*> &modified_blocks, ServerEnvironment *env);
 	bool try_liquify(v3s16 pos, const LiquidInfo &liquid,
 		std::map<v3s16, MapBlock*> &modified_blocks, ServerEnvironment *env);
-	void transform_slide(v3s16 pos, const FlowInfo &flow,
+	void transform_slide(v3s16 pos, FlowInfo &flow,
 		std::map<v3s16, MapBlock*> &modified_blocks, ServerEnvironment *env);
 /*
 	void update_node(NodeInfo &info, const LiquidInfo &liquid,

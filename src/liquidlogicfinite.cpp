@@ -413,40 +413,46 @@ bool LiquidLogicFinite::try_liquify(v3s16 pos, const LiquidInfo &liquid,
 
 	NodeInfo info;
 
-	if (liquid.blocks > 1) {
-		s8 space_needed = (liquid.blocks - 1) << 3;
-		std::vector<NodeInfo> spaces;
+	s8 space_needed = (liquid.blocks - 1) << 3;
+	std::vector<NodeInfo> spaces;
+
+	if (space_needed) {
+		s8 space = space_needed;
 		// Try to find space below
 		info = get_node_info(pos + down_dir, liquid);
 		if (info.space)
 			spaces.push_back(info);
-		space_needed -= info.space;
+		space -= info.space;
 
 		// Then around
-		if (space_needed > 0) {
+		if (space > 0) {
 			u8 start = std::rand() % 4;
 			u8 i = 0;
-			while (space_needed > 0 && i < 4) {
+			while (space > 0 && i < 4) {
 				info = get_node_info(pos + side_4dirs[(i + start)%4], liquid);
 				if (info.space)
 					spaces.push_back(info);
-				space_needed -= info.space;
+				space -= info.space;
 				i++;
 			}
 		}
 
-		if (space_needed > 0)
+		if (space > 0)
 			return false; // Failed to expand solid node to enough liquid nodes
+	}
 
-		space_needed = (liquid.blocks - 1) << 3;
+	// Tirgger "on_liquify"
+	if (env->getScriptIface()->node_on_liquify(pos, node))
+		return true;
+
+	dbg_liquid++;
+
+	if (space_needed)
 		for (auto &info : spaces) {
 			s8 fill = info.space > space_needed ? space_needed : info.space;
 			add_flow(info.pos, fill, liquid);
 			space_needed -= fill;
 		}
-	}
-
-	dbg_liquid++;
 	set_node(pos, MapNode(liquid.c_empty, 0, 0), modified_blocks, env);
 	add_flow(pos, LIQUID_LEVEL_SOURCE, liquid);
 	return true;
@@ -462,7 +468,7 @@ const v3s16 liquify_dirs[5] =
 };
 
 // Slide specific method
-void LiquidLogicFinite::transform_slide(v3s16 pos, const FlowInfo &flow,
+void LiquidLogicFinite::transform_slide(v3s16 pos, FlowInfo &flow,
 	std::map<v3s16, MapBlock*> &modified_blocks,
 	ServerEnvironment *env)
 {
@@ -476,9 +482,12 @@ void LiquidLogicFinite::transform_slide(v3s16 pos, const FlowInfo &flow,
 
 	// Solidify
 	if (flow.in <= flow.out)
-		if (std::rand()%50 > f.in)
-			if (solidify(info, liquid, modified_blocks, env))
+		if (std::rand()%30 > f.in)
+			if (solidify(info, liquid, modified_blocks, env)) {
+				flow.in = 0;
+				flow.out = 0;
 				return;
+			}
 
 	// Liquidify and break
 	if (flow.in > flow.out)
@@ -707,11 +716,9 @@ void LiquidLogicFinite::transform(
 
 	start = std::chrono::steady_clock::now();
 	// Liquify
-	for (auto &it : m_flows) {
-		v3s16 pos = key_to_pos(it.first);
-		FlowInfo &flow = it.second;
-		transform_slide(pos, flow, modified_blocks, env);
-	}
+	for (auto &it : m_flows)
+		transform_slide(key_to_pos(it.first), it.second, modified_blocks, env);
+
 	end = std::chrono::steady_clock::now();
 	printf("Liquidify              : %ld ms\n",
 			std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count());

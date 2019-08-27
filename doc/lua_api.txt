@@ -4834,6 +4834,11 @@ Definition tables
         ^ interval. Default: nil.
         ^ Warning: making a liquid node 'floodable' does not work and may cause problems. ]]
 
+        on_liquify = func(pos, node), --[[
+        ^ Called when a solid block is about to get liquifed by a "slide"
+        ^ liquid (node must be in a "liquified_by_..." group). Return true to
+        ^ prevent node liquefaction. ]]
+
         after_place_node = func(pos, placer, itemstack, pointed_thing) --[[
         ^ Called after constructing node when node was placed using
           minetest.item_place_node / minetest.place_node
