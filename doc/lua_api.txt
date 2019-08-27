@@ -6761,10 +6761,10 @@ Used by `minetest.register_node`.
             },
         },
 
-        on_construct = function(pos),
-        -- Node constructor; called after adding node.
-        -- Can set up metadata and stuff like that.
-        -- Not called for bulk node placement (i.e. schematics and VoxelManip).
+        on_construct = func(pos),
+        -- Node constructor; called after adding node
+        -- Can set up metadata and stuff like that
+        -- Not called for bulk node placement (i.e. schematics and VoxelManip)
         -- default: nil
 
         on_destruct = function(pos),
@@ -6785,6 +6785,11 @@ Used by `minetest.register_node`.
         -- over and over again every liquid update interval.
         -- Default: nil
         -- Warning: making a liquid node 'floodable' will cause problems.
+
+        on_liquify = func(pos, node),
+        -- Called when a solid block is about to get liquifed by a "slide"
+        -- liquid (node must be in a "liquified_by_..." group). Return true to
+        -- prevent node liquefaction.
 
         preserve_metadata = function(pos, oldnode, oldmeta, drops),
         -- Called when oldnode is about be converted to an item, but before the

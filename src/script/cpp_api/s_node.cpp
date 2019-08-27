@@ -195,6 +195,26 @@ bool ScriptApiNode::node_on_flood(v3s16 p, MapNode node, MapNode newnode)
 	return readParam<bool>(L, -1, false);
 }
 
+bool ScriptApiNode::node_on_liquify(v3s16 p, MapNode node)
+{
+	SCRIPTAPI_PRECHECKHEADER
+
+	int error_handler = PUSH_ERROR_HANDLER(L);
+
+	const NodeDefManager *ndef = getServer()->ndef();
+
+	// Push callback function on stack
+	if (!getItemCallback(ndef->get(node).name.c_str(), "on_liquify", &p))
+		return false;
+
+	// Call function
+	push_v3s16(L, p);
+	pushnode(L, node, ndef);
+	PCALL_RES(lua_pcall(L, 2, 1, error_handler));
+	lua_remove(L, error_handler);
+	return readParam<bool>(L, -1, false);
+}
+
 void ScriptApiNode::node_after_destruct(v3s16 p, MapNode node)
 {
 	SCRIPTAPI_PRECHECKHEADER
