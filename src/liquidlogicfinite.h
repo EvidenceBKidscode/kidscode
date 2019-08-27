@@ -34,15 +34,27 @@ struct LiquidInfo {
 	content_t c_source;
 	content_t c_flowing;
 	content_t c_empty;
+	// Slide specific
+	content_t c_solid;
+	u8 blocks;
+	std::string break_group;
+	std::string liquify_group;
+	std::string stop_group;
 };
 
 struct NodeInfo {
 	v3s16 pos;
 	s8 level;
+	s8 space;
 	MapNode node;
 	bool flowing_down;
-	bool fillable;
 	bool wet;
+};
+
+struct FlowInfo {
+	s8 in = 0;
+	s8 out = 0;
+	content_t c_liquid_source = CONTENT_IGNORE;
 };
 
 class LiquidLogicFinite: public LiquidLogic {
@@ -59,19 +71,43 @@ public:
 
 private:
 	LiquidInfo get_liquid_info(v3s16 pos);
-	NodeInfo get_node_info(v3s16 pos, LiquidInfo liquid);
-	void update_node(NodeInfo &info, LiquidInfo liquid,
+	LiquidInfo get_liquid_info(content_t c_node);
+	NodeInfo get_node_info(v3s16 pos, const LiquidInfo &liquid);
+	void set_node(v3s16 pos, MapNode node,
 		std::map<v3s16, MapBlock*> &modified_blocks, ServerEnvironment *env);
-	bool transfer(NodeInfo &source, NodeInfo &target,
-		LiquidInfo liquid, bool equalize,
+	void add_flow(v3s16 pos, s8 amount, const LiquidInfo &liquid);
+	s8 transfer(NodeInfo &source, NodeInfo &target,
+		const LiquidInfo &liquid, bool equalize);
+	void compute_flow(v3s16 pos);
+	void apply_flow(v3s16 pos, FlowInfo flow,
 		std::map<v3s16, MapBlock*> &modified_blocks, ServerEnvironment *env);
-	void transform_node(v3s16 pos, u16 start,
-		std::map<v3s16, MapBlock*> &modified_blocks,
-		ServerEnvironment *env);
 
+	// slides specific methods
+	FlowInfo neighboor_flow(v3s16 pos, const LiquidInfo &liquid);
+	u8 evaluate_neighboor_liquid(v3s16 pos, const LiquidInfo &liquid);
+	u8 count_neighboor_with_group(v3s16 pos, std::string group);
+	bool solidify(NodeInfo &info, const LiquidInfo &liquid,
+		std::map<v3s16, MapBlock*> &modified_blocks, ServerEnvironment *env);
+	bool try_liquify(v3s16 pos, const LiquidInfo &liquid,
+		std::map<v3s16, MapBlock*> &modified_blocks, ServerEnvironment *env);
+	void transform_slide(v3s16 pos, FlowInfo &flow,
+		std::map<v3s16, MapBlock*> &modified_blocks, ServerEnvironment *env);
+/*
+	void update_node(NodeInfo &info, const LiquidInfo &liquid,
+		std::map<v3s16, MapBlock*> &modified_blocks, ServerEnvironment *env);
+	void solidify(NodeInfo &info, const LiquidInfo &liquid,
+		std::map<v3s16, MapBlock*> &modified_blocks, ServerEnvironment *env);
+	void try_liquidify(v3s16 pos, const LiquidInfo &liquid,
+		std::map<v3s16, MapBlock*> &modified_blocks, ServerEnvironment *env);
+	void try_break(v3s16 pos, s8 transfer, const LiquidInfo &liquid,
+		std::map<v3s16, MapBlock*> &modified_blocks, ServerEnvironment *env);
+	void liquify_and_break(NodeInfo &info, s8 transfer, const LiquidInfo &liquid,
+		std::map<v3s16, MapBlock*> &modified_blocks, ServerEnvironment *env);
+*/
+
+	std::unordered_map<content_t, LiquidInfo> m_liquids_info;
 	UniqueQueue<v3s16> m_liquid_queue;
-	std::deque<v3s16> m_must_reflow;
-	std::set<v3s16> m_skip;
+	std::unordered_map<u64, FlowInfo> m_flows;
 	std::vector<std::pair<v3s16, MapNode> > m_changed_nodes;
 	v3s16 m_block_pos, m_rel_block_pos;
 	u32 m_unprocessed_count = 0;

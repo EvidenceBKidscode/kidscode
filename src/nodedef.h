@@ -364,6 +364,19 @@ struct ContentFeatures
 	std::string liquid_alternative_flowing;
 	// If the content is liquid, this is the source version of the liquid.
 	std::string liquid_alternative_source;
+
+	// If the content is liquid and can freeze, this is the solid version of the
+	// liquid
+	std::string liquid_alternative_solid;
+
+	// If the content is a slide (snowslide, mudslide) this is the name of that
+	// slide type. It will be used for group names.
+	std::string liquid_slide_type_name;
+	
+	// If the content is liquid and can freeze, this is number of liquid block per
+	// solid block
+	u8 liquid_blocks_per_solid;
+
 	// Viscosity for fluid flow, ranging from 1 to 7, with
 	// 1 giving almost instantaneous propagation and 7 being
 	// the slowest possible
