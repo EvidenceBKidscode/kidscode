@@ -32,7 +32,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <chrono>
 
 // Define to display times
-#define DEBUG_TIME
+//#define DEBUG_TIME
 
 const v3s16 dbg_pos(-10, 1068, 1542);
 
