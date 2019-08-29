@@ -86,7 +86,7 @@ private:
 	FlowInfo neighboor_flow(v3s16 pos, const LiquidInfo &liquid);
 	u8 evaluate_neighboor_liquid(v3s16 pos, const LiquidInfo &liquid);
 	u8 count_neighboor_with_group(v3s16 pos, std::string group);
-	bool solidify(NodeInfo &info, const LiquidInfo &liquid,
+	void solidify(NodeInfo &info, const LiquidInfo &liquid,
 		std::map<v3s16, MapBlock*> &modified_blocks, ServerEnvironment *env);
 	bool try_liquify(v3s16 pos, const LiquidInfo &liquid,
 		std::map<v3s16, MapBlock*> &modified_blocks, ServerEnvironment *env);
