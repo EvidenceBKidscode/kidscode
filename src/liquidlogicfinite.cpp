@@ -149,6 +149,24 @@ void LiquidLogicFinite::add_flow(v3s16 pos, s8 amount,
 	m_flows[key] = flow;
 }
 
+u8 LiquidLogicFinite::get_group(content_t c_node, const std::string &group_name)
+{
+	std::map<content_t, u8> &group_nodes = m_groups_info[group_name];
+	auto it = group_nodes.find(c_node);
+	if (it == group_nodes.end()) {
+		u8 group = m_ndef->get(c_node).getGroup(group_name);
+		group_nodes[c_node] =  group;
+		return group;
+	} else {
+		return it->second;
+	}
+}
+
+u8 LiquidLogicFinite::get_group(MapNode node, const std::string &group_name)
+{
+	return get_group(node.getContent(), group_name);
+}
+
 LiquidInfo LiquidLogicFinite::get_liquid_info(content_t c_node) {
 	try {
 		return m_liquids_info.at(c_node);
@@ -363,7 +381,7 @@ u8 LiquidLogicFinite::count_neighboor_with_group(v3s16 pos, std::string group)
 		if (X || Y || Z)
 		{
 			node = m_map->getNode(v3s16(X, Y, Z));
-			if (m_ndef->get(node).getGroup(group) > 0)
+			if (get_group(node, group) > 0)
 				count++;
 		}
 	return count;
@@ -398,8 +416,7 @@ bool LiquidLogicFinite::try_liquify(v3s16 pos, const LiquidInfo &liquid,
 			node.getContent() == liquid.c_flowing)
 		return false;
 
-	const ContentFeatures &cf = m_ndef->get(node);
-	if (cf.getGroup(liquid.liquify_group) == 0)
+	if (get_group(node, liquid.liquify_group) == 0)
 		return false;
 
 	NodeInfo info;
@@ -492,7 +509,7 @@ void LiquidLogicFinite::transform_slide(v3s16 pos, FlowInfo &flow,
 				// Because still
 				(flow.in == 0 && flow.out == 0) ||
 				// Because on non liquifiable
-				(cf.getGroup(liquid.liquify_group) == 0) ||
+				(get_group(nunder, liquid.liquify_group) == 0) ||
 				// Because calm
 				((flow.in <= flow.out) && (std::rand()%10 > (f.in + f.out))) ||
 				// Because nodes around
@@ -518,7 +535,8 @@ void LiquidLogicFinite::transform_slide(v3s16 pos, FlowInfo &flow,
 	for (int i = 0; i < 5; i++) {
 		v3s16 pos2 = pos + break_dirs[i];
 		// Break
-		u8 group = m_ndef->get(m_map->getNode(pos2)).getGroup(liquid.break_group);
+
+		u8 group = get_group(m_map->getNode(pos2), liquid.break_group);
 		if (group && std::rand() % 1000 < (1 << group) * flow.in)
 			set_node(pos2, MapNode(liquid.c_empty, 0, 0), modified_blocks, env);
 	}
