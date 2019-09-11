@@ -33,26 +33,58 @@ class Client;
 class ParsedText
 {
 public:
-	ParsedText(const wchar_t* text);
+	ParsedText(const wchar_t *text);
 	~ParsedText();
 
-	enum ElementType { ELEMENT_TEXT, ELEMENT_SEPARATOR, ELEMENT_IMAGE, ELEMENT_ITEM };
-	enum BackgroundType { BACKGROUND_NONE, BACKGROUND_COLOR };
-	enum FloatType { FLOAT_NONE, FLOAT_RIGHT, FLOAT_LEFT };
-	enum HalignType { HALIGN_CENTER, HALIGN_LEFT, HALIGN_RIGHT, HALIGN_JUSTIFY };
-	enum ValignType { VALIGN_MIDDLE, VALIGN_TOP, VALIGN_BOTTOM };
+	enum ElementType
+	{
+		ELEMENT_TEXT,
+		ELEMENT_SEPARATOR,
+		ELEMENT_IMAGE,
+		ELEMENT_ITEM
+	};
+
+	enum BackgroundType
+	{
+		BACKGROUND_NONE,
+		BACKGROUND_COLOR
+	};
+
+	enum FloatType
+	{
+		FLOAT_NONE,
+		FLOAT_RIGHT,
+		FLOAT_LEFT
+	};
+
+	enum HalignType
+	{
+		HALIGN_CENTER,
+		HALIGN_LEFT,
+		HALIGN_RIGHT,
+		HALIGN_JUSTIFY
+	};
+
+	enum ValignType
+	{
+		VALIGN_MIDDLE,
+		VALIGN_TOP,
+		VALIGN_BOTTOM
+	};
 
 	typedef std::unordered_map<std::string, std::string> StyleList;
 	typedef std::unordered_map<std::string, std::string> AttrsList;
 
-	struct Tag {
+	struct Tag
+	{
 		std::string name;
 		AttrsList attrs;
 		StyleList style;
 	};
 
-	struct Element {
-		std::list<Tag*> tags;
+	struct Element
+	{
+		std::list<Tag *> tags;
 		ElementType type;
 		core::stringw text = "";
 
@@ -65,9 +97,9 @@ public:
 		ValignType valign;
 
 #if USE_FREETYPE
-		gui::CGUITTFont* font;
+		gui::CGUITTFont *font;
 #else
-		gui::IGUIFont* font;
+		gui::IGUIFont *font;
 #endif
 
 		irr::video::SColor color;
@@ -78,13 +110,15 @@ public:
 
 		// img & item specific attributes
 		std::string name;
-		ItemRotationKind rotation = IT_ROT_NONE;
+		v3s16 angle{0, 0, 0};
+		v3s16 rotation{0, 0, 0};
 		s32 margin = 10;
 
 		void setStyle(StyleList &style);
 	};
 
-	struct Paragraph {
+	struct Paragraph
+	{
 		std::vector<Element> elements;
 		HalignType halign;
 		s32 margin = 10;
@@ -103,7 +137,6 @@ public:
 	Tag m_root_tag;
 
 protected:
-
 	// Parser functions
 	void enterElement(ElementType type);
 	void endElement();
@@ -113,12 +146,12 @@ protected:
 	ParsedText::Tag *newTag(const std::string &name, const AttrsList &attrs);
 	ParsedText::Tag *openTag(const std::string &name, const AttrsList &attrs);
 	bool closeTag(const std::string &name);
-	void parseGenericStyleAttr(const std::string &name,
-			const std::string &value, StyleList &style);
-	void parseStyles(AttrsList &attrs, StyleList &style);
-	u32 parseTag(const wchar_t* text, u32 cursor);
-	void globalTag(const ParsedText::AttrsList& attrs);
-	void parse(const wchar_t* text);
+	void parseGenericStyleAttr(const std::string &name, const std::string &value,
+			StyleList &style);
+	void parseStyles(const AttrsList &attrs, StyleList &style);
+	u32 parseTag(const wchar_t *text, u32 cursor);
+	void globalTag(const ParsedText::AttrsList &attrs);
+	void parse(const wchar_t *text);
 
 	std::unordered_map<std::string, StyleList> m_elementtags;
 	std::unordered_map<std::string, StyleList> m_paragraphtags;
@@ -128,42 +161,38 @@ protected:
 
 	// Current values
 	StyleList m_style;
-	Element* m_element;
-	Paragraph* m_paragraph;
+	Element *m_element;
+	Paragraph *m_paragraph;
 };
-
 
 class TextDrawer
 {
 public:
-	TextDrawer(
-		const wchar_t* text,
-		Client *client,
-		gui::IGUIEnvironment* environment,
-		ISimpleTextureSource *tsrc);
+	TextDrawer(const wchar_t *text, Client *client, gui::IGUIEnvironment *environment,
+			ISimpleTextureSource *tsrc);
 
-	void place(s32 width);
+	void place(const core::rect<s32> &dest_rect);
 	inline s32 getHeight() { return m_height; };
-	s32 getVoffset(s32 height);
 
-	void draw(
-		const core::rect<s32> &dest_rect,
-		const core::position2d<s32> &dest_offset);
+	void draw(const core::rect<s32> &dest_rect,
+			const core::position2d<s32> &dest_offset);
 
-	ParsedText::Element* getElementAt(const core::position2d<s32> &pos);
-	ParsedText::Tag* m_hovertag;
+	ParsedText::Element *getElementAt(core::position2d<s32> pos);
+	ParsedText::Tag *m_hovertag;
 
 protected:
 
-	struct RectWithMargin {
+	struct RectWithMargin
+	{
 		core::rect<s32> rect;
 		s32 margin;
 	};
 
 	ParsedText m_text;
 	Client *m_client;
-	gui::IGUIEnvironment* m_environment;
+	gui::IGUIEnvironment *m_environment;
 	s32 m_height;
+	s32 m_voffset;
 	std::vector<RectWithMargin> m_floating;
 };
 
@@ -171,14 +200,10 @@ class GUIHyperText : public gui::IGUIElement
 {
 public:
 	//! constructor
-	GUIHyperText(
-		const wchar_t* text,
-		gui::IGUIEnvironment* environment,
-		gui::IGUIElement* parent,
-		s32 id,
-		const core::rect<s32>& rectangle,
-		Client *client,
-		ISimpleTextureSource *tsrc);
+	GUIHyperText(const wchar_t *text, gui::IGUIEnvironment *environment,
+			gui::IGUIElement *parent, s32 id,
+			const core::rect<s32> &rectangle, Client *client,
+			ISimpleTextureSource *tsrc);
 
 	//! destructor
 	virtual ~GUIHyperText();
@@ -186,16 +211,16 @@ public:
 	//! draws the element and its children
 	virtual void draw();
 
-	bool OnEvent(const SEvent& event);
+	bool OnEvent(const SEvent &event);
 
 protected:
-
 	// GUI members
 	Client *m_client;
+	//GUIScrollBar *m_vscrollbar;
 	gui::IGUIScrollBar *m_vscrollbar;
 	TextDrawer m_drawer;
 
-	// Positionning
+	// Positioning
 	u32 m_scrollbar_width;
 	core::rect<s32> m_display_text_rect;
 	core::position2d<s32> m_text_scrollpos;
