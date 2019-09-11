@@ -133,4 +133,15 @@ void drawItemStack(video::IVideoDriver *driver,
 		Client *client,
 		ItemRotationKind rotation_kind);
 
+void drawItemStack(
+		video::IVideoDriver *driver,
+		gui::IGUIFont *font,
+		const ItemStack &item,
+		const core::rect<s32> &rect,
+		const core::rect<s32> *clip,
+		Client *client,
+		ItemRotationKind rotation_kind,
+		const v3s16 &angle,
+		const v3s16 &rotation_speed);
+
 #endif

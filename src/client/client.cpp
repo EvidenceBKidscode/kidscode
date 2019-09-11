@@ -1499,10 +1499,10 @@ void Client::addUpdateMeshTaskWithEdge(v3s16 blockpos, bool ack_to_server, bool 
 	catch(InvalidPositionException &e){}
 
 	// Leading edge
-	for (int i=0;i<6;i++)
+	for (int i=0;i<26;i++)
 	{
 		try{
-			v3s16 p = blockpos + g_6dirs[i];
+			v3s16 p = blockpos + g_26dirs/*g_6dirs*/[i];
 			addUpdateMeshTask(p, false, urgent);
 		}
 		catch(InvalidPositionException &e){}
