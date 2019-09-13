@@ -1408,6 +1408,7 @@ void GenericCAO::processMessage(const std::string &data)
 			collision_box.MinEdge *= BS;
 			collision_box.MaxEdge *= BS;
 			player->setCollisionbox(collision_box);
+			player->setEyeHeight(m_prop.eye_height);			
 			player->setCanZoom(m_prop.can_zoom);
 		}
 

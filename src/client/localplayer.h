@@ -138,6 +138,7 @@ public:
 	v3f getPosition() const { return m_position; }
 	v3f getEyePosition() const { return m_position + getEyeOffset(); }
 	v3f getEyeOffset() const;
+	void setEyeHeight(float eye_height) { m_eye_height = eye_height; }
 
 	void setCollisionbox(const aabb3f &box) { m_collisionbox = box; }
 
@@ -180,6 +181,7 @@ private:
 	bool camera_barely_in_ceiling = false;
 	aabb3f m_collisionbox = aabb3f(-BS * 0.30f, 0.0f, -BS * 0.30f, BS * 0.30f,
 			BS * 1.75f, BS * 0.30f);
+	float m_eye_height = 1.625f;
 	bool m_can_zoom = true;
 
 	GenericCAO *m_cao = nullptr;
