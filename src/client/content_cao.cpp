@@ -1406,9 +1406,15 @@ void GenericCAO::processMessage(const std::string &data)
 			player->makes_footstep_sound = m_prop.makes_footstep_sound;
 			aabb3f collision_box = m_prop.collisionbox;
 			collision_box.MinEdge *= BS;
+			collision_box.MinEdge.X *= m_prop.visual_size.Y;
+			collision_box.MinEdge.Y *= m_prop.visual_size.Y;
+			collision_box.MinEdge.Z *= m_prop.visual_size.X;
 			collision_box.MaxEdge *= BS;
+			collision_box.MaxEdge.X *= m_prop.visual_size.Y;
+			collision_box.MaxEdge.Y *= m_prop.visual_size.Y;
+			collision_box.MaxEdge.Z *= m_prop.visual_size.X;
 			player->setCollisionbox(collision_box);
-			player->setEyeHeight(m_prop.eye_height);			
+			player->setEyeHeight(m_prop.eye_height);
 			player->setCanZoom(m_prop.can_zoom);
 		}
 

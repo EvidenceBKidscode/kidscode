@@ -163,6 +163,4 @@ void ObjectProperties::deSerialize(std::istream &is)
 	glow = readS8(is);
 	breath_max = readU16(is);
 	eye_height = readF1000(is);
-	
-	printf("Deserialized eye height = %f\n", eye_height);
 }
