@@ -70,6 +70,8 @@ public:
 	void addTransformingFromData(BlockMakeData *data);
 
 private:
+	u8 get_group(content_t c_node, const std::string &group_name);
+	u8 get_group(MapNode node, const std::string &group_name);
 	LiquidInfo get_liquid_info(v3s16 pos);
 	LiquidInfo get_liquid_info(content_t c_node);
 	NodeInfo get_node_info(v3s16 pos, const LiquidInfo &liquid);
@@ -86,7 +88,7 @@ private:
 	FlowInfo neighboor_flow(v3s16 pos, const LiquidInfo &liquid);
 	u8 evaluate_neighboor_liquid(v3s16 pos, const LiquidInfo &liquid);
 	u8 count_neighboor_with_group(v3s16 pos, std::string group);
-	bool solidify(NodeInfo &info, const LiquidInfo &liquid,
+	void solidify(NodeInfo &info, const LiquidInfo &liquid,
 		std::map<v3s16, MapBlock*> &modified_blocks, ServerEnvironment *env);
 	bool try_liquify(v3s16 pos, const LiquidInfo &liquid,
 		std::map<v3s16, MapBlock*> &modified_blocks, ServerEnvironment *env);
@@ -105,11 +107,15 @@ private:
 		std::map<v3s16, MapBlock*> &modified_blocks, ServerEnvironment *env);
 */
 
-	std::unordered_map<content_t, LiquidInfo> m_liquids_info;
 	UniqueQueue<v3s16> m_liquid_queue;
 	std::unordered_map<u64, FlowInfo> m_flows;
 	std::vector<std::pair<v3s16, MapNode> > m_changed_nodes;
 	v3s16 m_block_pos, m_rel_block_pos;
+
+	// Cached node def informations
+	std::unordered_map<content_t, LiquidInfo> m_liquids_info;
+	std::map<std::string, std::map<content_t, u8>> m_groups_info;
+
 	u32 m_unprocessed_count = 0;
 	bool m_queue_size_timer_started = false;
 	u64 m_inc_trending_up_start_time = 0; // milliseconds

@@ -31,6 +31,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <algorithm>
 #include <chrono>
 
+// Define to display times
+//#define DEBUG_TIME
+
 const v3s16 dbg_pos(-10, 1068, 1542);
 
 u32 dbg_solid = 0;
@@ -144,6 +147,24 @@ void LiquidLogicFinite::add_flow(v3s16 pos, s8 amount,
 		flow.out -= amount;
 
 	m_flows[key] = flow;
+}
+
+u8 LiquidLogicFinite::get_group(content_t c_node, const std::string &group_name)
+{
+	std::map<content_t, u8> &group_nodes = m_groups_info[group_name];
+	auto it = group_nodes.find(c_node);
+	if (it == group_nodes.end()) {
+		u8 group = m_ndef->get(c_node).getGroup(group_name);
+		group_nodes[c_node] =  group;
+		return group;
+	} else {
+		return it->second;
+	}
+}
+
+u8 LiquidLogicFinite::get_group(MapNode node, const std::string &group_name)
+{
+	return get_group(node.getContent(), group_name);
 }
 
 LiquidInfo LiquidLogicFinite::get_liquid_info(content_t c_node) {
@@ -361,7 +382,7 @@ u8 LiquidLogicFinite::count_neighboor_with_group(v3s16 pos, std::string group)
 		if (X || Y || Z)
 		{
 			node = m_map->getNodeNoEx(v3s16(X, Y, Z));
-			if (m_ndef->get(node).getGroup(group) > 0)
+			if (get_group(node, group) > 0)
 				count++;
 		}
 	return count;
@@ -369,24 +390,12 @@ u8 LiquidLogicFinite::count_neighboor_with_group(v3s16 pos, std::string group)
 
 
 // Slide specific method
-bool LiquidLogicFinite::solidify(NodeInfo &info, const LiquidInfo &liquid,
+void LiquidLogicFinite::solidify(NodeInfo &info, const LiquidInfo &liquid,
 	std::map<v3s16, MapBlock*> &modified_blocks, ServerEnvironment *env)
 {
 	// Does this liquid solidifies ?
 	if (liquid.c_solid == CONTENT_IGNORE)
-		return true;
-
-	MapNode nunder = m_map->getNodeNoEx(info.pos + down_dir);
-
-	// Never solidify above CONTENT_IGNORE
-	if (nunder.getContent() == CONTENT_IGNORE ||
-			nunder.getContent() == CONTENT_UNKNOWN)
-		return true;
-
-	// Never solidify above a liquid
-	const ContentFeatures &cf = m_ndef->get(nunder);
-	if (cf.isLiquid())
-		return false; // Re-examine this liquid next turn
+		return;
 
 	if ((std::rand() % (8 * liquid.blocks)) < info.level) {
 		dbg_solid++;
@@ -398,7 +407,6 @@ bool LiquidLogicFinite::solidify(NodeInfo &info, const LiquidInfo &liquid,
 		info.node.param2 = 0;
 		set_node(info.pos, info.node, modified_blocks, env);
 	}
-	return true;
 }
 
 bool LiquidLogicFinite::try_liquify(v3s16 pos, const LiquidInfo &liquid,
@@ -409,8 +417,7 @@ bool LiquidLogicFinite::try_liquify(v3s16 pos, const LiquidInfo &liquid,
 			node.getContent() == liquid.c_flowing)
 		return false;
 
-	const ContentFeatures &cf = m_ndef->get(node);
-	if (cf.getGroup(liquid.liquify_group) == 0)
+	if (get_group(node, liquid.liquify_group) == 0)
 		return false;
 
 	NodeInfo info;
@@ -439,6 +446,12 @@ bool LiquidLogicFinite::try_liquify(v3s16 pos, const LiquidInfo &liquid,
 			}
 		}
 
+		// And up if up is liquid
+		info = get_node_info(pos - down_dir, liquid);
+		if (info.space && info.wet)
+			spaces.push_back(info);
+		space -= info.space;
+
 		if (space > 0)
 			return false; // Failed to expand solid node to enough liquid nodes
 	}
@@ -460,7 +473,7 @@ bool LiquidLogicFinite::try_liquify(v3s16 pos, const LiquidInfo &liquid,
 	return true;
 }
 
-const v3s16 liquify_dirs[5] =
+const v3s16 break_dirs[5] =
 {
 	v3s16( 0, -1,  0),
 	v3s16( 0,  0,  1),
@@ -479,43 +492,53 @@ void LiquidLogicFinite::transform_slide(v3s16 pos, FlowInfo &flow,
 	if (liquid.c_solid == CONTENT_IGNORE)
 		return; // Not a sliding liquid
 
-	FlowInfo f = neighboor_flow(pos, liquid);
 	NodeInfo info = get_node_info(pos, liquid);
+	MapNode nunder = m_map->getNodeNoEx(info.pos + down_dir);
 
 	// Solidify
-	// Becose node around
-	u8 stops = count_neighboor_with_group(pos, liquid.stop_group);
-	if (std::rand()%3 < stops)
-		if (solidify(info, liquid, modified_blocks, env)) {
-			flow.in = 0;
-			flow.out = 0;
-			return;
-		}
+	// Never solidify above CONTENT_IGNORE or air
+	if (nunder.getContent() != CONTENT_IGNORE &&
+			nunder.getContent() != CONTENT_UNKNOWN &&
+			nunder.getContent() != CONTENT_AIR) {
 
-	// Because still
-	if (flow.in <= flow.out)
-		if (std::rand()%30 > f.in)
-			if (solidify(info, liquid, modified_blocks, env)) {
+		const ContentFeatures &cf = m_ndef->get(nunder);
+
+		// Never solidify above a liquid
+		if (!cf.isLiquid()) {
+			FlowInfo f = neighboor_flow(pos, liquid);
+			if ( // Solidify...
+				// Because still
+				(flow.in == 0 && flow.out == 0) ||
+				// Because on non liquifiable
+				(get_group(nunder, liquid.liquify_group) == 0) ||
+				// Because calm
+				((flow.in <= flow.out) && (std::rand()%10 > (f.in + f.out))) ||
+				// Because nodes around
+				(std::rand()%3 < count_neighboor_with_group(pos, liquid.stop_group))
+			) {
+				solidify(info, liquid, modified_blocks, env);
 				flow.in = 0;
 				flow.out = 0;
 				return;
 			}
+		}
+	}
 
 	// Liquidify and break
 	if (flow.in > flow.out) {
-		for (int i = 0; i < 5; i++) {
-			v3s16 pos2 = pos + liquify_dirs[i];
-			// Liquify
-			if (std::rand() % 20 < (f.in*2 - f.out))
-				if (try_liquify(pos2, liquid, modified_blocks, env))
-					continue;
+		v3s16 pos2 = pos + down_dir;
+		if (// Prevents liquify around stop nodes
+				std::rand()%3 >= count_neighboor_with_group(pos2, liquid.stop_group) &&
+				try_liquify(pos2, liquid, modified_blocks, env))
+			return;
+	}
 
-			// Break
-			u8 group = m_ndef->get(m_map->getNodeNoEx(pos2)).getGroup(liquid.break_group);
-			if (group and std::rand() % 1000 < (1 << group) * flow.in) {
-				set_node(pos2, MapNode(liquid.c_empty, 0, 0), modified_blocks, env);
-			}
-		}
+	for (int i = 0; i < 5; i++) {
+		v3s16 pos2 = pos + break_dirs[i];
+		// Break
+		u8 group = get_group(m_map->getNodeNoEx(pos2), liquid.break_group);
+		if (group && std::rand() % 1000 < (1 << group) * flow.in)
+			set_node(pos2, MapNode(liquid.c_empty, 0, 0), modified_blocks, env);
 	}
 }
 

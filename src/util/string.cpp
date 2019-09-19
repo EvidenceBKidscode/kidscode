@@ -100,7 +100,7 @@ std::wstring utf8_to_wide(const std::string &input)
 
 	delete[] inbuf;
 	delete[] outbuf;
-	
+
 	return out;
 }
 
@@ -464,24 +464,24 @@ u64 read_seed(const char *str)
 	return num;
 }
 
-void parseTextString(const std::string &value, std::string &text, std::string &params, 
+void parseTextString(const std::string &value, std::string &text, std::string &params,
 		const char sep, const char esc)
 {
 	u32 i;
 	for (i = 0; i < value.length(); ++i) {
 		char c = value[i];
-		
+
 		if (c == esc)
 			++i;
 		else if (c == sep)
 			break;
 	}
-	
+
 	if (i + 1 < value.length())
 		params = value.substr(i + 1);
 	else
 		params = "";
-		
+
 	text = value.substr(0,i);
 }
 
@@ -1043,4 +1043,29 @@ std::wstring fix_string(const std::wstring &s) { // :PATCH:
 	std::wstring res(s);
 	fix_accented_characters(res, 0);
 	return res;
+}
+
+/**
+ * Create a std::string from a irr::core:stringw.
+ */
+std::string strwtostr(const irr::core::stringw &str)
+{
+	std::string text = core::stringc(str.c_str()).c_str();
+	return text;
+}
+
+/**
+ * Create a irr::core:stringw from a std::string.
+ */
+irr::core::stringw strtostrw(const std::string &str)
+{
+	size_t size = str.size();
+	// s.size() doesn't include NULL terminator
+	wchar_t *text = new wchar_t[size + sizeof(wchar_t)];
+	const char *data = &str[0];
+
+	mbsrtowcs(text, &data, size, NULL);
+
+	text[size] = L'\0';
+	return text;
 }
