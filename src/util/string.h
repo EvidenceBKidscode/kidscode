@@ -20,6 +20,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #pragma once
 
 #include "irrlichttypes_bloated.h"
+#include "irrString.h"
 #include <cstdlib>
 #include <string>
 #include <cstring>
@@ -86,7 +87,7 @@ std::string writeFlagString(u32 flags, const FlagDesc *flagdesc, u32 flagmask);
 size_t mystrlcpy(char *dst, const char *src, size_t size);
 char *mystrtok_r(char *s, const char *sep, char **lasts);
 u64 read_seed(const char *str);
-void parseTextString(const std::string &value, std::string &text, std::string &params, 
+void parseTextString(const std::string &value, std::string &text, std::string &params,
 		const char sep, const char esc='\\');
 bool parseColorString(const std::string &value, video::SColor &color, bool quiet);
 
@@ -711,3 +712,13 @@ inline const std::string duration_to_string(int sec)
 
 	return ss.str();
 }
+
+/**
+ * Create a std::string from a irr::core::stringw.
+ */
+std::string strwtostr(const irr::core::stringw &str);
+
+/**
+ * Create a irr::core:stringw from a std::string.
+ */
+irr::core::stringw strtostrw(const std::string &str);

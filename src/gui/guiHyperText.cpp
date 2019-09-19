@@ -37,25 +37,6 @@ using namespace irr::gui;
 #include "guiHyperText.h"
 #include "util/string.h"
 
-std::string strwtostr(const core::stringw &str)
-{
-	std::string text = core::stringc(str.c_str()).c_str();
-	return text;
-}
-
-irr::core::stringw strtostrw(const std::string &str)
-{
-	size_t size = str.size();
-	// s.size() doesn't include NULL terminator
-	wchar_t *text = new wchar_t[size + sizeof(wchar_t)];
-	const char *data = &str[0];
-
-	mbsrtowcs(text, &data, size, NULL);
-
-	text[size] = L'\0';
-	return text;
-}
-
 bool check_color(const std::string &str)
 {
 	irr::video::SColor color;
@@ -73,10 +54,6 @@ bool check_integer(const std::string &str)
 	return *endptr == '\0';
 }
 
-bool check_bool(const std::string &str)
-{
-	return str == "true" || str == "false";
-}
 
 // -----------------------------------------------------------------------------
 // ParsedText - A text parser
@@ -351,8 +328,7 @@ void ParsedText::parseGenericStyleAttr(
 
 		// Boolean styles
 	} else if (name == "bold" || name == "italic" || name == "underline") {
-		if (check_bool(value))
-			style[name] = value;
+		style[name] = is_yes(value);
 
 	} else if (name == "size") {
 		if (check_integer(value))
@@ -574,7 +550,7 @@ u32 ParsedText::parseTag(const wchar_t *text, u32 cursor)
 		StyleList tagstyle;
 		parseStyles(attrs, tagstyle);
 
-		if (attrs["paragraph"] == "true")
+		if (is_yes(attrs["paragraph"]))
 			m_paragraphtags[attrs["name"]] = tagstyle;
 		else
 			m_elementtags[attrs["name"]] = tagstyle;
