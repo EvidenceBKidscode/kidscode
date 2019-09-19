@@ -534,8 +534,8 @@ void Hud::drawSelectionMesh()
 				i = m_selection_boxes.begin();
 				i != m_selection_boxes.end(); ++i) {
 			aabb3f box = aabb3f(
-				i->MinEdge + m_selection_pos_with_offset - 1.f,
-				i->MaxEdge + m_selection_pos_with_offset + 1.f);
+				i->MinEdge + m_selection_pos_with_offset,
+				i->MaxEdge + m_selection_pos_with_offset);
 
 			u32 r = (selectionbox_argb.getRed() *
 					m_selection_mesh_color.getRed() / 255);
