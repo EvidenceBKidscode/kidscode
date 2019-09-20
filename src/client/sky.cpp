@@ -1,3 +1,22 @@
+/*
+Minetest
+Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation; either version 2.1 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License along
+with this program; if not, write to the Free Software Foundation, Inc.,
+51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+*/
+
 #include "sky.h"
 #include "ITexture.h"
 #include "IVideoDriver.h"
@@ -26,7 +45,11 @@ Sky::Sky(s32 id, ITextureSource *tsrc) :
 
 	video::SMaterial mat;
 	mat.Lighting = false;
+#if ENABLE_GLES
+	mat.ZBuffer = video::ECFN_DISABLED;
+#else
 	mat.ZBuffer = video::ECFN_NEVER;
+#endif
 	mat.ZWriteEnable = false;
 	mat.AntiAliasing = 0;
 	mat.TextureLayer[0].TextureWrapU = video::ETC_CLAMP_TO_EDGE;
@@ -57,11 +80,11 @@ Sky::Sky(s32 id, ITextureSource *tsrc) :
 		m_materials[3] = mat;
 		m_materials[3].setTexture(0, m_sun_texture);
 		m_materials[3].MaterialType = video::EMT_TRANSPARENT_ALPHA_CHANNEL;
-		// Settings to enable or disable texture filtering
-		// on a per-mod basis.
-		m_materials[3].setFlag(video::E_MATERIAL_FLAG(0x100), m_sun_billinear);
+		// Disables texture filtering
+		m_materials[3].setFlag(video::E_MATERIAL_FLAG(0x100), false);
 		m_materials[3].setFlag(video::E_MATERIAL_FLAG(0x200), false);
-		m_materials[3].setFlag(video::E_MATERIAL_FLAG(0x400), m_sun_antiso);
+		m_materials[3].setFlag(video::E_MATERIAL_FLAG(0x400), false);
+		// Use tonemaps if available
 		if (m_sun_tonemap)
 			m_materials[3].Lighting = true;
 	}
@@ -72,12 +95,12 @@ Sky::Sky(s32 id, ITextureSource *tsrc) :
 		m_materials[4] = mat;
 		m_materials[4].setTexture(0, m_moon_texture);
 		m_materials[4].MaterialType = video::EMT_TRANSPARENT_ALPHA_CHANNEL;
-		// Settings to enable or disable texture filtering
-		// on a per-mod basis.
+		// Disables texture filtering
 		m_materials[4].UseMipMaps = false;
-		m_materials[4].setFlag(video::E_MATERIAL_FLAG(0x100), m_moon_billinear);
+		m_materials[4].setFlag(video::E_MATERIAL_FLAG(0x100), false);
 		m_materials[4].setFlag(video::E_MATERIAL_FLAG(0x200), false);
-		m_materials[4].setFlag(video::E_MATERIAL_FLAG(0x400), m_moon_antiso);
+		m_materials[4].setFlag(video::E_MATERIAL_FLAG(0x400), false);
+		// Use tonemaps if available
 		if (m_moon_tonemap)
 			m_materials[4].Lighting = true;
 	}
@@ -124,10 +147,14 @@ void Sky::render()
 	if (m_sunlight_seen) {
 		float sunsize = 0.07;
 		video::SColorf suncolor_f(1, 1, 0, 1);
-		suncolor_f.r = 1;
-		suncolor_f.g = MYMAX(0.3, MYMIN(1.0, 0.7 + m_time_brightness * 0.5));
-		suncolor_f.b = MYMAX(0.0, m_brightness * 0.95);
+		//suncolor_f.r = 1;
+		//suncolor_f.g = MYMAX(0.3, MYMIN(1.0, 0.7 + m_time_brightness * 0.5));
+		//suncolor_f.b = MYMAX(0.0, m_brightness * 0.95);
 		video::SColorf suncolor2_f(1, 1, 1, 1);
+		// The values below were probably meant to be suncolor2_f instead of a
+		// reassignment of suncolor_f. However, the resulting colour was chosen
+		// and is our long-running classic colour. So preserve, but comment-out
+		// the unnecessary first assignments above.
 		suncolor_f.r = 1;
 		suncolor_f.g = MYMAX(0.3, MYMIN(1.0, 0.85 + m_time_brightness * 0.5));
 		suncolor_f.b = MYMAX(0.0, m_brightness);
@@ -351,8 +378,8 @@ void Sky::render()
 }
 
 void Sky::update(float time_of_day, float time_brightness,
-		float direct_brightness, bool sunlight_seen,
-		CameraMode cam_mode, float yaw, float pitch)
+	float direct_brightness, bool sunlight_seen,
+	CameraMode cam_mode, float yaw, float pitch)
 {
 	// Stabilize initial brightness and color values by flooding updates
 	if (m_first_update) {
@@ -403,7 +430,7 @@ void Sky::update(float time_of_day, float time_brightness,
 
 	float cloud_color_change_fraction = 0.95;
 	if (sunlight_seen) {
-		if (fabs(time_brightness - m_brightness) < 0.2) {
+		if (std::fabs(time_brightness - m_brightness) < 0.2f) {
 			m_brightness = m_brightness * 0.95 + time_brightness * 0.05;
 		} else {
 			m_brightness = m_brightness * 0.80 + time_brightness * 0.20;
@@ -417,9 +444,9 @@ void Sky::update(float time_of_day, float time_brightness,
 	}
 
 	m_clouds_visible = true;
-	float color_change_fraction = 0.98;
+	float color_change_fraction = 0.98f;
 	if (sunlight_seen) {
-		if (is_dawn) {  // Dawn
+		if (is_dawn) { // Dawn
 			m_bgcolor_bright_f = m_bgcolor_bright_f.getInterpolated(
 				bgcolor_bright_dawn_f, color_change_fraction);
 			m_skycolor_bright_f = m_skycolor_bright_f.getInterpolated(
@@ -427,12 +454,12 @@ void Sky::update(float time_of_day, float time_brightness,
 			m_cloudcolor_bright_f = m_cloudcolor_bright_f.getInterpolated(
 				cloudcolor_bright_dawn_f, color_change_fraction);
 		} else {
-			if (time_brightness < 0.07) {  // Night
+			if (time_brightness < 0.13f) { // Night
 				m_bgcolor_bright_f = m_bgcolor_bright_f.getInterpolated(
 					bgcolor_bright_night_f, color_change_fraction);
 				m_skycolor_bright_f = m_skycolor_bright_f.getInterpolated(
 					skycolor_bright_night_f, color_change_fraction);
-			} else {  // Day
+			} else { // Day
 				m_bgcolor_bright_f = m_bgcolor_bright_f.getInterpolated(
 					bgcolor_bright_normal_f, color_change_fraction);
 				m_skycolor_bright_f = m_skycolor_bright_f.getInterpolated(
@@ -546,15 +573,20 @@ void Sky::update(float time_of_day, float time_brightness,
 		m_skycolor = m_mix_scolor(m_skycolor, pointcolor, m_horizon_blend() * 0.25);
 	}
 
-	float cloud_direct_brightness = 0;
+	float cloud_direct_brightness = 0.0f;
 	if (sunlight_seen) {
 		if (!m_directional_colored_fog) {
 			cloud_direct_brightness = time_brightness;
-			if (time_brightness >= 0.2 && time_brightness < 0.7)
-				cloud_direct_brightness *= 1.3;
+			// Boost cloud brightness relative to sky, at dawn, dusk and at night
+			if (time_brightness < 0.7f)
+				cloud_direct_brightness *= 1.3f;
 		} else {
-			cloud_direct_brightness = MYMIN(m_horizon_blend() * 0.15 +
-				m_time_brightness, 1);
+			cloud_direct_brightness = std::fmin(m_horizon_blend() * 0.15f +
+				m_time_brightness, 1.0f);
+			// Set the same minimum cloud brightness at night
+			if (time_brightness < 0.5f)
+				cloud_direct_brightness = std::fmax(cloud_direct_brightness,
+					time_brightness * 1.3f);
 		}
 	} else {
 		cloud_direct_brightness = direct_brightness;
@@ -687,7 +719,7 @@ void Sky::draw_moon(video::IVideoDriver *driver, float moonsize, const video::SC
 			video::SColor starcolor(f * m_starcolor.getAlpha(), m_starcolor.getRed(),
 				m_starcolor.getGreen(), m_starcolor.getBlue());
 
-			// Stars are only drawn when brighter than skycolor
+			// Stars are only drawn when not fully transparent
 			if (f * m_starcolor.getAlpha() < 1)
 				return;
 #if ENABLE_GLES
