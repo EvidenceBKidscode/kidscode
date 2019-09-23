@@ -67,6 +67,7 @@ std::string ObjectProperties::dump()
 	os << ", pointable=" << pointable;
 	os << ", can_zoom=" << can_zoom;
 	os << ", static_save=" << static_save;
+	os << ", eye_height=" << eye_height;
 	return os.str();
 }
 
@@ -111,6 +112,7 @@ void ObjectProperties::serialize(std::ostream &os) const
 	writeU8(os, can_zoom);
 	writeS8(os, glow);
 	writeU16(os, breath_max);
+	writeF1000(os, eye_height);
 
 	// Add stuff only at the bottom.
 	// Never remove anything, because we don't want new versions of this
@@ -158,9 +160,7 @@ void ObjectProperties::deSerialize(std::istream &is)
 	infotext = deSerializeString(is);
 	wield_item = deSerializeString(is);
 	can_zoom = readU8(is);
-
-	try {
-		glow = readS8(is);
-		breath_max = readU16(is);
-	} catch (SerializationError &e) {}
+	glow = readS8(is);
+	breath_max = readU16(is);
+	eye_height = readF1000(is);
 }

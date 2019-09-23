@@ -718,7 +718,8 @@ v3s16 LocalPlayer::getLightPosition() const
 
 v3f LocalPlayer::getEyeOffset() const
 {
-	float eye_height = camera_barely_in_ceiling ? 1.5f : 1.625f;
+	float eye_height = camera_barely_in_ceiling ?
+		m_eye_height - 0.125f : m_eye_height;
 	return v3f(0, BS * eye_height, 0);
 }
 
@@ -880,12 +881,10 @@ void LocalPlayer::old_move(f32 dtime, Environment *env, f32 pos_max_d,
 		}
 	}
 
-	// this shouldn't be hardcoded but transmitted from server
-	float player_stepheight = touching_ground ? (BS * 0.6) : (BS * 0.2);
-
-#ifdef __ANDROID__
-	player_stepheight += (0.6 * BS);
-#endif
+	// Player object property step height is multiplied by BS in
+	// /src/script/common/c_content.cpp and /src/content_sao.cpp
+	float player_stepheight = (m_cao == nullptr) ? 0.0f :
+		(touching_ground ? m_cao->getStepHeight() : (0.2f * BS));
 
 	v3f accel_f = v3f(0, 0, 0);
 
