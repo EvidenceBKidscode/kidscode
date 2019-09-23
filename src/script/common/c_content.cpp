@@ -229,6 +229,7 @@ void read_object_properties(lua_State *L, int index,
 	getstringfield(L, -1, "mesh", prop->mesh);
 
 	lua_getfield(L, -1, "visual_size");
+
 	if (lua_istable(L, -1)) {
 		// Backwards compatibility: Also accept { x = ?, y = ? }
 		v2f scale_xy = read_v2f(L, -1);
@@ -240,6 +241,7 @@ void read_object_properties(lua_State *L, int index,
 		lua_pop(L, 1);
 
 		prop->visual_size = v3f(scale_xy.X, scale_xy.Y, scale_z);
+		prop->eye_height = prop->visual_size.Y * 1.625;
 	}
 	lua_pop(L, 1);
 
@@ -287,7 +289,6 @@ void read_object_properties(lua_State *L, int index,
 	if (getfloatfield(L, -1, "stepheight", prop->stepheight))
 		prop->stepheight *= BS;
 	getfloatfield(L, -1, "eye_height", prop->eye_height);
-
 	getfloatfield(L, -1, "automatic_rotate", prop->automatic_rotate);
 	lua_getfield(L, -1, "automatic_face_movement_dir");
 	if (lua_isnumber(L, -1)) {

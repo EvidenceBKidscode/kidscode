@@ -192,7 +192,7 @@ public:
 
 	inline f32 getStepHeight() const
 	{
-		return m_prop.stepheight;
+		return m_prop.stepheight * m_prop.visual_size.Y;
 	}
 
 	inline bool isLocalPlayer() const
