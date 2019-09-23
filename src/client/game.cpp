@@ -3619,7 +3619,17 @@ void Game::handleClientEvent_SetSky(ClientEvent *event, CameraOrientation *cam)
 			*event->set_sky.moon_tint,
 			*event->set_sky.tint_type
 		);
-		//sky->setFallbackBgColor(*event->set_sky.bgcolor);
+		// Clean up related data:
+		delete event->set_sky.day_sky;
+		delete event->set_sky.dawn_sky;
+		delete event->set_sky.night_sky;
+		delete event->set_sky.day_horizon;
+		delete event->set_sky.dawn_horizon;
+		delete event->set_sky.night_horizon;
+		delete event->set_sky.indoors;
+		delete event->set_sky.sun_tint;
+		delete event->set_sky.moon_tint;
+		delete event->set_sky.tint_type;
 	} else if (*event->set_sky.type == "skybox" &&
 		event->set_sky.params->size() == 6) {
 		sky->setVisible(false);

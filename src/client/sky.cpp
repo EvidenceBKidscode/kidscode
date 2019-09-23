@@ -89,8 +89,6 @@ Sky::Sky(s32 id, ITextureSource *tsrc) :
 			m_materials[3].Lighting = true;
 	}
 
-
-	
 	if (m_moon_texture) {
 		m_materials[4] = mat;
 		m_materials[4].setTexture(0, m_moon_texture);
@@ -703,135 +701,133 @@ void Sky::draw_moon(video::IVideoDriver *driver, float moonsize, const video::SC
 	}
 }
 
-	void Sky::draw_stars(video::IVideoDriver * driver, float wicked_time_of_day)
-	{
-			driver->setMaterial(m_materials[1]);
-			// Tune values so that stars first appear just after the sun
-			// disappears over the horizon, and disappear just before the sun
-			// appears over the horizon.
-			// Also tune so that stars are at full brightness from time 20000
-			// to time 4000.
-			float starbrightness = MYMAX(0,	MYMIN(1, (0.25 - fabs(wicked_time_of_day < 0.5 ?
-				wicked_time_of_day : (1.0 - wicked_time_of_day))) *	20));
-			float f = starbrightness;
-			float d = (0.007 / 2) * m_star_scale;
-			
-			video::SColor starcolor(f * m_starcolor.getAlpha(), m_starcolor.getRed(),
-				m_starcolor.getGreen(), m_starcolor.getBlue());
+void Sky::draw_stars(video::IVideoDriver * driver, float wicked_time_of_day)
+{
+	driver->setMaterial(m_materials[1]);
+	// Tune values so that stars first appear just after the sun
+	// disappears over the horizon, and disappear just before the sun
+	// appears over the horizon.
+	// Also tune so that stars are at full brightness from time 20000
+	// to time 4000.
+	float starbrightness = MYMAX(0,	MYMIN(1, (0.25 - fabs(wicked_time_of_day < 0.5 ?
+		wicked_time_of_day : (1.0 - wicked_time_of_day))) *	20));
+	float f = starbrightness;
+	float d = (0.007 / 2) * m_star_scale;
+	
+	video::SColor starcolor(f * m_starcolor.getAlpha(), m_starcolor.getRed(),
+		m_starcolor.getGreen(), m_starcolor.getBlue());
 
-			// Stars are only drawn when not fully transparent
-			if (f * m_starcolor.getAlpha() < 1)
-				return;
+	// Stars are only drawn when not fully transparent
+	if (f * m_starcolor.getAlpha() < 1)
+		return;
 #if ENABLE_GLES
-			u16 *indices = new u16[m_star_count * 3];
-			video::S3DVertex *vertices =
-					new video::S3DVertex[m_star_count * 3];
-			for (u32 i = 0; i < m_star_count; i++) {
-				indices[i * 3 + 0] = i * 3 + 0;
-				indices[i * 3 + 1] = i * 3 + 1;
-				indices[i * 3 + 2] = i * 3 + 2;
-				v3f r = m_stars[i];
-				core::CMatrix4<f32> a;
-				a.buildRotateFromTo(v3f(0, 1, 0), r);
-				v3f p = v3f(-d, 1, -d);
-				v3f p1 = v3f(d, 1, 0);
-				v3f p2 = v3f(-d, 1, d);
-				a.rotateVect(p);
-				a.rotateVect(p1);
-				a.rotateVect(p2);
-				p.rotateXYBy(wicked_time_of_day * 360 - 90);
-				p.rotateXZBy(m_star_rotation);
-				p1.rotateXYBy(wicked_time_of_day * 360 - 90);
-				p1.rotateXZBy(m_star_rotation);
-				p2.rotateXYBy(wicked_time_of_day * 360 - 90);
-				p2.rotateXZBy(m_star_rotation);
-				vertices[i * 3 + 0].Pos = p;
-				vertices[i * 3 + 0].Color = starcolor;
-				vertices[i * 3 + 1].Pos = p1;
-				vertices[i * 3 + 1].Color = starcolor;
-				vertices[i * 3 + 2].Pos = p2;
-				
+	u16 *indices = new u16[m_star_count * 3];
+	video::S3DVertex *vertices = new video::S3DVertex[m_star_count * 3];
+	for (u32 i = 0; i < m_star_count; i++) {
+		indices[i * 3 + 0] = i * 3 + 0;
+		indices[i * 3 + 1] = i * 3 + 1;
+		indices[i * 3 + 2] = i * 3 + 2;
+		v3f r = m_stars[i];
+		core::CMatrix4<f32> a;
+		a.buildRotateFromTo(v3f(0, 1, 0), r);
+		v3f p = v3f(-d, 1, -d);
+		v3f p1 = v3f(d, 1, 0);
+		v3f p2 = v3f(-d, 1, d);
+		a.rotateVect(p);
+		a.rotateVect(p1);
+		a.rotateVect(p2);
+		p.rotateXYBy(wicked_time_of_day * 360 - 90);
+		p.rotateXZBy(m_star_rotation);
+		p1.rotateXYBy(wicked_time_of_day * 360 - 90);
+		p1.rotateXZBy(m_star_rotation);
+		p2.rotateXYBy(wicked_time_of_day * 360 - 90);
+		p2.rotateXZBy(m_star_rotation);
+		vertices[i * 3 + 0].Pos = p;
+		vertices[i * 3 + 0].Color = starcolor;
+		vertices[i * 3 + 1].Pos = p1;
+		vertices[i * 3 + 1].Color = starcolor;
+		vertices[i * 3 + 2].Pos = p2;
+		
 
-				vertices[i * 3 + 2].Color = starcolor;
-			}
-			driver->drawIndexedTriangleList(vertices.data(), m_star_count * 3,
-					indices.data(), m_star_count);
-			delete[] indices;
-			delete[] vertices;
+		vertices[i * 3 + 2].Color = starcolor;
+	}
+	driver->drawIndexedTriangleList(vertices.data(), m_star_count * 3,
+			indices.data(), m_star_count);
+	delete[] indices;
+	delete[] vertices;
 #else
-			u16 *indices = new u16[m_star_count * 4];
-			video::S3DVertex *vertices =
-					new video::S3DVertex[m_star_count * 4];
-			for (u32 i = 0; i < m_star_count; i++) {
-				indices[i * 4 + 0] = i * 4 + 0;
-				indices[i * 4 + 1] = i * 4 + 1;
-				indices[i * 4 + 2] = i * 4 + 2;
-				indices[i * 4 + 3] = i * 4 + 3;
-				v3f r = m_stars[i];
-				core::CMatrix4<f32> a;
-				a.buildRotateFromTo(v3f(0, 1, 0), r);
-				v3f p = v3f(-d, 1, -d);
-				v3f p1 = v3f(d, 1, -d);
-				v3f p2 = v3f(d, 1, d);
-				v3f p3 = v3f(-d, 1, d);
-				a.rotateVect(p);
-				a.rotateVect(p1);
-				a.rotateVect(p2);
-				a.rotateVect(p3);
-				p.rotateXYBy(wicked_time_of_day * 360 - 90);
-				p.rotateXZBy(m_star_rotation);
-				p1.rotateXYBy(wicked_time_of_day * 360 - 90);
-				p1.rotateXZBy(m_star_rotation);
-				p2.rotateXYBy(wicked_time_of_day * 360 - 90);
-				p2.rotateXZBy(m_star_rotation);
-				p3.rotateXYBy(wicked_time_of_day * 360 - 90);
-				p3.rotateXZBy(m_star_rotation);
-				vertices[i * 4 + 0].Pos = p;
-				vertices[i * 4 + 0].Color = starcolor;
-				vertices[i * 4 + 1].Pos = p1;
-				vertices[i * 4 + 1].Color = starcolor;
-				vertices[i * 4 + 2].Pos = p2;
-				vertices[i * 4 + 2].Color = starcolor;
-				vertices[i * 4 + 3].Pos = p3;
-				vertices[i * 4 + 3].Color = starcolor;
-			}
-			driver->drawVertexPrimitiveList(vertices, m_star_count * 4,
-					indices, m_star_count, video::EVT_STANDARD,
-					scene::EPT_QUADS, video::EIT_16BIT);
-			delete[] indices;
-			delete[] vertices;
+	u16 *indices = new u16[m_star_count * 4];
+	video::S3DVertex *vertices =
+			new video::S3DVertex[m_star_count * 4];
+	for (u32 i = 0; i < m_star_count; i++) {
+		indices[i * 4 + 0] = i * 4 + 0;
+		indices[i * 4 + 1] = i * 4 + 1;
+		indices[i * 4 + 2] = i * 4 + 2;
+		indices[i * 4 + 3] = i * 4 + 3;
+		v3f r = m_stars[i];
+		core::CMatrix4<f32> a;
+		a.buildRotateFromTo(v3f(0, 1, 0), r);
+		v3f p = v3f(-d, 1, -d);
+		v3f p1 = v3f(d, 1, -d);
+		v3f p2 = v3f(d, 1, d);
+		v3f p3 = v3f(-d, 1, d);
+		a.rotateVect(p);
+		a.rotateVect(p1);
+		a.rotateVect(p2);
+		a.rotateVect(p3);
+		p.rotateXYBy(wicked_time_of_day * 360 - 90);
+		p.rotateXZBy(m_star_rotation);
+		p1.rotateXYBy(wicked_time_of_day * 360 - 90);
+		p1.rotateXZBy(m_star_rotation);
+		p2.rotateXYBy(wicked_time_of_day * 360 - 90);
+		p2.rotateXZBy(m_star_rotation);
+		p3.rotateXYBy(wicked_time_of_day * 360 - 90);
+		p3.rotateXZBy(m_star_rotation);
+		vertices[i * 4 + 0].Pos = p;
+		vertices[i * 4 + 0].Color = starcolor;
+		vertices[i * 4 + 1].Pos = p1;
+		vertices[i * 4 + 1].Color = starcolor;
+		vertices[i * 4 + 2].Pos = p2;
+		vertices[i * 4 + 2].Color = starcolor;
+		vertices[i * 4 + 3].Pos = p3;
+		vertices[i * 4 + 3].Color = starcolor;
+	}
+	driver->drawVertexPrimitiveList(vertices, m_star_count * 4,
+			indices, m_star_count, video::EVT_STANDARD,
+			scene::EPT_QUADS, video::EIT_16BIT);
+	delete[] indices;
+	delete[] vertices;
 #endif
-	}
+}
 
-	void Sky::draw_sky_body(std::array<video::S3DVertex, 4> &vertices, float pos_1, float pos_2, const video::SColor &c)
-	{
-		/*
-		 * Create an array of vertices with the dimensions specified.
-		 * pos_1, pos_2: position of the body's vertices
-		 * c: color of the body
-		 */
-
-		const f32 t = 1.0f;
-		const f32 o = 0.0f;
-		vertices[0] = video::S3DVertex(pos_1, pos_1, -1, 0, 0, 1, c, t, t);
-		vertices[1] = video::S3DVertex(pos_2, pos_1, -1, 0, 0, 1, c, o, t);
-		vertices[2] = video::S3DVertex(pos_2, pos_2, -1, 0, 0, 1, c, o, o);
-		vertices[3] = video::S3DVertex(pos_1, pos_2, -1, 0, 0, 1, c, t, o);
-	}
-
-
-	void Sky::place_sky_body(
-		std::array<video::S3DVertex, 4> &vertices, float horizon_position, float day_position)
+void Sky::draw_sky_body(std::array<video::S3DVertex, 4> &vertices, float pos_1, float pos_2, const video::SColor &c)
+{
 	/*
-	 * Place body in the sky.
-	 * vertices: The body as a rectangle of 4 vertices
-	 * horizon_position: turn the body around the Y axis
-	 * day_position: turn the body around the Z axis, to place it depending of the time of the day
+	 * Create an array of vertices with the dimensions specified.
+	 * pos_1, pos_2: position of the body's vertices
+	 * c: color of the body
 	 */
-	{
-		for (video::S3DVertex &vertex : vertices) {
-			// Body is directed to -Z (south) by default
-			vertex.Pos.rotateXZBy(horizon_position);
-			vertex.Pos.rotateXYBy(day_position);
-		}
+
+	const f32 t = 1.0f;
+	const f32 o = 0.0f;
+	vertices[0] = video::S3DVertex(pos_1, pos_1, -1, 0, 0, 1, c, t, t);
+	vertices[1] = video::S3DVertex(pos_2, pos_1, -1, 0, 0, 1, c, o, t);
+	vertices[2] = video::S3DVertex(pos_2, pos_2, -1, 0, 0, 1, c, o, o);
+	vertices[3] = video::S3DVertex(pos_1, pos_2, -1, 0, 0, 1, c, t, o);
+}
+
+void Sky::place_sky_body(
+	std::array<video::S3DVertex, 4> &vertices, float horizon_position, float day_position)
+/*
+ * Place body in the sky.
+ * vertices: The body as a rectangle of 4 vertices
+ * horizon_position: turn the body around the Y axis
+ * day_position: turn the body around the Z axis, to place it depending of the time of the day
+ */
+{
+	for (video::S3DVertex &vertex : vertices) {
+		// Body is directed to -Z (south) by default
+		vertex.Pos.rotateXZBy(horizon_position);
+		vertex.Pos.rotateXYBy(day_position);
 	}
+}
