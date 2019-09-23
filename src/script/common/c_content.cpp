@@ -218,8 +218,10 @@ void read_object_properties(lua_State *L, int index,
 	getstringfield(L, -1, "mesh", prop->mesh);
 
 	lua_getfield(L, -1, "visual_size");
-	if(lua_istable(L, -1))
+	if(lua_istable(L, -1)) {
 		prop->visual_size = read_v2f(L, -1);
+		prop->eye_height = prop->visual_size.Y * 1.625;
+	}
 	lua_pop(L, 1);
 
 	lua_getfield(L, -1, "textures");
@@ -265,6 +267,7 @@ void read_object_properties(lua_State *L, int index,
 	getboolfield(L, -1, "makes_footstep_sound", prop->makes_footstep_sound);
 	if (getfloatfield(L, -1, "stepheight", prop->stepheight))
 		prop->stepheight *= BS;
+	getfloatfield(L, -1, "eye_height", prop->eye_height);
 	getboolfield(L, -1, "can_zoom", prop->can_zoom);
 
 	getfloatfield(L, -1, "automatic_rotate", prop->automatic_rotate);
@@ -357,6 +360,8 @@ void push_object_properties(lua_State *L, ObjectProperties *prop)
 	lua_setfield(L, -2, "makes_footstep_sound");
 	lua_pushnumber(L, prop->stepheight / BS);
 	lua_setfield(L, -2, "stepheight");
+	lua_pushnumber(L, prop->eye_height);
+	lua_setfield(L, -2, "eye_height");
 	lua_pushboolean(L, prop->can_zoom);
 	lua_setfield(L, -2, "can_zoom");
 
