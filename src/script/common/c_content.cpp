@@ -218,8 +218,10 @@ void read_object_properties(lua_State *L, int index,
 	getstringfield(L, -1, "mesh", prop->mesh);
 
 	lua_getfield(L, -1, "visual_size");
-	if(lua_istable(L, -1))
+	if(lua_istable(L, -1)) {
 		prop->visual_size = read_v2f(L, -1);
+		prop->eye_height = prop->visual_size.Y * 1.625;
+	}
 	lua_pop(L, 1);
 
 	lua_getfield(L, -1, "textures");
