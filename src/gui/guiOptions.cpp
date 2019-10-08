@@ -191,7 +191,6 @@ void GUIOptions::regenerateGui(v2u32 screensize)
 		e->setLargeStep(10);
 		e->setPos(gui_scaling * 100);
 	}
-	
 }
 
 void GUIOptions::drawMenu()
@@ -209,14 +208,15 @@ bool GUIOptions::OnEvent(const SEvent& event)
 {
 	if (event.EventType == EET_KEY_INPUT_EVENT) {
 		if (event.KeyInput.Key == KEY_ESCAPE && event.KeyInput.PressedDown) {
-			quitMenu();
+			g_gamecallback->getBack();
 			return true;
 		}
 
 		if (event.KeyInput.Key == KEY_RETURN && event.KeyInput.PressedDown) {
-			quitMenu();
+			g_gamecallback->getBack();
 			return true;
 		}
+
 	} else if (event.EventType == EET_GUI_EVENT) {
 		if (event.GUIEvent.EventType == gui::EGET_BUTTON_CLICKED) {
 			if (event.GUIEvent.Caller->getID() == ID_soundButton) {

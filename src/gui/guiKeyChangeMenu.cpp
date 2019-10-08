@@ -383,7 +383,7 @@ bool GUIKeyChangeMenu::OnEvent(const SEvent& event)
 	} else if (event.EventType == EET_KEY_INPUT_EVENT && activeKey < 0
 			&& event.KeyInput.PressedDown
 			&& event.KeyInput.Key == irr::KEY_ESCAPE) {
-		quitMenu();
+		g_gamecallback->getBack();
 		return true;
 	} else if (event.EventType == EET_GUI_EVENT) {
 		if (event.GUIEvent.EventType == gui::EGET_ELEMENT_FOCUS_LOST

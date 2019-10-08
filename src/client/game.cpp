@@ -164,13 +164,11 @@ struct LocalFormspecHandler : public TextDest
 				return;
 			}
 
-			if (fields.find("quit") != fields.end()) {
+			if (fields.find("quit") != fields.end())
 				return;
-			}
 
-			if (fields.find("btn_continue") != fields.end()) {
+			if (fields.find("btn_continue") != fields.end())
 				return;
-			}
 
 			if (fields.find("sbr_mouse_sensitivity") != fields.end()) {
 				float val = 0.0f;
@@ -1809,6 +1807,29 @@ inline bool Game::checkConnection()
  */
 inline bool Game::handleCallbacks()
 {
+	if (g_gamecallback->back) {
+		if (g_gamecallback->current_menu == "") {
+			auto formspec = m_game_ui->getFormspecGUI();
+			if (formspec)
+				formspec->quitMenu();
+		}
+
+		if (g_gamecallback->current_menu == "options") {
+			runData.pause_timer = 0.f;
+			g_gamecallback->current_menu = "";
+			showPauseMenu(false);
+
+		} else if (g_gamecallback->current_menu == "volume" ||
+				g_gamecallback->current_menu == "keys") {
+			runData.pause_timer = 0.f;
+			g_gamecallback->current_menu = "options";
+			(new GUIOptions(guienv, guiroot, -1, &g_menumgr))->drop();
+		}
+
+		g_gamecallback->back = false;
+		return true;
+	}
+
 	if (g_gamecallback->disconnect_requested) {
 		runData.pause_timer = 0.f;
 		g_gamecallback->disconnect_requested = false;
@@ -1817,28 +1838,36 @@ inline bool Game::handleCallbacks()
 
 	if (g_gamecallback->options_requested) {
 		runData.pause_timer = 0.f;
+		g_gamecallback->current_menu = "options";
 		(new GUIOptions(guienv, guiroot, -1, &g_menumgr))->drop();
 		g_gamecallback->options_requested = false;
+	}
 
+	if (g_gamecallback->show_pause_menu) {
+		runData.pause_timer = 0.f;
+		g_gamecallback->current_menu = "";
+		showPauseMenu(false);
+		g_gamecallback->show_pause_menu = false;
 	}
 
 	if (g_gamecallback->changevolume_requested) {
 		runData.pause_timer = 0.f;
-		(new GUIVolumeChange(guienv, guiroot, -1,
-				     &g_menumgr))->drop();
+		g_gamecallback->current_menu = "volume";
+		(new GUIVolumeChange(guienv, guiroot, -1, &g_menumgr))->drop();
 		g_gamecallback->changevolume_requested = false;
 	}
 
 	if (g_gamecallback->keyconfig_requested) {
 		runData.pause_timer = 0.f;
-		(new GUIKeyChangeMenu(guienv, guiroot, -1,
-				      &g_menumgr))->drop();
+		g_gamecallback->current_menu = "keys";
+		(new GUIKeyChangeMenu(guienv, guiroot, -1, &g_menumgr))->drop();
 		g_gamecallback->keyconfig_requested = false;
 	}
 
 	if (g_gamecallback->keyconfig_changed) {
 		input->keycache.populate(); // update the cache with new settings
 		runData.pause_timer = 0.f;
+		g_gamecallback->current_menu = "keys";
 		g_gamecallback->keyconfig_changed = false;
 	}
 

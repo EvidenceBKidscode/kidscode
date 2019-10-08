@@ -25,6 +25,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "modalMenu.h"
 #include <cassert>
 #include <list>
+#include <string>
 
 class IGameCallback
 {
@@ -35,6 +36,8 @@ public:
 	virtual void changePassword() = 0;
 	virtual void changeVolume() = 0;
 	virtual void showOptions() = 0;
+	virtual void showPause() = 0;
+	virtual void getBack() = 0;
 
 	virtual void signalKeyConfigChange() = 0;
 };
@@ -145,6 +148,16 @@ public:
 		keyconfig_changed = true;
 	}
 
+	virtual void showPause()
+	{
+		show_pause_menu = true;
+	}
+
+	virtual void getBack()
+	{
+		back = true;
+	}
+
 
 	bool disconnect_requested = false;
 	bool changepassword_requested = false;
@@ -153,6 +166,9 @@ public:
 	bool keyconfig_changed = false;
 	bool shutdown_requested = false;
 	bool options_requested = false;
+	bool show_pause_menu = false;
+	bool back = false;
+	std::string current_menu = "";
 };
 
 extern MainGameCallback *g_gamecallback;
