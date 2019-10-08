@@ -29,6 +29,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "settings.h"
 
 #include "gettext.h"
+#include "mainmenumanager.h"
 
 const int ID_soundText = 263;
 const int ID_soundExitButton = 264;
@@ -140,14 +141,15 @@ bool GUIVolumeChange::OnEvent(const SEvent& event)
 {
 	if (event.EventType == EET_KEY_INPUT_EVENT) {
 		if (event.KeyInput.Key == KEY_ESCAPE && event.KeyInput.PressedDown) {
-			quitMenu();
+			g_gamecallback->getBack();
 			return true;
 		}
 
 		if (event.KeyInput.Key == KEY_RETURN && event.KeyInput.PressedDown) {
-			quitMenu();
+			g_gamecallback->getBack();
 			return true;
 		}
+
 	} else if (event.EventType == EET_GUI_EVENT) {
 		if (event.GUIEvent.EventType == gui::EGET_CHECKBOX_CHANGED) {
 			gui::IGUIElement *e = getElementFromId(ID_soundMuteButton);
