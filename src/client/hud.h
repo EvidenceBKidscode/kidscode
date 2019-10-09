@@ -24,6 +24,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <vector>
 #include <IGUIFont.h>
 #include "irr_aabb3d.h"
+#include "client/texture_pool.h"
 #include "../hud.h"
 #include "texture_pool.h" // KIDSCODE
 
