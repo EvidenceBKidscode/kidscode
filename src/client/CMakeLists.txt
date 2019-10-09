@@ -38,6 +38,7 @@ set(client_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/filecache.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/fontengine.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/game.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/gamemenu.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/guiscalingfilter.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/hud.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/imagefilters.cpp

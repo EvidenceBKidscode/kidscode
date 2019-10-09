@@ -37,7 +37,6 @@ public:
 	virtual void changeVolume() = 0;
 	virtual void showOptions() = 0;
 	virtual void showPause() = 0;
-	virtual void getBack() = 0;
 
 	virtual void signalKeyConfigChange() = 0;
 };
@@ -86,8 +85,10 @@ public:
 		assert(*i == menu);
 		m_stack.erase(i);*/
 
-		if(!m_stack.empty())
-			m_stack.back()->setVisible(true);
+		if(!m_stack.empty()) {
+			setVisible(true);
+			guienv->setFocus(m_stack.back());
+		}
 	}
 
 	// Returns true to prevent further processing
@@ -112,6 +113,12 @@ public:
 				return true;
 		}
 		return false;
+	}
+
+	void setVisible(bool visible) {
+		if (m_stack.empty())
+			return;
+		m_stack.back()->setVisible(visible);
 	}
 
 	std::list<gui::IGUIElement*> m_stack;
@@ -167,12 +174,6 @@ public:
 		show_pause_menu = true;
 	}
 
-	virtual void getBack()
-	{
-		back = true;
-	}
-
-
 	bool disconnect_requested = false;
 	bool changepassword_requested = false;
 	bool changevolume_requested = false;
@@ -181,7 +182,6 @@ public:
 	bool shutdown_requested = false;
 	bool options_requested = false;
 	bool show_pause_menu = false;
-	bool back = false;
 	std::string current_menu = "";
 };
 

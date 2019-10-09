@@ -141,12 +141,12 @@ bool GUIVolumeChange::OnEvent(const SEvent& event)
 {
 	if (event.EventType == EET_KEY_INPUT_EVENT) {
 		if (event.KeyInput.Key == KEY_ESCAPE && event.KeyInput.PressedDown) {
-			g_gamecallback->getBack();
+			quitMenu();
 			return true;
 		}
 
 		if (event.KeyInput.Key == KEY_RETURN && event.KeyInput.PressedDown) {
-			g_gamecallback->getBack();
+			quitMenu();
 			return true;
 		}
 
@@ -172,7 +172,7 @@ bool GUIVolumeChange::OnEvent(const SEvent& event)
 		if (event.GUIEvent.EventType == gui::EGET_ELEMENT_FOCUS_LOST
 				&& isVisible()) {
 			if (!canTakeFocus(event.GUIEvent.Element)) {
-				dstream << "GUIMainMenu: Not allowing focus change."
+				dstream << "GUIVolumeChange: Not allowing focus change."
 				<< std::endl;
 				// Returning true disables focus change
 				return true;
