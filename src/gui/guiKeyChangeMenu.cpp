@@ -383,7 +383,7 @@ bool GUIKeyChangeMenu::OnEvent(const SEvent& event)
 	} else if (event.EventType == EET_KEY_INPUT_EVENT && activeKey < 0
 			&& event.KeyInput.PressedDown
 			&& event.KeyInput.Key == irr::KEY_ESCAPE) {
-		g_gamecallback->getBack();
+		quitMenu();
 		return true;
 	} else if (event.EventType == EET_GUI_EVENT) {
 		if (event.GUIEvent.EventType == gui::EGET_ELEMENT_FOCUS_LOST
@@ -391,7 +391,7 @@ bool GUIKeyChangeMenu::OnEvent(const SEvent& event)
 		{
 			if (!canTakeFocus(event.GUIEvent.Element))
 			{
-				dstream << "GUIMainMenu: Not allowing focus change."
+				dstream << "GUIKeyChangeMenu: Not allowing focus change."
 				<< std::endl;
 				// Returning true disables focus change
 				return true;

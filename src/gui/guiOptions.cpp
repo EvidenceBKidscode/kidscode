@@ -46,6 +46,7 @@ GUIOptions::GUIOptions(gui::IGUIEnvironment* env,
 ):
 	GUIModalMenu(env, parent, id, menumgr)
 {
+	allowFocusRemoval(true);
 }
 
 GUIOptions::~GUIOptions()
@@ -195,6 +196,7 @@ void GUIOptions::regenerateGui(v2u32 screensize)
 
 void GUIOptions::drawMenu()
 {
+//	g_gamecallback->setCurrentMenu(this);
 	gui::IGUISkin* skin = Environment->getSkin();
 	if (!skin)
 		return;
@@ -208,12 +210,12 @@ bool GUIOptions::OnEvent(const SEvent& event)
 {
 	if (event.EventType == EET_KEY_INPUT_EVENT) {
 		if (event.KeyInput.Key == KEY_ESCAPE && event.KeyInput.PressedDown) {
-			g_gamecallback->getBack();
-			return true;
+			quitMenu();
+			return false;
 		}
 
 		if (event.KeyInput.Key == KEY_RETURN && event.KeyInput.PressedDown) {
-			g_gamecallback->getBack();
+			quitMenu();
 			return true;
 		}
 
@@ -245,7 +247,7 @@ bool GUIOptions::OnEvent(const SEvent& event)
 		if (event.GUIEvent.EventType == gui::EGET_ELEMENT_FOCUS_LOST
 				&& isVisible()) {
 			if (!canTakeFocus(event.GUIEvent.Element)) {
-				dstream << "GUIMainMenu: Not allowing focus change."
+				dstream << "GUIOptions: Not allowing focus change."
 				<< std::endl;
 				// Returning true disables focus change
 				return true;

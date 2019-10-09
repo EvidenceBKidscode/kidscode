@@ -44,9 +44,10 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "gui/guiChatConsole.h"
 #include "gui/guiConfirmRegistration.h"
 #include "gui/guiFormSpecMenu.h"
+#include "gui/guiPasswordChange.h"
+#include "gui/guiVolumeChange.h"
 #include "gui/guiKeyChangeMenu.h"
 #include "gui/guiOptions.h"
-#include "gui/guiVolumeChange.h"
 #include "gui/mainmenumanager.h"
 #include "gui/profilergraph.h"
 #include "mapblock.h"
@@ -78,6 +79,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 	#include "client/sound.h"
 #endif
 
+// Time, in seconds, before pause menu hides
+// TODO:Shouldn't it be a setting ?
 #define PAUSE_TIMER_LIMIT 10.f
 
 /*
@@ -145,65 +148,6 @@ struct LocalFormspecHandler : public TextDest
 
 	void gotText(const StringMap &fields)
 	{
-		if (m_formname == "MT_PAUSE_MENU") {
-			if (fields.find("btn_options") != fields.end()) {
-				g_gamecallback->showOptions();
-				return;
-			}
-
-			if (fields.find("btn_exit_menu") != fields.end()) {
-				g_gamecallback->disconnect();
-				return;
-			}
-
-			if (fields.find("btn_exit_os") != fields.end()) {
-				g_gamecallback->exitToOS();
-#ifndef __ANDROID__
-				RenderingEngine::get_raw_device()->closeDevice();
-#endif
-				return;
-			}
-
-			if (fields.find("quit") != fields.end())
-				return;
-
-			if (fields.find("btn_continue") != fields.end())
-				return;
-
-			if (fields.find("sbr_mouse_sensitivity") != fields.end()) {
-				float val = 0.0f;
-				for (auto &v : fields) {
-					if (v.first == "sbr_mouse_sensitivity") {
-						val = stof(v.second.substr(v.second.find(":") + 1, -1)) * 0.002f;
-						g_settings->setFloat("mouse_sensitivity", val);
-						break;
-					}
-				}
-			}
-
-			if (fields.find("sbr_gui_scaling") != fields.end()) {
-				float val = 0.0f;
-				for (auto &v : fields) {
-					if (v.first == "sbr_gui_scaling") {
-						val = stof(v.second.substr(v.second.find(":") + 1, -1)) * 0.002f;
-						g_settings->setFloat("gui_scaling", val);
-						break;
-					}
-				}
-			}
-
-			if (fields.find("sbr_viewing_range") != fields.end()) {
-				float val = 0.0f;
-				for (auto &v : fields) {
-					if (v.first == "sbr_viewing_range") {
-						val = (stof(v.second.substr(v.second.find(":") + 1, -1)) * 100.0f) / 250.0f;
-						g_settings->setFloat("viewing_range", val);
-						break;
-					}
-				}
-			}
-		}
-
 		if (m_formname == "MT_DEATH_SCREEN") {
 			assert(m_client != 0);
 			m_client->sendRespawn();
@@ -215,6 +159,71 @@ struct LocalFormspecHandler : public TextDest
 	}
 
 	Client *m_client = nullptr;
+};
+
+/* Handle game (pause) menu fields */
+
+struct PauseMenuFormspecHandler : public TextDest
+{
+	void gotText(const StringMap &fields)
+	{
+		if (fields.find("btn_options") != fields.end()) {
+			g_gamecallback->showOptions();
+			return;
+		}
+
+		if (fields.find("btn_exit_menu") != fields.end()) {
+			g_gamecallback->disconnect();
+			return;
+		}
+
+		if (fields.find("btn_exit_os") != fields.end()) {
+			g_gamecallback->exitToOS();
+#ifndef __ANDROID__
+			RenderingEngine::get_raw_device()->closeDevice();
+#endif
+			return;
+		}
+
+		if (fields.find("quit") != fields.end())
+			return;
+
+		if (fields.find("btn_continue") != fields.end())
+			return;
+
+		if (fields.find("sbr_mouse_sensitivity") != fields.end()) {
+			float val = 0.0f;
+			for (auto &v : fields) {
+				if (v.first == "sbr_mouse_sensitivity") {
+					val = stof(v.second.substr(v.second.find(":") + 1, -1)) * 0.002f;
+					g_settings->setFloat("mouse_sensitivity", val);
+					break;
+				}
+			}
+		}
+
+		if (fields.find("sbr_gui_scaling") != fields.end()) {
+			float val = 0.0f;
+			for (auto &v : fields) {
+				if (v.first == "sbr_gui_scaling") {
+					val = stof(v.second.substr(v.second.find(":") + 1, -1)) * 0.002f;
+					g_settings->setFloat("gui_scaling", val);
+					break;
+				}
+			}
+		}
+
+		if (fields.find("sbr_viewing_range") != fields.end()) {
+			float val = 0.0f;
+			for (auto &v : fields) {
+				if (v.first == "sbr_viewing_range") {
+					val = (stof(v.second.substr(v.second.find(":") + 1, -1)) * 100.0f) / 250.0f;
+					g_settings->setFloat("viewing_range", val);
+					break;
+				}
+			}
+		}
+	}
 };
 
 /* Form update callback */
@@ -796,6 +805,7 @@ protected:
 	void updateInteractTimers(f32 dtime);
 	bool checkConnection();
 	bool handleCallbacks();
+	void activeEvent(f32 dtime, bool active);
 	void processQueues();
 	void updateProfilers(const RunStats &stats, const FpsControl &draw_times, f32 dtime);
 	void updateStats(RunStats *stats, const FpsControl &draw_times, f32 dtime);
@@ -884,13 +894,14 @@ protected:
 #endif
 
 private:
+
 	struct Flags {
 		bool force_fog_off = false;
 		bool disable_camera_update = false;
 	};
 
 	void showDeathFormspec();
-	void showPauseMenu(bool empty);
+	void showPauseMenu();
 
 	// ClientEvent handlers
 	void handleClientEvent_None(ClientEvent *event, CameraOrientation *cam);
@@ -999,6 +1010,7 @@ private:
 	bool m_camera_offset_changed = false;
 
 	bool m_does_lost_focus_pause_game = false;
+	float m_event_timer;
 
 #ifdef __ANDROID__
 	bool m_cache_hold_aux1;
@@ -1219,6 +1231,11 @@ void Game::run()
 		if (!handleCallbacks())
 			break;
 
+		if (g_gamecallback->keyconfig_changed) {
+			input->keycache.populate(); // update the cache with new settings
+			g_gamecallback->keyconfig_changed = false;
+		}
+
 		processQueues();
 
 		m_game_ui->clearInfoText();
@@ -1246,7 +1263,7 @@ void Game::run()
 		m_game_ui->m_flags.show_minimap &= client->shouldShowMinimap();
 
 		if (m_does_lost_focus_pause_game && !device->isWindowFocused() && !isMenuActive()) {
-			showPauseMenu(false);
+			showPauseMenu();
 		}
 	}
 }
@@ -1802,82 +1819,58 @@ inline bool Game::checkConnection()
 	return true;
 }
 
-
 /* returns false if game should exit, otherwise true
  */
 inline bool Game::handleCallbacks()
 {
-	if (g_gamecallback->back) {
-		if (g_gamecallback->current_menu == "") {
-			auto formspec = m_game_ui->getFormspecGUI();
-			if (formspec)
-				formspec->quitMenu();
-		}
-
-		if (g_gamecallback->current_menu == "options") {
-			runData.pause_timer = 0.f;
-			g_gamecallback->current_menu = "";
-			showPauseMenu(false);
-
-		} else if (g_gamecallback->current_menu == "volume" ||
-				g_gamecallback->current_menu == "keys") {
-			runData.pause_timer = 0.f;
-			g_gamecallback->current_menu = "options";
-			(new GUIOptions(guienv, guiroot, -1, &g_menumgr))->drop();
-		}
-
-		g_gamecallback->back = false;
-		return true;
-	}
-
 	if (g_gamecallback->disconnect_requested) {
-		runData.pause_timer = 0.f;
 		g_gamecallback->disconnect_requested = false;
 		return false;
 	}
 
 	if (g_gamecallback->options_requested) {
-		runData.pause_timer = 0.f;
-		g_gamecallback->current_menu = "options";
+		m_event_timer = 0.f;
 		(new GUIOptions(guienv, guiroot, -1, &g_menumgr))->drop();
 		g_gamecallback->options_requested = false;
 	}
 
-	if (g_gamecallback->show_pause_menu) {
-		runData.pause_timer = 0.f;
-		g_gamecallback->current_menu = "";
-		showPauseMenu(false);
-		g_gamecallback->show_pause_menu = false;
-	}
-
 	if (g_gamecallback->changevolume_requested) {
-		runData.pause_timer = 0.f;
-		g_gamecallback->current_menu = "volume";
+		m_event_timer = 0.f;
 		(new GUIVolumeChange(guienv, guiroot, -1, &g_menumgr))->drop();
 		g_gamecallback->changevolume_requested = false;
 	}
 
 	if (g_gamecallback->keyconfig_requested) {
-		runData.pause_timer = 0.f;
-		g_gamecallback->current_menu = "keys";
+		m_event_timer = 0.f;
 		(new GUIKeyChangeMenu(guienv, guiroot, -1, &g_menumgr))->drop();
 		g_gamecallback->keyconfig_requested = false;
 	}
 
-	if (g_gamecallback->keyconfig_changed) {
-		input->keycache.populate(); // update the cache with new settings
-		runData.pause_timer = 0.f;
-		g_gamecallback->current_menu = "keys";
-		g_gamecallback->keyconfig_changed = false;
-	}
-
 	if (g_gamecallback->changepassword_requested) {
-		runData.pause_timer = 0.f;
+		m_event_timer = 0.f;
+		(new GUIPasswordChange(guienv, guiroot, -1, &g_menumgr, client))->drop();
+		g_gamecallback->changepassword_requested = false;
 	}
 
+	if (g_gamecallback->show_pause_menu) {
+		m_event_timer = 0.f;
+		showPauseMenu();
+		g_gamecallback->show_pause_menu = false;
+	}
 	return true;
 }
 
+inline void Game::activeEvent(f32 dtime, bool active)
+{
+	if (active) {
+		m_event_timer = 0.f;
+		g_menumgr.setVisible(true);
+	} else {
+		m_event_timer += dtime;
+		if (m_event_timer > PAUSE_TIMER_LIMIT)
+			g_menumgr.setVisible(false);
+	}
+}
 
 void Game::processQueues()
 {
@@ -1885,7 +1878,6 @@ void Game::processQueues()
 	itemdef_manager->processQueue(client);
 	shader_src->processQueue();
 }
-
 
 void Game::updateProfilers(const RunStats &stats, const FpsControl &draw_times,
 		f32 dtime)
@@ -2029,7 +2021,7 @@ void Game::processKeyInput()
 		m_android_chat_open = false;
 #endif
 		if (!gui_chat_console->isOpenInhibited()) {
-			showPauseMenu(false);
+			g_gamecallback->show_pause_menu = true;
 		}
 	} else if (wasKeyDown(KeyType::CHAT)) {
 		openConsole(0.2, L"");
@@ -2659,19 +2651,7 @@ inline void Game::step(f32 *dtime)
 	if (is_paused) {
 		bool mouse_moved = input->getMouseMoved();
 		input->resetMouseMoved();
-
-		runData.pause_timer += *dtime;
-
-		if (runData.pause_timer > PAUSE_TIMER_LIMIT) {
-			if (mouse_moved) {
-				runData.pause_timer = 0.f;
-				showPauseMenu(false);
-			} else {
-				showPauseMenu(true);
-			}
-		}
-	} else {
-		runData.pause_timer = 0.f;
+		activeEvent(*dtime, mouse_moved);
 	}
 
 	if (can_be_and_is_paused) { // This is for a singleplayer server
@@ -2776,7 +2756,7 @@ void Game::handleClientEvent_ShowFormSpec(ClientEvent *event, CameraOrientation 
 void Game::handleClientEvent_ShowLocalFormSpec(ClientEvent *event, CameraOrientation *cam)
 {
 	FormspecFormSource *fs_src = new FormspecFormSource(*event->show_formspec.formspec);
-	LocalFormspecHandler *txt_dst =
+	LocalFormspecHandler *txt_dst =  // PYR gerer ça autrement
 		new LocalFormspecHandler(*event->show_formspec.formname, client);
 	GUIFormSpecMenu::create(m_game_ui->getFormspecGUI(), client, &input->joystick,
 			fs_src, txt_dst, client->getFormspecPrepend());
@@ -4223,89 +4203,33 @@ void Game::showDeathFormspec()
 }
 
 #define GET_KEY_NAME(KEY) gettext(getKeySetting(#KEY).name())
-void Game::showPauseMenu(bool empty)
+
+void Game::showPauseMenu()
 {
-// >> KIDSCODE
-/*
-#ifdef __ANDROID__
-	static const std::string control_text = strgettext("Default Controls:\n"
-		"No menu visible:\n"
-		"- single tap: button activate\n"
-		"- double tap: place/use\n"
-		"- slide finger: look around\n"
-		"Menu/Inventory visible:\n"
-		"- double tap (outside):\n"
-		" -->close\n"
-		"- touch stack, touch slot:\n"
-		" --> move stack\n"
-		"- touch&drag, tap 2nd finger\n"
-		" --> place single item to slot\n"
-		);
-#else
-	static const std::string control_text_template = strgettext("Controls:\n"
-		"- %s: move forwards\n"
-		"- %s: move backwards\n"
-		"- %s: move left\n"
-		"- %s: move right\n"
-		"- %s: jump/climb\n"
-		"- %s: sneak/go down\n"
-		"- %s: drop item\n"
-		"- %s: inventory\n"
-		"- Mouse: turn/look\n"
-		"- Mouse left: dig/punch\n"
-		"- Mouse right: place/use\n"
-		"- Mouse wheel: select item\n"
-		"- %s: chat\n"
-	);
-
-	 char control_text_buf[600];
-
-	 porting::mt_snprintf(control_text_buf, sizeof(control_text_buf), control_text_template.c_str(),
-			GET_KEY_NAME(keymap_forward),
-			GET_KEY_NAME(keymap_backward),
-			GET_KEY_NAME(keymap_left),
-			GET_KEY_NAME(keymap_right),
-			GET_KEY_NAME(keymap_jump),
-			GET_KEY_NAME(keymap_sneak),
-			GET_KEY_NAME(keymap_drop),
-			GET_KEY_NAME(keymap_inventory),
-			GET_KEY_NAME(keymap_chat)
-			);
-
-	std::string control_text = std::string(control_text_buf);
-	str_formspec_escape(control_text);
-#endif
-*/
-// << KISCODE
-
+	// Prepare Pause Menu stuff
 	std::ostringstream os;
+	os << "" << "size[5.6,1.1,true]";
 
-	if (!empty) {
-		os << "formspec_version[1]" << "size[5.6,1.1,true]";
+	f32 xpos = -0.15f;
 
-		f32 xpos = -0.15f;
+	os << "button_exit[" << (xpos) << ",0;3,0.5;btn_continue;"
+		 << strgettext("Continue") << "]";
 
-		os << "button_exit[" << (xpos) << ",0;3,0.5;btn_continue;"
-		   << strgettext("Continue") << "]";
+	os << "button_exit[" << (xpos) << ",0.8;3,0.5;btn_options;"
+		 << strgettext("Options") << "]";
 
-		os << "button_exit[" << (xpos) << ",0.8;3,0.5;btn_options;"
-		   << strgettext("Options") << "]";
+	os << "button_exit[" << (xpos+=2.9f) << ",0;3,0.5;btn_exit_menu;"
+		 << strgettext("Exit to Menu") << "]";
 
-		os << "button_exit[" << (xpos+=2.9f) << ",0;3,0.5;btn_exit_menu;"
-		   << strgettext("Exit to Menu") << "]";
-
-		os << "button_exit[" << (xpos) << ",0.8;3,0.5;btn_exit_os;"
-		   << strgettext("Exit to OS") << "]";
-	} else {
-		os << "formspec_version[1]" << "size[0,0,true]";
-		os << "bgcolor[#00000000;true]";
-	}
+	os << "button_exit[" << (xpos) << ",0.8;3,0.5;btn_exit_os;"
+		 << strgettext("Exit to OS") << "]";
 
 	/* Create menu */
 	/* Note: FormspecFormSource and LocalFormspecHandler  *
-	 * are deleted by guiFormSpecMenu                     */
+	* are deleted by guiFormSpecMenu                     */
+
 	FormspecFormSource *fs_src = new FormspecFormSource(os.str());
-	LocalFormspecHandler *txt_dst = new LocalFormspecHandler("MT_PAUSE_MENU");
+	PauseMenuFormspecHandler *txt_dst = new PauseMenuFormspecHandler();
 
 	auto *&formspec = m_game_ui->getFormspecGUI();
 	GUIFormSpecMenu::create(formspec, client, &input->joystick,
