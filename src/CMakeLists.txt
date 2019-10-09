@@ -435,8 +435,6 @@ set(common_SRCS
 	staticobject.cpp
 	subgame.cpp
 	terminal_chat_console.cpp
-	texture.cpp
-	texture_pool.cpp
 	tileanimation.cpp
 	tool.cpp
 	translation.cpp
