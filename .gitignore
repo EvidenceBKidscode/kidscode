@@ -81,6 +81,7 @@ locale/
 *.layout
 *.o
 *.a
+*.so
 *.ninja
 .ninja*
 *.gch
