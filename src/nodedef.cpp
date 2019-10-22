@@ -690,7 +690,6 @@ static void fillTileAttribs(ITextureSource *tsrc, TileLayer *layer,
 		layer->frames->resize(frame_count);
 
 		for (int i = 0; i < frame_count; i++) {
-
 			FrameSpec frame;
 
 			os.str("");
@@ -892,6 +891,25 @@ void ContentFeatures::updateTextures(ITextureSource *tsrc, IShaderSource *shdsrc
 		fillTileAttribs(tsrc, &special_tiles[j].layers[0], special_tiles[j], tdef_spec[j],
 				color, special_material, special_shader,
 				tdef_spec[j].backface_culling, tsettings);
+
+	// Replace water node tiles if water surface shader is enabled,
+	// turn off all the animations.
+	if (is_liquid) {
+		u32 shader_id = shdsrc->getShader("water_shader", material_type, drawtype);
+
+		for (u16 j = 0; j < 6; j++) {
+			fillTileAttribs(tsrc, &tiles[j].layers[0], tiles[j], tdef[j],
+				color, material_type, shader_id,
+				tdef[j].backface_culling, tsettings);
+		}
+
+		for (u16 j = 0; j < CF_SPECIAL_COUNT; j++) {
+			fillTileAttribs(tsrc, &special_tiles[j].layers[0], special_tiles[j], tdef[j],
+				color, material_type, shader_id,
+				tdef[j].backface_culling, tsettings);
+		}
+
+	}
 
 	if (param_type_2 == CPT2_COLOR ||
 			param_type_2 == CPT2_COLORED_FACEDIR ||

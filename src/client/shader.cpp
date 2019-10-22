@@ -215,6 +215,7 @@ public:
 		m_world_view_proj("mWorldViewProj"),
 		m_world("mWorld")
 	{}
+
 	~MainShaderConstantSetter() = default;
 
 	virtual void onSetConstants(video::IMaterialRendererServices *services,
@@ -239,7 +240,6 @@ public:
 			m_world.set(*reinterpret_cast<float(*)[16]>(world.pointer()), services);
 		else
 			services->setVertexShaderConstant(world.pointer(), 4, 4);
-
 	}
 };
 

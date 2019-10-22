@@ -58,9 +58,10 @@ ClientMap::ClientMap(
 	m_cache_bilinear_filter   = g_settings->getBool("bilinear_filter");
 	m_cache_anistropic_filter = g_settings->getBool("anisotropic_filter");
 
+	m_driver = SceneManager->getVideoDriver();
 }
 
-MapSector * ClientMap::emergeSector(v2s16 p2d)
+MapSector *ClientMap::emergeSector(v2s16 p2d)
 {
 	// Check that it doesn't exist already
 	try {
@@ -84,6 +85,12 @@ void ClientMap::OnRegisterSceneNode()
 	}
 
 	ISceneNode::OnRegisterSceneNode();
+}
+
+void ClientMap::render()
+{
+	m_driver->setTransform(video::ETS_WORLD, AbsoluteTransformation);
+	renderMap(SceneManager->getSceneNodeRenderPass());
 }
 
 void ClientMap::getBlocksInViewRange(v3s16 cam_pos_nodes,
@@ -300,7 +307,7 @@ struct MeshBufListList
 	}
 };
 
-void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
+void ClientMap::renderMap(s32 pass)
 {
 	bool is_transparent_pass = pass == scene::ESNRP_TRANSPARENT;
 
@@ -414,7 +421,7 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 
 					video::SMaterial& material = buf->getMaterial();
 					video::IMaterialRenderer* rnd =
-						driver->getMaterialRenderer(material.MaterialType);
+						m_driver->getMaterialRenderer(material.MaterialType);
 					bool transparent = (rnd && rnd->isTransparent());
 					if (transparent == is_transparent_pass) {
 						if (buf->getVertexCount() == 0)
@@ -453,10 +460,10 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 				}
 			}
 
-			driver->setMaterial(list.m);
+			m_driver->setMaterial(list.m);
 
 			for (scene::IMeshBuffer *buf : list.bufs) {
-				driver->drawMeshBuffer(buf);
+				m_driver->drawMeshBuffer(buf);
 				vertex_count += buf->getVertexCount();
 				meshbuffer_count++;
 			}
@@ -656,10 +663,9 @@ void ClientMap::renderPostFx(CameraMode cam_mode)
 	if (post_effect_color.getAlpha() != 0)
 	{
 		// Draw a full-screen rectangle
-		video::IVideoDriver* driver = SceneManager->getVideoDriver();
-		v2u32 ss = driver->getScreenSize();
+		v2u32 ss = m_driver->getScreenSize();
 		core::rect<s32> rect(0,0, ss.X, ss.Y);
-		driver->draw2DRectangle(post_effect_color, rect);
+		m_driver->draw2DRectangle(post_effect_color, rect);
 	}
 }
 

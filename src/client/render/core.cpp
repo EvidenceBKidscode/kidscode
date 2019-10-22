@@ -24,6 +24,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "client/clientmap.h"
 #include "client/hud.h"
 #include "client/minimap.h"
+#include "client/water.h"
 
 RenderingCore::RenderingCore(IrrlichtDevice *_device, Client *_client, Hud *_hud)
 	: device(_device), driver(device->getVideoDriver()), smgr(device->getSceneManager()),
@@ -32,6 +33,12 @@ RenderingCore::RenderingCore(IrrlichtDevice *_device, Client *_client, Hud *_hud
 {
 	screensize = driver->getScreenSize();
 	virtual_size = screensize;
+
+	auto root = smgr->getRootSceneNode();
+	auto parent = smgr->addEmptySceneNode(root, -1);
+
+	WaterSceneNode *water = new WaterSceneNode(smgr, client, 4096.f, 4096.f, parent);
+	water->setPosition(v3f(0.f, 50.f, 0.f));
 }
 
 RenderingCore::~RenderingCore()
