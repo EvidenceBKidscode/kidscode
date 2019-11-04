@@ -1,0 +1,22 @@
+Déplacez-vous avec les touches "Z", "S", "Q", "D" (par défaut). Utilisez la souris pour orienter le regard. 
+Appuyez sur la touche "X" (par défaut) pour zoomer. 
+Appuyez sur la touche "F9" pour activer la minimap. Appuyez encore pour changer l'affichage de celle-ci.
+Restaurez le monde à son état initial depuis le "menu IGN" >> "Sauvegarde du monde" >> "Charger carte d'origine"
+Soyez patients, certaines simulations nécessitent quelques secondes pour effectuer les calculs. 
+Réglez le volume des sons et des musiques depuis "menu IGN" >> "Son" 
+Une avalanche finira par se figer si elle rencontre une zone plate. 
+Placez un téléporteur avec clic droit puis donnez-lui un nom. Vous pourrez ensuite vous y rendre rapidement depuis "Menu IGN" >> "Téléporteur IGN". 
+La boîte à outils contient de nombreux objets et blocs pour créer des exercices, des consignes, des points de repère etc. Essayez-la ! 
+Appuyez sur la touche Echap >> "Options" >> "Config. clavier" pour changer l'attribution des touches. 
+Averses de pluie, tempête de neige, beau temps... le menu "Météo" permet de lancer des scénarios météorologiques réalistes. 
+Changez le système d'affichage des coordoonnées (longitude/latitude ou lambert) depuis "Menu IGN" >> bouton "long/lat/lambert".
+Agumentez ou diminuez la distance d'affichage avec les touches "+/-" du clavier numérique. 
+Une trop grande distance d'affichage affecte les performances de votre ordinateur. Diminuez-là avec le bouton "-" du clavier numérique.
+Le HUD est l'ensemble des informations qui s'affichent à l'écran. Vous pouvez le désactiver avec la touche "F1". Pratique pour faire des captures d'écran !
+Appuyez sur "F3" pour activer et désactiver le brouillard. 
+L'inventaire rapide (ou hotbar) se trouve en bas de l'écran. Utilisez la molette de la souris pour naviguer entre les objets/blocs qui s'y trouvent.
+Appuyez sur la touche "J" (par défaut) pour vous déplacer rapidement. Pour aller encore plus vite allez dans "menu IGN" >> "Augmenter/diminuer la vitesse du joueur"
+Appuyez sur la touche "K" (par défaut) pour activer/désactiver le mode vol. Appuyez ensuite sur "Espace" pour voler ou sur "Shift Gauche" pour descendre. 
+Clic gauche pour casser un bloc. Clic droit pour poser un bloc/objet dans le monde.
+Appuyez sur la touche "i" (par défaut) pour ouvrir l'inventaire. Appuyez sur "échap" ou "i" pour le fermer.
+Dans l'inventaire vous pouvez rapidement supprimer un bloc/objet en faisant "Shift" + "Clic gauche" sur ce bloc/objet. 

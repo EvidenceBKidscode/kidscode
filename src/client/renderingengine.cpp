@@ -36,6 +36,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "inputhandler.h"
 #include "gettext.h"
 #include "../gui/guiSkin.h"
+#include "filesys.h"
+#include <locale>
+#include <codecvt>
 
 #if !defined(_WIN32) && !defined(__APPLE__) && !defined(__ANDROID__) && \
 		!defined(SERVER) && !defined(__HAIKU__)
@@ -76,6 +79,29 @@ static gui::GUISkin *createSkin(gui::IGUIEnvironment *environment,
 	return skin;
 }
 
+using wbuffer_convert_utf8_utf16 = std::wbuffer_convert<
+	std::codecvt_utf8_utf16< wchar_t, 0x10ffff, std::consume_header > >;
+
+static bool getFileContent(std::string tippath, std::vector<std::wstring> &vec)
+{
+	std::ifstream file(tippath.c_str());
+
+	if (!file) {
+		std::cerr << "Cannot open tips file" << std::endl;
+		return false;
+	}
+
+	wbuffer_convert_utf8_utf16 conv(file.rdbuf());
+	std::wistream file_utf16(&conv);
+
+	std::wstring str;
+	while (std::getline(file_utf16, str))
+		if (str.size() > 0)
+			vec.push_back(str);
+
+	file.close();
+	return true;
+}
 
 RenderingEngine::RenderingEngine(IEventReceiver *receiver)
 {
@@ -147,6 +173,9 @@ RenderingEngine::RenderingEngine(IEventReceiver *receiver)
 			gui::EGST_WINDOWS_METALLIC, driver);
 	m_device->getGUIEnvironment()->setSkin(skin);
 	skin->drop();
+
+	std::string tippath = porting::path_user + DIR_DELIM + "tips.txt";
+	getFileContent(tippath, m_tips);
 }
 
 RenderingEngine::~RenderingEngine()
@@ -473,14 +502,17 @@ bool RenderingEngine::setXorgWindowIconFromPath(const std::string &icon_file)
 }
 
 /*
-	Draws a screen with a single text on it.
-	Text will be removed when the screen is drawn the next time.
-	Additionally, a progressbar can be drawn when percent is set between 0 and 100.
+    Draws a screen with a single text on it.
+    Text will be removed when the screen is drawn the next time.
+    Additionally, a progressbar can be drawn when percent is set between 0 and 100.
 */
+
 void RenderingEngine::_draw_load_screen(const std::wstring &text,
 		gui::IGUIEnvironment *guienv, ITextureSource *tsrc, float dtime,
 		int percent, bool clouds)
 {
+	m_time += dtime;
+	//std::cout << m_time << std::endl;
 	v2u32 screensize = RenderingEngine::get_instance()->getWindowSize();
 
 	v2s32 textsize(g_fontengine->getTextWidth(text), g_fontengine->getLineHeight());
@@ -488,29 +520,51 @@ void RenderingEngine::_draw_load_screen(const std::wstring &text,
 	core::rect<s32> textrect(center - textsize / 2, center + textsize / 2);
 
 	gui::IGUIStaticText *guitext =
-			guienv->addStaticText(text.c_str(), textrect, false, false);
+		guienv->addStaticText(text.c_str(), textrect, false, false);
 	guitext->setTextAlignment(gui::EGUIA_CENTER, gui::EGUIA_UPPERLEFT);
+
+
+	// tips
+	gui::IGUIStaticText *guitip = nullptr;
+
+	if (!m_tips.empty()) {
+		int rdm = m_rdm_tip != -1 ? m_rdm_tip : rand() % m_tips.size();
+
+		if (m_time > 6.f) {
+			rdm = rand() % m_tips.size();
+			m_time = 0.f;
+		}
+
+		m_rdm_tip = rdm;
+
+		std::wstring tip = m_tips[rdm];
+
+		v2s32 tipsize(screensize.X, g_fontengine->getLineHeight());
+		v2s32 centertip(screensize.X / 2, screensize.Y / 4);
+		core::rect<s32> tiprect(centertip - tipsize / 2, centertip + tipsize / 2);
+		//driver->draw2DRectangle(video::SColor(255, 0, 0, 0), tiprect, NULL);
+
+		guitip = guienv->addStaticText(tip.c_str(), tiprect, false, false);
+		guitip->setTextAlignment(gui::EGUIA_CENTER, gui::EGUIA_UPPERLEFT);
+	}
 
 	bool cloud_menu_background = clouds && g_settings->getBool("menu_clouds");
 	if (cloud_menu_background) {
 		g_menuclouds->step(dtime * 3);
 		g_menuclouds->render();
-		get_video_driver()->beginScene(
-				true, true, video::SColor(255, 140, 186, 250));
+		driver->beginScene(true, true, video::SColor(255, 140, 186, 250));
 		g_menucloudsmgr->drawAll();
 	} else
-		get_video_driver()->beginScene(true, true, video::SColor(255, 0, 0, 0));
+		driver->beginScene(true, true, video::SColor(255, 0, 0, 0));
 
 	// draw progress bar
 	if ((percent >= 0) && (percent <= 100)) {
 		video::ITexture *progress_img = tsrc->getTexture("progress_bar.png");
-		video::ITexture *progress_img_bg =
-				tsrc->getTexture("progress_bar_bg.png");
+		video::ITexture *progress_img_bg = tsrc->getTexture("progress_bar_bg.png");
 
 		if (progress_img && progress_img_bg) {
 #ifndef __ANDROID__
-			const core::dimension2d<u32> &img_size =
-					progress_img_bg->getSize();
+			const core::dimension2d<u32> &img_size = progress_img_bg->getSize();
 			u32 imgW = rangelim(img_size.Width, 200, 600);
 			u32 imgH = rangelim(img_size.Height, 24, 72);
 #else
@@ -519,31 +573,27 @@ void RenderingEngine::_draw_load_screen(const std::wstring &text,
 			u32 imgW = screensize.X / 2.2f;
 			u32 imgH = floor(imgW * imgRatio);
 #endif
-			v2s32 img_pos((screensize.X - imgW) / 2,
-					(screensize.Y - imgH) / 2);
+			v2s32 img_pos((screensize.X - imgW) / 2, (screensize.Y - imgH) / 2);
 
-			draw2DImageFilterScaled(get_video_driver(), progress_img_bg,
-					core::rect<s32>(img_pos.X, img_pos.Y,
-							img_pos.X + imgW,
-							img_pos.Y + imgH),
-					core::rect<s32>(0, 0, img_size.Width,
-							img_size.Height),
-					0, 0, true);
+			draw2DImageFilterScaled(driver, progress_img_bg,
+				core::rect<s32>(img_pos.X, img_pos.Y, img_pos.X + imgW, img_pos.Y + imgH),
+				core::rect<s32>(0, 0, img_size.Width, img_size.Height), 0, 0, true);
 
-			draw2DImageFilterScaled(get_video_driver(), progress_img,
-					core::rect<s32>(img_pos.X, img_pos.Y,
-							img_pos.X + (percent * imgW) / 100,
-							img_pos.Y + imgH),
-					core::rect<s32>(0, 0,
-							(percent * img_size.Width) / 100,
-							img_size.Height),
-					0, 0, true);
+			draw2DImageFilterScaled(driver, progress_img,
+				core::rect<s32>(img_pos.X, img_pos.Y,
+					img_pos.X + (percent * imgW) / 100, img_pos.Y + imgH),
+
+				core::rect<s32>(0, 0, (percent * img_size.Width) / 100,
+					img_size.Height), 0, 0, true);
 		}
 	}
 
 	guienv->drawAll();
-	get_video_driver()->endScene();
+	driver->endScene();
 	guitext->remove();
+
+	if (guitip)
+		guitip->remove();
 }
 
 /*
