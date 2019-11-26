@@ -485,7 +485,7 @@ void parseTextString(const std::string &value, std::string &text, std::string &p
 	else
 		params = "";
 		
-	text = value.substr(0,i);
+	text = value.substr(0, i);
 }
 
 bool parseColorString(const std::string &value, video::SColor &color, bool quiet,
