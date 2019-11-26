@@ -104,9 +104,8 @@ Client::Client(
 	// Add local player
 	m_env.setLocalPlayer(new LocalPlayer(this, playername));
 
-	if (g_settings->getBool("enable_minimap")) {
-		m_minimap = new Minimap(this);
-	}
+	m_minimap = new Minimap(this);
+
 	m_cache_save_interval = g_settings->getU16("server_map_save_interval");
 }
 
