@@ -38,7 +38,6 @@ struct MapgenFractalParams : public MapgenParams
 	u32 spflags = MGFRACTAL_TERRAIN;
 	float cave_width = 0.09f;
 	s16 large_cave_depth = -33;
-	s16 lava_depth = -256;
 	u16 small_cave_num_min = 0;
 	u16 small_cave_num_max = 0;
 	u16 large_cave_num_min = 0;
@@ -86,10 +85,6 @@ public:
 private:
 	u16 formula;
 	bool julia;
-
-	s16 large_cave_depth;
-	s16 dungeon_ymin;
-	s16 dungeon_ymax;
 	u16 fractal;
 	u16 iterations;
 	v3f scale;

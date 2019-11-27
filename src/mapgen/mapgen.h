@@ -244,7 +244,7 @@ public:
 	virtual void generateBiomes();
 	virtual void dustTopNodes();
 	virtual void generateCavesNoiseIntersection(s16 max_stone_y);
-	virtual void generateCavesRandomWalk(s16 max_stone_y, s16 large_cave_depth);
+	virtual void generateCavesRandomWalk(s16 max_stone_y, s16 large_cave_ymax);
 	virtual bool generateCavernsNoise(s16 max_stone_y);
 	virtual void generateDungeons(s16 max_stone_y);
 
@@ -285,7 +285,7 @@ protected:
 	int large_cave_num_min;
 	int large_cave_num_max;
 	float large_cave_flooded;
-	// TODO 'lava_depth' is deprecated and should be removed. Cave liquids are
-	// now defined and located using biome definitions.
-	int lava_depth;
+	s16 large_cave_depth;
+	s16 dungeon_ymin;
+	s16 dungeon_ymax;
 };

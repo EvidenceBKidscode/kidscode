@@ -45,7 +45,6 @@ struct MapgenV7Params : public MapgenParams {
 
 	float cave_width = 0.09f;
 	s16 large_cave_depth = -33;
-	s16 lava_depth = -256;
 	u16 small_cave_num_min = 0;
 	u16 small_cave_num_max = 0;
 	u16 large_cave_num_min = 0;
@@ -108,10 +107,6 @@ private:
 	float float_mount_exponent;
 	s16 floatland_level;
 	s16 shadow_limit;
-
-	s16 large_cave_depth;
-	s16 dungeon_ymin;
-	s16 dungeon_ymax;
 
 	Noise *noise_terrain_base;
 	Noise *noise_terrain_alt;

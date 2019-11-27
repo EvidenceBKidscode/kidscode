@@ -34,7 +34,6 @@ struct MapgenV5Params : public MapgenParams
 	u32 spflags = MGV5_CAVERNS;
 	float cave_width = 0.09f;
 	s16 large_cave_depth = -256;
-	s16 lava_depth = -256;
 	u16 small_cave_num_min = 0;
 	u16 small_cave_num_max = 0;
 	u16 large_cave_num_min = 0;
@@ -75,10 +74,6 @@ public:
 	int generateBaseTerrain();
 
 private:
-	s16 large_cave_depth;
-	s16 dungeon_ymin;
-	s16 dungeon_ymax;
-
 	Noise *noise_factor;
 	Noise *noise_height;
 	Noise *noise_ground;
