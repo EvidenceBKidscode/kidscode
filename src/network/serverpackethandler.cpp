@@ -498,6 +498,7 @@ void Server::process_PlayerPos(RemotePlayer *player, PlayerSAO *playersao,
 	player->control.sneak = (keyPressed & 64);
 	player->control.LMB = (keyPressed & 128);
 	player->control.RMB = (keyPressed & 256);
+	player->control.MMB = (keyPressed & 512); // KIDSCODE
 
 	if (playersao->checkMovementCheat()) {
 		// Call callbacks

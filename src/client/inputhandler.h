@@ -160,8 +160,11 @@ public:
 		keyWasDown.clear();
 
 		leftclicked = false;
+		middleclicked = false; // KIDSCODE
 		rightclicked = false;
+
 		leftreleased = false;
+		middlereleased = false; // KIDSCODE
 		rightreleased = false;
 
 		left_active = false;
@@ -179,8 +182,11 @@ public:
 	}
 
 	bool leftclicked = false;
+	bool middleclicked = false; // KIDSCODE
 	bool rightclicked = false;
+
 	bool leftreleased = false;
+	bool middlereleased = false; // KIDSCODE
 	bool rightreleased = false;
 
 	bool left_active = false;
@@ -230,16 +236,23 @@ public:
 	virtual void setMousePos(s32 x, s32 y) = 0;
 
 	virtual bool getLeftState() = 0;
+	virtual bool getMiddleState() = 0; // KIDSCODE
 	virtual bool getRightState() = 0;
 
 	virtual bool getLeftClicked() = 0;
+	virtual bool getMiddleClicked() = 0; // KIDSCODE
 	virtual bool getRightClicked() = 0;
+
 	virtual void resetLeftClicked() = 0;
+	virtual void resetMiddleClicked() = 0; // KIDSCODE
 	virtual void resetRightClicked() = 0;
 
 	virtual bool getLeftReleased() = 0;
+	virtual bool getMiddleReleased() = 0; // KIDSCODE
 	virtual bool getRightReleased() = 0;
+
 	virtual void resetLeftReleased() = 0;
+	virtual void resetMiddleReleased() = 0; // KIDSCODE
 	virtual void resetRightReleased() = 0;
 
 	virtual s32 getMouseWheel() = 0;
@@ -305,6 +318,10 @@ public:
 	{
 		return m_receiver->left_active || joystick.isKeyDown(KeyType::MOUSE_L);
 	}
+	virtual bool getMiddleState() // KIDSCODE
+	{
+		return m_receiver->middle_active || joystick.isKeyDown(KeyType::MOUSE_M);
+	}
 	virtual bool getRightState()
 	{
 		return m_receiver->right_active || joystick.isKeyDown(KeyType::MOUSE_R);
@@ -314,6 +331,11 @@ public:
 	{
 		return m_receiver->leftclicked ||
 		       joystick.getWasKeyDown(KeyType::MOUSE_L);
+	}
+	virtual bool getMiddleClicked() // KIDSCODE
+	{
+		return m_receiver->middleclicked ||
+		       joystick.getWasKeyDown(KeyType::MOUSE_M);
 	}
 	virtual bool getRightClicked()
 	{
@@ -326,6 +348,11 @@ public:
 		m_receiver->leftclicked = false;
 		joystick.clearWasKeyDown(KeyType::MOUSE_L);
 	}
+	virtual void resetMiddleClicked() // KIDSCODE
+	{
+		m_receiver->middleclicked = false;
+		joystick.clearWasKeyDown(KeyType::MOUSE_M);
+	}
 	virtual void resetRightClicked()
 	{
 		m_receiver->rightclicked = false;
@@ -337,6 +364,11 @@ public:
 		return m_receiver->leftreleased ||
 		       joystick.wasKeyReleased(KeyType::MOUSE_L);
 	}
+	virtual bool getMiddleReleased() // KIDSCODE
+	{
+		return m_receiver->middlereleased ||
+		       joystick.wasKeyReleased(KeyType::MOUSE_M);
+	}
 	virtual bool getRightReleased()
 	{
 		return m_receiver->rightreleased ||
@@ -347,6 +379,11 @@ public:
 	{
 		m_receiver->leftreleased = false;
 		joystick.clearWasKeyReleased(KeyType::MOUSE_L);
+	}
+	virtual void resetMiddleReleased() // KIDSCODE
+	{
+		m_receiver->middlereleased = false;
+		joystick.clearWasKeyReleased(KeyType::MOUSE_M);
 	}
 	virtual void resetRightReleased()
 	{
@@ -379,16 +416,23 @@ public:
 	virtual void setMousePos(s32 x, s32 y) { mousepos = v2s32(x, y); }
 
 	virtual bool getLeftState() { return leftdown; }
+	virtual bool getMiddleState() { return middledown; } // KIDSCODE
 	virtual bool getRightState() { return rightdown; }
 
 	virtual bool getLeftClicked() { return leftclicked; }
+	virtual bool getMiddleClicked() { return middleclicked; } // KIDSCODE
 	virtual bool getRightClicked() { return rightclicked; }
+
 	virtual void resetLeftClicked() { leftclicked = false; }
+	virtual void resetMiddleClicked() { middleclicked = false; } // KIDSCODE
 	virtual void resetRightClicked() { rightclicked = false; }
 
 	virtual bool getLeftReleased() { return leftreleased; }
+	virtual bool getMiddleReleased() { return middlereleased; } // KIDSCODE
 	virtual bool getRightReleased() { return rightreleased; }
+
 	virtual void resetLeftReleased() { leftreleased = false; }
+	virtual void resetMiddleReleased() { middlereleased = false; } // KIDSCODE
 	virtual void resetRightReleased() { rightreleased = false; }
 
 	virtual s32 getMouseWheel() { return 0; }
@@ -402,9 +446,12 @@ private:
 	v2s32 mousepos;
 	v2s32 mousespeed;
 	bool leftdown = false;
+	bool middledown = false; // KIDSCODE
 	bool rightdown = false;
 	bool leftclicked = false;
+	bool middleclicked = false; // KIDSCODE
 	bool rightclicked = false;
 	bool leftreleased = false;
+	bool middlereleased = false; // KIDSCODE
 	bool rightreleased = false;
 };

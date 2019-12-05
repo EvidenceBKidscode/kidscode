@@ -2453,6 +2453,7 @@ void Game::updatePlayerControl(const CameraOrientation &cam)
 		isKeyDown(KeyType::SNEAK),
 		isKeyDown(KeyType::ZOOM),
 		input->getLeftState(),
+		input->getMiddleState(), // KIDSCODE
 		input->getRightState(),
 		cam.camera_pitch,
 		cam.camera_yaw,
@@ -2469,8 +2470,9 @@ void Game::updatePlayerControl(const CameraOrientation &cam)
 			( (u32)(isKeyDown(KeyType::SPECIAL1)                      & 0x1) << 5) |
 			( (u32)(isKeyDown(KeyType::SNEAK)                         & 0x1) << 6) |
 			( (u32)(input->getLeftState()                             & 0x1) << 7) |
-			( (u32)(input->getRightState()                            & 0x1) << 8
-		);
+			( (u32)(input->getRightState()                            & 0x1) << 8) |
+			( (u32)(input->getMiddleState()                           & 0x1) << 9) //KC
+		;
 
 #ifdef ANDROID
 	/* For Android, simulate holding down AUX1 (fast move) if the user has
@@ -3091,9 +3093,11 @@ void Game::processPlayerInteraction(f32 dtime, bool show_hud, bool show_debug)
 		camera->setDigging(0); // left click animation
 
 	input->resetLeftClicked();
+	input->resetMiddleClicked(); // KIDSCODE
 	input->resetRightClicked();
 
 	input->resetLeftReleased();
+	input->resetMiddleReleased(); // KIDSCODE
 	input->resetRightReleased();
 }
 
