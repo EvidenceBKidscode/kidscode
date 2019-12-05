@@ -432,8 +432,12 @@ int ModApiEnvMod::l_place_node(lua_State *L)
 	pointed.type = POINTEDTHING_NODE;
 	pointed.node_abovesurface = pos;
 	pointed.node_undersurface = pos + v3s16(0,-1,0);
-	// Place it with a NULL placer (appears in Lua as nil)
-	bool success = scriptIfaceItem->item_OnPlace(item, nullptr, pointed);
+
+	const char *name = luaL_checkstring(L, 3);
+	RemotePlayer *player = dynamic_cast<RemotePlayer *>(env->getPlayer(name));
+	PlayerSAO *sao = player->getPlayerSAO();
+
+	bool success = scriptIfaceItem->item_OnPlace(item, sao, pointed);
 	lua_pushboolean(L, success);
 	return 1;
 }
