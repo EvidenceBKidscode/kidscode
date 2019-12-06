@@ -25,6 +25,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <IGUIFont.h>
 #include "irr_aabb3d.h"
 #include "../hud.h"
+#include "texture_pool.h" // KIDSCODE
 
 class Client;
 class ITextureSource;
@@ -56,6 +57,7 @@ public:
 			Inventory *inventory);
 	~Hud();
 
+	void updateScaling(); // KIDSCODE
 	void drawHotbar(u16 playeritem);
 	void resizeHotbar();
 	void drawCrosshair();
@@ -90,6 +92,7 @@ private:
 
 	void drawItem(const ItemStack &item, const core::rect<s32> &rect, bool selected);
 
+	float m_hud_grid_resolution; // KIDSCODE
 	float m_hud_scaling; // cached minetest setting
 	v3s16 m_camera_offset;
 	v2u32 m_screensize;
@@ -115,6 +118,11 @@ private:
 		HIGHLIGHT_HALO,
 		HIGHLIGHT_NONE
 	} m_mode;
+
+	// >> KIDSCODE
+	TexturePool m_texture_pool;
+	u32 m_font_size;
+	// << KIDSCODE
 };
 
 enum ItemRotationKind

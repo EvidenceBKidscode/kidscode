@@ -51,7 +51,10 @@ Hud::Hud(gui::IGUIEnvironment *guienv, Client *client, LocalPlayer *player,
 	this->player      = player;
 	this->inventory   = inventory;
 
-	m_hud_scaling      = g_settings->getFloat("hud_scaling");
+	// >> KIDSCODE
+	//m_hud_scaling      = g_settings->getFloat("hud_scaling");
+	updateScaling();
+	// << KIDSCODE
 	m_hotbar_imagesize = std::floor(HOTBAR_IMAGE_SIZE *
 		RenderingEngine::getDisplayDensity() + 0.5f);
 	m_hotbar_imagesize *= m_hud_scaling;
@@ -110,6 +113,8 @@ Hud::Hud(gui::IGUIEnvironment *guienv, Client *client, LocalPlayer *player,
 	} else {
 		m_selection_material.MaterialType = video::EMT_SOLID;
 	}
+
+	m_font_size = g_fontengine->getDefaultFontSize(); // KIDSCODE
 }
 
 Hud::~Hud()
@@ -117,6 +122,15 @@ Hud::~Hud()
 	if (m_selection_mesh)
 		m_selection_mesh->drop();
 }
+
+// >> KIDSCODE
+void Hud::updateScaling()
+{
+	m_hud_grid_resolution = g_settings->getFloat("hud_grid_resolution");
+	m_hud_scaling = g_settings->getFloat("hud_scaling") *
+		RenderingEngine::get_instance()->getWindowSize().X / m_hud_grid_resolution;
+}
+// << KIDSCODE
 
 void Hud::drawItem(const ItemStack &item, const core::rect<s32>& rect,
 		bool selected)
@@ -215,8 +229,12 @@ void Hud::drawItems(v2s32 upperleftpos, v2s32 screen_offset, s32 itemcount,
 
 	// Position of upper left corner of bar
 	v2s32 pos = screen_offset;
-	pos.X *= m_hud_scaling * RenderingEngine::getDisplayDensity();
-	pos.Y *= m_hud_scaling * RenderingEngine::getDisplayDensity();
+	// >> KIDSCODE
+	pos.X *= m_hud_scaling;
+	pos.Y *= m_hud_scaling;
+//	pos.X *= m_hud_scaling * RenderingEngine::getDisplayDensity();
+//	pos.Y *= m_hud_scaling * RenderingEngine::getDisplayDensity();
+	// << KIDSCODE
 	pos += upperleftpos;
 
 	// Store hotbar_image in member variable, used by drawItem()
@@ -282,8 +300,13 @@ void Hud::drawItems(v2s32 upperleftpos, v2s32 screen_offset, s32 itemcount,
 
 void Hud::drawLuaElements(const v3s16 &camera_offset)
 {
-	u32 text_height = g_fontengine->getTextHeight();
-	irr::gui::IGUIFont* font = g_fontengine->getFont();
+	// >> KIDSCODE
+	u32 default_text_height = g_fontengine->getTextHeight(m_font_size * m_hud_scaling);
+	irr::gui::IGUIFont* default_font = g_fontengine->getFont(m_font_size * m_hud_scaling);
+	m_texture_pool.step();
+	//u32 text_height = g_fontengine->getTextHeight();
+	//irr::gui::IGUIFont* font = g_fontengine->getFont();
+	// << KIDSCODE
 
 	// Reorder elements by z_index
 	std::vector<size_t> ids;
@@ -307,28 +330,55 @@ void Hud::drawLuaElements(const v3s16 &camera_offset)
 				floor(e->pos.Y * (float) m_screensize.Y + 0.5));
 		switch (e->type) {
 			case HUD_ELEM_IMAGE: {
-				video::ITexture *texture = tsrc->getTexture(e->text);
+				// >> KIDSCODE
+				//video::ITexture *texture = tsrc->getTexture(e->text);
+				video::ITexture *texture = m_texture_pool.getTexture(
+					e->text, tsrc, e->texture_index);
+				// << KIDSCODE
 				if (!texture)
 					continue;
 
 				const video::SColor color(255, 255, 255, 255);
 				const video::SColor colors[] = {color, color, color, color};
 				core::dimension2di imgsize(texture->getOriginalSize());
-				v2s32 dstsize(imgsize.Width * e->scale.X,
-				              imgsize.Height * e->scale.Y);
+				// >> KIDSCODE
+				//v2s32 dstsize(imgsize.Width * e->scale.X,
+				//              imgsize.Height * e->scale.Y);
+				v2s32 dstsize(imgsize.Width * e->scale.X * m_hud_scaling,
+					imgsize.Height * e->scale.Y * m_hud_scaling);
+				// << KIDSCODE
 				if (e->scale.X < 0)
-					dstsize.X = m_screensize.X * (e->scale.X * -0.01);
+					// >> KIDSCODE
+					//dstsize.X = m_screensize.X * (e->scale.X * -0.01);
+					dstsize.X = m_screensize.X * (e->scale.X * m_hud_scaling * -0.01);
+					// << KIDSCODE
 				if (e->scale.Y < 0)
-					dstsize.Y = m_screensize.Y * (e->scale.Y * -0.01);
+					// >> KIDSCODE
+					//dstsize.Y = m_screensize.Y * (e->scale.Y * -0.01);
+					dstsize.Y = m_screensize.Y * (e->scale.Y * m_hud_scaling * -0.01);
+					// << KIDSCODE
 				v2s32 offset((e->align.X - 1.0) * dstsize.X / 2,
 				             (e->align.Y - 1.0) * dstsize.Y / 2);
 				core::rect<s32> rect(0, 0, dstsize.X, dstsize.Y);
-				rect += pos + offset + v2s32(e->offset.X, e->offset.Y);
+				// >> KIDSCODE
+				//rect += pos + offset + v2s32(e->offset.X, e->offset.Y);
+				rect += pos + offset + v2s32(e->offset.X * m_hud_scaling,
+					e->offset.Y * m_hud_scaling);
+				// << KIDSCODE
 				draw2DImageFilterScaled(driver, texture, rect,
 					core::rect<s32>(core::position2d<s32>(0,0), imgsize),
 					NULL, colors, true);
 				break; }
 			case HUD_ELEM_TEXT: {
+				// >> KIDSCODE
+				u32 text_height = default_text_height;
+				irr::gui::IGUIFont* font = default_font;
+				if (e->font_size != 0 && e->font_size != m_font_size) {
+					text_height = g_fontengine->getTextHeight(e->font_size * m_hud_scaling);
+					font = g_fontengine->getFont(e->font_size * m_hud_scaling);
+				}
+				// << KIDSCODE
+
 				video::SColor color(255, (e->number >> 16) & 0xFF,
 										 (e->number >> 8)  & 0xFF,
 										 (e->number >> 0)  & 0xFF);
@@ -337,7 +387,10 @@ void Hud::drawLuaElements(const v3s16 &camera_offset)
 				core::dimension2d<u32> textsize = font->getDimension(text.c_str());
 				v2s32 offset((e->align.X - 1.0) * (textsize.Width / 2),
 				             (e->align.Y - 1.0) * (textsize.Height / 2));
-				v2s32 offs(e->offset.X, e->offset.Y);
+				// >> KIDSCODE
+				//v2s32 offs(e->offset.X, e->offset.Y);
+				v2s32 offs(e->offset.X * m_hud_scaling, e->offset.Y * m_hud_scaling);
+				// << KIDSCODE
 				font->draw(text.c_str(), size + pos + offset + offs, color);
 				break; }
 			case HUD_ELEM_STATBAR: {
@@ -350,6 +403,10 @@ void Hud::drawLuaElements(const v3s16 &camera_offset)
 					inv, e->item, e->dir);
 				break; }
 			case HUD_ELEM_WAYPOINT: {
+				// >> KIDSCODE
+				u32 text_height = default_text_height;
+				irr::gui::IGUIFont* font = default_font;
+				// << KIDSCODE
 				v3f p_pos = player->getPosition() / BS;
 				v3f w_pos = e->world_pos * BS;
 				float distance = std::floor(10 * p_pos.getDistanceFrom(e->world_pos)) /
@@ -376,7 +433,10 @@ void Hud::drawLuaElements(const v3s16 &camera_offset)
 				std::ostringstream os;
 				os << distance << e->text;
 				text = unescape_translate(utf8_to_wide(os.str()));
-				pos.Y += text_height;
+				// >> KIDSCODE
+				//pos.Y += text_height;
+				pos.Y += default_text_height;
+				// << KIDSCODE
 				font->draw(text.c_str(), size + pos, color);
 				break; }
 			case HUD_ELEM_MINIMAP: {
@@ -414,7 +474,10 @@ void Hud::drawStatbar(v2s32 pos, u16 corner, u16 drawdir, const std::string &tex
 	if (size == v2s32()) {
 		dstd = srcd;
 	} else {
-		float size_factor = m_hud_scaling * RenderingEngine::getDisplayDensity();
+		// << KIDSCODE
+		//float size_factor = m_hud_scaling * RenderingEngine::getDisplayDensity();
+		float size_factor = m_hud_scaling;
+		// >> KIDSCODE
 		dstd.Height = size.Y * size_factor;
 		dstd.Width  = size.X * size_factor;
 		offset.X *= size_factor;
@@ -624,6 +687,7 @@ void Hud::resizeHotbar() {
 	const v2u32 &window_size = RenderingEngine::get_instance()->getWindowSize();
 
 	if (m_screensize != window_size) {
+		updateScaling(); // KIDSCODE
 		m_hotbar_imagesize = floor(HOTBAR_IMAGE_SIZE *
 			RenderingEngine::getDisplayDensity() + 0.5);
 		m_hotbar_imagesize *= m_hud_scaling;

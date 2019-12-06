@@ -1082,6 +1082,7 @@ void Client::handleCommand_HudAdd(NetworkPacket* pkt)
 	v3f world_pos;
 	v2s32 size;
 	s16 z_index = 0;
+	u32 font_size; // KIDSCODE
 
 	*pkt >> server_id >> type >> pos >> name >> scale >> text >> number >> item
 		>> dir >> align >> offset;
@@ -1099,6 +1100,13 @@ void Client::handleCommand_HudAdd(NetworkPacket* pkt)
 	}
 	catch(PacketError &e) {}
 
+	// >> KIDSCODE
+	try {
+		*pkt >> font_size;
+	}
+	catch(PacketError &e) {}
+	// << KIDSCODE
+
 	ClientEvent *event = new ClientEvent();
 	event->type             = CE_HUDADD;
 	event->hudadd.server_id = server_id;
@@ -1115,6 +1123,7 @@ void Client::handleCommand_HudAdd(NetworkPacket* pkt)
 	event->hudadd.world_pos = new v3f(world_pos);
 	event->hudadd.size      = new v2s32(size);
 	event->hudadd.z_index   = z_index;
+	event->hudadd.font_size = font_size; // KIDSCODE
 	m_client_event_queue.push(event);
 }
 

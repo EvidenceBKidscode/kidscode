@@ -565,6 +565,7 @@ enum ToClientCommand
 		v3f1000 world_pos
 		v2s32 size
 		s16 z_index
+		u32 font_size // KIDSCODE
 	*/
 
 	TOCLIENT_HUDRM = 0x4a,

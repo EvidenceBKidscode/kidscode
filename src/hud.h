@@ -61,7 +61,7 @@ enum HudElementType {
 	HUD_ELEM_STATBAR   = 2,
 	HUD_ELEM_INVENTORY = 3,
 	HUD_ELEM_WAYPOINT  = 4,
-	HUD_ELEM_MINIMAP   = 5,	
+	HUD_ELEM_MINIMAP   = 5,
 };
 
 enum HudElementStat {
@@ -77,6 +77,7 @@ enum HudElementStat {
 	HUD_STAT_WORLD_POS,
 	HUD_STAT_SIZE,
 	HUD_STAT_Z_INDEX,
+	HUD_STAT_FONT_SIZE, // KIDSCODE
 };
 
 struct HudElement {
@@ -93,6 +94,10 @@ struct HudElement {
 	v3f world_pos;
 	v2s32 size;
 	s16 z_index = 0;
+	// >> KIDSCODE
+	u32 font_size = 0;
+	s32 texture_index = 0;
+	// << KIDSCODE
 };
 
 extern const EnumString es_HudElementType[];

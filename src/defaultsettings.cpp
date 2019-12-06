@@ -221,6 +221,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("crosshair_alpha", "255");
 	settings->setDefault("recent_chat_messages", "6");
 	settings->setDefault("hud_scaling", "1.0");
+	settings->setDefault("hud_grid_resolution", "1920.0"); // KIDSCODE
 	settings->setDefault("gui_scaling", "1.0");
 	settings->setDefault("gui_scaling_filter", "false");
 	settings->setDefault("gui_scaling_filter_txr2img", "true");
@@ -486,20 +487,20 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("leaves_style", "simple");
 	settings->setDefault("curl_verify_cert","false");
 
-	// Apply settings according to screen size
+		// Apply settings according to screen size
 	float x_inches = ((double) porting::getDisplaySize().X /
 			(160 * porting::getDisplayDensity()));
 
 	if (x_inches < 3.7f) {
-		settings->setDefault("hud_scaling", "0.6");
+		// settings->setDefault("hud_scaling", "0.6"); // KIDSCODE
 		settings->setDefault("font_size", "14");
 		settings->setDefault("mono_font_size", "14");
 	} else if (x_inches < 4.5f) {
-		settings->setDefault("hud_scaling", "0.7");
+		// settings->setDefault("hud_scaling", "0.7"); // KIDSCODE
 		settings->setDefault("font_size", "14");
 		settings->setDefault("mono_font_size", "14");
 	} else if (x_inches < 6.0f) {
-		settings->setDefault("hud_scaling", "0.85");
+		// settings->setDefault("hud_scaling", "0.85"); // KIDSCODE
 		settings->setDefault("font_size", "14");
 		settings->setDefault("mono_font_size", "14");
 	}
@@ -508,6 +509,8 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("screen_dpi", "72");
 #endif
 }
+
+
 
 void override_default_settings(Settings *settings, Settings *from)
 {

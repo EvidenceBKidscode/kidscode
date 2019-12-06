@@ -1655,7 +1655,8 @@ void Server::SendHUDAdd(session_t peer_id, u32 id, HudElement *form)
 	pkt << id << (u8) form->type << form->pos << form->name << form->scale
 			<< form->text << form->number << form->item << form->dir
 			<< form->align << form->offset << form->world_pos << form->size
-			<< form->z_index;
+			<< form->z_index
+			<< form->font_size; // KIDSCODE
 
 	Send(&pkt);
 }

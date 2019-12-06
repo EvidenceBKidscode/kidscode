@@ -1875,6 +1875,11 @@ void read_hud_element(lua_State *L, HudElement *elem)
 	elem->world_pos = lua_istable(L, -1) ? read_v3f(L, -1) : v3f();
 	lua_pop(L, 1);
 
+	// >> KIDSCODE
+	elem->font_size = getintfield_default(L, 2, "font_size", 0);
+	elem->texture_index = 0;
+	// << KIDSCODE
+
 	/* check for known deprecated element usage */
 	if ((elem->type  == HUD_ELEM_STATBAR) && (elem->size == v2s32()))
 		log_deprecated(L,"Deprecated usage of statbar without size!");
@@ -1926,6 +1931,11 @@ void push_hud_element(lua_State *L, HudElement *elem)
 
 	lua_pushnumber(L, elem->z_index);
 	lua_setfield(L, -2, "z_index");
+
+	// >> KIDSCODE
+	lua_pushnumber(L, elem->font_size);
+	lua_setfield(L, -2, "font_size");
+	// << KIDSCODE
 }
 
 HudElementStat read_hud_change(lua_State *L, HudElement *elem, void **value)
@@ -1987,6 +1997,12 @@ HudElementStat read_hud_change(lua_State *L, HudElement *elem, void **value)
 			elem->z_index = MYMAX(S16_MIN, MYMIN(S16_MAX, luaL_checknumber(L, 4)));
 			*value = &elem->z_index;
 			break;
+		// >> KIDSCODE
+		case HUD_STAT_FONT_SIZE:
+			elem->font_size = luaL_checknumber(L, 4);
+			*value = &elem->font_size;
+			break;
+		// << KIDSCODE
 	}
 	return stat;
 }

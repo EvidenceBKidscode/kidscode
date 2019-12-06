@@ -2665,6 +2665,10 @@ void Game::handleClientEvent_HudAdd(ClientEvent *event, CameraOrientation *cam)
 	e->world_pos = *event->hudadd.world_pos;
 	e->size = *event->hudadd.size;
 	e->z_index = event->hudadd.z_index;
+	// >> KIDSCODE
+	e->font_size = event->hudadd.font_size;
+	e->texture_index = 0;
+	// << KIDSCODE
 	hud_server_to_client[server_id] = player->addHud(e);
 
 	delete event->hudadd.pos;
@@ -2747,6 +2751,12 @@ void Game::handleClientEvent_HudChange(ClientEvent *event, CameraOrientation *ca
 		case HUD_STAT_Z_INDEX:
 			e->z_index = event->hudchange.data;
 			break;
+
+		// >> KIDSCODE
+		case HUD_STAT_FONT_SIZE:
+			e->font_size = event->hudchange.data;
+			break;
+		// << KIDSCODE
 	}
 
 	delete event->hudchange.v3fdata;

@@ -84,6 +84,7 @@ void RenderingCore::draw3D()
 void RenderingCore::drawHUD()
 {
 	if (show_hud) {
+		hud->updateScaling(); // KIDSCODE
 		if (draw_crosshair)
 			hud->drawCrosshair();
 		hud->drawHotbar(client->getEnv().getLocalPlayer()->getWieldIndex());

@@ -132,6 +132,7 @@ struct ClientEvent
 			v3f *world_pos;
 			v2s32 *size;
 			s16 z_index;
+			u32 font_size; // KIDSCODE
 		} hudadd;
 		struct
 		{
