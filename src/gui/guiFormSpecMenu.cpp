@@ -3434,8 +3434,8 @@ void GUIFormSpecMenu::drawList(const ListDrawSpec &s, int layer,
 			x = (i%s.geom.X) * (imgsize.X * 1.25);
 			y = (i/s.geom.X) * (imgsize.Y * 1.25);
 		} else {
-			x = (i%s.geom.X) * spacing.X;
-			y = (i/s.geom.X) * spacing.Y;
+			x = (i%s.geom.X) * s.spacing.X;
+			y = (i/s.geom.X) * s.spacing.Y;
 		}
 		v2s32 p(x,y);
 		core::rect<s32> rect = imgrect + base_pos + p;
