@@ -57,7 +57,6 @@ public:
 			Inventory *inventory);
 	~Hud();
 
-	void updateScaling(); // KIDSCODE
 	void drawHotbar(u16 playeritem);
 	void resizeHotbar();
 	void drawCrosshair();
@@ -92,7 +91,6 @@ private:
 
 	void drawItem(const ItemStack &item, const core::rect<s32> &rect, bool selected);
 
-	float m_hud_grid_resolution; // KIDSCODE
 	float m_hud_scaling; // cached minetest setting
 	v3s16 m_camera_offset;
 	v2u32 m_screensize;

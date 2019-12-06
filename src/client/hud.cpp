@@ -51,10 +51,7 @@ Hud::Hud(gui::IGUIEnvironment *guienv, Client *client, LocalPlayer *player,
 	this->player      = player;
 	this->inventory   = inventory;
 
-	// >> KIDSCODE
-	//m_hud_scaling      = g_settings->getFloat("hud_scaling");
-	updateScaling();
-	// << KIDSCODE
+	m_hud_scaling      = g_settings->getFloat("hud_scaling");
 	m_hotbar_imagesize = std::floor(HOTBAR_IMAGE_SIZE *
 		RenderingEngine::getDisplayDensity() + 0.5f);
 	m_hotbar_imagesize *= m_hud_scaling;
@@ -122,15 +119,6 @@ Hud::~Hud()
 	if (m_selection_mesh)
 		m_selection_mesh->drop();
 }
-
-// >> KIDSCODE
-void Hud::updateScaling()
-{
-	m_hud_grid_resolution = g_settings->getFloat("hud_grid_resolution");
-	m_hud_scaling = g_settings->getFloat("hud_scaling") *
-		RenderingEngine::get_instance()->getWindowSize().X / m_hud_grid_resolution;
-}
-// << KIDSCODE
 
 void Hud::drawItem(const ItemStack &item, const core::rect<s32>& rect,
 		bool selected)
@@ -687,7 +675,6 @@ void Hud::resizeHotbar() {
 	const v2u32 &window_size = RenderingEngine::get_instance()->getWindowSize();
 
 	if (m_screensize != window_size) {
-		updateScaling(); // KIDSCODE
 		m_hotbar_imagesize = floor(HOTBAR_IMAGE_SIZE *
 			RenderingEngine::getDisplayDensity() + 0.5);
 		m_hotbar_imagesize *= m_hud_scaling;
