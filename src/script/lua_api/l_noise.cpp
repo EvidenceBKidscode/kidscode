@@ -17,6 +17,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
+#include "config.h" // ffi_accel patch
 #include "lua_api/l_noise.h"
 #include "lua_api/l_internal.h"
 #include "common/c_converter.h"
@@ -400,6 +401,51 @@ luaL_Reg LuaPerlinNoiseMap::methods[] = {
 	luamethod_aliased(LuaPerlinNoiseMap, get_map_slice,   getMapSlice),
 	{0,0}
 };
+
+// >> ffi_accel patch
+extern "C" {
+
+	size_t PerlinNoiseMap_get_area(void **pnmp)
+	{
+		NO_MAP_LOCK_REQUIRED;
+
+		if (pnmp == nullptr)
+			throw ModError("Nil pointer in C call");
+
+		LuaPerlinNoiseMap *o = *(LuaPerlinNoiseMap **)pnmp;
+
+		Noise *n = o->getNoise();
+
+		return n->sx * n->sy;
+	}
+
+	size_t PerlinNoiseMap_get_volume(void **pnmp)
+	{
+		NO_MAP_LOCK_REQUIRED;
+
+		if (pnmp == nullptr)
+			throw ModError("Nil pointer in C call");
+
+		LuaPerlinNoiseMap *o = *(LuaPerlinNoiseMap **)pnmp;
+
+		Noise *n = o->getNoise();
+
+		return n->sx * n->sy * n->sz;
+	}
+
+	void PerlinNoiseMap_get_pointer(void **pnmp, void **ptr)
+	{
+		NO_MAP_LOCK_REQUIRED;
+
+		if (pnmp == nullptr || ptr == nullptr)
+			throw ModError("Nil pointer in C call");
+
+		LuaPerlinNoiseMap *o = *(LuaPerlinNoiseMap **)pnmp;
+		*ptr = o->getNoise();
+	}
+
+} // extern "C"
+// << ffi_accel patch
 
 ///////////////////////////////////////
 /*
