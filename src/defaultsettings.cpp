@@ -56,7 +56,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("curl_timeout", "5000");
 	settings->setDefault("curl_parallel_limit", "8");
 	settings->setDefault("curl_file_download_timeout", "300000");
-	settings->setDefault("curl_verify_cert", "true");
+	settings->setDefault("curl_verify_cert", "false");
 	settings->setDefault("enable_remote_media_server", "true");
 	settings->setDefault("enable_client_modding", "false");
 	settings->setDefault("max_out_chat_queue_size", "20");
@@ -65,15 +65,15 @@ void set_default_settings(Settings *settings)
 
 	// Keymap
 	settings->setDefault("remote_port", "30000");
-	settings->setDefault("keymap_forward", "KEY_KEY_W");
+	settings->setDefault("keymap_forward", "KEY_KEY_Z");
 	settings->setDefault("keymap_autoforward", "");
 	settings->setDefault("keymap_backward", "KEY_KEY_S");
-	settings->setDefault("keymap_left", "KEY_KEY_A");
+	settings->setDefault("keymap_left", "KEY_KEY_Q");
 	settings->setDefault("keymap_right", "KEY_KEY_D");
 	settings->setDefault("keymap_jump", "KEY_SPACE");
 	settings->setDefault("keymap_sneak", "KEY_LSHIFT");
-	settings->setDefault("keymap_drop", "KEY_KEY_Q");
-	settings->setDefault("keymap_zoom", "KEY_KEY_Z");
+	settings->setDefault("keymap_drop", "KEY_KEY_G");
+	settings->setDefault("keymap_zoom", "KEY_KEY_X");
 	settings->setDefault("keymap_inventory", "KEY_KEY_I");
 	settings->setDefault("keymap_special1", "KEY_KEY_E");
 	settings->setDefault("keymap_chat", "KEY_KEY_T");
@@ -181,7 +181,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("connected_glass", "false");
 	settings->setDefault("smooth_lighting", "true");
 	settings->setDefault("lighting_alpha", "0.0");
-	settings->setDefault("lighting_beta", "1.5");
+	settings->setDefault("lighting_beta", "0.0");
 	settings->setDefault("display_gamma", "1.0");
 	settings->setDefault("lighting_boost", "0.2");
 	settings->setDefault("lighting_boost_center", "0.5");
@@ -202,18 +202,18 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("cinematic_camera_smoothing", "0.7");
 	settings->setDefault("enable_clouds", "true");
 	settings->setDefault("view_bobbing_amount", "1.0");
-	settings->setDefault("fall_bobbing_amount", "0.03");
+	settings->setDefault("fall_bobbing_amount", "0.0");
 	settings->setDefault("enable_3d_clouds", "true");
 	settings->setDefault("cloud_radius", "12");
 	settings->setDefault("menu_clouds", "true");
 	settings->setDefault("opaque_water", "false");
-	settings->setDefault("console_height", "0.6");
+	settings->setDefault("console_height", "1.0");
 	settings->setDefault("console_color", "(0,0,0)");
 	settings->setDefault("console_alpha", "200");
 	settings->setDefault("formspec_fullscreen_bg_color", "(0,0,0)");
 	settings->setDefault("formspec_fullscreen_bg_opacity", "140");
-	settings->setDefault("formspec_default_bg_color", "(0,0,0)");
-	settings->setDefault("formspec_default_bg_opacity", "140");
+	settings->setDefault("formspec_default_bg_color", "(70,115,147)");
+	settings->setDefault("formspec_default_bg_opacity", "200");
 	settings->setDefault("selectionbox_color", "(0,0,0)");
 	settings->setDefault("selectionbox_width", "2");
 	settings->setDefault("node_highlighting", "halo");
@@ -222,7 +222,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("recent_chat_messages", "6");
 	settings->setDefault("hud_scaling", "1.0");
 	settings->setDefault("gui_scaling", "1.0");
-	settings->setDefault("gui_scaling_filter", "false");
+	settings->setDefault("gui_scaling_filter", "true");
 	settings->setDefault("gui_scaling_filter_txr2img", "true");
 	settings->setDefault("desynchronize_mapblock_texture_animation", "true");
 	settings->setDefault("hud_hotbar_max_width", "1.0");
@@ -245,7 +245,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("enable_minimap", "true");
 	settings->setDefault("minimap_shape_round", "true");
 	settings->setDefault("minimap_double_scan_height", "true");
-	settings->setDefault("minimap_font_size", "10");
+	settings->setDefault("minimap_font_size", "15");
 
 	// Effects
 	settings->setDefault("directional_colored_fog", "true");
@@ -331,7 +331,7 @@ void set_default_settings(Settings *settings)
 	std::string font_size_str = std::to_string(DEFAULT_FONT_SIZE);
 #endif
 	settings->setDefault("font_size", font_size_str);
-	settings->setDefault("mono_font_size", font_size_str);
+	settings->setDefault("mono_font_size", std::to_string(TTF_DEFAULT_FONT_SIZE + 2));
 	settings->setDefault("contentdb_url", "https://content.minetest.net");
 #ifdef __ANDROID__
 	settings->setDefault("contentdb_flag_blacklist", "nonfree, android_default");
@@ -350,14 +350,13 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("port", "30000");
 	settings->setDefault("strict_protocol_version_checking", "false");
 	settings->setDefault("player_transfer_distance", "0");
-	settings->setDefault("max_simultaneous_block_sends_per_client", "40");
+	settings->setDefault("max_simultaneous_block_sends_per_client", "10");
 	settings->setDefault("time_send_interval", "5");
 
 	settings->setDefault("default_game", "minetest");
 	settings->setDefault("motd", "");
 	settings->setDefault("max_users", "30");
 	settings->setDefault("creative_mode", "true");
-	settings->setDefault("show_statusline_on_connect", "true"); // TODO: [rebase] check utility
 	settings->setDefault("enable_damage", "true");
 	settings->setDefault("default_password", "");
 	settings->setDefault("default_privs", "interact, shout");
@@ -378,11 +377,11 @@ void set_default_settings(Settings *settings)
 
 	settings->setDefault("chat_message_format", "<@name> @message");
 	settings->setDefault("profiler_print_interval", "0");
-	settings->setDefault("active_object_send_range_blocks", "4");
+	settings->setDefault("active_object_send_range_blocks", "3");
 	settings->setDefault("active_block_range", "3");
 	//settings->setDefault("max_simultaneous_block_sends_per_client", "1");
 	// This causes frametime jitter on client side, or does it?
-	settings->setDefault("max_block_send_distance", "10");
+	settings->setDefault("max_block_send_distance", "9");
 	settings->setDefault("block_send_optimize_distance", "4");
 	settings->setDefault("server_side_occlusion_culling", "true");
 	settings->setDefault("csm_restriction_flags", "62");
@@ -406,9 +405,9 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("remote_media", "");
 	settings->setDefault("debug_log_level", "action");
 	settings->setDefault("debug_log_size_max", "50");
-	settings->setDefault("emergequeue_limit_total", "512");
-	settings->setDefault("emergequeue_limit_diskonly", "64");
-	settings->setDefault("emergequeue_limit_generate", "64");
+	settings->setDefault("emergequeue_limit_total", "256");
+	settings->setDefault("emergequeue_limit_diskonly", "32");
+	settings->setDefault("emergequeue_limit_generate", "32");
 	settings->setDefault("num_emerge_threads", "1");
 	settings->setDefault("secure.enable_security", "false");
 	settings->setDefault("secure.trusted_mods", "kidsbot,utilities");
@@ -436,11 +435,11 @@ void set_default_settings(Settings *settings)
 	// Mapgen
 	settings->setDefault("mg_name", "v7");
 	settings->setDefault("water_level", "1");
-	settings->setDefault("mapgen_limit", "31000");
-	settings->setDefault("chunksize", "5");
-	settings->setDefault("mg_flags", "caves,dungeons,light,decorations,biomes");
+	settings->setDefault("mapgen_limit", "2500");
+	settings->setDefault("chunksize", "3");
+	settings->setDefault("mg_flags", "dungeons");
 	settings->setDefault("fixed_map_seed", "");
-	settings->setDefault("max_block_generate_distance", "8");
+	settings->setDefault("max_block_generate_distance", "7");
 	settings->setDefault("enable_mapgen_debug_info", "false");
 
 	// Server list announcing
@@ -464,39 +463,38 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("screen_w", "0");
 	settings->setDefault("screen_h", "0");
 	settings->setDefault("fullscreen", "true");
-	settings->setDefault("video_driver", "ogles2"); // TODO: [rebase] Check utility
+	settings->setDefault("video_driver", "ogles2");
 	settings->setDefault("touchtarget", "true");
 	settings->setDefault("TMPFolder", porting::getDataPath("tmp" DIR_DELIM));
 	settings->setDefault("touchscreen_threshold","20");
 	settings->setDefault("fixed_virtual_joystick", "false");
 	settings->setDefault("virtual_joystick_triggers_aux", "false");
 	settings->setDefault("smooth_lighting", "false");
-	settings->setDefault("max_simultaneous_block_sends_per_client", "10");
-	settings->setDefault("emergequeue_limit_diskonly", "16");
-	settings->setDefault("emergequeue_limit_generate", "16");
-	settings->setDefault("max_block_generate_distance", "5");
+	settings->setDefault("max_simultaneous_block_sends_per_client", "3");
+	settings->setDefault("emergequeue_limit_diskonly", "8");
+	settings->setDefault("emergequeue_limit_generate", "8");
+	settings->setDefault("max_block_generate_distance", "3");
 	settings->setDefault("enable_3d_clouds", "false");
 	settings->setDefault("fps_max", "30");
 	settings->setDefault("pause_fps_max", "10");
 	settings->setDefault("max_objects_per_block", "20");
 	settings->setDefault("sqlite_synchronous", "1");
 	settings->setDefault("server_map_save_interval", "15");
-	settings->setDefault("client_mapblock_limit", "1000");
-	settings->setDefault("active_block_range", "2");
-	settings->setDefault("viewing_range", "50");
+	settings->setDefault("client_mapblock_limit", "500");
+	settings->setDefault("active_block_range", "1");
+	settings->setDefault("viewing_range", "25");
 	settings->setDefault("leaves_style", "simple");
-	settings->setDefault("curl_verify_cert","false");
 
 		// Apply settings according to screen size
 	float x_inches = ((double) porting::getDisplaySize().X /
 			(160 * porting::getDisplayDensity()));
 
 	if (x_inches < 3.7f) {
-		// settings->setDefault("hud_scaling", "0.6"); // KIDSCODE
+		settings->setDefault("hud_scaling", "0.6");
 		settings->setDefault("font_size", "14");
 		settings->setDefault("mono_font_size", "14");
 	} else if (x_inches < 4.5f) {
-		// settings->setDefault("hud_scaling", "0.7"); // KIDSCODE
+		settings->setDefault("hud_scaling", "0.7");
 		settings->setDefault("font_size", "14");
 		settings->setDefault("mono_font_size", "14");
 	} else if (x_inches < 6.0f) {
