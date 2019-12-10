@@ -47,7 +47,15 @@ void guiScalingCache(const io::path &key, video::IVideoDriver *driver, video::II
 	video::IImage *copied = driver->createImage(value->getColorFormat(),
 			value->getDimension());
 	value->copyTo(copied);
+
+	if (g_imgCache.count(key)) {
+		video::IImage *img = g_imgCache[key];
+		if (img)
+			img->drop();
+	}
+
 	g_imgCache[key] = copied;
+
 }
 
 // Manually clear the cache, e.g. when switching to different worlds.
