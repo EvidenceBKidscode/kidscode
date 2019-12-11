@@ -1552,6 +1552,11 @@ void GUIFormSpecMenu::parseSimpleField(parserData *data,
 	std::string label = parts[1];
 	std::string default_val = parts[2];
 
+	// >> KIDSCODE - Makes fields starting with "!" send content as soon as key pressed
+	bool is_dynamic = (name.length() > 0 && name[0] == '!');
+	if (is_dynamic)
+		name = name.substr(1);
+	// << KIDSCODE
 	core::rect<s32> rect;
 
 	if (data->explicit_size)
@@ -1579,6 +1584,7 @@ void GUIFormSpecMenu::parseSimpleField(parserData *data,
 		utf8_to_wide(unescape_string(default_val)),
 		258 + m_fields.size()
 	);
+	spec.is_dynamic = is_dynamic; // KIDSCODE - Makes fields starting with "!" send content as soon as key pressed
 
 	createTextField(data, spec, rect, false);
 
@@ -1595,6 +1601,12 @@ void GUIFormSpecMenu::parseTextArea(parserData* data, std::vector<std::string>& 
 	std::string name = parts[2];
 	std::string label = parts[3];
 	std::string default_val = parts[4];
+
+	// >> KIDSCODE - Makes fields starting with "!" send content as soon as key pressed
+	bool is_dynamic = (name.length() > 0 && name[0] == '!');
+	if (is_dynamic)
+		name = name.substr(1);
+	// << KIDSCODE
 
 	MY_CHECKPOS(type,0);
 	MY_CHECKGEOM(type,1);
@@ -1641,6 +1653,7 @@ void GUIFormSpecMenu::parseTextArea(parserData* data, std::vector<std::string>& 
 		utf8_to_wide(unescape_string(default_val)),
 		258 + m_fields.size()
 	);
+	spec.is_dynamic = is_dynamic; // KIDSCODE - Makes fields starting with "!" send content as soon as key pressed
 
 	createTextField(data, spec, rect, type == "textarea");
 
@@ -4770,6 +4783,25 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 				}
 			}
 		}
+
+		// >> KIDSCODE - Makes fields starting with "!" send content as soon as key pressed
+		if (event.GUIEvent.EventType == gui::EGET_EDITBOX_CHANGED) {
+			if (event.GUIEvent.Caller->getID() > 257) {
+				// find the element that was clicked
+				for (GUIFormSpecMenu::FieldSpec &s : m_fields) {
+					// if it's a table, set the send field
+					// so lua knows which table was changed
+					if (s.ftype == f_Unknown && s.is_dynamic &&
+							s.fid == event.GUIEvent.Caller->getID()) {
+						s.send = true;
+						acceptInput();
+						s.send=false;
+					}
+				}
+				return true;
+			}
+		}
+		// << KIDSCODE
 
 		if (event.GUIEvent.EventType == gui::EGET_EDITBOX_ENTER) {
 			if (event.GUIEvent.Caller->getID() > 257) {

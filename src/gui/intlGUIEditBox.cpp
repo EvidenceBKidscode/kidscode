@@ -37,7 +37,6 @@
 #include "IGUIFont.h"
 #include "IVideoDriver.h"
 #include "util/string.h"
-//#include "rect.h"
 //#include "irrlicht/os.cpp"
 #include "porting.h"
 //#include "Keycodes.h"
@@ -63,13 +62,8 @@ namespace gui
 intlGUIEditBox::intlGUIEditBox(const wchar_t* text, bool border,
 		IGUIEnvironment* environment, IGUIElement* parent, s32 id,
 		const core::rect<s32>& rectangle, bool writable, bool has_vscrollbar)
-	: IGUIEditBox(environment, parent, id, rectangle), MouseMarking(false),
-	Border(border), OverrideColorEnabled(false), MarkBegin(0), MarkEnd(0),
-	OverrideColor(video::SColor(101,255,255,255)), OverrideFont(0), LastBreakFont(0),
-	Operator(0), BlinkStartTime(0), CursorPos(0), HScrollPos(0), VScrollPos(0), Max(0),
-	WordWrap(false), MultiLine(false), AutoScroll(true), PasswordBox(false),
-	PasswordChar(L'*'), HAlign(EGUIA_UPPERLEFT), VAlign(EGUIA_CENTER),
-	CurrentTextRect(0,0,1,1), FrameRect(rectangle),
+	: IGUIEditBox(environment, parent, id, rectangle),
+	Border(border), FrameRect(rectangle),
 	m_scrollbar_width(0), m_vscrollbar(NULL), m_writable(writable),
 	m_bg_color(video::SColor(0,0,0,0)), m_bg_color_used(false)
 {
@@ -198,6 +192,7 @@ void intlGUIEditBox::enableOverrideColor(bool enable)
 
 bool intlGUIEditBox::isOverrideColorEnabled() const
 {
+	_IRR_IMPLEMENT_MANAGED_MARSHALLING_BUGFIX;
 	return OverrideColorEnabled;
 }
 
@@ -211,7 +206,7 @@ void intlGUIEditBox::setWordWrap(bool enable)
 
 void intlGUIEditBox::updateAbsolutePosition()
 {
-    core::rect<s32> oldAbsoluteRect(AbsoluteRect);
+	core::rect<s32> oldAbsoluteRect(AbsoluteRect);
 	IGUIElement::updateAbsolutePosition();
 	if ( oldAbsoluteRect != AbsoluteRect )
 	{
@@ -223,6 +218,7 @@ void intlGUIEditBox::updateAbsolutePosition()
 //! Checks if word wrap is enabled
 bool intlGUIEditBox::isWordWrapEnabled() const
 {
+	_IRR_IMPLEMENT_MANAGED_MARSHALLING_BUGFIX;
 	return WordWrap;
 }
 
@@ -237,6 +233,7 @@ void intlGUIEditBox::setMultiLine(bool enable)
 //! Checks if multi line editing is enabled
 bool intlGUIEditBox::isMultiLineEnabled() const
 {
+	_IRR_IMPLEMENT_MANAGED_MARSHALLING_BUGFIX;
 	return MultiLine;
 }
 
@@ -256,6 +253,7 @@ void intlGUIEditBox::setPasswordBox(bool passwordBox, wchar_t passwordChar)
 
 bool intlGUIEditBox::isPasswordBox() const
 {
+	_IRR_IMPLEMENT_MANAGED_MARSHALLING_BUGFIX;
 	return PasswordBox;
 }
 
@@ -1001,6 +999,7 @@ void intlGUIEditBox::setAutoScroll(bool enable)
 //! \return true if automatic scrolling is enabled, false if not
 bool intlGUIEditBox::isAutoScrollEnabled() const
 {
+	_IRR_IMPLEMENT_MANAGED_MARSHALLING_BUGFIX;
 	return AutoScroll;
 }
 
@@ -1518,8 +1517,6 @@ void intlGUIEditBox::createVScrollBar()
 	m_vscrollbar->setVisible(false);
 	m_vscrollbar->setSmallStep(3 * fontHeight);
 	m_vscrollbar->setLargeStep(10 * fontHeight);
-	m_vscrollbar->setMin(0);
-	m_vscrollbar->setMax(1);
 }
 
 //! Update the vertical scrollbar (visibilty & scroll position)

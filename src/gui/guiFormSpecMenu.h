@@ -258,6 +258,7 @@ class GUIFormSpecMenu : public GUIModalMenu
 		// Draw priority for formspec version < 3
 		int priority;
 		core::rect<s32> rect;
+		bool is_dynamic; // KIDSCODE - Makes fields starting wiht "!" send content as soon as key pressed
 	};
 
 	struct TooltipSpec
