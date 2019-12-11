@@ -27,10 +27,18 @@ GUISkin::GUISkin(EGUI_SKIN_TYPE type, video::IVideoDriver* driver)
 
 	if ((Type == EGST_WINDOWS_CLASSIC) || (Type == EGST_WINDOWS_METALLIC))
 	{
+		// >> KIDSCODE - Colors
+/*
 		Colors[EGDC_3D_DARK_SHADOW]     = video::SColor(101,50,50,50);
 		Colors[EGDC_3D_SHADOW]          = video::SColor(101,130,130,130);
 		Colors[EGDC_3D_FACE]            = video::SColor(101,210,210,210);
 		Colors[EGDC_3D_HIGH_LIGHT]      = video::SColor(101,255,255,255);
+*/
+		Colors[EGDC_3D_DARK_SHADOW]     = video::SColor(255,34, 43, 49); // EGDC_3D_FACE * 0.25
+		Colors[EGDC_3D_SHADOW]          = video::SColor(255,68, 86, 98); // EGDC_3D_FACE * 0.50
+		Colors[EGDC_3D_FACE]            = video::SColor(255,136, 172, 197);
+		Colors[EGDC_3D_HIGH_LIGHT]      = video::SColor(255,255, 255, 255); // EGDC_3D_FACE * 1.5
+		// << KIDSCODE
 		Colors[EGDC_3D_LIGHT]           = video::SColor(101,210,210,210);
 		Colors[EGDC_ACTIVE_BORDER]      = video::SColor(101,16,14,115);
 		Colors[EGDC_ACTIVE_CAPTION]     = video::SColor(255,255,255,255);
@@ -164,6 +172,7 @@ GUISkin::GUISkin(EGUI_SKIN_TYPE type, video::IVideoDriver* driver)
 		Fonts[i] = 0;
 
 	UseGradient = (Type == EGST_WINDOWS_METALLIC) || (Type == EGST_BURNING_SKIN) ;
+
 }
 
 
@@ -1081,4 +1090,3 @@ void GUISkin::getColors(video::SColor* colors)
 
 
 #endif // _IRR_COMPILE_WITH_GUI_
-

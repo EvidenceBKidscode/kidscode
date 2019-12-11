@@ -904,8 +904,10 @@ void GUIFormSpecMenu::parseButton(parserData* data, const std::string &element,
 		std::vector<std::string> v_geom = split(parts[1],',');
 		std::string name = parts[2];
 		std::string label = parts[3];
+		// >> KIDSCODE - Color parameter
 		video::SColor color;
 		bool has_color = parts.size() > 4 && parseColorString(parts[4], color, false);
+		// << KIDSCODE
 
 		MY_CHECKPOS("button",0);
 		MY_CHECKGEOM("button",1);
@@ -948,17 +950,10 @@ void GUIFormSpecMenu::parseButton(parserData* data, const std::string &element,
 		auto style = getStyleForElement(type, name, (type != "button") ? "button" : "");
 		e->setFromStyle(style, m_tsrc);
 
-		if (has_color) {
-//			set3DSkinColors(e, color);
-//			e->setColor(EGDC_WINDOW_SYMBOL, color, 1.75f);
+		// >> KIDSCODE - Color parameter
+		if (has_color)
 			e->setColor(color);
-		} else {
-			video::SColor c = video::SColor(255, 192, 211, 225);
-//			set3DSkinColors(e, c);
-//			e->setColor(EGDC_WINDOW_SYMBOL, c, 1.75f);
-			e->setColor(c);
-		}
-
+		// << KIDSCODE
 
 		if (spec.fname == data->focused_fieldname) {
 			Environment->setFocus(e);
@@ -1865,7 +1860,7 @@ void GUIFormSpecMenu::parseImageButton(parserData* data, const std::string &elem
 {
 	std::vector<std::string> parts = split(element,';');
 
-	if ((((parts.size() >= 5) && (parts.size() <= 8)) && (parts.size() != 6)) ||
+	if (((parts.size() >= 5) && (parts.size() <= 8)) ||
 		((parts.size() > 8) && (m_formspec_version > FORMSPEC_API_VERSION)))
 	{
 		std::vector<std::string> v_pos = split(parts[0],',');
@@ -1873,6 +1868,10 @@ void GUIFormSpecMenu::parseImageButton(parserData* data, const std::string &elem
 		std::string image_name = parts[2];
 		std::string name = parts[3];
 		std::string label = parts[4];
+		// >> KIDSCODE - Color parameter
+		video::SColor color;
+		bool has_color = parts.size() == 6 && parseColorString(parts[5], color, false);
+		// << KIDSCODE
 
 		MY_CHECKPOS("imagebutton",0);
 		MY_CHECKGEOM("imagebutton",1);
@@ -1936,6 +1935,11 @@ void GUIFormSpecMenu::parseImageButton(parserData* data, const std::string &elem
 
 		auto style = getStyleForElement("image_button", spec.fname);
 		e->setFromStyle(style, m_tsrc);
+
+		// >> KIDSCODE - Color parameter
+		if (has_color)
+			e->setColor(color);
+		// << KIDSCODE
 
 		// We explicitly handle these arguments *after* the style properties in
 		// order to override them if they are provided
@@ -2326,8 +2330,10 @@ void GUIFormSpecMenu::parseItemImageButton(parserData* data, const std::string &
 		std::string item_name = parts[2];
 		std::string name = parts[3];
 		std::string label = parts[4];
+		// >> KIDSCODE - Color parameter
 		video::SColor color;
 		bool has_color = parts.size() > 5 && parseColorString(parts[5], color, false);
+		// << KIDSCODE
 
 		label = unescape_string(label);
 		item_name = unescape_string(item_name);
@@ -2375,22 +2381,10 @@ void GUIFormSpecMenu::parseItemImageButton(parserData* data, const std::string &
 		auto style = getStyleForElement("item_image_button", spec_btn.fname, "image_button");
 		e_btn->setFromStyle(style, m_tsrc);
 
-//			e->setColor(style.getColor(StyleSpec::BGCOLOR));
-//			e->setHoveredColor(style.getColor(StyleSpec::BGCOLOR_HOVERED));
-//			e->setPressedColor(style.getColor(StyleSpec::BGCOLOR_PRESSED));
-//			e->setOverrideColor(style.getColor(StyleSpec::TEXTCOLOR));
-
-
-		if (has_color) {
-//			set3DSkinColors(e_btn, color);
-//			e_btn->setColor(EGDC_WINDOW_SYMBOL, color, 1.75f);
+		// >> KIDSCODE - Color parameter
+		if (has_color)
 			e_btn->setColor(color);
-		} else {
-			video::SColor c = video::SColor(255, 192, 211, 225);
-//			set3DSkinColors(e_btn, c);
-//			e_btn->setColor(EGDC_WINDOW_SYMBOL, c, 1.75f);
-			e_btn->setColor(c);
-		}
+		// << KIDSCODE
 
 		if (spec_btn.fname == data->focused_fieldname) {
 			Environment->setFocus(e_btn);
