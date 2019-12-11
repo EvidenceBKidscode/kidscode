@@ -118,6 +118,13 @@ bool GUIScrollBar::OnEvent(const SEvent &event)
 					core::vector2di corner = slider_rect.UpperLeftCorner;
 					drag_offset = is_horizontal ? p.X - corner.X : p.Y - corner.Y;
 					tray_clicked = !dragged_by_slider;
+
+					// >> KIDSCODE : forbid slider dragging
+					dragged_by_slider = false;
+					tray_clicked = true;
+					is_dragging = false;
+					// << KIDSCODE
+
 					if (tray_clicked) {
 						const s32 new_pos = getPosFromMousePos(p);
 						const s32 old_pos = scroll_pos;
