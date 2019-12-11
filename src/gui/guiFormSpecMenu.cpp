@@ -364,16 +364,17 @@ void GUIFormSpecMenu::parseList(parserData* data, const std::string &element)
 		std::string listname = parts[1];
 		std::vector<std::string> v_pos  = split(parts[2],',');
 		std::vector<std::string> v_geom = split(parts[3],',');
+		// >> KIDSCODE - List slots spacing
 		bool has_spacing_factors = parts.size() > 5;
 		std::vector<std::string> v_spacing_factors =
-			has_spacing_factors ?
-			split(parts[5], ',') : std::vector<std::string>();
+			has_spacing_factors ?split(parts[5], ',') : std::vector<std::string>();
 		bool has_slot_size_factor = parts.size() > 6;
 		std::string slot_size_factor = has_slot_size_factor ? parts[6] : "";
 		const s32 border = 1;
+		// << KIDSCODE
 
-		std::string startindex = "";
-		if (parts.size() == 5)
+		std::string startindex;
+		if (parts.size() > 4)
 			startindex = parts[4];
 
 		MY_CHECKPOS("list",2);
@@ -3446,20 +3447,17 @@ GUIFormSpecMenu::ItemSpec GUIFormSpecMenu::getItemAtPos(v2s32 p) const
 				x = (i%s.geom.X) * (imgsize.X * 1.25);
 				y = (i/s.geom.X) * (imgsize.Y * 1.25);
 			} else {
-				x = (i%s.geom.X) * spacing.X;
-				y = (i/s.geom.X) * spacing.Y;
+				x = (i%s.geom.X) * s.spacing.X;
+				y = (i/s.geom.X) * s.spacing.Y;
 			}
 			v2s32 p0(x,y);
 			core::rect<s32> rect = imgrect + base_pos + p0;
 			rect.clipAgainst(clipping_rect);
 			if (rect.getArea() > 0 && rect.isPointInside(p))
-			//TODO:PYR CHECK THAT !
-				return ItemSpec(s.inventoryloc, s.listname, item_i, s.imgsize,
-					s.spacing, s.border);
+				return ItemSpec(s.inventoryloc, s.listname, item_i);
 		}
 	}
-			//TODO:PYR CHECK THAT !
-	return ItemSpec(InventoryLocation(), "", -1, imgsize, v2s32(spacing.X, spacing.Y), 1);
+	return ItemSpec(InventoryLocation(), "", -1);
 }
 
 void GUIFormSpecMenu::drawList(const ListDrawSpec &s, int layer,
@@ -3587,7 +3585,7 @@ void GUIFormSpecMenu::drawSelectedItem()
 	ItemStack stack = list->getItem(m_selected_item->i);
 	stack.count = m_selected_amount;
 
-	core::rect<s32> imgrect(0,0,m_selected_item->imgsize.X, m_selected_item->imgsize.Y);
+	core::rect<s32> imgrect(0, 0, imgsize.X, imgsize.Y);
 	core::rect<s32> rect = imgrect + (m_pointer - imgrect.getCenter());
 	rect.constrainTo(driver->getViewPort());
 	drawItemStack(driver, m_font, stack, rect, NULL, m_client, IT_ROT_DRAGGED);
@@ -3834,9 +3832,6 @@ void GUIFormSpecMenu::updateSelectedItem()
 			m_selected_item->inventoryloc = s.inventoryloc;
 			m_selected_item->listname = "craftresult";
 			m_selected_item->i = 0;
-			m_selected_item->imgsize = s.imgsize;
-			m_selected_item->spacing = s.spacing;
-			m_selected_item->border = s.border;
 			m_selected_amount = item.count;
 			m_selected_dragging = false;
 			break;

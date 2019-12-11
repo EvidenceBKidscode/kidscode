@@ -85,17 +85,11 @@ class GUIFormSpecMenu : public GUIModalMenu
 
 		ItemSpec(const InventoryLocation &a_inventoryloc,
 				const std::string &a_listname,
-				s32 a_i,
-				const v2s32 &a_imgsize,
-				const v2s32 &a_spacing,
-				s32 a_border) :
+				s32 a_i) :
 			inventoryloc(a_inventoryloc),
 			listname(a_listname),
 			i(a_i)
 		{
-			imgsize = a_imgsize;
-			spacing = a_spacing;
-			border = a_border;
 		}
 
 		bool isValid() const { return i != -1; }
@@ -103,9 +97,6 @@ class GUIFormSpecMenu : public GUIModalMenu
 		InventoryLocation inventoryloc;
 		std::string listname;
 		s32 i = -1;
-		v2s32 imgsize;
-		v2s32 spacing;
-		s32 border;
 	};
 
 	struct ListDrawSpec
