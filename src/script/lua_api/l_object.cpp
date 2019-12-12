@@ -1806,9 +1806,10 @@ int ObjectRef::l_set_sky(lua_State *L)
 
 			// Because we need to leave the "sky_color" table.
 			lua_pop(L, 1);
-			getServer(L)->setSky(player, skybox_params);
-			lua_pushboolean(L, true);
 		}
+
+		getServer(L)->setSky(player, skybox_params);
+		lua_pushboolean(L, true);
 	} else {
 		// Handle old set_sky calls, and log deprecated:
 		log_deprecated(L, "Deprecated call to set_sky, please check lua_api.txt");
