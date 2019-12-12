@@ -34,10 +34,10 @@ GUISkin::GUISkin(EGUI_SKIN_TYPE type, video::IVideoDriver* driver)
 		Colors[EGDC_3D_FACE]            = video::SColor(101,210,210,210);
 		Colors[EGDC_3D_HIGH_LIGHT]      = video::SColor(101,255,255,255);
 */
-		Colors[EGDC_3D_DARK_SHADOW]     = video::SColor(255,34, 43, 49); // EGDC_3D_FACE * 0.25
-		Colors[EGDC_3D_SHADOW]          = video::SColor(255,68, 86, 98); // EGDC_3D_FACE * 0.50
-		Colors[EGDC_3D_FACE]            = video::SColor(255,136, 172, 197);
-		Colors[EGDC_3D_HIGH_LIGHT]      = video::SColor(255,255, 255, 255); // EGDC_3D_FACE * 1.5
+		Colors[EGDC_3D_DARK_SHADOW]     = video::SColor(255, 34, 43, 49); // EGDC_3D_FACE * 0.25
+		Colors[EGDC_3D_SHADOW]          = video::SColor(255, 68, 86, 98); // EGDC_3D_FACE * 0.50
+		Colors[EGDC_3D_FACE]            = video::SColor(255, 136, 172, 197);
+		Colors[EGDC_3D_HIGH_LIGHT]      = video::SColor(255, 255, 255, 255); // EGDC_3D_FACE * 1.5
 		// << KIDSCODE
 		Colors[EGDC_3D_LIGHT]           = video::SColor(101,210,210,210);
 		Colors[EGDC_ACTIVE_BORDER]      = video::SColor(101,16,14,115);
@@ -51,14 +51,21 @@ GUISkin::GUISkin(EGUI_SKIN_TYPE type, video::IVideoDriver* driver)
 		Colors[EGDC_INACTIVE_CAPTION]   = video::SColor(255,30,30,30);
 		Colors[EGDC_TOOLTIP]            = video::SColor(200,0,0,0);
 		Colors[EGDC_TOOLTIP_BACKGROUND] = video::SColor(200,255,255,225);
-		Colors[EGDC_SCROLLBAR]          = video::SColor(101,230,230,230);
-		Colors[EGDC_WINDOW]             = video::SColor(101,255,255,255);
-		Colors[EGDC_WINDOW_SYMBOL]      = video::SColor(200,10,10,10);
+		// >> KIDSCODE - Colors
+/*
+		Colors[EGDC_SCROLLBAR]          = video::SColor(101,230,230,230); // Scroll bar background
+		Colors[EGDC_WINDOW]             = video::SColor(101,255,255,255); // Text area background
+*/
+		Colors[EGDC_SCROLLBAR]          = video::SColor(255, 238, 255, 255); // Scroll bar background (255, 136, 172, 197)*1.75
+		Colors[EGDC_WINDOW]             = video::SColor(255, 70, 115, 147);
+		// << KIDSCODE - Colors
+		Colors[EGDC_WINDOW_SYMBOL]      = video::SColor(200,10,10,10); // Controls symbols colors
+
 		Colors[EGDC_ICON]               = video::SColor(200,255,255,255);
 		Colors[EGDC_ICON_HIGH_LIGHT]    = video::SColor(200,8,36,107);
-		Colors[EGDC_GRAY_WINDOW_SYMBOL] = video::SColor(240,100,100,100);
-		Colors[EGDC_EDITABLE] 			= video::SColor(255,255,255,255);
-		Colors[EGDC_GRAY_EDITABLE]		= video::SColor(255,120,120,120);
+		Colors[EGDC_GRAY_WINDOW_SYMBOL] = video::SColor(240,100,100,100); // Controls symbols colors - disabled
+		Colors[EGDC_EDITABLE]           = video::SColor(255,255,255,255);
+		Colors[EGDC_GRAY_EDITABLE]      = video::SColor(255,120,120,120);
 		Colors[EGDC_FOCUSED_EDITABLE]	= video::SColor(255,240,240,255);
 
 
