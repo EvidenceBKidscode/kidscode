@@ -1861,7 +1861,7 @@ void GUIFormSpecMenu::parseImageButton(parserData* data, const std::string &elem
 {
 	std::vector<std::string> parts = split(element,';');
 
-	if (((parts.size() >= 5) && (parts.size() <= 8)) ||
+	if (((parts.size() >= 5) && (parts.size() <= 9)) ||
 		((parts.size() > 8) && (m_formspec_version > FORMSPEC_API_VERSION)))
 	{
 		std::vector<std::string> v_pos = split(parts[0],',');
@@ -1871,7 +1871,11 @@ void GUIFormSpecMenu::parseImageButton(parserData* data, const std::string &elem
 		std::string label = parts[4];
 		// >> KIDSCODE - Color parameter
 		video::SColor color;
-		bool has_color = parts.size() == 6 && parseColorString(parts[5], color, false);
+		bool has_color = false;
+		if (parts.size() == 6)
+			has_color = parseColorString(parts[5], color, false);
+		if (parts.size() == 9)
+			has_color = parseColorString(parts[8], color, false);
 		// << KIDSCODE
 
 		MY_CHECKPOS("imagebutton",0);
@@ -1942,16 +1946,18 @@ void GUIFormSpecMenu::parseImageButton(parserData* data, const std::string &elem
 			e->setColor(color);
 		// << KIDSCODE
 
-		// We explicitly handle these arguments *after* the style properties in
-		// order to override them if they are provided
-		e->setForegroundImage(guiScalingImageButton(
-			Environment->getVideoDriver(), texture, geom.X, geom.Y));
-		if (!pressed_image_name.empty()) {
-			video::ITexture *pressed_texture = m_tsrc->getTexture(pressed_image_name);
-			e->setPressedForegroundImage(guiScalingImageButton(
-						Environment->getVideoDriver(), pressed_texture, geom.X, geom.Y));
+		if (texture) { // KIDSCODE - Ensure button will have no background if no image
+			// We explicitly handle these arguments *after* the style properties in
+			// order to override them if they are provided
+			e->setForegroundImage(guiScalingImageButton(
+				Environment->getVideoDriver(), texture, geom.X, geom.Y));
+			if (!pressed_image_name.empty()) {
+				video::ITexture *pressed_texture = m_tsrc->getTexture(pressed_image_name);
+				e->setPressedForegroundImage(guiScalingImageButton(
+							Environment->getVideoDriver(), pressed_texture, geom.X, geom.Y));
+			}
+			e->setScaleImage(true);
 		}
-		e->setScaleImage(true);
 
 		if (parts.size() >= 7) {
 			e->setNotClipped(noclip);

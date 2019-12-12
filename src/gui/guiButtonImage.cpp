@@ -33,11 +33,21 @@ GUIButtonImage::GUIButtonImage(gui::IGUIEnvironment *environment,
 		gui::IGUIElement *parent, s32 id, core::rect<s32> rectangle, bool noclip)
 	: GUIButton (environment, parent, id, rectangle, noclip)
 {
+	m_image = nullptr;
+}
+
+// >> KIDSCODE - Ensure button will have no background if no image
+void GUIButtonImage::needImage()
+{
+	if (m_image)
+		return;
+
 	m_image = Environment->addImage(
-			core::rect<s32>(0,0,rectangle.getWidth(),rectangle.getHeight()), this);
+			core::rect<s32>(0,0,AbsoluteRect.getWidth(),AbsoluteRect.getHeight()), this);
 	m_image->setScaleImage(isScalingImage());
 	sendToBack(m_image);
 }
+// << KIDSCODE
 
 bool GUIButtonImage::OnEvent(const SEvent& event)
 {
@@ -56,6 +66,9 @@ void GUIButtonImage::setForegroundImage(EGUI_BUTTON_IMAGE_STATE state,
 {
 	if (state >= EGBIS_COUNT)
 		return;
+
+	needImage(); // KIDSCODE - Ensure button will have no background if no image
+
 
 	if (image)
 		image->grab();
@@ -127,6 +140,7 @@ void GUIButtonImage::setFromStyle(const StyleSpec &style, ISimpleTextureSource *
 
 void GUIButtonImage::setScaleImage(bool scaleImage)
 {
+	needImage(); // KIDSCODE - Ensure button will have no background if no image
 	GUIButton::setScaleImage(scaleImage);
 	m_image->setScaleImage(scaleImage);
 }

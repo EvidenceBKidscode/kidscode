@@ -54,6 +54,7 @@ public:
 			const wchar_t *text, const wchar_t *tooltiptext = L"");
 
 private:
+	void needImage();
 	ButtonImage m_foreground_images[gui::EGBIS_COUNT];
 	gui::IGUIImage *m_image;
 };
