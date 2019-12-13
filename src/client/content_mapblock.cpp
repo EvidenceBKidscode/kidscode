@@ -412,7 +412,8 @@ void MapblockMeshGenerator::prepareLiquidNodeDrawing()
 	// >> KIDSCODE
 	bottom_is_same_liquid = (nbottom.getContent() == c_flowing) || (nbottom.getContent() == c_source);
 	const ContentFeatures &neighbor_features = nodedef->get(nbottom.getContent());
-	bottom_is_solid = neighbor_features.solidness == 2;
+	// Consider CONTENT_IGNORE as solid to avoid drawing faces on edge of mapblocks
+	bottom_is_solid = neighbor_features.solidness == 2 || nbottom.getContent() == CONTENT_IGNORE;
 
  	/*
 	draw_liquid_bottom = (nbottom.getContent() != c_flowing) && (nbottom.getContent() != c_source);
