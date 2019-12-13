@@ -1719,12 +1719,9 @@ void GUIFormSpecMenu::parseHyperText(parserData *data, const std::string &elemen
 	} else {
 		pos = getElementBasePos(&v_pos);
 		pos -= padding;
-
-		pos.X += stof(v_pos[0]) * spacing.X;
-		pos.Y += stof(v_pos[1]) * spacing.Y + (m_btn_height * 2);
-
+		pos.Y += m_btn_height;
 		geom.X = (stof(v_geom[0]) * spacing.X) - (spacing.X - imgsize.X);
-		geom.Y = (stof(v_geom[1]) * imgsize.Y) - (spacing.Y - imgsize.Y);
+		geom.Y = (stof(v_geom[1]) * (float)imgsize.Y) - (spacing.Y - imgsize.Y);
 	}
 
 	core::rect<s32> rect = core::rect<s32>(pos.X, pos.Y, pos.X + geom.X, pos.Y + geom.Y);
