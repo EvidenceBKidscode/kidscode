@@ -67,6 +67,10 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "intlGUIEditBox.h"
 #include "guiHyperText.h"
 #include "guiImageTabControl.h"
+// >> KIDSCODE
+#include "guiListBox.h"
+#include "guiComboBox.h"
+// << KIDSCODE
 
 #define MY_CHECKPOS(a,b)													\
 	if (v_pos.size() != 2) {												\
@@ -1248,7 +1252,7 @@ void GUIFormSpecMenu::parseDropDown(parserData* data, const std::string &element
 {
 	std::vector<std::string> parts = split(element,';');
 
-	if ((parts.size() == 5) ||
+	if (((parts.size() >= 5) && (parts.size() <= 7)) || // KIDSCODE
 		((parts.size() > 5) && (m_formspec_version > FORMSPEC_API_VERSION)))
 	{
 		std::vector<std::string> v_pos = split(parts[0],',');
@@ -1256,6 +1260,14 @@ void GUIFormSpecMenu::parseDropDown(parserData* data, const std::string &element
 		std::vector<std::string> items = split(parts[3],',');
 		std::string str_initial_selection;
 		str_initial_selection = parts[4];
+// >> KIDSCODE - Alternative combo box with color settings
+		video::SColor bg_color;
+		bool has_bg_color = parts.size() > 5 && parseColorString(parts[5], bg_color, false);
+		video::SColor selected_item_color;
+		bool has_selected_item_color = parts.size() > 6 && parseColorString(parts[6], selected_item_color, false);
+		video::SColor button_color;
+		bool has_button_color = parts.size() > 7 && parseColorString(parts[7], button_color, false);
+// << KIDSCODE
 
 		MY_CHECKPOS("dropdown",0);
 
@@ -1294,8 +1306,23 @@ void GUIFormSpecMenu::parseDropDown(parserData* data, const std::string &element
 		spec.send = true;
 
 		//now really show list
-		gui::IGUIComboBox *e = Environment->addComboBox(rect, this, spec.fid);
+// >> KIDSCODE - Alternative combo box with color settings
+//		gui::IGUIComboBox *e = Environment->addComboBox(rect, this, spec.fid);
+		GUIComboBox* e = new GUIComboBox(Environment, this, spec.fid, rect);
 
+		if (has_bg_color) {
+			e->setBackgroundColor(bg_color);
+		} else {
+			video::SColor c = video::SColor(255, 40, 65, 83);
+			e->setBackgroundColor(c);
+		}
+
+		if (has_selected_item_color)
+			e->setSelectedItemColor(selected_item_color);
+
+		if (has_button_color)
+			e->setButtonColor(button_color);
+// << KIDSCODE
 		if (spec.fname == data->focused_fieldname) {
 			Environment->setFocus(e);
 		}

@@ -13,6 +13,7 @@
 #include "IGUIFont.h"
 #include "IGUIButton.h"
 #include "guiListBox.h"
+#include "guiSkin.h"
 
 using namespace irr;
 using namespace irr::gui;
@@ -29,8 +30,8 @@ GUIComboBox::GUIComboBox(IGUIEnvironment *environment, IGUIElement *parent,
 	m_selected(-1), m_halign(EGUIA_UPPERLEFT), m_valign(EGUIA_CENTER),
 	m_max_selection_rows(5), m_has_focus(false),
 	m_bg_color_used(false), m_bg_color(video::SColor(0)),
-	m_selected_item_color_used(false), m_selected_item_color(video::SColor(0))
-
+	m_selected_item_color_used(false), m_selected_item_color(video::SColor(0)),
+	Colors(0) // :PATCH:
 {
 #ifdef _DEBUG
 	setDebugName("CGUIComboBox");
@@ -49,15 +50,15 @@ GUIComboBox::GUIComboBox(IGUIEnvironment *environment, IGUIElement *parent,
 	r.UpperLeftCorner.Y = 2;
 	r.LowerRightCorner.Y = rectangle.getHeight() - 2;
 
-	m_list_button = Environment->addButton(r, this, -1, L"");
+	m_list_button = GUIButton::addButton(Environment, r, this, -1, L"");
 	if (skin && skin->getSpriteBank()) {
 		m_list_button->setSpriteBank(skin->getSpriteBank());
 		m_list_button->setSprite(EGBS_BUTTON_UP,
 			skin->getIcon(EGDI_CURSOR_DOWN),
-			skin->getColor(EGDC_WINDOW_SYMBOL));
+			getColor(EGDC_WINDOW_SYMBOL));
 		m_list_button->setSprite(EGBS_BUTTON_DOWN,
 			skin->getIcon(EGDI_CURSOR_DOWN),
-			skin->getColor(EGDC_WINDOW_SYMBOL));
+			getColor(EGDC_WINDOW_SYMBOL));
 	}
 	m_list_button->setAlignment(EGUIA_LOWERRIGHT,
 		EGUIA_LOWERRIGHT, EGUIA_UPPERLEFT, EGUIA_LOWERRIGHT);
@@ -77,7 +78,7 @@ GUIComboBox::GUIComboBox(IGUIEnvironment *environment, IGUIElement *parent,
 		EGUIA_LOWERRIGHT, EGUIA_UPPERLEFT, EGUIA_LOWERRIGHT);
 	m_selected_text->setTextAlignment(EGUIA_UPPERLEFT, EGUIA_CENTER);
 	if (skin)
-		m_selected_text->setOverrideColor(skin->getColor(EGDC_BUTTON_TEXT));
+		m_selected_text->setOverrideColor(getColor(EGDC_BUTTON_TEXT));
 	m_selected_text->enableOverrideColor(true);
 
 	// this element can be tabbed to
@@ -86,6 +87,15 @@ GUIComboBox::GUIComboBox(IGUIEnvironment *environment, IGUIElement *parent,
 }
 
 
+//! destructor
+GUIComboBox::~GUIComboBox()
+{
+	if (Colors)
+		delete[] Colors;
+}
+
+
+//! Set the text alignment of the text part
 void GUIComboBox::setTextAlignment(EGUI_ALIGNMENT horizontal, EGUI_ALIGNMENT vertical)
 {
 	m_halign = horizontal;
@@ -377,7 +387,7 @@ void GUIComboBox::draw()
 	if (!IsVisible)
 		return;
 
-	IGUISkin* skin = Environment->getSkin();
+	GUISkin* skin = (GUISkin *)Environment->getSkin();
 	IGUIElement *currentFocus = Environment->getFocus();
 	if (currentFocus != m_last_focus) {
 		m_has_focus = currentFocus == this || isMyChild(currentFocus);
@@ -387,23 +397,23 @@ void GUIComboBox::draw()
 	// set colors each time as skin-colors can be changed
 	m_selected_text->setBackgroundColor(
 		m_selected_item_color_used ?
-		m_selected_item_color : skin->getColor(EGDC_HIGH_LIGHT));
+		m_selected_item_color : getColor(EGDC_HIGH_LIGHT));
 	if (isEnabled()) {
 		m_selected_text->setDrawBackground(m_has_focus);
 		m_selected_text->setOverrideColor(
-			skin->getColor(m_has_focus ?
+			getColor(m_has_focus ?
 				EGDC_HIGH_LIGHT_TEXT : EGDC_BUTTON_TEXT));
 	}
 	else {
 		m_selected_text->setDrawBackground(false);
-		m_selected_text->setOverrideColor(skin->getColor(EGDC_GRAY_TEXT));
+		m_selected_text->setOverrideColor(getColor(EGDC_GRAY_TEXT));
 	}
-	
-	video::SColor enabled_color = skin->getColor(EGDC_WINDOW_SYMBOL);
+
+	video::SColor enabled_color = getColor(EGDC_WINDOW_SYMBOL);
 #if IRRLICHT_VERSION_MAJOR == 1 && IRRLICHT_VERSION_MINOR < 8
 	video::SColor disabled_color(240, 100, 100, 100);
 #else
-	video::SColor disabled_color = skin->getColor(EGDC_GRAY_WINDOW_SYMBOL);
+	video::SColor disabled_color = getColor(EGDC_GRAY_WINDOW_SYMBOL);
 #endif
 
 
@@ -419,9 +429,9 @@ void GUIComboBox::draw()
 
 	// draw the border
 
-	skin->draw3DSunkenPane(this,
-		m_bg_color_used ? m_bg_color : skin->getColor(EGDC_3D_HIGH_LIGHT),
-		true, true, frameRect, &AbsoluteClippingRect);
+	skin->drawColored3DSunkenPane(this,
+		m_bg_color_used ? m_bg_color : getColor(EGDC_3D_HIGH_LIGHT),
+		true, true, frameRect, &AbsoluteClippingRect, Colors);
 
 	// draw children
 	IGUIElement::draw();
@@ -509,6 +519,27 @@ void GUIComboBox::setBackgroundColor(const video::SColor &color)
 	m_bg_color = color;
 }
 
+
+//! Change the button color
+void GUIComboBox::setButtonColor(const video::SColor &color)
+{
+	if (m_list_button)
+		m_list_button->setColor(color);
+}
+
+
+//! returns a color
+video::SColor GUIComboBox::getColor(EGUI_DEFAULT_COLOR color) const
+{
+	getElementSkinColor(color);
+}
+
+
+//! sets a color
+void GUIComboBox::setColor(EGUI_DEFAULT_COLOR which, video::SColor newColor, f32 shading)
+{
+	setElementSkinColor(which, newColor, shading);
+}
 
 //! Writes attributes of the element.
 void GUIComboBox::serializeAttributes(io::IAttributes *out, io::SAttributeReadWriteOptions *options = 0) const
