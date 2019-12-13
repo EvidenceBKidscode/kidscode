@@ -2019,6 +2019,7 @@ void GUIFormSpecMenu::parseImageButton(parserData* data, const std::string &elem
 	errorstream<< "Invalid imagebutton element(" << parts.size() << "): '" << element << "'"  << std::endl;
 }
 
+// >> KIDSCODE - Image tabs
 void GUIFormSpecMenu::parseImageTab(parserData* data, const std::string &element)
 {
 	std::vector<std::string> parts = split(element,';');
@@ -2180,7 +2181,6 @@ void GUIFormSpecMenu::parseImageTab(parserData* data, const std::string &element
 			left_arrow_texture, left_arrow_pressed_texture,
 			right_arrow_texture, right_arrow_pressed_texture);
 
-		e->drop();
 		e->setAlignment(EGUIA_UPPERLEFT, EGUIA_UPPERLEFT,
 				EGUIA_UPPERLEFT, EGUIA_LOWERRIGHT);
 		e->setTabHeight(tab_height);
@@ -2248,6 +2248,7 @@ void GUIFormSpecMenu::parseImageTab(parserData* data, const std::string &element
 				(tab_index < (int) buttons.size()))
 			e->setActiveTab(tab_index);
 
+		m_backgrounds.push_back(e);
 		m_fields.push_back(spec);
 		return;
 	}
@@ -2255,6 +2256,7 @@ void GUIFormSpecMenu::parseImageTab(parserData* data, const std::string &element
 	errorstream << "Invalid ImageTab element(" << parts.size() << "): '"
 			<< element << "'"  << std::endl;
 }
+// << KIDSCODE
 
 void GUIFormSpecMenu::parseTabHeader(parserData* data, const std::string &element)
 {
@@ -3704,6 +3706,12 @@ void GUIFormSpecMenu::drawMenu()
 		Call base class
 	*/
 	gui::IGUIElement::draw();
+
+	// >> KIDSCODE - Make backgrounds able to react
+	for (gui::IGUIElement *e : m_backgrounds) {
+		e->setVisible(true);
+	}
+	// << KIDSCODE
 
 	/*
 		Draw animated images
