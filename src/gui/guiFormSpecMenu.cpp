@@ -1449,7 +1449,7 @@ void GUIFormSpecMenu::parsePwdField(parserData* data, const std::string &element
 }
 
 void GUIFormSpecMenu::createTextField(parserData *data, FieldSpec &spec,
-	core::rect<s32> &rect, bool is_multiline)
+	core::rect<s32> &rect, bool is_multiline, video::SColor *bg_color)
 {
 	bool is_editable = !spec.fname.empty();
 	if (!is_editable && !is_multiline) {
@@ -1512,6 +1512,16 @@ void GUIFormSpecMenu::createTextField(parserData *data, FieldSpec &spec,
 		if (style.get(StyleSpec::BGCOLOR, "") == "transparent") {
 			e->setDrawBackground(false);
 		}
+		// >> KIDSCODE - Backgroud color
+		if (bg_color) {
+			if (use_intl_edit_box && g_settings->getBool("freetype"))
+				((gui::intlGUIEditBox *)e)->setBackgroundColor(*bg_color);
+			else
+				if (is_multiline)
+					((GUIEditBoxWithScrollBar *)e)->setBackgroundColor(*bg_color);
+		}
+		// no setBackgroundColor for irr::gui::IGUIEditBox
+		// << KIDSCODE
 
 		e->drop();
 	}
@@ -1535,11 +1545,15 @@ void GUIFormSpecMenu::parseSimpleField(parserData *data,
 	std::string label = parts[1];
 	std::string default_val = parts[2];
 
-	// >> KIDSCODE - Makes fields starting with "!" send content as soon as key pressed
+	// >> KIDSCODE - Background color
+	video::SColor bg_color;
+	bool has_bg_color = parts.size() > 3 && parseColorString(parts[3], bg_color, true);
+	// == KIDSCODE - Makes fields starting with "!" send content as soon as key pressed
 	bool is_dynamic = (name.length() > 0 && name[0] == '!');
 	if (is_dynamic)
 		name = name.substr(1);
 	// << KIDSCODE
+
 	core::rect<s32> rect;
 
 	if (data->explicit_size)
@@ -1569,7 +1583,10 @@ void GUIFormSpecMenu::parseSimpleField(parserData *data,
 	);
 	spec.is_dynamic = is_dynamic; // KIDSCODE - Makes fields starting with "!" send content as soon as key pressed
 
-	createTextField(data, spec, rect, false);
+	// >> KIDSCODE - Background color
+	//createTextField(data, spec, rect, false);
+	createTextField(data, spec, rect, false, has_bg_color?&bg_color:nullptr);
+	// << KIDSCODE
 
 	m_fields.push_back(spec);
 
@@ -1585,7 +1602,10 @@ void GUIFormSpecMenu::parseTextArea(parserData* data, std::vector<std::string>& 
 	std::string label = parts[3];
 	std::string default_val = parts[4];
 
-	// >> KIDSCODE - Makes fields starting with "!" send content as soon as key pressed
+	// >> KIDSCODE - Background color
+	video::SColor bg_color;
+	bool has_bg_color = parts.size() > 5 && parseColorString(parts[5], bg_color, false);
+	// == KIDSCODE - Makes fields starting with "!" send content as soon as key pressed
 	bool is_dynamic = (name.length() > 0 && name[0] == '!');
 	if (is_dynamic)
 		name = name.substr(1);
@@ -1638,7 +1658,11 @@ void GUIFormSpecMenu::parseTextArea(parserData* data, std::vector<std::string>& 
 	);
 	spec.is_dynamic = is_dynamic; // KIDSCODE - Makes fields starting with "!" send content as soon as key pressed
 
-	createTextField(data, spec, rect, type == "textarea");
+	// >> KIDSCODE - Background color
+	//createTextField(data, spec, rect, type == "textarea");
+	createTextField(data, spec, rect, type == "textarea",
+		has_bg_color?&bg_color:nullptr);
+	// << KIDSCODE
 
 	if (parts.size() >= 6) {
 		// TODO: remove after 2016-11-03
