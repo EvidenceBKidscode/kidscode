@@ -1,44 +1,78 @@
 /*
 ** Configuration header.
-** Copyright (C) 2005-2013 Mike Pall. See Copyright Notice in luajit.h
+** Copyright (C) 2005-2014 Mike Pall. See Copyright Notice in luajit.h
 */
 
 #ifndef luaconf_h
 #define luaconf_h
 
+#ifndef WINVER
+#define WINVER 0x0501
+#endif
 #include <limits.h>
 #include <stddef.h>
 
-/* #undef LUAJIT_DISABLE_FFI */
-#define LUAJIT_ENABLE_LUA52COMPAT
-/* #undef LUAJIT_DISABLE_JIT */
-
-/* #undef LUAJIT_USE_SYSMALLOC */
-/* #undef LUAJIT_USE_VALGRIND */
-/* #undef LUAJIT_USE_GDBJIT */
-
-/* #undef LUA_USE_APICHECK */
-/* #undef LUA_USE_ASSERT */
-
-/* #undef LUAJIT_CPU_SSE2 */
-/* #undef LUAJIT_CPU_NOCMOV */
-
 /* Default path for loading Lua and C modules with require(). */
-#define LUA_MODULE_SUFFIX ".so"
-#define LUA_DIR	"!/../"
-#define LUA_LDIR	"lib/lua"
-#define LUA_CDIR	"lib/lua"
+#if defined(_WIN32)
+/*
+** In Windows, any exclamation mark ('!') in the path is replaced by the
+** path of the directory of the executable file of the current process.
+*/
+#define LUA_LDIR	"!\\lua\\"
+#define LUA_CDIR	"!\\"
+#define LUA_PATH_DEFAULT \
+  ".\\?.lua;" LUA_LDIR"?.lua;" LUA_LDIR"?\\init.lua;"
+#define LUA_CPATH_DEFAULT \
+  ".\\?.dll;" LUA_CDIR"?.dll;" LUA_CDIR"loadall.dll"
+#else
+/*
+** Note to distribution maintainers: do NOT patch the following lines!
+** Please read ../doc/install.html#distro and pass PREFIX=/usr instead.
+*/
+#ifndef LUA_MULTILIB
+#define LUA_MULTILIB	"lib"
+#endif
+#ifndef LUA_LMULTILIB
+#define LUA_LMULTILIB	"lib"
+#endif
+#define LUA_LROOT	"/usr/local"
+#define LUA_LUADIR	"/lua/5.1/"
+#define LUA_LJDIR	"/luajit-2.0.3/"
 
-#define LUA_PATH_DEFAULT "./?.lua;!/../lib/lua/?.lua;!/../lib/lua/?/init.lua;./?/init.lua"
-#define LUA_CPATH_DEFAULT "./?.so;!/../lib/lua/?.so;!/../lib/lua/loadall.so"
+#ifdef LUA_ROOT
+#define LUA_JROOT	LUA_ROOT
+#define LUA_RLDIR	LUA_ROOT "/share" LUA_LUADIR
+#define LUA_RCDIR	LUA_ROOT "/" LUA_MULTILIB LUA_LUADIR
+#define LUA_RLPATH	";" LUA_RLDIR "?.lua;" LUA_RLDIR "?/init.lua"
+#define LUA_RCPATH	";" LUA_RCDIR "?.so"
+#else
+#define LUA_JROOT	LUA_LROOT
+#define LUA_RLPATH
+#define LUA_RCPATH
+#endif
+
+#define LUA_JPATH	";" LUA_JROOT "/share" LUA_LJDIR "?.lua"
+#define LUA_LLDIR	LUA_LROOT "/share" LUA_LUADIR
+#define LUA_LCDIR	LUA_LROOT "/" LUA_LMULTILIB LUA_LUADIR
+#define LUA_LLPATH	";" LUA_LLDIR "?.lua;" LUA_LLDIR "?/init.lua"
+#define LUA_LCPATH1	";" LUA_LCDIR "?.so"
+#define LUA_LCPATH2	";" LUA_LCDIR "loadall.so"
+
+#define LUA_PATH_DEFAULT	"./?.lua" LUA_JPATH LUA_LLPATH LUA_RLPATH
+#define LUA_CPATH_DEFAULT	"./?.so" LUA_LCPATH1 LUA_RCPATH LUA_LCPATH2
+#endif
 
 /* Environment variable names for path overrides and initialization code. */
-#define LUA_PATH "LUA_PATH"
-#define LUA_CPATH "LUA_CPATH"
-#define LUA_INIT "LUA_INIT"
+#define LUA_PATH	"LUA_PATH"
+#define LUA_CPATH	"LUA_CPATH"
+#define LUA_INIT	"LUA_INIT"
 
 /* Special file system characters. */
+#if defined(_WIN32)
+#define LUA_DIRSEP	"\\"
+#else
 #define LUA_DIRSEP	"/"
+#endif
 #define LUA_PATHSEP	";"
 #define LUA_PATH_MARK	"?"
 #define LUA_EXECDIR	"!"
@@ -65,9 +99,9 @@
 /* Configuration for the frontend (the luajit executable). */
 #if defined(luajit_c)
 #define LUA_PROGNAME	"luajit"  /* Fallback frontend name. */
-#define LUA_PROMPT		"> "  /* Interactive prompt. */
-#define LUA_PROMPT2	">> "  /* Continuation prompt. */
-#define LUA_MAXINPUT	512 /* Max. input line length. */
+#define LUA_PROMPT	"> "	/* Interactive prompt. */
+#define LUA_PROMPT2	">> "	/* Continuation prompt. */
+#define LUA_MAXINPUT	512	/* Max. input line length. */
 #endif
 
 /* Note: changing the following defines breaks the Lua 5.1 ABI. */

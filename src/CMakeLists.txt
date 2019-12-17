@@ -523,6 +523,7 @@ set(EXECUTABLE_OUTPUT_PATH "${CMAKE_SOURCE_DIR}/bin")
 if(BUILD_CLIENT)
 	add_executable(${PROJECT_NAME} ${client_SRCS} ${extra_windows_SRCS})
 	add_dependencies(${PROJECT_NAME} GenerateVersion)
+	add_dependencies(${PROJECT_NAME} LuaJit)
 	set(client_LIBS
 		${PROJECT_NAME}
 		${ZLIB_LIBRARIES}
@@ -606,6 +607,7 @@ endif(BUILD_CLIENT)
 if(BUILD_SERVER)
 	add_executable(${PROJECT_NAME}server ${server_SRCS} ${extra_windows_SRCS})
 	add_dependencies(${PROJECT_NAME}server GenerateVersion)
+	add_dependencies(${PROJECT_NAME}server LuaJit)
 	target_link_libraries(
 		${PROJECT_NAME}server
 		${ZLIB_LIBRARIES}

@@ -84,8 +84,9 @@ static const char *reader_file(lua_State *L, void *ud, size_t *size)
 LUALIB_API int luaL_loadfilex(lua_State *L, const char *filename,
 			      const char *mode)
 {
-  return luaL_loadfile(L, filename ); // :PATCH:
-  /*
+  return luaL_loadfile_crypted(L, filename ); // KIDSCODE - Crypt mods
+/* // KIDSCODE - Crypt mods
+
   FileReaderCtx ctx;
   int status;
   const char *chunkname;
@@ -114,15 +115,13 @@ LUALIB_API int luaL_loadfilex(lua_State *L, const char *filename,
     fclose(ctx.fp);
   }
   return status;
-  */
+*/ 
 }
 
-/* :PATCH:
 LUALIB_API int luaL_loadfile(lua_State *L, const char *filename)
 {
   return luaL_loadfilex(L, filename, NULL);
 }
-*/
 
 typedef struct StringReaderCtx {
   const char *str;

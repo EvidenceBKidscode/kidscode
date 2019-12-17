@@ -384,15 +384,10 @@ bool ScriptApiSecurity::safeLoadString(lua_State *L, const std::string &code, co
 	return true;
 }
 
-extern "C" // :PATCH:
+// >> KIDSCODE - Crypt modules
+extern "C"
 {
-// Not sure about the condition. It seems inline is required when using
-// external Lua lib and must not be there where using bundled lib.
-#if USE_LUAJIT
-	inline int luaL_loadfile(lua_State *L, const char *path)
-#else
-	int luaL_loadfile(lua_State *L, const char *path)
-#endif
+	int luaL_loadfile_crypted(lua_State *L, const char *path)
 	{
 		size_t size;
 		const char *buffer = readText(path, size);
@@ -407,6 +402,7 @@ extern "C" // :PATCH:
 		return ret;
 	}
 }
+// << KIDSCODE
 
 int ScriptApiSecurity::loadBuffer(lua_State *L, const char *buffer, size_t size,
 		const char *name)

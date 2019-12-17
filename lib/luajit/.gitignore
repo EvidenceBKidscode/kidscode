@@ -12,3 +12,4 @@ _*
 .tags
 buildvm
 minilua
+buildvm_arch.h
