@@ -66,8 +66,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "guiTable.h"
 #include "intlGUIEditBox.h"
 #include "guiHyperText.h"
-#include "guiImageTabControl.h"
 // >> KIDSCODE
+#include "guiImageTabControl.h"
 #include "guiListBox.h"
 #include "guiComboBox.h"
 // << KIDSCODE
@@ -361,8 +361,12 @@ void GUIFormSpecMenu::parseList(parserData* data, const std::string &element)
 
 	std::vector<std::string> parts = split(element,';');
 
+	// >> KIDSCODE - List slots spacing
 	if (((parts.size() >= 4) && (parts.size() <= 7)) ||
 		((parts.size() > 7) && (m_formspec_version > FORMSPEC_API_VERSION)))
+	/* if (((parts.size() >= 4) && (parts.size() <= 5)) ||
+		((parts.size() > 5) && (m_formspec_version > FORMSPEC_API_VERSION)))
+	*/ // << KIDSCODE
 	{
 		std::string location = parts[0];
 		std::string listname = parts[1];
@@ -378,7 +382,8 @@ void GUIFormSpecMenu::parseList(parserData* data, const std::string &element)
 		// << KIDSCODE
 
 		std::string startindex;
-		if (parts.size() > 4)
+
+		if (parts.size() > 4) // KIDSCODE
 			startindex = parts[4];
 
 		MY_CHECKPOS("list",2);
@@ -399,6 +404,7 @@ void GUIFormSpecMenu::parseList(parserData* data, const std::string &element)
 		if (!startindex.empty())
 			start_i = stoi(startindex);
 
+		// >> KIDSCODE
 		v2s32 _imgsize = imgsize;
 		if (has_slot_size_factor && !slot_size_factor.empty()) {
 			f32 size_factor = stof(slot_size_factor);
@@ -413,9 +419,10 @@ void GUIFormSpecMenu::parseList(parserData* data, const std::string &element)
 			_spacing.Y = _imgsize.Y + 2 * border
 				+ (s32)(stof(v_spacing_factors[1]) * (spacing.Y - imgsize.Y - 2 * border));
 		}
+		// << KIDSCODE
 
 		if (geom.X < 0 || geom.Y < 0 || start_i < 0
-			|| (has_spacing_factors && v_spacing_factors.size() != 2)) {
+			|| (has_spacing_factors && v_spacing_factors.size() != 2)) { // KIDSCODE
 			errorstream<< "Invalid list element: '" << element << "'"  << std::endl;
 			return;
 		}
@@ -477,8 +484,9 @@ void GUIFormSpecMenu::parseList(parserData* data, const std::string &element)
 		gui::IGUIElement *e = new gui::IGUIElement(EGUIET_ELEMENT, Environment,
 				this, spec.fid, rect);
 
-		m_inventorylists.emplace_back(loc, listname, e, geom,
-				start_i, _imgsize, _spacing, border, data->real_coordinates);
+		m_inventorylists.emplace_back(loc, listname, e, geom, start_i,
+				_imgsize, _spacing, border,  // KIDSCODE
+				data->real_coordinates);
 		m_fields.push_back(spec);
 		return;
 	}
@@ -811,6 +819,7 @@ void GUIFormSpecMenu::parseImage(parserData* data, const std::string &element)
 	errorstream<< "Invalid image element(" << parts.size() << "): '" << element << "'"  << std::endl;
 }
 
+// >> KIDSCODE
 void GUIFormSpecMenu::parseAnimatedImage(parserData *data, const std::string &element)
 {
 	std::vector<std::string> parts = split(element, ';');
@@ -848,6 +857,7 @@ void GUIFormSpecMenu::parseAnimatedImage(parserData *data, const std::string &el
 
 	errorstream << "Invalid animated image element(" << parts.size() << "): '" << element << "'"  << std::endl;
 }
+// << KIDSCODE
 
 void GUIFormSpecMenu::parseItemImage(parserData* data, const std::string &element)
 {
@@ -902,7 +912,8 @@ void GUIFormSpecMenu::parseButton(parserData* data, const std::string &element,
 {
 	std::vector<std::string> parts = split(element,';');
 
-	if ((parts.size() == 4) || (parts.size() == 5) ||
+	if ((parts.size() == 4) ||
+		(parts.size() == 5) || // KIDSCODE
 		((parts.size() > 4) && (m_formspec_version > FORMSPEC_API_VERSION)))
 	{
 		std::vector<std::string> v_pos = split(parts[0],',');
@@ -1252,7 +1263,8 @@ void GUIFormSpecMenu::parseDropDown(parserData* data, const std::string &element
 {
 	std::vector<std::string> parts = split(element,';');
 
-	if (((parts.size() >= 5) && (parts.size() <= 7)) || // KIDSCODE
+	if ((parts.size() == 5) ||
+		(parts.size() == 6) || (parts.size() == 7) || // KIDSCODE
 		((parts.size() > 5) && (m_formspec_version > FORMSPEC_API_VERSION)))
 	{
 		std::vector<std::string> v_pos = split(parts[0],',');
@@ -1261,6 +1273,7 @@ void GUIFormSpecMenu::parseDropDown(parserData* data, const std::string &element
 		std::string str_initial_selection;
 		str_initial_selection = parts[4];
 // >> KIDSCODE - Alternative combo box with color settings
+//		gui::IGUIComboBox *e = Environment->addComboBox(rect, this, spec.fid);
 		video::SColor bg_color;
 		bool has_bg_color = parts.size() > 5 && parseColorString(parts[5], bg_color, false);
 		video::SColor selected_item_color;
@@ -1449,7 +1462,8 @@ void GUIFormSpecMenu::parsePwdField(parserData* data, const std::string &element
 }
 
 void GUIFormSpecMenu::createTextField(parserData *data, FieldSpec &spec,
-	core::rect<s32> &rect, bool is_multiline, video::SColor *bg_color)
+	core::rect<s32> &rect, bool is_multiline,
+	video::SColor *bg_color) // KIDSCODE - Background color
 {
 	bool is_editable = !spec.fname.empty();
 	if (!is_editable && !is_multiline) {
@@ -1720,8 +1734,10 @@ void GUIFormSpecMenu::parseHyperText(parserData *data, const std::string &elemen
 		pos = getElementBasePos(&v_pos);
 		pos -= padding;
 		pos.Y += m_btn_height;
+//		pos.X += stof(v_pos[0]) * spacing.X;
+//		pos.Y += stof(v_pos[1]) * spacing.Y + (m_btn_height * 2);
 		geom.X = (stof(v_geom[0]) * spacing.X) - (spacing.X - imgsize.X);
-		geom.Y = (stof(v_geom[1]) * (float)imgsize.Y) - (spacing.Y - imgsize.Y);
+		geom.Y = (stof(v_geom[1]) * imgsize.Y) - (spacing.Y - imgsize.Y);
 	}
 
 	core::rect<s32> rect = core::rect<s32>(pos.X, pos.Y, pos.X + geom.X, pos.Y + geom.Y);
@@ -1909,7 +1925,7 @@ void GUIFormSpecMenu::parseImageButton(parserData* data, const std::string &elem
 {
 	std::vector<std::string> parts = split(element,';');
 
-	if (((parts.size() >= 5) && (parts.size() <= 9)) ||
+	if (((parts.size() >= 5) && (parts.size() <= 9)) || // KIDSCODE
 		((parts.size() > 8) && (m_formspec_version > FORMSPEC_API_VERSION)))
 	{
 		std::vector<std::string> v_pos = split(parts[0],',');
@@ -2379,8 +2395,9 @@ void GUIFormSpecMenu::parseItemImageButton(parserData* data, const std::string &
 
 	std::vector<std::string> parts = split(element,';');
 
-	if ((parts.size() == 5) || (parts.size() == 6) ||
-		((parts.size() > 6) && (m_formspec_version > FORMSPEC_API_VERSION)))
+	if ((parts.size() == 5) ||
+		(parts.size() == 6) || // KIDSCODE
+		((parts.size() > 5) && (m_formspec_version > FORMSPEC_API_VERSION)))
 	{
 		std::vector<std::string> v_pos = split(parts[0],',');
 		std::vector<std::string> v_geom = split(parts[1],',');
@@ -2877,10 +2894,12 @@ void GUIFormSpecMenu::parseElement(parserData* data, const std::string &element)
 		return;
 	}
 
+	// >> KIDSCODE
 	if (type == "animated_image") {
 		parseAnimatedImage(data, description);
 		return;
 	}
+	// << KIDSCODE
 
 	if (type == "item_image") {
 		parseItemImage(data, description);
@@ -2962,10 +2981,12 @@ void GUIFormSpecMenu::parseElement(parserData* data, const std::string &element)
 		return;
 	}
 
+	// >> KIDSCODE - Image tabs
 	if (type == "image_tab") {
 		parseImageTab(data,description);
 		return;
 	}
+	// << KIDSCODE
 
 	if (type == "tabheader") {
 		parseTabHeader(data,description);
@@ -3084,7 +3105,7 @@ void GUIFormSpecMenu::regenerateGui(v2u32 screensize)
 	/* Convert m_init_draw_spec to m_inventorylists */
 
 	m_inventorylists.clear();
-	m_animated_images.clear();
+	m_animated_images.clear(); // KIDSCODE - Animated Images
 	m_backgrounds.clear();
 	m_tables.clear();
 	m_checkboxes.clear();
@@ -3439,7 +3460,7 @@ void GUIFormSpecMenu::legacySortElements(core::list<IGUIElement *>::Iterator fro
 		elements.emplace_back(*it);
 
 	// 2: Sort the container
-	std::sort(elements.begin(), elements.end(),
+	std::stable_sort(elements.begin(), elements.end(),
 			[this] (const IGUIElement *a, const IGUIElement *b) -> bool {
 		const FieldSpec *spec_a = getSpecByID(a->getID());
 		const FieldSpec *spec_b = getSpecByID(b->getID());
@@ -3503,8 +3524,13 @@ GUIFormSpecMenu::ItemSpec GUIFormSpecMenu::getItemAtPos(v2s32 p) const
 				x = (i%s.geom.X) * (imgsize.X * 1.25);
 				y = (i/s.geom.X) * (imgsize.Y * 1.25);
 			} else {
+				// >> KIDSCODE
 				x = (i%s.geom.X) * s.spacing.X;
 				y = (i/s.geom.X) * s.spacing.Y;
+				/*
+				x = (i%s.geom.X) * spacing.X;
+				y = (i/s.geom.X) * spacing.Y;
+				*/ // << KIDSCODE
 			}
 			v2s32 p0(x,y);
 			core::rect<s32> rect = imgrect + base_pos + p0;
@@ -3553,8 +3579,13 @@ void GUIFormSpecMenu::drawList(const ListDrawSpec &s, int layer,
 			x = (i%s.geom.X) * (imgsize.X * 1.25);
 			y = (i/s.geom.X) * (imgsize.Y * 1.25);
 		} else {
+			// >> KIDSCODE
 			x = (i%s.geom.X) * s.spacing.X;
 			y = (i/s.geom.X) * s.spacing.Y;
+			/*
+			x = (i%s.geom.X) * spacing.X;
+			y = (i/s.geom.X) * spacing.Y;
+			*/ // << KIDSCODE
 		}
 		v2s32 p(x,y);
 		core::rect<s32> rect = imgrect + base_pos + p;
@@ -3586,7 +3617,7 @@ void GUIFormSpecMenu::drawList(const ListDrawSpec &s, int layer,
 			s32 y1 = rect.UpperLeftCorner.Y;
 			s32 x2 = rect.LowerRightCorner.X;
 			s32 y2 = rect.LowerRightCorner.Y;
-			s32 border = s.border;
+			s32 border = s.border; // KIDSCODE
 			driver->draw2DRectangle(m_slotbordercolor,
 				core::rect<s32>(v2s32(x1 - border, y1 - border),
 								v2s32(x2 + border, y1)), &clipping_rect);
@@ -3641,7 +3672,7 @@ void GUIFormSpecMenu::drawSelectedItem()
 	ItemStack stack = list->getItem(m_selected_item->i);
 	stack.count = m_selected_amount;
 
-	core::rect<s32> imgrect(0, 0, imgsize.X, imgsize.Y);
+	core::rect<s32> imgrect(0,0,imgsize.X,imgsize.Y);
 	core::rect<s32> rect = imgrect + (m_pointer - imgrect.getCenter());
 	rect.constrainTo(driver->getViewPort());
 	drawItemStack(driver, m_font, stack, rect, NULL, m_client, IT_ROT_DRAGGED);
@@ -3713,6 +3744,7 @@ void GUIFormSpecMenu::drawMenu()
 	}
 	// << KIDSCODE
 
+	// >> KIDSCODE - Draw animated images
 	/*
 		Draw animated images
 	*/
@@ -3747,6 +3779,7 @@ void GUIFormSpecMenu::drawMenu()
 			errorstream << "\t" << spec.name << std::endl;
 		}
 	}
+	// << KIDSCODE
 
 	/*
 		Draw items

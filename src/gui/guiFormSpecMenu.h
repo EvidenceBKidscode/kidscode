@@ -32,7 +32,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "util/string.h"
 #include "util/enriched_string.h"
 #include "StyleSpec.h"
+// >> KIDSCODE
 #include "client/texture_pool.h"
+// << KIDSCODE
 
 class InventoryManager;
 class ISimpleTextureSource;
@@ -105,16 +107,19 @@ class GUIFormSpecMenu : public GUIModalMenu
 
 		ListDrawSpec(const InventoryLocation &a_inventoryloc,
 				const std::string &a_listname,
-				IGUIElement *elem /* v2s32 a_pos */ , v2s32 a_geom, s32 a_start_item_i,
-				v2s32 a_imgsize, v2s32 a_spacing, s32 a_border, bool a_real_coordinates):
+				IGUIElement *elem, v2s32 a_geom, s32 a_start_item_i,
+				v2s32 a_imgsize, v2s32 a_spacing, s32 a_border, // KIDSCODE
+				bool a_real_coordinates):
 			inventoryloc(a_inventoryloc),
 			listname(a_listname),
 			e(elem),
 			geom(a_geom),
 			start_item_i(a_start_item_i),
+			// >> KIDSCODE
 			imgsize(a_imgsize),
 			spacing(a_spacing),
 			border(a_border),
+			// << KIDSCODE
 			real_coordinates(a_real_coordinates)
 		{
 		}
@@ -124,9 +129,11 @@ class GUIFormSpecMenu : public GUIModalMenu
 		IGUIElement *e;
 		v2s32 geom;
 		s32 start_item_i;
+		// >> KIDSCODE
 		v2s32 imgsize;
 		v2s32 spacing;
 		s32 border;
+		// << KIDSCODE
 		bool real_coordinates;
 	};
 
@@ -145,6 +152,7 @@ class GUIFormSpecMenu : public GUIModalMenu
 		std::string listname;
 	};
 
+	// >> KIDSCODE
 	struct ImageDrawSpec
 	{
 		ImageDrawSpec():
@@ -221,6 +229,7 @@ class GUIFormSpecMenu : public GUIModalMenu
 		bool scale;
 		bool clip;
 	};
+	// << KIDSCODE
 
 	struct FieldSpec
 	{
@@ -423,12 +432,12 @@ protected:
 	std::string m_formspec_string;
 	std::string m_formspec_prepend;
 	InventoryLocation m_current_inventory_location;
-	TexturePool       m_texture_pool;
+	TexturePool       m_texture_pool; // KIDSCODE - Animated images
 
 	std::vector<ListDrawSpec> m_inventorylists;
 	std::vector<ListRingSpec> m_inventory_rings;
 	std::vector<gui::IGUIElement *> m_backgrounds;
-	std::vector<ImageDrawSpec> m_animated_images;
+	std::vector<ImageDrawSpec> m_animated_images; // KIDSCODE - Animated images
 	std::unordered_map<std::string, bool> field_close_on_enter;
 	std::vector<FieldSpec> m_fields;
 	std::vector<std::pair<FieldSpec, GUITable *>> m_tables;
@@ -522,7 +531,7 @@ private:
 	void parseListRing(parserData* data, const std::string &element);
 	void parseCheckbox(parserData* data, const std::string &element);
 	void parseImage(parserData* data, const std::string &element);
-	void parseAnimatedImage(parserData* data, const std::string &element);
+	void parseAnimatedImage(parserData* data, const std::string &element);  // KIDSCODE - Animated images
 	void parseItemImage(parserData* data, const std::string &element);
 	void parseButton(parserData* data, const std::string &element,
 			const std::string &typ);
@@ -550,7 +559,7 @@ private:
 	void parseImageButton(parserData* data, const std::string &element,
 			const std::string &type);
 	void parseItemImageButton(parserData* data, const std::string &element);
-	void parseImageTab(parserData* data, const std::string &element);
+	void parseImageTab(parserData* data, const std::string &element);  // KIDSCODE - Image Tabs
 	void parseTabHeader(parserData* data, const std::string &element);
 	void parseBox(parserData* data, const std::string &element);
 	void parseBackgroundColor(parserData* data, const std::string &element);
