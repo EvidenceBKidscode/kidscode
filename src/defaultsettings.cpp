@@ -56,7 +56,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("curl_timeout", "5000");
 	settings->setDefault("curl_parallel_limit", "8");
 	settings->setDefault("curl_file_download_timeout", "300000");
-	settings->setDefault("curl_verify_cert", "false");
+	settings->setDefault("curl_verify_cert", "false"); // KIDSCODE Changed
 	settings->setDefault("enable_remote_media_server", "true");
 	settings->setDefault("enable_client_modding", "false");
 	settings->setDefault("max_out_chat_queue_size", "20");
@@ -65,15 +65,15 @@ void set_default_settings(Settings *settings)
 
 	// Keymap
 	settings->setDefault("remote_port", "30000");
-	settings->setDefault("keymap_forward", "KEY_KEY_Z");
+	settings->setDefault("keymap_forward", "KEY_KEY_Z"); // KIDSCODE Changed
 	settings->setDefault("keymap_autoforward", "");
 	settings->setDefault("keymap_backward", "KEY_KEY_S");
-	settings->setDefault("keymap_left", "KEY_KEY_Q");
+	settings->setDefault("keymap_left", "KEY_KEY_Q"); // KIDSCODE Changed
 	settings->setDefault("keymap_right", "KEY_KEY_D");
 	settings->setDefault("keymap_jump", "KEY_SPACE");
 	settings->setDefault("keymap_sneak", "KEY_LSHIFT");
-	settings->setDefault("keymap_drop", "KEY_KEY_G");
-	settings->setDefault("keymap_zoom", "KEY_KEY_X");
+	settings->setDefault("keymap_drop", "KEY_KEY_G"); // KIDSCODE Changed
+	settings->setDefault("keymap_zoom", "KEY_KEY_X"); // KIDSCODE Changed
 	settings->setDefault("keymap_inventory", "KEY_KEY_I");
 	settings->setDefault("keymap_special1", "KEY_KEY_E");
 	settings->setDefault("keymap_chat", "KEY_KEY_T");
@@ -169,11 +169,15 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("screen_h", "600");
 	settings->setDefault("autosave_screensize", "true");
 
+// >> KIDSCODE
 #if defined(__APPLE__)
 	settings->setDefault("fullscreen", "true"); // MacOS X
 #else
 	settings->setDefault("fullscreen", "false");
 #endif
+// settings->setDefault("fullscreen", "false");
+// << KIDSCODE
+
 	settings->setDefault("fullscreen_bpp", "24");
 	settings->setDefault("vsync", "false");
 	settings->setDefault("fov", "72");
@@ -181,7 +185,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("connected_glass", "false");
 	settings->setDefault("smooth_lighting", "true");
 	settings->setDefault("lighting_alpha", "0.0");
-	settings->setDefault("lighting_beta", "0.0");
+	settings->setDefault("lighting_beta", "0.0"); // KIDSCODE Changed
 	settings->setDefault("display_gamma", "1.0");
 	settings->setDefault("lighting_boost", "0.2");
 	settings->setDefault("lighting_boost_center", "0.5");
@@ -202,27 +206,27 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("cinematic_camera_smoothing", "0.7");
 	settings->setDefault("enable_clouds", "true");
 	settings->setDefault("view_bobbing_amount", "1.0");
-	settings->setDefault("fall_bobbing_amount", "0.0");
+	settings->setDefault("fall_bobbing_amount", "0.0"); // KIDSCODE Changed
 	settings->setDefault("enable_3d_clouds", "true");
 	settings->setDefault("cloud_radius", "12");
 	settings->setDefault("menu_clouds", "true");
 	settings->setDefault("opaque_water", "false");
-	settings->setDefault("console_height", "1.0");
+	settings->setDefault("console_height", "1.0"); // KIDSCODE Changed
 	settings->setDefault("console_color", "(0,0,0)");
 	settings->setDefault("console_alpha", "200");
 	settings->setDefault("formspec_fullscreen_bg_color", "(0,0,0)");
-	settings->setDefault("formspec_fullscreen_bg_opacity", "140");
-	settings->setDefault("formspec_default_bg_color", "(70,115,147)");
-	settings->setDefault("formspec_default_bg_opacity", "200");
+	settings->setDefault("formspec_fullscreen_bg_opacity", "0"); // KIDSCODE Changed
+	settings->setDefault("formspec_default_bg_color", "(70,115,147)"); // KIDSCODE Changed
+	settings->setDefault("formspec_default_bg_opacity", "200"); // KIDSCODE Changed
 	settings->setDefault("selectionbox_color", "(0,0,0)");
 	settings->setDefault("selectionbox_width", "2");
-	settings->setDefault("node_highlighting", "halo");
+	settings->setDefault("node_highlighting", "halo"); // KIDSCODE Changed
 	settings->setDefault("crosshair_color", "(255,255,255)");
 	settings->setDefault("crosshair_alpha", "255");
 	settings->setDefault("recent_chat_messages", "6");
 	settings->setDefault("hud_scaling", "1.0");
 	settings->setDefault("gui_scaling", "1.0");
-	settings->setDefault("gui_scaling_filter", "true");
+	settings->setDefault("gui_scaling_filter", "true"); // KIDSCODE Changed
 	settings->setDefault("gui_scaling_filter_txr2img", "true");
 	settings->setDefault("desynchronize_mapblock_texture_animation", "true");
 	settings->setDefault("hud_hotbar_max_width", "1.0");
@@ -238,23 +242,21 @@ void set_default_settings(Settings *settings)
 #endif
 	settings->setDefault("enable_particles", "true");
 
-	settings->setDefault("arm_inertia", "false");
-	settings->setDefault("formspec_fullscreen_bg_color", "(0,0,0)");
-	settings->setDefault("formspec_fullscreen_bg_opacity", "0");
+	settings->setDefault("arm_inertia", "false"); // KIDSCODE Changed
 
 	settings->setDefault("enable_minimap", "true");
-	settings->setDefault("minimap_shape_round", "true");
+	settings->setDefault("minimap_shape_round", "false"); // KIDSCODE Changed
 	settings->setDefault("minimap_double_scan_height", "true");
-	settings->setDefault("minimap_font_size", "15");
+	settings->setDefault("minimap_font_size", "15");  // KIDSCODE Addition
 
 	// Effects
 	settings->setDefault("directional_colored_fog", "true");
-	settings->setDefault("inventory_items_animations", "true");
+	settings->setDefault("inventory_items_animations", "true"); // KIDSCODE Changed
 	settings->setDefault("mip_map", "false");
 	settings->setDefault("anisotropic_filter", "false");
 	settings->setDefault("bilinear_filter", "false");
 	settings->setDefault("trilinear_filter", "false");
-	settings->setDefault("directional_shading", "true");
+	settings->setDefault("directional_shading", "true"); // KIDSCODE Addition
 	settings->setDefault("tone_mapping", "false");
 	settings->setDefault("enable_bumpmapping", "false");
 	settings->setDefault("enable_parallax_occlusion", "false");
@@ -276,13 +278,15 @@ void set_default_settings(Settings *settings)
 	// Input
 	settings->setDefault("invert_mouse", "false");
 	settings->setDefault("mouse_sensitivity", "0.2");
+	// >> KIDSCODE
 	settings->setDefault("mouse_dampening_influence", "1.0");
 	settings->setDefault("mouse_dampening_speed", "200.0");
+	// << KIDSCODE
 	settings->setDefault("repeat_rightclick_time", "0.25");
 	settings->setDefault("safe_dig_and_place", "false");
 	settings->setDefault("random_input", "false");
 	settings->setDefault("aux1_descends", "false");
-	settings->setDefault("doubletap_jump", "true");
+	settings->setDefault("doubletap_jump", "true"); // KIDSCODE Changed
 	settings->setDefault("always_fly_fast", "true");
 #ifdef __ANDROID__
 	settings->setDefault("autojump", "true");
@@ -303,18 +307,18 @@ void set_default_settings(Settings *settings)
 
 #if USE_FREETYPE
 	settings->setDefault("freetype", "true");
-	settings->setDefault("font_path", porting::getDataPath("fonts" DIR_DELIM "LiberationSans-Regular.ttf"));
-	settings->setDefault("font_path_italic", porting::getDataPath("fonts" DIR_DELIM "LiberationSans-Italic.ttf"));
-	settings->setDefault("font_path_bold", porting::getDataPath("fonts" DIR_DELIM "LiberationSans-Bold.ttf"));
-	settings->setDefault("font_path_bold_italic", porting::getDataPath("fonts" DIR_DELIM "LiberationSans-BoldItalic.ttf"));
-	settings->setDefault("font_bold", "true");
+	settings->setDefault("font_path", porting::getDataPath("fonts" DIR_DELIM "LiberationSans-Regular.ttf"));  // KIDSCODE Changed
+	settings->setDefault("font_path_italic", porting::getDataPath("fonts" DIR_DELIM "LiberationSans-Italic.ttf")); // KIDSCODE Changed
+	settings->setDefault("font_path_bold", porting::getDataPath("fonts" DIR_DELIM "LiberationSans-Bold.ttf")); // KIDSCODE Changed
+	settings->setDefault("font_path_bold_italic", porting::getDataPath("fonts" DIR_DELIM "LiberationSans-BoldItalic.ttf")); // KIDSCODE Changed
+	settings->setDefault("font_bold", "true"); // KIDSCODE Changed
 	settings->setDefault("font_italic", "false");
-	settings->setDefault("font_shadow", "0");
+	settings->setDefault("font_shadow", "0"); // KIDSCODE Changed
 	settings->setDefault("font_shadow_alpha", "127");
-	settings->setDefault("mono_font_path", porting::getDataPath("fonts" DIR_DELIM "LiberationMono-Regular.ttf"));
-	settings->setDefault("mono_font_path_italic", porting::getDataPath("fonts" DIR_DELIM "LiberationMono-Italic.ttf"));
-	settings->setDefault("mono_font_path_bold", porting::getDataPath("fonts" DIR_DELIM "LiberationMono-Bold.ttf"));
-	settings->setDefault("mono_font_path_bold_italic", porting::getDataPath("fonts" DIR_DELIM "LiberationMono-BoldItalic.ttf"));
+	settings->setDefault("mono_font_path", porting::getDataPath("fonts" DIR_DELIM "LiberationMono-Regular.ttf")); // KIDSCODE Changed
+	settings->setDefault("mono_font_path_italic", porting::getDataPath("fonts" DIR_DELIM "LiberationMono-Italic.ttf")); // KIDSCODE Changed
+	settings->setDefault("mono_font_path_bold", porting::getDataPath("fonts" DIR_DELIM "LiberationMono-Bold.ttf")); // KIDSCODE Changed
+	settings->setDefault("mono_font_path_bold_italic", porting::getDataPath("fonts" DIR_DELIM "LiberationMono-BoldItalic.ttf")); // KIDSCODE Changed
 	settings->setDefault("fallback_font_path", porting::getDataPath("fonts" DIR_DELIM "DroidSansFallbackFull.ttf"));
 
 	settings->setDefault("fallback_font_shadow", "1");
@@ -331,7 +335,7 @@ void set_default_settings(Settings *settings)
 	std::string font_size_str = std::to_string(DEFAULT_FONT_SIZE);
 #endif
 	settings->setDefault("font_size", font_size_str);
-	settings->setDefault("mono_font_size", std::to_string(TTF_DEFAULT_FONT_SIZE + 2));
+	settings->setDefault("mono_font_size", std::to_string(TTF_DEFAULT_FONT_SIZE + 2)); // KIDSCODE Changed
 	settings->setDefault("contentdb_url", "https://content.minetest.net");
 #ifdef __ANDROID__
 	settings->setDefault("contentdb_flag_blacklist", "nonfree, android_default");
@@ -350,17 +354,17 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("port", "30000");
 	settings->setDefault("strict_protocol_version_checking", "false");
 	settings->setDefault("player_transfer_distance", "0");
-	settings->setDefault("max_simultaneous_block_sends_per_client", "10");
+	settings->setDefault("max_simultaneous_block_sends_per_client", "10"); // KIDSCODE Changed
 	settings->setDefault("time_send_interval", "5");
 
 	settings->setDefault("default_game", "minetest");
 	settings->setDefault("motd", "");
-	settings->setDefault("max_users", "30");
-	settings->setDefault("creative_mode", "true");
+	settings->setDefault("max_users", "30"); // KIDSCODE Changed
+	settings->setDefault("creative_mode", "true"); // KIDSCODE Changed
 	settings->setDefault("enable_damage", "true");
 	settings->setDefault("default_password", "");
 	settings->setDefault("default_privs", "interact, shout");
-	settings->setDefault("enable_pvp", "false");
+	settings->setDefault("enable_pvp", "false"); // KIDSCODE Changed
 	settings->setDefault("enable_mod_channels", "false");
 	settings->setDefault("disallow_empty_password", "false");
 	settings->setDefault("disable_anticheat", "false");
@@ -377,20 +381,20 @@ void set_default_settings(Settings *settings)
 
 	settings->setDefault("chat_message_format", "<@name> @message");
 	settings->setDefault("profiler_print_interval", "0");
-	settings->setDefault("active_object_send_range_blocks", "3");
+	settings->setDefault("active_object_send_range_blocks", "4");
 	settings->setDefault("active_block_range", "3");
 	//settings->setDefault("max_simultaneous_block_sends_per_client", "1");
 	// This causes frametime jitter on client side, or does it?
-	settings->setDefault("max_block_send_distance", "9");
+	settings->setDefault("max_block_send_distance", "10");
 	settings->setDefault("block_send_optimize_distance", "4");
 	settings->setDefault("server_side_occlusion_culling", "true");
 	settings->setDefault("csm_restriction_flags", "62");
 	settings->setDefault("csm_restriction_noderange", "0");
 	settings->setDefault("max_clearobjects_extra_loaded_blocks", "4096");
-	settings->setDefault("time_speed", "0");
-	settings->setDefault("world_start_time", "8000");
+	settings->setDefault("time_speed", "0"); // KIDSCODE Changed
+	settings->setDefault("world_start_time", "8000"); // KIDSCODE Changed
 	settings->setDefault("server_unload_unused_data_timeout", "29");
-	settings->setDefault("max_objects_per_block", "64");
+	settings->setDefault("max_objects_per_block", "128"); // KIDSCODE Changed
 	settings->setDefault("server_map_save_interval", "5.3");
 	settings->setDefault("chat_message_max_size", "500");
 	settings->setDefault("chat_message_limit_per_10sec", "8.0");
@@ -405,13 +409,13 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("remote_media", "");
 	settings->setDefault("debug_log_level", "action");
 	settings->setDefault("debug_log_size_max", "50");
-	settings->setDefault("emergequeue_limit_total", "256");
-	settings->setDefault("emergequeue_limit_diskonly", "32");
-	settings->setDefault("emergequeue_limit_generate", "32");
+	settings->setDefault("emergequeue_limit_total", "256"); // KIDSCODE Changed
+	settings->setDefault("emergequeue_limit_diskonly", "32"); // KIDSCODE Changed
+	settings->setDefault("emergequeue_limit_generate", "32"); // KIDSCODE Changed
 	settings->setDefault("num_emerge_threads", "1");
-	settings->setDefault("secure.enable_security", "false");
-	settings->setDefault("secure.trusted_mods", "kidsbot,utilities");
-	settings->setDefault("secure.http_mods", "kidsbot,player_menu,utilities");
+	settings->setDefault("secure.enable_security", "false"); // KIDSCODE Changed
+	settings->setDefault("secure.trusted_mods", "kidsbot,utilities"); // KIDSCODE Changed
+	settings->setDefault("secure.http_mods", "kidsbot,player_menu,utilities"); // KIDSCODE Changed
 
 	// Physics
 	settings->setDefault("movement_acceleration_default", "3");
@@ -430,16 +434,16 @@ void set_default_settings(Settings *settings)
 	// Liquids
 	settings->setDefault("liquid_loop_max", "100000");
 	settings->setDefault("liquid_queue_purge_time", "0");
-	settings->setDefault("liquid_update", "0.3");
+	settings->setDefault("liquid_update", "0.3"); // KIDSCODE Changed
 
 	// Mapgen
 	settings->setDefault("mg_name", "v7");
 	settings->setDefault("water_level", "1");
-	settings->setDefault("mapgen_limit", "2500");
-	settings->setDefault("chunksize", "3");
-	settings->setDefault("mg_flags", "dungeons");
+	settings->setDefault("mapgen_limit", "2500"); // KIDSCODE Changed
+	settings->setDefault("chunksize", "3"); // KIDSCODE Changed
+	settings->setDefault("mg_flags", "dungeons"); // KIDSCODE Changed
 	settings->setDefault("fixed_map_seed", "");
-	settings->setDefault("max_block_generate_distance", "7");
+	settings->setDefault("max_block_generate_distance", "7"); // KIDSCODE Changed
 	settings->setDefault("enable_mapgen_debug_info", "false");
 
 	// Server list announcing
@@ -463,29 +467,30 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("screen_w", "0");
 	settings->setDefault("screen_h", "0");
 	settings->setDefault("fullscreen", "true");
-	settings->setDefault("video_driver", "ogles2");
+	settings->setDefault("video_driver", "ogles2"); // KIDSCODE Changed
 	settings->setDefault("touchtarget", "true");
 	settings->setDefault("TMPFolder", porting::getDataPath("tmp" DIR_DELIM));
 	settings->setDefault("touchscreen_threshold","20");
 	settings->setDefault("fixed_virtual_joystick", "false");
 	settings->setDefault("virtual_joystick_triggers_aux", "false");
 	settings->setDefault("smooth_lighting", "false");
-	settings->setDefault("max_simultaneous_block_sends_per_client", "3");
-	settings->setDefault("emergequeue_limit_diskonly", "8");
-	settings->setDefault("emergequeue_limit_generate", "8");
-	settings->setDefault("max_block_generate_distance", "3");
+	settings->setDefault("max_simultaneous_block_sends_per_client", "3"); // KIDSCODE Changed
+	settings->setDefault("emergequeue_limit_diskonly", "8"); // KIDSCODE Changed
+	settings->setDefault("emergequeue_limit_generate", "8"); // KIDSCODE Changed
+	settings->setDefault("max_block_generate_distance", "3"); // KIDSCODE Changed
 	settings->setDefault("enable_3d_clouds", "false");
 	settings->setDefault("fps_max", "30");
 	settings->setDefault("pause_fps_max", "10");
 	settings->setDefault("max_objects_per_block", "20");
 	settings->setDefault("sqlite_synchronous", "1");
 	settings->setDefault("server_map_save_interval", "15");
-	settings->setDefault("client_mapblock_limit", "500");
-	settings->setDefault("active_block_range", "1");
-	settings->setDefault("viewing_range", "25");
+	settings->setDefault("client_mapblock_limit", "500"); // KIDSCODE Changed
+	settings->setDefault("active_block_range", "1"); // KIDSCODE Changed
+	settings->setDefault("viewing_range", "25"); // KIDSCODE Changed
 	settings->setDefault("leaves_style", "simple");
+	settings->setDefault("curl_verify_cert","false");
 
-		// Apply settings according to screen size
+	// Apply settings according to screen size
 	float x_inches = ((double) porting::getDisplaySize().X /
 			(160 * porting::getDisplayDensity()));
 
@@ -507,8 +512,6 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("screen_dpi", "72");
 #endif
 }
-
-
 
 void override_default_settings(Settings *settings, Settings *from)
 {
