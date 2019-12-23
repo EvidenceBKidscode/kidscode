@@ -66,6 +66,13 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "chat_interface.h"
 #include "remoteplayer.h"
 
+// >> KIDSCODE : Limit file size to 15Mb
+// String size (data size) is limited to 64Mb
+// But packet size has to be smaller than 16Mb and may include extra data
+// 15Mb should be a reasonable limit so
+#define MAX_FILE_SIZE 15728640
+// << KIDSCODE
+
 class ClientNotFoundException : public BaseException
 {
 public:
@@ -2518,6 +2525,16 @@ void Server::fillMediaCache()
 						<< filepath << "\"" << std::endl;
 				continue;
 			}
+
+			// >> KIDSCODE : Limit file size to 15Mb
+			if (tmp_os.str().length() > MAX_FILE_SIZE) {
+				errorstream << "Server::fillMediaCache(): Ignoring file \""
+						<< filepath << "\" because file is too large ("
+						<< tmp_os.str().length() << " bytes, max is " << MAX_FILE_SIZE
+						<< ")" << std::endl;
+				continue;
+			}
+			// << KIDSCODE
 
 			SHA1 sha1;
 			sha1.addBytes(tmp_os.str().c_str(), tmp_os.str().length());
