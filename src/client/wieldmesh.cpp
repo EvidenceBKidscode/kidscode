@@ -467,7 +467,7 @@ void WieldMeshSceneNode::setColor(video::SColor c)
 			bc.getGreen() * green / 255,
 			bc.getBlue() * blue / 255);
 		scene::IMeshBuffer *buf = mesh->getMeshBuffer(j);
-		colorizeWorldMeshBuffer(buf, &buffercolor);
+		colorizeMeshBuffer(buf, &buffercolor);
 	}
 }
 
@@ -504,7 +504,7 @@ void getItemMesh(Client *client, const ItemStack &item, ItemMesh *result)
 	content_t id = ndef->getId(def.name);
 
 	FATAL_ERROR_IF(!g_extrusion_mesh_cache, "Extrusion mesh cache is not yet initialized");
-	
+
 	scene::SMesh *mesh = nullptr;
 
 	// Shading is on by default
