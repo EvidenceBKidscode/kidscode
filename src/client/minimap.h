@@ -145,9 +145,9 @@ public:
 	void addMode(MinimapModeDef mode);
 	void addMode(MinimapType type, std::string label, u16 size, std::string extra);
 
-		void setModeIndex(size_t index);
+	void setModeIndex(size_t index);
 	size_t getModeIndex() const { return m_current_mode_index; };
-	size_t getMaxModeIndex() const { return m_modes.size()-1; };
+	size_t getMaxModeIndex() const { return m_modes.size() - 1; };
 	void nextMode();
 
 	void setModesFromString(std::string modes_string);
@@ -181,7 +181,7 @@ private:
 	scene::SMeshBuffer *m_meshbuffer;
 	bool m_enable_shaders;
 	std::vector<MinimapModeDef> m_modes;
-	size_t m_current_mode_index;	
+	size_t m_current_mode_index;
 	u16 m_surface_mode_scan_height;
 	f32 m_angle;
 	std::mutex m_mutex;

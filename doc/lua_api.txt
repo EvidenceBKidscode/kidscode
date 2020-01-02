@@ -5884,7 +5884,7 @@ This is basically a reference to a C++ `ServerActiveObject`
 * `hud_get_hotbar_selected_image`: returns texturename
 * `set_minimap_modes({modes}, selected_mode)`: Sets available minimap modes and
   selected mode number (existing modes are replaced). Modes is a table of mode
-	descriptions. Mode description is a table with four fields :
+  descriptions. Mode description is a table with four fields :
     * `type`: Available type:
       * `off`: Minimap off
       * `surface`: Minimap in surface mode

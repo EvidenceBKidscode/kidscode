@@ -2358,7 +2358,7 @@ void Game::toggleMinimap(bool shift_pressed)
 	}
 	// <--
 	// End of 'not so satifying code'
-	m_game_ui->showTranslatedStatusText(mapper->getModeDef().label.c_str());
+	m_game_ui->showStatusText(utf8_to_wide(mapper->getModeDef().label));
 }
 
 void Game::toggleFog()
@@ -2917,7 +2917,6 @@ void Game::handleClientEvent_SetSky(ClientEvent *event, CameraOrientation *cam)
 	sky->setVisible(false);
 	// Whether clouds are visible in front of a custom skybox.
 	sky->setCloudsEnabled(event->set_sky.clouds);
-
 	if (skybox) {
 		skybox->remove();
 		skybox = NULL;

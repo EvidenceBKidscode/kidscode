@@ -329,7 +329,7 @@ void Minimap::addMode(MinimapType type, std::string label, u16 size,
 	mode.label = label;
 	mode.map_size = size;
 	mode.extra = extra;
-	switch(type) {
+	switch (type) {
 		case MINIMAP_TYPE_SURFACE:
 			mode.scan_height = m_surface_mode_scan_height;
 			break;
@@ -344,7 +344,7 @@ void Minimap::addMode(MinimapType type, std::string label, u16 size,
 
 void Minimap::nextMode()
 {
-if (m_modes.empty())
+	if (m_modes.empty())
 		return;
 	m_current_mode_index++;
 	if (m_current_mode_index >= m_modes.size())
