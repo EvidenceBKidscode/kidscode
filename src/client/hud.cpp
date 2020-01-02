@@ -312,10 +312,9 @@ void Hud::drawItems(v2s32 upperleftpos, v2s32 screen_offset, s32 itemcount,
 
 void Hud::drawLuaElements(const v3s16 &camera_offset)
 {
-	// >> KIDSCODE
+	// >> KIDSCODE - HUD font size
 	u32 default_text_height = g_fontengine->getTextHeight(m_font_size * m_hud_scaling);
 	irr::gui::IGUIFont* default_font = g_fontengine->getFont(m_font_size * m_hud_scaling);
-	m_texture_pool.step();
 	//u32 text_height = g_fontengine->getTextHeight();
 	//irr::gui::IGUIFont* font = g_fontengine->getFont();
 	// << KIDSCODE
@@ -335,7 +334,6 @@ void Hud::drawLuaElements(const v3s16 &camera_offset)
 		ids.insert(it, i);
 	}
 
-	// Draw elements
 	for (size_t i : ids) {
 		HudElement *e = player->getHud(i);
 
@@ -343,11 +341,7 @@ void Hud::drawLuaElements(const v3s16 &camera_offset)
 				floor(e->pos.Y * (float) m_screensize.Y + 0.5));
 		switch (e->type) {
 			case HUD_ELEM_IMAGE: {
-				// >> KIDSCODE
-				//video::ITexture *texture = tsrc->getTexture(e->text);
-				video::ITexture *texture = m_texture_pool.getTexture(
-					e->text, tsrc, e->texture_index);
-				// << KIDSCODE
+				video::ITexture *texture = tsrc->getTexture(e->text);
 				if (!texture)
 					continue;
 
@@ -466,8 +460,7 @@ void Hud::drawLuaElements(const v3s16 &camera_offset)
 				break; }
 //>> KIDSCODE
 			case HUD_ELEM_COMPASS: {
-				video::ITexture *texture = m_texture_pool.getTexture(
-					e->text, tsrc, e->texture_index);
+				video::ITexture *texture = tsrc->getTexture(e->text);
 				if (!texture)
 					continue;
 

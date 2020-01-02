@@ -32,9 +32,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "util/string.h"
 #include "util/enriched_string.h"
 #include "StyleSpec.h"
-// >> KIDSCODE
-#include "client/texture_pool.h"
-// << KIDSCODE
 
 class InventoryManager;
 class ISimpleTextureSource;
@@ -432,12 +429,10 @@ protected:
 	std::string m_formspec_string;
 	std::string m_formspec_prepend;
 	InventoryLocation m_current_inventory_location;
-	TexturePool       m_texture_pool; // KIDSCODE - Animated images
 
 	std::vector<ListDrawSpec> m_inventorylists;
 	std::vector<ListRingSpec> m_inventory_rings;
 	std::vector<gui::IGUIElement *> m_backgrounds;
-	std::vector<ImageDrawSpec> m_animated_images; // KIDSCODE - Animated images
 	std::unordered_map<std::string, bool> field_close_on_enter;
 	std::vector<FieldSpec> m_fields;
 	std::vector<std::pair<FieldSpec, GUITable *>> m_tables;
@@ -531,7 +526,6 @@ private:
 	void parseListRing(parserData* data, const std::string &element);
 	void parseCheckbox(parserData* data, const std::string &element);
 	void parseImage(parserData* data, const std::string &element);
-	void parseAnimatedImage(parserData* data, const std::string &element);  // KIDSCODE - Animated images
 	void parseItemImage(parserData* data, const std::string &element);
 	void parseButton(parserData* data, const std::string &element,
 			const std::string &typ);

@@ -24,9 +24,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <vector>
 #include <IGUIFont.h>
 #include "irr_aabb3d.h"
-#include "client/texture_pool.h"
 #include "../hud.h"
-#include "texture_pool.h" // KIDSCODE
 
 class Client;
 class ITextureSource;
@@ -125,10 +123,7 @@ private:
 		HIGHLIGHT_NONE
 	} m_mode;
 
-	// >> KIDSCODE
-	TexturePool m_texture_pool;
-	u32 m_font_size;
-	// << KIDSCODE
+	u32 m_font_size; // KIDSCODE - HUD font size
 };
 
 enum ItemRotationKind
