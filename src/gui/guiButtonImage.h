@@ -54,7 +54,7 @@ public:
 			const wchar_t *text, const wchar_t *tooltiptext = L"");
 
 private:
-	void needImage();
+	void needImage(); // KIDSCODE - Ensure button will have no background if no image
 	ButtonImage m_foreground_images[gui::EGBIS_COUNT];
 	gui::IGUIImage *m_image;
 };

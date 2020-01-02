@@ -1263,6 +1263,7 @@ factor!
 The `z_index` field specifies the order of HUD elements from back to front.
 Lower z-index elements are displayed behind higher z-index elements. Elements
 with same z-index are displayed in an arbitrary order. Default 0.
+Supports negative values.
 
 Below are the specific uses for fields in each type; fields not listed for that
 type are ignored.
@@ -1487,7 +1488,8 @@ Usage
 -----
 
 Groups are stored in a table, having the group names with keys and the
-group ratings as values. For example:
+group ratings as values. Group ratings are integer values within the
+range [-32767, 32767]. For example:
 
     -- Default dirt
     groups = {crumbly=3, soil=1}
@@ -4892,33 +4894,36 @@ Rollback
     * Revert latest actions of someone
     * `actor`: `"player:<name>"`, also `"liquid"`.
 
-Defaults for the `on_*` item definition functions
--------------------------------------------------
-
-These functions return the leftover itemstack.
+Defaults for the `on_place` and `on_drop` item definition functions
+-------------------------------------------------------------------
 
 * `minetest.item_place_node(itemstack, placer, pointed_thing[, param2, prevent_after_place])`
     * Place item as a node
     * `param2` overrides `facedir` and wallmounted `param2`
     * `prevent_after_place`: if set to `true`, `after_place_node` is not called
       for the newly placed node to prevent a callback and placement loop
-    * returns `itemstack, success`
+    * returns `itemstack, position`
+      * `position`: the location the node was placed to. `nil` if nothing was placed.
 * `minetest.item_place_object(itemstack, placer, pointed_thing)`
     * Place item as-is
-* `minetest.item_place(itemstack, placer, pointed_thing, param2)`
-    * Use one of the above based on what the item is.
+    * returns the leftover itemstack
+    * **Note**: This function is deprecated and will never be called.
+* `minetest.item_place(itemstack, placer, pointed_thing[, param2])`
+    * Wrapper that calls `minetest.item_place_node` if appropriate
     * Calls `on_rightclick` of `pointed_thing.under` if defined instead
     * **Note**: is not called when wielded item overrides `on_place`
-    * `param2` overrides `facedir` and wallmounted `param2`
-    * returns `itemstack, success`
+    * `param2` overrides facedir and wallmounted `param2`
+    * returns `itemstack, position`
+      * `position`: the location the node was placed to. `nil` if nothing was placed.
 * `minetest.item_drop(itemstack, dropper, pos)`
     * Drop the item
-* `minetest.item_eat(hp_change, replace_with_item)`
-    * Eat the item.
+    * returns the leftover itemstack
+* `minetest.item_eat(hp_change[, replace_with_item])`
+    * Returns `function(itemstack, user, pointed_thing)` as a
+      function wrapper for `minetest.do_item_eat`.
     * `replace_with_item` is the itemstring which is added to the inventory.
       If the player is eating a stack, then replace_with_item goes to a
-      different spot. Can be `nil`
-    * See `minetest.do_item_eat`
+      different spot.
 
 Defaults for the `on_punch` and `on_dig` node definition callbacks
 ------------------------------------------------------------------
@@ -5680,6 +5685,9 @@ This is basically a reference to a C++ `ServerActiveObject`
 * `get_hp()`: returns number of hitpoints (2 * number of hearts)
 * `set_hp(hp, reason)`: set number of hitpoints (2 * number of hearts).
     * See reason in register_on_player_hpchange
+    * Is limited to the range of 0 ... 65535 (2^16 - 1)
+    * For players: HP are also limited by `hp_max` specified in the player's
+      object properties
 * `get_inventory()`: returns an `InvRef` for players, otherwise returns `nil`
 * `get_wield_list()`: returns the name of the inventory list the wielded item
    is in.
@@ -5800,6 +5808,7 @@ This is basically a reference to a C++ `ServerActiveObject`
         * `0`: player is drowning
         * max: bubbles bar is not shown
         * See [Object properties] for more information
+    * Is limited to range 0 ... 65535 (2^16 - 1)
 * `set_fov(fov, is_multiplier)`: Sets player's FOV
     * `fov`: FOV value.
     * `is_multiplier`: Set to `true` if the FOV value is a multiplier.
@@ -6575,6 +6584,7 @@ Used by `minetest.register_node`, `minetest.register_craftitem`, and
                          uses = 20, maxlevel = 2},
             },
             damage_groups = {groupname = damage},
+            -- Damage values must be between -32768 and 32767 (2^15)
 
             punch_attack_uses = nil,
             -- Amount of uses this tool has for attacking players and entities
