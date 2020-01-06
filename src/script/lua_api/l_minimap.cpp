@@ -98,7 +98,7 @@ int LuaMinimap::l_set_mode(lua_State *L)
 	LuaMinimap *ref = checkobject(L, 1);
 	Minimap *m = getobject(ref);
 
-	s32 mode = lua_tointeger(L, 2);
+	u32 mode = lua_tointeger(L, 2);
 	if (mode < 0 || mode >= m->getMaxModeIndex()) {
 		return 0;
 	}
