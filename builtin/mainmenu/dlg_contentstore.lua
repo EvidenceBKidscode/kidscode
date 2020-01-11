@@ -43,9 +43,6 @@ local filter_types_type = {
 	"txp",
 }
 
-
-
-
 local function download_package(param)
 	if core.download_file(param.package.url, param.filename) then
 		return {
@@ -401,11 +398,10 @@ function store.get_formspec(dlgdata)
 			"size[12,7;true]",
 			"position[0.5,0.55]",
 			"field[0.2,0.1;7.8,1;search_string;;",
-			core.formspec_escape(search_string), "]",
+				core.formspec_escape(search_string), "]",
 			"field_close_on_enter[search_string;false]",
-			"button[7.7,-0.2;2,1;search;",
-			fgettext("Search"), "]",
-			"dropdown[9.7,-0.1;2.4;type;",
+			"button[7.7,-0.23;2,1;search;", fgettext("Search"), "]",
+			"dropdown[9.7,-0.15;2.4;type;",
 			table.concat(filter_types_titles, ","),
 			";", filter_type, "]",
 			-- "textlist[0,1;2.4,5.6;a;",

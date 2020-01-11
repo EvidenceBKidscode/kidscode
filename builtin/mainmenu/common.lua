@@ -245,7 +245,7 @@ function asyncOnlineFavourites()
 
 	core.handle_async(
 		function(param)
-			return core.get_favorites("online")
+			return {} --core.get_favorites("online") -- KIDSCODE
 		end,
 		nil,
 		function(result)

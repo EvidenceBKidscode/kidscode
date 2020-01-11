@@ -360,7 +360,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("motd", "");
 	settings->setDefault("max_users", "30"); // KIDSCODE Changed
 	settings->setDefault("creative_mode", "true"); // KIDSCODE Changed
-	settings->setDefault("enable_damage", "true");
+	settings->setDefault("enable_damage", "false"); // KIDSCODE Changed
 	settings->setDefault("default_password", "");
 	settings->setDefault("default_privs", "interact, shout");
 	settings->setDefault("enable_pvp", "false"); // KIDSCODE Changed

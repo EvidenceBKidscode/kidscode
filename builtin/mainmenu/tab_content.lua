@@ -58,7 +58,7 @@ local function get_formspec(tabview, name, tabdata)
 		"table[0,0.25;5.1,4.3;pkglist;" ..
 		pkgmgr.render_packagelist(packages) ..
 		";" .. tabdata.selected_pkg .. "]" ..
-		"button[0,4.85;5.25,0.5;btn_contentdb;".. fgettext("Browse online content") .. "]"
+		"button[0,4.75;5.25,0.6;btn_contentdb;".. fgettext("Browse online content") .. "]"
 
 
 	local selected_pkg
@@ -89,7 +89,7 @@ local function get_formspec(tabview, name, tabdata)
 
 		retval = retval ..
 				"image[5.5,0;3,2;" .. core.formspec_escape(modscreenshot) .. "]" ..
-				"label[8.25,0.6;" .. core.formspec_escape(selected_pkg.name) .. "]" ..
+				"label[8.5,0.6;" .. core.formspec_escape(selected_pkg.name) .. "]" ..
 				"box[5.5,2.2;6.15,2.35;#000]"
 
 		if selected_pkg.type == "mod" then
@@ -133,13 +133,13 @@ local function get_formspec(tabview, name, tabdata)
 			end
 		end
 
-		retval = retval .. "textarea[5.85,2.2;6.35,2.9;;" ..
+		retval = retval .. "textarea[5.7,2.6;6.35,2.9;;" ..
 			fgettext("Information:") .. ";" .. desc .. "]"
 
 		if core.may_modify_path(selected_pkg.path) then
 			retval = retval ..
-				"button[5.5,4.65;3.25,1;btn_mod_mgr_delete_mod;" ..
-				fgettext("Uninstall Package") .. "]"
+				"button[5.5,4.75;3.25,0.6;btn_mod_mgr_delete_mod;" ..
+					fgettext("Uninstall Package") .. "]"
 		end
 	end
 	return retval

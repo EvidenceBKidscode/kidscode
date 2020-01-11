@@ -174,34 +174,24 @@ end
 
 local function formspec(tabview, name, tabdata)
 	local tab_string =
-		"box[0,0;3.75,4.5;#999999]" ..
-		"checkbox[0.25,0;cb_smooth_lighting;" .. fgettext("Smooth Lighting") .. ";"
+		"box[0,0.1;3.75,4.5;#999999]" ..
+		"checkbox[0.25,0.4;cb_smooth_lighting;" .. fgettext("Smooth Lighting") .. ";"
 				.. dump(core.settings:get_bool("smooth_lighting")) .. "]" ..
-		"checkbox[0.25,0.5;cb_particles;" .. fgettext("Particles") .. ";"
+		"checkbox[0.25,0.9;cb_particles;" .. fgettext("Particles") .. ";"
 				.. dump(core.settings:get_bool("enable_particles")) .. "]" ..
-		"checkbox[0.25,1;cb_3d_clouds;" .. fgettext("3D Clouds") .. ";"
+		"checkbox[0.25,1.4;cb_3d_clouds;" .. fgettext("3D Clouds") .. ";"
 				.. dump(core.settings:get_bool("enable_3d_clouds")) .. "]" ..
-		"checkbox[0.25,1.5;cb_opaque_water;" .. fgettext("Opaque Water") .. ";"
+		"checkbox[0.25,1.9;cb_opaque_water;" .. fgettext("Opaque Water") .. ";"
 				.. dump(core.settings:get_bool("opaque_water")) .. "]" ..
-		"checkbox[0.25,2.0;cb_connected_glass;" .. fgettext("Connected Glass") .. ";"
+		"checkbox[0.25,2.4;cb_connected_glass;" .. fgettext("Connected Glass") .. ";"
 				.. dump(core.settings:get_bool("connected_glass")) .. "]" ..
-		"dropdown[0.25,2.8;3.5;dd_node_highlighting;" .. dd_options.node_highlighting[1] .. ";"
+		"checkbox[0.25,2.9;cb_autosave_screensize;" .. fgettext("Autosave Screen Size") .. ";"
+			.. dump(core.settings:get_bool("autosave_screensize")) .. "]" ..
+		"dropdown[0.25,3.3;3.3,0.5;dd_node_highlighting;" .. dd_options.node_highlighting[1] .. ";"
 				.. getSettingIndex.NodeHighlighting() .. "]" ..
-		"dropdown[0.25,3.6;3.5;dd_leaves_style;" .. dd_options.leaves[1] .. ";"
+		"dropdown[0.25,3.9;3.3,0.5;dd_leaves_style;" .. dd_options.leaves[1] .. ";"
 				.. getSettingIndex.Leaves() .. "]" ..
-		"box[4,0;3.75,4.5;#999999]" ..
-		"label[4.25,0.1;" .. fgettext("Texturing:") .. "]" ..
-		"dropdown[4.25,0.55;3.5;dd_filters;" .. dd_options.filters[1] .. ";"
-				.. getSettingIndex.Filter() .. "]" ..
-		"dropdown[4.25,1.35;3.5;dd_mipmap;" .. dd_options.mipmap[1] .. ";"
-				.. getSettingIndex.Mipmap() .. "]" ..
-		"label[4.25,2.15;" .. fgettext("Antialiasing:") .. "]" ..
-		"dropdown[4.25,2.6;3.5;dd_antialiasing;" .. dd_options.antialiasing[1] .. ";"
-				.. getSettingIndex.Antialiasing() .. "]" ..
-		"label[4.25,3.45;" .. fgettext("Screen:") .. "]" ..
-		"checkbox[4.25,3.6;cb_autosave_screensize;" .. fgettext("Autosave Screen Size") .. ";"
-				.. dump(core.settings:get_bool("autosave_screensize")) .. "]" ..
-		"box[8,0;3.75,4.5;#999999]"
+		"box[4,0.1;3.75,4.5;#999999]"
 
 	local video_driver = core.settings:get("video_driver")
 	local shaders_supported = video_driver == "opengl"
@@ -209,13 +199,13 @@ local function formspec(tabview, name, tabdata)
 	if shaders_supported then
 		shaders_enabled = core.settings:get_bool("enable_shaders")
 		tab_string = tab_string ..
-			"checkbox[8.25,0;cb_shaders;" .. fgettext("Shaders") .. ";"
+			"checkbox[4.25,0.4;cb_shaders;" .. fgettext("Shaders") .. ";"
 					.. tostring(shaders_enabled) .. "]"
 	else
 		core.settings:set_bool("enable_shaders", false)
 		tab_string = tab_string ..
-			"label[8.38,0.2;" .. core.colorize("#888888",
-					fgettext("Shaders (unavailable)")) .. "]"
+			"label[4.25,0.4;" .. core.colorize("#888888",
+				fgettext("Shaders (unavailable)")) .. "]"
 	end
 
 	if core.settings:get("main_menu_style") == "simple" then
@@ -225,14 +215,11 @@ local function formspec(tabview, name, tabdata)
 			.. fgettext("Reset singleplayer world") .. "]"
 	else
 		tab_string = tab_string ..
-			"button[8,4.75;3.95,1;btn_change_keys;"
-			.. fgettext("Change Keys") .. "]"
+			"button[4,4.75;3.75,0.6;btn_change_keys;" .. fgettext("Change Keys") .. "]"
 	end
 
 	tab_string = tab_string ..
-		"button[0,4.75;3.95,1;btn_advanced_settings;"
-		.. fgettext("All Settings") .. "]"
-
+		"button[0,4.75;3.75,0.6;btn_advanced_settings;" .. fgettext("All Settings") .. "]"
 
 	if core.settings:get("touchscreen_threshold") ~= nil then
 		tab_string = tab_string ..
@@ -244,35 +231,35 @@ local function formspec(tabview, name, tabdata)
 
 	if shaders_enabled then
 		tab_string = tab_string ..
-			"checkbox[8.25,0.5;cb_bumpmapping;" .. fgettext("Bump Mapping") .. ";"
+			"checkbox[4.25,1;cb_bumpmapping;" .. fgettext("Bump Mapping") .. ";"
 					.. dump(core.settings:get_bool("enable_bumpmapping")) .. "]" ..
-			"checkbox[8.25,1;cb_tonemapping;" .. fgettext("Tone Mapping") .. ";"
+			"checkbox[4.25,1.5;cb_tonemapping;" .. fgettext("Tone Mapping") .. ";"
 					.. dump(core.settings:get_bool("tone_mapping")) .. "]" ..
-			"checkbox[8.25,1.5;cb_generate_normalmaps;" .. fgettext("Generate Normal Maps") .. ";"
+			"checkbox[4.25,2;cb_generate_normalmaps;" .. fgettext("Generate Normal Maps") .. ";"
 					.. dump(core.settings:get_bool("generate_normalmaps")) .. "]" ..
-			"checkbox[8.25,2;cb_parallax;" .. fgettext("Parallax Occlusion") .. ";"
+			"checkbox[4.25,2.5;cb_parallax;" .. fgettext("Parallax Occlusion") .. ";"
 					.. dump(core.settings:get_bool("enable_parallax_occlusion")) .. "]" ..
-			"checkbox[8.25,2.5;cb_waving_water;" .. fgettext("Waving Liquids") .. ";"
+			"checkbox[4.25,3;cb_waving_water;" .. fgettext("Waving Liquids") .. ";"
 					.. dump(core.settings:get_bool("enable_waving_water")) .. "]" ..
-			"checkbox[8.25,3;cb_waving_leaves;" .. fgettext("Waving Leaves") .. ";"
+			"checkbox[4.25,3.5;cb_waving_leaves;" .. fgettext("Waving Leaves") .. ";"
 					.. dump(core.settings:get_bool("enable_waving_leaves")) .. "]" ..
-			"checkbox[8.25,3.5;cb_waving_plants;" .. fgettext("Waving Plants") .. ";"
+			"checkbox[4.25,4;cb_waving_plants;" .. fgettext("Waving Plants") .. ";"
 					.. dump(core.settings:get_bool("enable_waving_plants")) .. "]"
 	else
 		tab_string = tab_string ..
-			"label[8.38,0.7;" .. core.colorize("#888888",
+			"label[4.38,1;" .. core.colorize("#888888",
 					fgettext("Bump Mapping")) .. "]" ..
-			"label[8.38,1.2;" .. core.colorize("#888888",
+			"label[4.38,1.5;" .. core.colorize("#888888",
 					fgettext("Tone Mapping")) .. "]" ..
-			"label[8.38,1.7;" .. core.colorize("#888888",
+			"label[4.38,2;" .. core.colorize("#888888",
 					fgettext("Generate Normal Maps")) .. "]" ..
-			"label[8.38,2.2;" .. core.colorize("#888888",
+			"label[4.38,2.5;" .. core.colorize("#888888",
 					fgettext("Parallax Occlusion")) .. "]" ..
-			"label[8.38,2.7;" .. core.colorize("#888888",
+			"label[4.38,3;" .. core.colorize("#888888",
 					fgettext("Waving Liquids")) .. "]" ..
-			"label[8.38,3.2;" .. core.colorize("#888888",
+			"label[4.38,3.5;" .. core.colorize("#888888",
 					fgettext("Waving Leaves")) .. "]" ..
-			"label[8.38,3.7;" .. core.colorize("#888888",
+			"label[4.38,4;" .. core.colorize("#888888",
 					fgettext("Waving Plants")) .. "]"
 	end
 
@@ -281,13 +268,11 @@ end
 
 --------------------------------------------------------------------------------
 local function handle_settings_buttons(this, fields, tabname, tabdata)
-
 	if fields["btn_advanced_settings"] ~= nil then
 		local adv_settings_dlg = create_adv_settings_dlg()
 		adv_settings_dlg:set_parent(this)
 		this:hide()
 		adv_settings_dlg:show()
-		--mm_texture.update("singleplayer", current_game())
 		return true
 	end
 	if fields["cb_smooth_lighting"] then

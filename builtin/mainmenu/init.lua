@@ -33,14 +33,16 @@ dofile(basepath .. "common" .. DIR_DELIM .. "filterlist.lua")
 dofile(basepath .. "fstk" .. DIR_DELIM .. "buttonbar.lua")
 dofile(basepath .. "fstk" .. DIR_DELIM .. "dialog.lua")
 dofile(basepath .. "fstk" .. DIR_DELIM .. "tabview.lua")
+dofile(basepath .. "fstk" .. DIR_DELIM .. "tabview_layouts.lua")
 dofile(basepath .. "fstk" .. DIR_DELIM .. "ui.lua")
 dofile(menupath .. DIR_DELIM .. "common.lua")
 dofile(menupath .. DIR_DELIM .. "pkgmgr.lua")
-dofile(menupath .. DIR_DELIM .. "textures.lua")
+dofile(menupath .. DIR_DELIM .. "gamemenu.lua")
 
 dofile(menupath .. DIR_DELIM .. "dlg_config_world.lua")
 dofile(menupath .. DIR_DELIM .. "dlg_settings_advanced.lua")
 dofile(menupath .. DIR_DELIM .. "dlg_contentstore.lua")
+dofile(menupath .. DIR_DELIM .. "dlg_change_game.lua")
 if menustyle ~= "simple" then
 	dofile(menupath .. DIR_DELIM .. "dlg_create_world.lua")
 	dofile(menupath .. DIR_DELIM .. "dlg_delete_content.lua")
@@ -49,10 +51,10 @@ if menustyle ~= "simple" then
 end
 
 local tabs = {}
-
 tabs.settings = dofile(menupath .. DIR_DELIM .. "tab_settings.lua")
 tabs.content  = dofile(menupath .. DIR_DELIM .. "tab_content.lua")
-tabs.credits  = dofile(menupath .. DIR_DELIM .. "tab_credits.lua")
+tabs.quit     = dofile(menupath .. DIR_DELIM .. "tab_quit.lua")
+
 if menustyle == "simple" then
 	tabs.simple_main = dofile(menupath .. DIR_DELIM .. "tab_simple_main.lua")
 else
@@ -117,17 +119,11 @@ local function init_globals()
 		menudata.worldlist:add_sort_mechanism("alphabetic", sort_worlds_alphabetic)
 		menudata.worldlist:set_sortmode("alphabetic")
 
-		if not core.settings:get("menu_last_game") then
-			local default_game = core.settings:get("default_game") or "minetest"
-			core.settings:set("menu_last_game", default_game)
-		end
-
-		mm_texture.init()
+		gamemenu.init()
 	end
 
 	-- Create main tabview
-	local tv_main = tabview_create("maintab", {x = 12, y = 5.4}, {x = 0, y = 0})
-
+	local tv_main = tabview_create("maintab", {x = 12, y = 5.5}, {x = 0, y = 0}, tabview_layouts.vertical)
 	if menustyle == "simple" then
 		tv_main:add(tabs.simple_main)
 	else
@@ -138,7 +134,7 @@ local function init_globals()
 
 	tv_main:add(tabs.content)
 	tv_main:add(tabs.settings)
-	tv_main:add(tabs.credits)
+	tv_main:add(tabs.quit)
 
 	tv_main:set_global_event_handler(main_event_handler)
 	tv_main:set_fixed_size(false)
