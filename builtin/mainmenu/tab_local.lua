@@ -42,7 +42,7 @@ local function get_formspec(tabview, name, tabdata)
 
 	if core.settings:get_bool("enable_server") then
 		retval = retval ..
-				"button[4,4;2.2,0.6;play;".. fgettext("Host Game") .. "]" ..
+				"button[4,4;2.2,0.6;play;".. fgettext("Host Game") .. ";#0000ff]" ..
 				"label[0.25,1.6;" .. fgettext("Name / Password") .. "]" ..
 				"field[0.25,1.9;3.5,0.5;te_playername;;" ..
 					core.formspec_escape(core.settings:get("name")) .. "]" ..
@@ -62,7 +62,7 @@ local function get_formspec(tabview, name, tabdata)
 		end
 	else
 		retval = retval ..
-			"button[4,4;2.2,0.6;play;".. fgettext("Play Game") .. "]"
+			"button[4,4;2.2,0.6;play;".. fgettext("Play Game") .. ";#0000ff]"
 	end
 
 	return retval

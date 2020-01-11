@@ -37,7 +37,7 @@ common_update_cached_supp_proto()
 local function render_client_count(n)
 	if     n > 99 then return '99+'
 	elseif n >= 0 then return tostring(n)
-	else return '?' end
+	else return '' end
 end
 
 local function configure_selected_world_params(idx)
@@ -132,13 +132,13 @@ function render_serverlist_row(spec, is_favorite)
 		end
 
 		details = details .. clients_color .. ',' ..
-			render_client_count(spec.clients) .. ',/,' ..
+			render_client_count(spec.clients) .. ',,' ..
 			render_client_count(spec.clients_max) .. ','
 
 	elseif grey_out then
-		details = details .. '#aaaaaa,?,/,?,'
+		details = details .. '#aaaaaa,,,,'
 	else
-		details = details .. ',?,/,?,'
+		details = details .. ',,,,'
 	end
 
 	if spec.creative then
