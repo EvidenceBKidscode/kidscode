@@ -50,6 +50,7 @@ enum
 	GUI_ID_KEY_FAST_BUTTON,
 	GUI_ID_KEY_JUMP_BUTTON,
 	GUI_ID_KEY_NOCLIP_BUTTON,
+	GUI_ID_KEY_CINEMATIC_BUTTON, // KIDSCODE
 	GUI_ID_KEY_PITCH_MOVE,
 	GUI_ID_KEY_CHAT_BUTTON,
 	GUI_ID_KEY_CMD_BUTTON,
@@ -143,7 +144,7 @@ void GUIKeyChangeMenu::regenerateGui(v2u32 screensize)
 		core::rect < s32 > rect(size.X / (show_advanced_buttons ? 3 : 4), 0, 1300 * s, 40 * s);
 		rect += topleft + v2s32(25 * s, 3 * s);
 		//gui::IGUIStaticText *t =
-		const wchar_t *text = wgettext("Keybindings. (If this menu screws up, remove stuff from minetest.conf)");
+		const wchar_t *text = wgettext("Keybindings.");
 		Environment->addStaticText(text,
 								   rect, false, true, this, -1);
 		delete[] text;
@@ -467,7 +468,7 @@ void GUIKeyChangeMenu::init_keys()
 	this->add_key(GUI_ID_KEY_HOTBAR_NEXT_BUTTON,wgettext("Next item"),       "keymap_hotbar_next",        true);
 	this->add_key(GUI_ID_KEY_ZOOM_BUTTON,      wgettext("Zoom"),             "keymap_zoom",               false);
 	this->add_key(GUI_ID_KEY_CAMERA_BUTTON,    wgettext("Change camera"),    "keymap_camera_mode",        true);
-//	this->add_key(GUI_ID_KEY_CINEMATIC_BUTTON, wgettext("Toggle Cinematic"), "keymap_cinematic",          true);
+	this->add_key(GUI_ID_KEY_CINEMATIC_BUTTON, wgettext("Toggle Cinematic"), "keymap_cinematic",          true); // KIDSCODE
 	this->add_key(GUI_ID_KEY_MINIMAP_BUTTON,   wgettext("Toggle minimap"),   "keymap_minimap",            true);
 	this->add_key(GUI_ID_KEY_FLY_BUTTON,       wgettext("Toggle fly"),       "keymap_freemove",           false);
 	this->add_key(GUI_ID_KEY_PITCH_MOVE,       wgettext("Toggle pitchmove"), "keymap_pitchmove",          false);
@@ -486,6 +487,6 @@ void GUIKeyChangeMenu::init_keys()
 	this->add_key(GUI_ID_KEY_CMD_BUTTON,       wgettext("Command"),          "keymap_cmd",                true);
 	this->add_key(GUI_ID_KEY_CMD_LOCAL_BUTTON, wgettext("Local command"),    "keymap_cmd_local",          true);
 	this->add_key(GUI_ID_KEY_HUD_BUTTON,       wgettext("Toggle HUD"),       "keymap_toggle_hud",         true);
-	this->add_key(GUI_ID_KEY_CHATLOG_BUTTON,   wgettext("Toggle chat log"),  "keymap_toggle_chat",        false);
-	this->add_key(GUI_ID_KEY_FOG_BUTTON,       wgettext("Toggle fog"),       "keymap_toggle_fog",         false);
+	this->add_key(GUI_ID_KEY_CHATLOG_BUTTON,   wgettext("Toggle chat log"),  "keymap_toggle_chat",        true); // KIDSCODE
+	this->add_key(GUI_ID_KEY_FOG_BUTTON,       wgettext("Toggle fog"),       "keymap_toggle_fog",         true); // KIDSCODE
 }
