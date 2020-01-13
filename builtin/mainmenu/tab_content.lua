@@ -58,7 +58,7 @@ local function get_formspec(tabview, name, tabdata)
 		"table[0,0.25;5.1,4.3;pkglist;" ..
 		pkgmgr.render_packagelist(packages) ..
 		";" .. tabdata.selected_pkg .. "]" ..
-		"button[0,4.75;5.25,0.6;btn_contentdb;".. fgettext("Browse online content") .. "]"
+		"button[0,4.75;3,0.6;btn_contentdb;".. fgettext("Browse online content") .. "]"
 
 
 	local selected_pkg
@@ -89,13 +89,13 @@ local function get_formspec(tabview, name, tabdata)
 
 		retval = retval ..
 				"image[5.5,0;3,2;" .. core.formspec_escape(modscreenshot) .. "]" ..
-				"label[8.5,0.6;" .. core.formspec_escape(selected_pkg.name) .. "]" ..
+				"label[8.7,0.6;" .. core.formspec_escape(selected_pkg.name) .. "]" ..
 				"box[5.5,2.2;6.15,2.35;#000]"
 
 		if selected_pkg.type == "mod" then
 			if selected_pkg.is_modpack then
 				retval = retval ..
-					"button[8.65,4.65;3.25,1;btn_mod_mgr_rename_modpack;" ..
+					"button[3.15,4.75;3,0.6;btn_mod_mgr_rename_modpack;" ..
 					fgettext("Rename") .. "]"
 			else
 				--show dependencies
@@ -123,11 +123,11 @@ local function get_formspec(tabview, name, tabdata)
 			if selected_pkg.type == "txp" then
 				if selected_pkg.enabled then
 					retval = retval ..
-						"button[8.65,4.65;3.25,1;btn_mod_mgr_disable_txp;" ..
+						"button[3.15,4.75;3,0.6;btn_mod_mgr_disable_txp;" ..
 						fgettext("Disable Texture Pack") .. "]"
 				else
 					retval = retval ..
-						"button[8.65,4.65;3.25,1;btn_mod_mgr_use_txp;" ..
+						"button[3.15,4.75;3,0.6;btn_mod_mgr_use_txp;" ..
 						fgettext("Use Texture Pack") .. "]"
 				end
 			end
@@ -138,7 +138,7 @@ local function get_formspec(tabview, name, tabdata)
 
 		if core.may_modify_path(selected_pkg.path) then
 			retval = retval ..
-				"button[5.5,4.75;3.25,0.6;btn_mod_mgr_delete_mod;" ..
+				"button[6.3,4.75;3,0.6;btn_mod_mgr_delete_mod;" ..
 					fgettext("Uninstall Package") .. "]"
 		end
 	end

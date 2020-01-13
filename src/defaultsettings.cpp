@@ -190,7 +190,8 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("lighting_boost", "0.2");
 	settings->setDefault("lighting_boost_center", "0.5");
 	settings->setDefault("lighting_boost_spread", "0.2");
-	settings->setDefault("texture_path", "");
+	settings->setDefault("texture_path",
+		porting::getDataPath("textures" DIR_DELIM "refi_textures" DIR_DELIM)); // KIDSCODE Changed
 	settings->setDefault("shader_path", "");
 #if ENABLE_GLES
 #ifdef _IRR_COMPILE_WITH_OGLES1_
