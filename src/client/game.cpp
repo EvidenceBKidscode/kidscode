@@ -2285,7 +2285,11 @@ void Game::toggleMinimap(bool shift_pressed)
 	}
 	// <--
 	// End of 'not so satifying code'
-	m_game_ui->showStatusText(utf8_to_wide(mapper->getModeDef().label));
+	if ((hud_flags & HUD_FLAG_MINIMAP_VISIBLE) ||
+			(hud && hud->hasElementOfType(HUD_ELEM_MINIMAP)))
+		m_game_ui->showStatusText(utf8_to_wide(mapper->getModeDef().label));
+	else
+		m_game_ui->showTranslatedStatusText("Minimap currently disabled by game or mod");
 }
 
 void Game::toggleFog()

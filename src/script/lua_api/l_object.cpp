@@ -1456,8 +1456,10 @@ int ObjectRef::l_get_player_control(lua_State *L)
 	lua_setfield(L, -2, "LMB");
 	lua_pushboolean(L, control.RMB);
 	lua_setfield(L, -2, "RMB");
+	// >> KIDSCODE - Middle mouse button handling
 	lua_pushboolean(L, control.MMB);
 	lua_setfield(L, -2, "MMB");
+	// << KIDSCODE - Middle mouse button handling
 	return 1;
 }
 
@@ -2270,14 +2272,17 @@ int ObjectRef::l_set_minimap_modes(lua_State *L)
 				mode.type = 2;
 			else if (type == "texture") {
 				mode.type = 3;
-				mode.extra = getstringfield_default(L, -1, "texture", "");
+				mode.texture = getstringfield_default(L, -1, "texture", "");
+				mode.scale = getintfield_default(L, -1, "scale", 1);
 			} else {
 				mode.type = -1;
 			}
 
 			if (mode.type >= 0) {
 				mode.label = getstringfield_default(L, -1, "label", "unknown");
-				mode.size = getintfield_default(L, -1, "size", 0);
+				// Size is limited to 512. Performance gets poor if size too large, and
+				// segfaults have been exeprienced.
+				mode.size = rangelim(getintfield_default(L, -1, "size", 0), 1, 512);
 				modes.push_back(mode);
 			}
 		}

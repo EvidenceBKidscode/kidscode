@@ -17,6 +17,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
+#include <cmath>
 #include "minimap.h"
 #include "client.h"
 #include "clientmap.h"
@@ -25,8 +26,10 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "mapblock.h"
 #include "client/renderingengine.h"
 #include "client/fontengine.h"
-#include "IGUIFont.h"
-#include "gettext.h"
+#include "IGUIFont.h" // KIDSCODE - Metadata markers
+#include "gettext.h" // KIDSCODE - Metadata markers
+
+// KIDSCODE - WARNING: Metadata markers : Not all code changes marked
 
 ////
 //// MinimapUpdateThread
@@ -196,18 +199,18 @@ Minimap::Minimap(Client *client)
 		g_settings->getBool("minimap_double_scan_height") ? 256 : 128;
 
 	// Initialize minimap modes
-	addMode(MINIMAP_TYPE_OFF,     N_("Minimap hidden"), 0, "");
-	addMode(MINIMAP_TYPE_SURFACE, N_("Minimap in surface mode, Zoom x1"), 256, "");
-	addMode(MINIMAP_TYPE_SURFACE, N_("Minimap in surface mode, Zoom x2"), 128, "");
-	addMode(MINIMAP_TYPE_SURFACE, N_("Minimap in surface mode, Zoom x4"), 64, "");
-	addMode(MINIMAP_TYPE_RADAR,   N_("Minimap in radar mode, Zoom x1"), 512, "");
-	addMode(MINIMAP_TYPE_RADAR,   N_("Minimap in radar mode, Zoom x2"), 256, "");
-	addMode(MINIMAP_TYPE_RADAR,   N_("Minimap in radar mode, Zoom x4"), 128, "");
+	addMode(MINIMAP_TYPE_OFF);
+	addMode(MINIMAP_TYPE_SURFACE, 256);
+	addMode(MINIMAP_TYPE_SURFACE, 128);
+	addMode(MINIMAP_TYPE_SURFACE, 64);
+	addMode(MINIMAP_TYPE_RADAR,   512);
+	addMode(MINIMAP_TYPE_RADAR,   256);
+	addMode(MINIMAP_TYPE_RADAR,   128);
 
 	// Initialize minimap data
 	data = new MinimapData;
-	setModeIndex(0);
 	data->map_invalidated = true;
+
 	data->minimap_shape_round = g_settings->getBool("minimap_shape_round");
 
 	// Get round minimap textures
@@ -228,6 +231,8 @@ Minimap::Minimap(Client *client)
 	data->player_marker = m_tsrc->getTexture("player_marker.png");
 	// Create object marker texture
 	data->object_marker_red = m_tsrc->getTexture("object_marker_red.png");
+
+	setModeIndex(0);
 
 	// Create mesh buffer for minimap
 	m_meshbuffer = getMinimapMeshBuffer();
@@ -302,7 +307,7 @@ void Minimap::setModeIndex(size_t index)
 		data->mode = m_modes[index];
 		m_current_mode_index = index;
 	} else {
-		data->mode = MinimapModeDef{MINIMAP_TYPE_OFF, "hidden", 0, 0, ""};
+		data->mode = MinimapModeDef{MINIMAP_TYPE_OFF, N_("Minimap hidden"), 0, 0, ""};
 		m_current_mode_index = 0;
 	}
 
@@ -314,21 +319,57 @@ void Minimap::addMode(MinimapModeDef mode)
 {
 	// Check validity
 	if (mode.type == MINIMAP_TYPE_TEXTURE) {
-		if (mode.extra.empty())
+		if (mode.texture.empty())
 			return;
+		if (mode.scale < 1)
+			mode.scale = 1;
+	}
+
+	int zoom = -1;
+
+	// Build a default standard label
+	if (mode.label == "") {
+		switch (mode.type) {
+			case MINIMAP_TYPE_OFF:
+				mode.label = N_("Minimap hidden");
+				break;
+			case MINIMAP_TYPE_SURFACE:
+				mode.label = N_("Minimap in surface mode, Zoom x%d");
+				if (mode.map_size > 0)
+					zoom = 256 / mode.map_size;
+				break;
+			case MINIMAP_TYPE_RADAR:
+				mode.label = N_("Minimap in radar mode, Zoom x%d");
+				if (mode.map_size > 0)
+					zoom = 512 / mode.map_size;
+				break;
+			case MINIMAP_TYPE_TEXTURE:
+				mode.label = N_("Minimap in texture mode");
+				break;
+			default:
+				break;
+		}
+	}
+
+	if (zoom >= 0) {
+		char label_buf[1024];
+		porting::mt_snprintf(label_buf, sizeof(label_buf),
+			mode.label.c_str(), zoom);
+		mode.label = label_buf;
 	}
 
 	m_modes.push_back(mode);
 }
 
-void Minimap::addMode(MinimapType type, std::string label, u16 size,
-		std::string extra)
+void Minimap::addMode(MinimapType type, u16 size, std::string label,
+		std::string texture, u16 scale)
 {
 	MinimapModeDef mode;
 	mode.type = type;
 	mode.label = label;
 	mode.map_size = size;
-	mode.extra = extra;
+	mode.texture = texture;
+	mode.scale = scale;
 	switch (type) {
 		case MINIMAP_TYPE_SURFACE:
 			mode.scan_height = m_surface_mode_scan_height;
@@ -450,7 +491,7 @@ video::ITexture *Minimap::getMinimapTexture()
 		// Not sure with this code :/
 
 		// Want to use texture source, to : 1 find texture, 2 cache it
-		video::ITexture* texture = m_tsrc->getTexture(data->mode.extra);
+		video::ITexture* texture = m_tsrc->getTexture(data->mode.texture);
 		video::IImage* image = driver->createImageFromData(
 			 texture->getColorFormat(), texture->getSize(), texture->lock(), true, false);
 		texture->unlock();
@@ -461,8 +502,11 @@ video::ITexture *Minimap::getMinimapTexture()
 
 		image->copyTo(map_image,
 			irr::core::vector2d<int> {
-				(data->mode.map_size - data->pos.X - static_cast<int>(dim.Width))>>1,
-				(data->mode.map_size + data->pos.Z - static_cast<int>(dim.Height))>>1});
+				((data->mode.map_size - (static_cast<int>(dim.Width))) >> 1)
+					- data->pos.X / data->mode.scale,
+				((data->mode.map_size - (static_cast<int>(dim.Height))) >> 1)
+					+ data->pos.Z / data->mode.scale
+			});
 		image->drop();
 	}
 
@@ -501,8 +545,8 @@ v3f Minimap::getYawVec()
 {
 	if (data->minimap_shape_round) {
 		return v3f(
-			cos(m_angle * core::DEGTORAD),
-			sin(m_angle * core::DEGTORAD),
+			std::cos(m_angle * core::DEGTORAD),
+			std::sin(m_angle * core::DEGTORAD),
 			1.0);
 	}
 
@@ -533,8 +577,8 @@ scene::SMeshBuffer *Minimap::getMinimapMeshBuffer()
 
 void Minimap::drawMinimap()
 {
+	// Non hud managed minimap drawing (legacy minimap)
 	v2u32 screensize = RenderingEngine::get_instance()->getWindowSize();
-
 	const u32 size = 0.25 * screensize.Y;
 
 	drawMinimap(core::rect<s32>(
@@ -598,8 +642,8 @@ void Minimap::drawMinimap(core::rect<s32> rect) {
 	v2s32 s_pos(rect.UpperLeftCorner.X, rect.UpperLeftCorner.Y);
 
 	static const video::SColor col(255, 255, 255, 255);
-	f32 sin_angle = sin(m_angle * core::DEGTORAD);
-	f32 cos_angle = cos(m_angle * core::DEGTORAD);
+	f32 sin_angle = std::sin(m_angle * core::DEGTORAD);
+	f32 cos_angle = std::cos(m_angle * core::DEGTORAD);
 	s32 marker_size2 =  0.025 * (float)rect.getWidth();
 	core::rect<s32> clip_rect(
 		rect.UpperLeftCorner.X + 1,
@@ -739,7 +783,8 @@ void Minimap::updateActiveMarkers()
 //// MinimapMapblock
 ////
 
-void MinimapMapblock::getMinimapNodes(VoxelManipulator *vmanip, const v3s16 &pos, Map &map)
+void MinimapMapblock::getMinimapNodes(VoxelManipulator *vmanip, const v3s16 &pos,
+		Map &map) // KIDSCODE - Metadata markers
 {
 	for (s16 x = 0; x < MAP_BLOCKSIZE; x++)
 	for (s16 z = 0; z < MAP_BLOCKSIZE; z++) {
@@ -757,6 +802,7 @@ void MinimapMapblock::getMinimapNodes(VoxelManipulator *vmanip, const v3s16 &pos
 			} else if (n.getContent() == CONTENT_AIR) {
 				air_count++;
 			}
+			// >> KIDSCODE - Metadata markers
 			if (n.getContent() != CONTENT_UNKNOWN
 			 && n.getContent() != CONTENT_IGNORE
 			 && n.getContent() != CONTENT_AIR)
@@ -774,6 +820,7 @@ void MinimapMapblock::getMinimapNodes(VoxelManipulator *vmanip, const v3s16 &pos
 					m_symbols.emplace_back(symbol);
 				}
 			}
+			// << KIDSCODE - Metadata markers
 		}
 
 		if (!surface_found)

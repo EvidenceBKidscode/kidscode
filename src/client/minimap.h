@@ -50,7 +50,8 @@ struct MinimapModeDef {
 	std::string label;
 	u16 scan_height;
 	u16 map_size;
-	std::string extra;
+	std::string texture;
+	u16 scale;
 };
 
 struct MinimapPixel {
@@ -143,7 +144,8 @@ public:
 
 	void clearModes() { m_modes.clear(); };
 	void addMode(MinimapModeDef mode);
-	void addMode(MinimapType type, std::string label, u16 size, std::string extra);
+	void addMode(MinimapType type, u16 size = 0, std::string label = "",
+			std::string texture = "", u16 scale = 1);
 
 	void setModeIndex(size_t index);
 	size_t getModeIndex() const { return m_current_mode_index; };

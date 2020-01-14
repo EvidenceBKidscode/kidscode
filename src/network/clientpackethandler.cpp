@@ -1225,11 +1225,12 @@ void Client::handleCommand_HudSetFlags(NetworkPacket* pkt)
 		m_minimap->setModeIndex(0);
 
 	// If radar has been disabled, try to find a non radar mode or fall back to 0
-	if (m_minimap && m_minimap_radar_disabled_by_server && was_minimap_radar_visible)
+	if (m_minimap && m_minimap_radar_disabled_by_server
+		&& was_minimap_radar_visible) {
 		while (m_minimap->getModeIndex() &&
-			m_minimap->getModeDef().type == MINIMAP_TYPE_RADAR)
-		m_minimap->nextMode();
-
+				m_minimap->getModeDef().type == MINIMAP_TYPE_RADAR)
+			m_minimap->nextMode();
+	}
 	// <--
 	// End of 'not so satifying code'
 }
@@ -1648,12 +1649,13 @@ void Client::handleCommand_MinimapModes(NetworkPacket *pkt)
 		u16 type;
 		std::string label;
 		u16 size;
-		std::string extra;
+		std::string texture;
+		u16 scale;
 
-		*pkt >> type >> label >> size >> extra;
+		*pkt >> type >> label >> size >> texture >> scale;
 
 		if (m_minimap)
-			m_minimap->addMode(MinimapType(type), label, size, extra);
+			m_minimap->addMode(MinimapType(type), size, label, texture, scale);
 	}
 
 	if (m_minimap)
