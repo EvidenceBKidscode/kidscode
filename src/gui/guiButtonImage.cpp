@@ -57,10 +57,13 @@ bool GUIButtonImage::OnEvent(const SEvent& event)
 	video::ITexture *texture = m_foreground_images[(u32)imageState].Texture;
 	if (texture != nullptr)
 	{
+		needImage();
 		m_image->setImage(texture);
 	}
 
-	m_image->setVisible(texture != nullptr);
+	if (m_image) { // KIDSCODE - Ensure button will have no background if no image
+		m_image->setVisible(texture != nullptr);
+	} // KIDSCODE - Ensure button will have no background if no image
 
 	return result;
 }
@@ -150,9 +153,9 @@ void GUIButtonImage::setFromStyle(const StyleSpec &style, ISimpleTextureSource *
 
 void GUIButtonImage::setScaleImage(bool scaleImage)
 {
-	needImage(); // KIDSCODE - Ensure button will have no background if no image
 	GUIButton::setScaleImage(scaleImage);
-	m_image->setScaleImage(scaleImage);
+	if (m_image) // KIDSCODE - Ensure button will have no background if no image
+		m_image->setScaleImage(scaleImage);
 }
 
 GUIButtonImage *GUIButtonImage::addButton(IGUIEnvironment *environment,
