@@ -1063,8 +1063,9 @@ int ModApiEnvMod::l_clear_objects(lua_State *L)
 		mode = (ClearObjectsMode)getenumfield(L, 1, "mode",
 			ModApiEnvMod::es_ClearObjectsMode, mode);
 	}
-
+	env->getServerMap().lockMap(); // KIDSCODE - Threading
 	env->clearObjects(mode);
+	env->getServerMap().unlockMap(); // KIDSCODE - Threading
 	return 0;
 }
 
@@ -1361,12 +1362,7 @@ int ModApiEnvMod::l_map_create_backup(lua_State *L)
 	const char *backup_name = luaL_checkstring(L, 1);
 	ServerMap &map = env->getServerMap();
 
-	// Force loaded entities to hibernate
-	env->clearActiveBlocks();
-	env->deactivateFarObjects(false);
-	map.unloadUnreferencedBlocks(NULL);
-
-	map.createBackup(backup_name);
+	map.createBackup(backup_name, env);
 	return 0;
 }
 
@@ -1375,8 +1371,8 @@ int ModApiEnvMod::l_map_delete_backup(lua_State *L)
 	GET_ENV_PTR;
 	const char *backup_name = luaL_checkstring(L, 1);
 	ServerMap &map = env->getServerMap();
-	env->clearActiveBlocks();
-	map.deleteBackup(backup_name);
+
+	map.deleteBackup(backup_name, env);
 	return 0;
 }
 
@@ -1401,18 +1397,16 @@ int ModApiEnvMod::l_map_restore_backup(lua_State *L)
 	GET_ENV_PTR;
 	const char *backup_name = luaL_checkstring(L, 1);
 	ServerMap &map = env->getServerMap();
-	env->clearObjects(CLEAR_OBJECTS_MODE_LOADED_ONLY);
-	env->clearActiveBlocks();
-	map.restoreBackup(backup_name);
+	map.restoreBackup(backup_name, env);
 	return 0;
 }
 
-int ModApiEnvMod::l_enable_liquids_transform(lua_State *L)
+int ModApiEnvMod::l_map_freeze(lua_State *L)
 {
 	GET_ENV_PTR;
-	bool enable = lua_toboolean(L, 1);
+	bool freeze = lua_toboolean(L, 1);
 	ServerMap &map = env->getServerMap();
-	map.enableLiquidsTransform(enable);
+	map.freeze(freeze);
 	return 0;
 }
 
@@ -1467,7 +1461,7 @@ void ModApiEnvMod::Initialize(lua_State *L, int top)
 	API_FCT(map_list_backups);
 	API_FCT(map_restore_backup);
 	API_FCT(map_delete_backup);
-	API_FCT(enable_liquids_transform);
+	API_FCT(map_freeze);
 }
 
 void ModApiEnvMod::InitializeClient(lua_State *L, int top)

@@ -42,6 +42,7 @@ public:
 	virtual void transform(std::map<v3s16, MapBlock*> &modified_blocks,
 		ServerEnvironment *env) {};
 	virtual void addTransformingFromData(BlockMakeData *data) {};
+	virtual void reset() {}; // KIDSCODE - Map Versioning
 
 protected:
 	Map *m_map = nullptr;

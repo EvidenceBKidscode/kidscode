@@ -204,9 +204,9 @@ private:
 	// Delete a map backup
 	static int l_map_delete_backup(lua_State *L);
 
-	// enable_liquid_transform(enable)
-	// Enable or disable liquid transformation
-	static int l_enable_liquids_transform(lua_State *L);
+	// map_freeze(freeze)
+	// Enable or disable map core operations
+	static int l_map_freeze(lua_State *L);
 
 public:
 	static void Initialize(lua_State *L, int top);

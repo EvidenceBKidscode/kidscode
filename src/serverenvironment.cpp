@@ -1074,6 +1074,7 @@ bool ServerEnvironment::swapNode(v3s16 p, const MapNode &n)
 	return true;
 }
 
+// Must be protected behind shared map mutex lock // KIDSCODE - Threading
 void ServerEnvironment::clearObjects(ClearObjectsMode mode)
 {
 	infostream << "ServerEnvironment::clearObjects(): "
@@ -1157,6 +1158,7 @@ void ServerEnvironment::clearObjects(ClearObjectsMode mode)
 				<< "Failed to emerge block " << PP(p) << std::endl;
 			continue;
 		}
+		block->lockBlock(); // KIDSCODE - Threading
 		u32 num_stored = block->m_static_objects.m_stored.size();
 		u32 num_active = block->m_static_objects.m_active.size();
 		if (num_stored != 0 || num_active != 0) {
@@ -1167,6 +1169,7 @@ void ServerEnvironment::clearObjects(ClearObjectsMode mode)
 			num_objs_cleared += num_stored + num_active;
 			num_blocks_cleared++;
 		}
+		block->unlockBlock(); // KIDSCODE - Threading
 		num_blocks_checked++;
 
 		if (report_interval != 0 &&
@@ -1179,10 +1182,17 @@ void ServerEnvironment::clearObjects(ClearObjectsMode mode)
 				<< percent << "%)" << std::endl;
 		}
 		if (num_blocks_checked % unload_interval == 0) {
-			m_map->unloadUnreferencedBlocks();
+			// >> KIDSCODE - Threading
+			m_map->save(MOD_STATE_WRITE_NEEDED);
+			// m_map->unloadUnreferencedBlocks();
+			// << KIDSCODE - Threading
 		}
 	}
-	m_map->unloadUnreferencedBlocks();
+	// >> KIDSCODE - Threading
+	m_map->save(MOD_STATE_WRITE_NEEDED);
+	m_map->unloadBlocks(0.0, -1.0, nullptr);
+	// m_map->unloadUnreferencedBlocks();
+	// << KIDSCODE - Threading
 
 	// Drop references that were added above
 	for (v3s16 p : loaded_blocks) {
@@ -1316,6 +1326,8 @@ void ServerEnvironment::step(float dtime)
 			if (!block)
 				continue;
 
+			block->lockBlock(); // KIDSCODE - Threading
+
 			// Reset block usage timer
 			block->resetUsageTimer();
 
@@ -1326,6 +1338,8 @@ void ServerEnvironment::step(float dtime)
 			if(block->getTimestamp() > block->getDiskTimestamp() + 60)
 				block->raiseModified(MOD_STATE_WRITE_AT_UNLOAD,
 					MOD_REASON_BLOCK_EXPIRED);
+
+			block->unlockBlock(); // KIDSCODE - Threading
 
 			// Run node timers
 			std::vector<NodeTimer> elapsed_timers = block->m_node_timers.step(dtime);
@@ -1677,6 +1691,7 @@ u16 ServerEnvironment::addActiveObjectRaw(ServerActiveObject *object,
 		v3s16 blockpos = getNodeBlockPos(floatToInt(objectpos, BS));
 		MapBlock *block = m_map->emergeBlock(blockpos);
 		if(block){
+			block->lockBlock(); // KIDSCODE - Threading
 			block->m_static_objects.m_active[object->getId()] = s_obj;
 			object->m_static_exists = true;
 			object->m_static_block = blockpos;
@@ -1684,6 +1699,7 @@ u16 ServerEnvironment::addActiveObjectRaw(ServerActiveObject *object,
 			if(set_changed)
 				block->raiseModified(MOD_STATE_WRITE_NEEDED,
 					MOD_REASON_ADD_ACTIVE_OBJECT_RAW);
+			block->unlockBlock(); // KIDSCODE - Threading
 		} else {
 			v3s16 p = floatToInt(objectpos, BS);
 			errorstream<<"ServerEnvironment::addActiveObjectRaw(): "
@@ -1733,6 +1749,7 @@ void ServerEnvironment::removeRemovedObjects()
 		if (!obj->m_pending_removal && obj->m_static_exists) {
 			MapBlock *block = m_map->emergeBlock(obj->m_static_block, false);
 			if (block) {
+				block->lockBlock(); // KIDSCODE - Threading
 				const auto i = block->m_static_objects.m_active.find(id);
 				if (i != block->m_static_objects.m_active.end()) {
 					block->m_static_objects.m_stored.push_back(i->second);
@@ -1745,6 +1762,7 @@ void ServerEnvironment::removeRemovedObjects()
 							<< "static data doesn't actually exist in "
 							<< PP(obj->m_static_block) << std::endl;
 				}
+				block->unlockBlock(); // KIDSCODE - Threading
 			} else {
 				infostream << "Failed to emerge block from which an object to "
 						<< "be deactivated was loaded from. id=" << id << std::endl;
@@ -1808,9 +1826,13 @@ void ServerEnvironment::activateObjects(MapBlock *block, u32 dtime_s)
 	if(block == NULL)
 		return;
 
+	block->lockBlock(); // KIDSCODE - Threading
+
 	// Ignore if no stored objects (to not set changed flag)
-	if(block->m_static_objects.m_stored.empty())
+	if(block->m_static_objects.m_stored.empty()) {
+		block->unlockBlock(); // KIDSCODE - Threading
 		return;
+	}
 
 	verbosestream<<"ServerEnvironment::activateObjects(): "
 		<<"activating objects of block "<<PP(block->getPos())
@@ -1826,6 +1848,7 @@ void ServerEnvironment::activateObjects(MapBlock *block, u32 dtime_s)
 		block->m_static_objects.m_stored.clear();
 		block->raiseModified(MOD_STATE_WRITE_NEEDED,
 			MOD_REASON_TOO_MANY_OBJECTS);
+		block->unlockBlock(); // KIDSCODE - Threading
 		return;
 	}
 
@@ -1859,7 +1882,7 @@ void ServerEnvironment::activateObjects(MapBlock *block, u32 dtime_s)
 	for (const StaticObject &s_obj : new_stored) {
 		block->m_static_objects.m_stored.push_back(s_obj);
 	}
-
+	block->unlockBlock(); // KIDSCODE - Threading
 	/*
 		Note: Block hasn't really been modified here.
 		The objects have just been activated and moved from the stored
@@ -2030,9 +2053,11 @@ void ServerEnvironment::deleteStaticFromBlock(
 		return;
 	}
 
+	block->lockBlock(); // KIDSCODE - Threading
 	block->m_static_objects.remove(id);
 	if (mod_reason != MOD_REASON_UNKNOWN) // Do not mark as modified if requested
 		block->raiseModified(MOD_STATE_WRITE_NEEDED, mod_reason);
+	block->unlockBlock(); // KIDSCODE - Threading
 
 	obj->m_static_exists = false;
 }
@@ -2056,18 +2081,20 @@ bool ServerEnvironment::saveStaticToBlock(
 				<< " when saving static data of object to it. id=" << store_id << std::endl;
 		return false;
 	}
+	block->lockBlock(); // KIDSCODE - Threading
 	if (block->m_static_objects.m_stored.size() >= g_settings->getU16("max_objects_per_block")) {
 		warningstream << "ServerEnv: Trying to store id = " << store_id
 				<< " statically but block " << PP(blockpos)
 				<< " already contains "
 				<< block->m_static_objects.m_stored.size()
 				<< " objects." << std::endl;
+		block->unlockBlock(); // KIDSCODE - Threading
 		return false;
 	}
-
 	block->m_static_objects.insert(store_id, s_obj);
 	if (mod_reason != MOD_REASON_UNKNOWN) // Do not mark as modified if requested
 		block->raiseModified(MOD_STATE_WRITE_NEEDED, mod_reason);
+	block->unlockBlock(); // KIDSCODE - Threading
 
 	obj->m_static_exists = true;
 	obj->m_static_block = blockpos;

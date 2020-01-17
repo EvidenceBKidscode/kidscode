@@ -86,14 +86,19 @@ public:
 		return m_parent;
 	}
 
+	void lockBlock();
+	void unlockBlock();
+
 	void reallocate()
 	{
+		lockBlock(); // KIDSCODE - Threading
 		delete[] data;
 		data = new MapNode[nodecount];
 		for (u32 i = 0; i < nodecount; i++)
 			data[i] = MapNode(CONTENT_IGNORE);
 
 		raiseModified(MOD_STATE_WRITE_NEEDED, MOD_REASON_REALLOCATE);
+		unlockBlock(); // KIDSCODE - Threading
 	}
 
 	MapNode* getData()
@@ -279,8 +284,10 @@ public:
 		if (!isValidPosition(x, y, z))
 			throw InvalidPositionException();
 
+		lockBlock(); // KIDSCODE - Threading
 		data[z * zstride + y * ystride + x] = n;
 		raiseModified(MOD_STATE_WRITE_NEEDED, MOD_REASON_SET_NODE);
+		unlockBlock(); // KIDSCODE - Threading
 	}
 
 	inline void setNode(v3s16 p, MapNode & n)
@@ -327,8 +334,10 @@ public:
 		if (!data)
 			throw InvalidPositionException();
 
+		lockBlock(); // KIDSCODE - Threading
 		data[z * zstride + y * ystride + x] = n;
 		raiseModified(MOD_STATE_WRITE_NEEDED, MOD_REASON_SET_NODE_NO_CHECK);
+		lockBlock(); // KIDSCODE - Threading
 	}
 
 	inline void setNodeNoCheck(v3s16 p, MapNode & n)
@@ -344,10 +353,12 @@ public:
 
 	inline void drawbox(s16 x0, s16 y0, s16 z0, s16 w, s16 h, s16 d, MapNode node)
 	{
+		lockBlock(); // KIDSCODE - Threading
 		for (u16 z = 0; z < d; z++)
 		for (u16 y = 0; y < h; y++)
 		for (u16 x = 0; x < w; x++)
 			setNode(x0 + x, y0 + y, z0 + z, node);
+		unlockBlock(); // KIDSCODE - Threading
 	}
 
 	// Copies data to VoxelManipulator to getPosRelative()
@@ -367,8 +378,10 @@ public:
 
 	inline bool getDayNightDiff()
 	{
+		lockBlock(); // KIDSCODE - Threading
 		if (m_day_night_differs_expired)
 			actuallyUpdateDayNightDiff();
+		unlockBlock(); // KIDSCODE - Threading
 		return m_day_night_differs;
 	}
 
@@ -394,8 +407,10 @@ public:
 
 	inline void setTimestamp(u32 time)
 	{
+		lockBlock(); // KIDSCODE - Threading
 		m_timestamp = time;
 		raiseModified(MOD_STATE_WRITE_AT_UNLOAD, MOD_REASON_SET_TIMESTAMP);
+		unlockBlock(); // KIDSCODE - Threading
 	}
 
 	inline void setTimestampNoChangedFlag(u32 time)

@@ -23,6 +23,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "util/container.h"
 #include "irrlichttypes_bloated.h"
 #include "mapnode.h"
+#include <unordered_set> // KIDCODE - Threading
 
 class ServerEnvironment;
 class IGameDef;
@@ -68,13 +69,33 @@ public:
 	void transform(std::map<v3s16, MapBlock*> &modified_blocks,
 		ServerEnvironment *env);
 	void addTransformingFromData(BlockMakeData *data);
+	void reset();
 
 private:
+	// >> KIDSCODE - Threading
+	enum LuaTriggerType {
+		LTT_ON_FLOOD,
+		LTT_ON_LIQUIFY
+	};
+
+	struct LuaTrigger {
+		LuaTriggerType type;
+		v3s16 pos;
+		MapNode new_node;
+		MapNode old_node;
+	};
+
+	void defer_lua_trigger(LuaTriggerType, const v3s16 &pos,
+		const MapNode &new_node, const MapNode &old_node);
+	void run_lua_triggers(ServerEnvironment *env);
+	// << KIDSCODE - Threading
+
 	u8 get_group(content_t c_node, const std::string &group_name);
 	u8 get_group(MapNode node, const std::string &group_name);
 	LiquidInfo get_liquid_info(v3s16 pos);
 	LiquidInfo get_liquid_info(content_t c_node);
-	NodeInfo get_node_info(v3s16 pos, const LiquidInfo &liquid);
+	NodeInfo get_node_info(const v3s16 &pos, const LiquidInfo &liquid);
+
 	void set_node(v3s16 pos, MapNode node,
 		std::map<v3s16, MapBlock*> &modified_blocks, ServerEnvironment *env);
 	void add_flow(v3s16 pos, s8 amount, const LiquidInfo &liquid);
@@ -83,6 +104,12 @@ private:
 	void compute_flow(v3s16 pos);
 	void apply_flow(v3s16 pos, FlowInfo flow,
 		std::map<v3s16, MapBlock*> &modified_blocks, ServerEnvironment *env);
+
+	// >> KIDSCODE - Threading
+	// Thread management methods
+	void lockBlock(v3s16 pos);
+	void unlockAllBlocks();
+	// << KIDSCODE - Threading
 
 	// slides specific methods
 	FlowInfo neighboor_flow(v3s16 pos, const LiquidInfo &liquid);
@@ -94,20 +121,23 @@ private:
 		std::map<v3s16, MapBlock*> &modified_blocks, ServerEnvironment *env);
 	void transform_slide(v3s16 pos, FlowInfo &flow,
 		std::map<v3s16, MapBlock*> &modified_blocks, ServerEnvironment *env);
-/*
-	void update_node(NodeInfo &info, const LiquidInfo &liquid,
-		std::map<v3s16, MapBlock*> &modified_blocks, ServerEnvironment *env);
-	void solidify(NodeInfo &info, const LiquidInfo &liquid,
-		std::map<v3s16, MapBlock*> &modified_blocks, ServerEnvironment *env);
-	void try_liquidify(v3s16 pos, const LiquidInfo &liquid,
-		std::map<v3s16, MapBlock*> &modified_blocks, ServerEnvironment *env);
-	void try_break(v3s16 pos, s8 transfer, const LiquidInfo &liquid,
-		std::map<v3s16, MapBlock*> &modified_blocks, ServerEnvironment *env);
-	void liquify_and_break(NodeInfo &info, s8 transfer, const LiquidInfo &liquid,
-		std::map<v3s16, MapBlock*> &modified_blocks, ServerEnvironment *env);
-*/
 
-	UniqueQueue<v3s16> m_liquid_queue;
+	// >> KIDSCODE - Threading
+	// Thread specific
+	std::mutex m_logic_mutex;
+	std::mutex m_extra_liquid_queue_mutex;
+	std::unordered_set<u64> m_locked_blocks;
+
+	// Logic
+	UniqueQueue<v3s16> m_extra_liquid_queue; // This one is protected by mutex
+	UniqueQueue<v3s16> m_liquid_queue; // This one is only accessed in liquid thread
+
+	// Defered lua triggers (to avoid mutex deadlocks)
+	std::deque<LuaTrigger> m_lua_triggers;
+
+//	UniqueQueue<v3s16> m_liquid_queue;
+	// << KIDSCODE - Threading
+
 	std::unordered_map<u64, FlowInfo> m_flows;
 	std::vector<std::pair<v3s16, MapNode> > m_changed_nodes;
 	v3s16 m_block_pos, m_rel_block_pos;

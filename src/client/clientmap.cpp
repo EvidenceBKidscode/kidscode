@@ -31,6 +31,23 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <algorithm>
 #include "client/renderingengine.h"
 
+// >> KIDSCODE - Threading
+struct TimeOrderedMapBlock {
+	MapSector *sect;
+	MapBlock *block;
+
+	TimeOrderedMapBlock(MapSector *sect, MapBlock *block) :
+		sect(sect),
+		block(block)
+	{}
+
+	bool operator<(const TimeOrderedMapBlock &b) const
+	{
+		return block->getUsageTimer() < b.block->getUsageTimer();
+	};
+};
+// << KIDSCODE - Threading
+
 ClientMap::ClientMap(
 		Client *client,
 		MapDrawControl &control,
@@ -59,6 +76,77 @@ ClientMap::ClientMap(
 	m_cache_anistropic_filter = g_settings->getBool("anisotropic_filter");
 
 }
+
+// >> KIDSCODE - Threading
+/*
+	Unload outdated blocks or blocks beyond memory limit
+*/
+void ClientMap::unloadOutdatedBlocks(float dtime, float unload_timeout,
+		u32 max_loaded_blocks, std::vector<v3s16> *unloaded_blocks)
+{
+	// Profile modified reasons
+	Profiler modprofiler;
+
+	std::vector<v2s16> sector_deletion_queue;
+	u32 deleted_blocks_count = 0;
+	u32 block_count_all = 0;
+
+	std::priority_queue<TimeOrderedMapBlock> mapblock_queue;
+	for (auto &sector_it : m_sectors) {
+		MapSector *sector = sector_it.second;
+
+		MapBlockVect blocks;
+		sector->getBlocks(blocks);
+
+		for (MapBlock *block : blocks) {
+			block->incrementUsageTimer(dtime);
+			mapblock_queue.push(TimeOrderedMapBlock(sector, block));
+		}
+	}
+	block_count_all = mapblock_queue.size();
+
+	// Delete old blocks, and blocks over the limit from the memory
+	while (!mapblock_queue.empty() && (mapblock_queue.size() > max_loaded_blocks
+			|| mapblock_queue.top().block->getUsageTimer() > unload_timeout)) {
+		TimeOrderedMapBlock b = mapblock_queue.top();
+		mapblock_queue.pop();
+
+		MapBlock *block = b.block;
+
+		if (block->refGet() != 0)
+			continue;
+
+		v3s16 p = block->getPos();
+
+		// Delete from memory
+		b.sect->deleteBlock(block);
+
+		if (unloaded_blocks)
+			unloaded_blocks->push_back(p);
+
+		deleted_blocks_count++;
+		block_count_all--;
+	}
+	// Delete empty sectors
+	for (auto &sector_it : m_sectors) {
+		if (sector_it.second->empty()) {
+			sector_deletion_queue.push_back(sector_it.first);
+		}
+	}
+
+	// Finally delete the empty sectors
+	deleteSectors(sector_deletion_queue);
+
+	if(deleted_blocks_count != 0)
+	{
+		PrintInfo(infostream);
+		infostream<<"Unloaded "<<deleted_blocks_count
+				<<" blocks from memory";
+		infostream<<", "<<block_count_all<<" blocks in memory";
+		infostream<<"."<<std::endl;
+	}
+}
+// << KIDSCODE - Threading
 
 MapSector * ClientMap::emergeSector(v2s16 p2d)
 {
@@ -608,5 +696,3 @@ void ClientMap::PrintInfo(std::ostream &out)
 {
 	out<<"ClientMap: ";
 }
-
-

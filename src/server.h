@@ -67,6 +67,7 @@ struct MoonParams;
 struct StarParams;
 class ServerThread;
 class ServerModManager;
+class LiquidThread;
 
 enum ClientDeletionReason {
 	CDR_LEAVE,
@@ -374,6 +375,17 @@ public:
 	// Environment mutex (envlock)
 	std::mutex m_env_mutex;
 
+	// >> KIDSCODE - Threading
+	// Made public for liquid thread
+	// Some timers
+	float m_liquid_transform_timer = 0.0f;
+	float m_liquid_transform_every = 1.0f;
+
+	/* mark blocks not sent for all clients */
+	void SetBlocksNotSent(std::map<v3s16, MapBlock *>& block);
+	// << KIDSCODE - Threading
+
+
 private:
 	friend class EmergeThread;
 	friend class RemoteClient;
@@ -408,7 +420,7 @@ private:
 		u16 protocol_version);
 
 	/* mark blocks not sent for all clients */
-	void SetBlocksNotSent(std::map<v3s16, MapBlock *>& block);
+	// void SetBlocksNotSent(std::map<v3s16, MapBlock *>& block); // KIDSCODE - Threading
 
 
 	virtual void SendChatMessage(session_t peer_id, const ChatMessage &message);
@@ -549,8 +561,10 @@ private:
 	MutexedVariable<std::string> m_async_fatal_error;
 
 	// Some timers
+	/* KIDSCODE - Threading
 	float m_liquid_transform_timer = 0.0f;
 	float m_liquid_transform_every = 1.0f;
+	*/
 	float m_masterserver_timer = 0.0f;
 	float m_emergethread_trigger_timer = 0.0f;
 	float m_savemap_timer = 0.0f;
@@ -603,6 +617,9 @@ private:
 
 	// The server mainly operates in this thread
 	ServerThread *m_thread = nullptr;
+
+	// Liquid transforming thread
+	LiquidThread *m_liquid_thread = nullptr; // KIDSCODE - Threading
 
 	/*
 		Time related stuff

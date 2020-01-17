@@ -78,7 +78,13 @@ public:
 	*/
 	MapSector * emergeSector(v2s16 p);
 
-	//void deSerializeSector(v2s16 p2d, std::istream &is);
+	// >> KIDSCODE - Threading
+	/*
+		Unload outdated blocks or blocks beyond memory limit
+	*/
+	void unloadOutdatedBlocks(float dtime, float unload_timeout,
+			u32 max_loaded_blocks, std::vector<v3s16> *unloaded_blocks);
+	// << KIDSCODE - Threading
 
 	/*
 		ISceneNode methods

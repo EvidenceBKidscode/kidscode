@@ -88,6 +88,18 @@ MapBlock::~MapBlock()
 	delete[] data;
 }
 
+// >> KIDSCODE - Threading
+void MapBlock::lockBlock()
+{
+	m_parent->lockBlock(m_pos);
+}
+
+void MapBlock::unlockBlock()
+{
+	m_parent->unlockBlock(m_pos);
+}
+// << KIDSCODE - Threading
+
 bool MapBlock::isValidPositionParent(v3s16 p)
 {
 	if (isValidPosition(p)) {

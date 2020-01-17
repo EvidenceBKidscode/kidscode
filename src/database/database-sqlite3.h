@@ -24,51 +24,101 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <thread>
 #include "database.h"
 #include "exceptions.h"
+// >> KIDSCODE - Threading
+#include <mutex>
+#include <map>
+// << KIDSCODE - Threading
+
 
 extern "C" {
 #include "sqlite3.h"
 }
+
+// >> KIDSCODE - Threading
+// Per thread connection information
+struct Database_SQLite3_Connection_Info
+{
+	bool readwrite;
+	sqlite3 *connection;
+	s64 busy_handler_data[2];
+	std::map<std::string, sqlite3_stmt *> statements;
+};
+// << KIDSCODE - Threading
 
 class Database_SQLite3 : public Database
 {
 public:
 	virtual ~Database_SQLite3();
 
+	// >> KIDSCODE - Threading
+	// Get sqlite3 connection object for current thread
+	sqlite3* getConnection();
+	// << KIDSCODE - Threading
+
 	void beginSave();
 	void endSave();
 
-	bool initialized() const { return m_initialized; }
+//	bool initialized() const { return m_initialized; } // >> KIDSCODE - Threading
 protected:
 	Database_SQLite3(const std::string &savedir, const std::string &dbname);
 
 	// Open and initialize the database if needed
-	void verifyDatabase();
+//	void verifyDatabase(); // >> KIDSCODE - Threading
 
 	// Tells if a table exists in the database
-	bool tableExists(const std::string &table_name);
+	bool tableExists(sqlite3 *connection, const std::string &table_name); // >> KIDSCODE - Map versionning
+
+	// >> KIDSCODE - Map versionning
+	// Create the database structure from scratch
+	virtual void createDatabase(sqlite3 *connection) = 0;
+
+	// Updates existing database structure
+	virtual void updateDatabase(sqlite3 *connection) {};
+	// << KIDSCODE - Map versionning
+
+	// >> KIDSCODE - Threading
+	/* Multithread connection management */
+
+	// Opens a connection read only or read/write. If no connection opened, a
+	// read write connection is automatically opened by getConnectionInfo.
+	void openConnection(bool readwrite);
+
+	// Get connection info for current thread
+	Database_SQLite3_Connection_Info* getConnectionInfo();
+
+	// Retreive statement by name if already prepared
+	sqlite3_stmt *statement(std::string name);
+
+	// Prepare, store and retreived statement by name if already prepared
+	sqlite3_stmt *statement(std::string name, std::string query);
+
+	// Do initialization stuff after database created and updated
+	virtual void initStatements() {};
+
+	// << KIDSCODE - Threading
 
 	// Convertors
-	inline void str_to_sqlite(sqlite3_stmt *s, int iCol, const std::string &str) const
+	inline void str_to_sqlite(sqlite3_stmt *s, int iCol, const std::string &str) // const // KIDSCODE - Threeading
 	{
 		sqlite3_vrfy(sqlite3_bind_text(s, iCol, str.c_str(), str.size(), NULL));
 	}
 
-	inline void str_to_sqlite(sqlite3_stmt *s, int iCol, const char *str) const
+	inline void str_to_sqlite(sqlite3_stmt *s, int iCol, const char *str) // const // KIDSCODE - Threeading
 	{
 		sqlite3_vrfy(sqlite3_bind_text(s, iCol, str, strlen(str), NULL));
 	}
 
-	inline void int_to_sqlite(sqlite3_stmt *s, int iCol, int val) const
+	inline void int_to_sqlite(sqlite3_stmt *s, int iCol, int val) // const // KIDSCODE - Threeading
 	{
 		sqlite3_vrfy(sqlite3_bind_int(s, iCol, val));
 	}
 
-	inline void int64_to_sqlite(sqlite3_stmt *s, int iCol, s64 val) const
+	inline void int64_to_sqlite(sqlite3_stmt *s, int iCol, s64 val) // const // KIDSCODE - Threeading
 	{
 		sqlite3_vrfy(sqlite3_bind_int64(s, iCol, (sqlite3_int64) val));
 	}
 
-	inline void double_to_sqlite(sqlite3_stmt *s, int iCol, double val) const
+	inline void double_to_sqlite(sqlite3_stmt *s, int iCol, double val) // const // KIDSCODE - Threeading
 	{
 		sqlite3_vrfy(sqlite3_bind_double(s, iCol, val));
 	}
@@ -111,46 +161,70 @@ protected:
 	}
 
 	// Query verifiers helpers
-	inline void sqlite3_vrfy(int s, const std::string &m = "", int r = SQLITE_OK) const
+	inline void sqlite3_vrfy(int s, const std::string &m = "", int r = SQLITE_OK) // const // KIDSCODE - Threeading
 	{
 		if (s != r)
-			throw DatabaseException(m + ": " + sqlite3_errmsg(m_database));
+			throw DatabaseException(m + ": " + sqlite3_errmsg(getConnection()));
+//			throw DatabaseException(m + ": " + sqlite3_errmsg(m_database)); // KIDSCODE - Threeading
 	}
 
-	inline void sqlite3_vrfy(const int s, const int r, const std::string &m = "") const
+	inline void sqlite3_vrfy(const int s, const int r, const std::string &m = "") // const // KIDSCODE - Threeading
 	{
 		sqlite3_vrfy(s, m, r);
 	}
 
+/* // KIDSCODE - Threeading
 	// Create the database structure
 	virtual void createDatabase() = 0;
 	virtual void initStatements() = 0;
 
 	sqlite3 *m_database = nullptr;
+
+*/
+
+protected:
+	virtual bool getDefaultReadWrite() { return false; }; // KIDSCODE - Threeading
+
 private:
 	// Open the database
 	void openDatabase();
 
-	bool m_initialized = false;
+// >> KIDSCODE - Threeading
+	bool m_ready = false;
+/*
 
+	bool m_initialized = false;
+*/
+// << KIDSCODE - Threeading
 	std::string m_savedir = "";
 	std::string m_dbname = "";
 
+// >> KIDSCODE - Threeading
+	std::map<std::thread::id, Database_SQLite3_Connection_Info> m_connections;
+	std::mutex m_open_database_mutex;
+/*
 	sqlite3_stmt *m_stmt_begin = nullptr;
 	sqlite3_stmt *m_stmt_end = nullptr;
 
 	s64 m_busy_handler_data[2];
-
+*/
+// << KIDSCODE - Threeading
 	static int busyHandler(void *data, int count);
 };
 
-class PurgeDataSQLite3Thread;
+class PurgeDataSQLite3Thread; // KIDSCODE - Map Versioning
 
 class MapDatabaseSQLite3 : private Database_SQLite3, public MapDatabase
 {
 public:
 	MapDatabaseSQLite3(const std::string &savedir);
 	virtual ~MapDatabaseSQLite3();
+
+	// >> KIDSCODE - Threading
+	virtual void setThreadWriteAccess(bool writeaccess)
+		{ openConnection(writeaccess); };
+	virtual bool isThreadCapable() { return true; };
+	// << KIDSCODE - Threading
 
 	bool saveBlock(const v3s16 &pos, const std::string &data);
 	void loadBlock(const v3s16 &pos, std::string *block);
@@ -160,27 +234,42 @@ public:
 	void beginSave() { Database_SQLite3::beginSave(); }
 	void endSave() { Database_SQLite3::endSave(); }
 
+	 // >> KIDSCODE - Map Versioning
 	void listBackups(std::vector<std::string> &dst);
 	bool createBackup(const std::string &name);
 	void restoreBackup(const std::string &name);
 	void deleteBackup(const std::string &name);
+	void purgeUnreferencedBlocks(int limit);
+	// << KIDSCODE - Map Versioning
 
 protected:
-	virtual void createDatabase();
-	virtual void initStatements();
-	void upgradeDatabaseStructure();
+	// >> KIDSCODE - Threading
+	virtual void createDatabase(sqlite3 *connection);
+	virtual void updateDatabase(sqlite3 *connection);
+//	virtual void createDatabase();
+//	virtual void initStatements();
+	// << KIDSCODE - Threading
+
+	// >> KIDSCODE - Map Versioning
+	void upgradeDatabaseStructure(sqlite3 *connection);
 	PurgeDataSQLite3Thread *m_purgethread;
+	// << KIDSCODE - Map Versioning
 
 private:
 	void bindPos(sqlite3_stmt *stmt, const v3s16 &pos, int index = 1);
-	void setCurrentVersion(int id);
- 	int getVersionByName(const std::string &name);
 
+	// >> KIDSCODE - Map Versioning
+	void setCurrentVersion(int id, sqlite3* connection=nullptr);
+ 	int getVersionByName(const std::string &name);
+	// << KIDSCODE - Map Versioning
+
+	/* KIDSCODE - Threading
 	// Map
 	sqlite3_stmt *m_stmt_read = nullptr;
 	sqlite3_stmt *m_stmt_write = nullptr;
 	sqlite3_stmt *m_stmt_list = nullptr;
 	sqlite3_stmt *m_stmt_delete = nullptr;
+	*/
 };
 
 class PlayerDatabaseSQLite3 : private Database_SQLite3, public PlayerDatabase
@@ -195,7 +284,9 @@ public:
 	void listPlayers(std::vector<std::string> &res);
 
 protected:
-	virtual void createDatabase();
+	virtual void createDatabase(sqlite3 *connection); // KIDSCODE - Threading
+//	virtual void createDatabase();
+
 	virtual void initStatements();
 
 private:
@@ -232,7 +323,11 @@ public:
 	virtual void reload();
 
 protected:
-	virtual void createDatabase();
+	// >> KIDSCODE - Threading
+	virtual bool getDefaultReadWrite() { return true; }
+	virtual void createDatabase(sqlite3 *connection);
+//	virtual void createDatabase();
+	// << KIDSCODE - Threading
 	virtual void initStatements();
 
 private:

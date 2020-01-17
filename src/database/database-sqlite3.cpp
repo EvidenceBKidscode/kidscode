@@ -39,7 +39,28 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #define BUSY_FATAL_TRESHOLD	3000	// Allow SQLITE_BUSY to be returned, which will cause a minetest crash.
 #define BUSY_ERROR_INTERVAL	10000	// Safety net: report again every 10 seconds
 
+// >> KIDSCODE - Threading
+#define SQLFATALC(m, c) \
+	throw DatabaseException(std::string(m) + ": " + sqlite3_errmsg(c));
 
+#define SQLFATAL(m) SQLFATALC(m, getConnection())
+
+#define SQLRESC(s, r, m, c) \
+	if ((s) != (r)) SQLFATALC(m, c)
+
+#define SQLOKC(s, m, c) SQLRESC(s, SQLITE_OK, m, c)
+#define SQLRES(s, r, m) SQLRESC(s, r, m, getConnection())
+#define SQLOK(s, m) SQLRES(s, SQLITE_OK, m)
+#define Q(x) #x
+#define QUOTE(x) Q(x)
+#define PREPARE_STATEMENT(name, query) m_stmt_##name = statement(QUOTE(name), query);
+
+#define SQLOK_ERRSTREAM(s, m)                           \
+	if ((s) != SQLITE_OK) {                             \
+		errorstream << (m) << ": "                      \
+			<< sqlite3_errmsg(getConnection()) << std::endl; \
+	}
+/*
 #define SQLRES(s, r, m) \
 	if ((s) != (r)) { \
 		throw DatabaseException(std::string(m) + ": " +\
@@ -59,6 +80,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #define FINALIZE_STATEMENT(statement) SQLOK_ERRSTREAM(sqlite3_finalize(statement), \
 	"Failed to finalize " #statement)
+*/
+// << KIDSCODE - Threading
 
 int Database_SQLite3::busyHandler(void *data, int count)
 {
@@ -112,6 +135,128 @@ Database_SQLite3::Database_SQLite3(const std::string &savedir, const std::string
 {
 }
 
+// >> KIDSCODE - Threading - New functions
+
+// Open a new connection to the database, eventually opens database.
+void Database_SQLite3::openConnection(bool readwrite)
+{
+	openDatabase();
+	if (m_connections.find(std::this_thread::get_id()) != m_connections.end()) {
+		errorstream << "SQLite3 database has already a connection for thread "
+				<< std::this_thread::get_id() << std::endl;
+		return;
+	}
+
+	Database_SQLite3_Connection_Info connection_info;
+	connection_info.readwrite = readwrite;
+
+	std::string dbp = m_savedir + DIR_DELIM + m_dbname + ".sqlite";
+
+	if (readwrite) { // Open read write database connection
+		SQLOKC(sqlite3_open_v2(dbp.c_str(), &(connection_info.connection),
+			SQLITE_OPEN_READWRITE|SQLITE_OPEN_FULLMUTEX, NULL),
+			std::string("Failed to open SQLite3 database file (read write)") + dbp,
+			connection_info.connection);
+
+		SQLOKC(sqlite3_busy_handler(connection_info.connection,
+			Database_SQLite3::busyHandler,
+			&(connection_info.busy_handler_data)),
+			"Failed to set SQLite3 busy handler (read write)",
+			connection_info.connection);
+
+		SQLOKC(sqlite3_exec(connection_info.connection,
+			"PRAGMA synchronous=NORMAL", NULL, NULL, NULL),
+			"Failed to modify sqlite3 synchronous mode",
+			connection_info.connection);
+		SQLOKC(sqlite3_exec(connection_info.connection,
+			"PRAGMA foreign_keys=ON", NULL, NULL, NULL),
+			"Failed to enable sqlite3 foreign key support",
+			connection_info.connection);
+		SQLOKC(sqlite3_exec(connection_info.connection,
+			"PRAGMA journal_mode=WAL", NULL, NULL, NULL),
+			"Failed to modify sqlite3 journal mode",
+			connection_info.connection);
+	} else { // Open read only database connection
+		SQLOKC(sqlite3_open_v2(dbp.c_str(), &(connection_info.connection),
+			SQLITE_OPEN_READONLY|SQLITE_OPEN_FULLMUTEX, NULL),
+			std::string("Failed to open SQLite3 database file (read only)") + dbp,
+			connection_info.connection);
+
+		SQLOKC(sqlite3_busy_handler(connection_info.connection,
+			Database_SQLite3::busyHandler, &(connection_info.busy_handler_data)),
+			"Failed to set SQLite3 busy handler (read only)",
+			connection_info.connection);
+	}
+
+	printf("New Read %s connection on \"%s\" for thread %lx\n",
+		readwrite?"Write":"Only", m_dbname.c_str(),
+		std::this_thread::get_id());
+
+	m_connections[std::this_thread::get_id()] = connection_info;
+
+	initStatements();
+}
+
+// Get connection info, eventually open connection (in default rw or ro mode)
+Database_SQLite3_Connection_Info *Database_SQLite3::getConnectionInfo()
+{
+	if (m_connections.find(std::this_thread::get_id()) == m_connections.end())
+		openConnection(getDefaultReadWrite());
+
+	return &(m_connections[std::this_thread::get_id()]);
+}
+
+sqlite3 *Database_SQLite3::getConnection()
+{
+	return getConnectionInfo()->connection;
+}
+
+sqlite3_stmt *Database_SQLite3::statement(std::string name) {
+	Database_SQLite3_Connection_Info *connection_info = getConnectionInfo();
+	auto it = connection_info->statements.find(name);
+	if (it != connection_info->statements.end())
+		return it->second;
+	else
+		return nullptr;
+}
+
+sqlite3_stmt *Database_SQLite3::statement(std::string name, std::string query)
+{
+	Database_SQLite3_Connection_Info *connection_info = getConnectionInfo();
+	auto it = connection_info->statements.find(name);
+	if (it != connection_info->statements.end())
+		return it->second;
+
+	sqlite3_stmt *stmt;
+
+	if (sqlite3_prepare_v2(connection_info->connection, query.c_str(), -1,
+			&stmt, NULL) != SQLITE_OK) {
+		errorstream << "SQLite3 failed to prepare query \"" <<
+				query << "\"" << std::endl;
+		return nullptr;
+	}
+
+	connection_info->statements[name] = stmt;
+	return stmt;
+}
+// << KIDSCOCDE - Threading
+
+// >> KIDSCODE - Threading - Removed and replaced functions
+void Database_SQLite3::beginSave()
+ {
+	Database_SQLite3_Connection_Info *connection_info = getConnectionInfo();
+	if (!connection_info->readwrite) {
+		errorstream
+		<< "SQLite3 database can't 'beginSave' on a read only connection."
+		<< std::endl;
+	}
+	sqlite3_stmt *stmt = statement("begin", "BEGIN;");
+	SQLRES(sqlite3_step(stmt), SQLITE_DONE,
+		"Failed to start SQLite3 transaction");
+	sqlite3_reset(stmt);
+}
+
+/*
 void Database_SQLite3::beginSave()
 {
 	verifyDatabase();
@@ -119,7 +264,23 @@ void Database_SQLite3::beginSave()
 		"Failed to start SQLite3 transaction");
 	sqlite3_reset(m_stmt_begin);
 }
+*/
 
+void Database_SQLite3::endSave()
+{
+	Database_SQLite3_Connection_Info *connection_info = getConnectionInfo();
+	if (!connection_info->readwrite) {
+		errorstream
+			<< "SQLite3 database can't 'endSave' on a read only connection."
+			<< std::endl;
+	}
+	sqlite3_stmt *stmt = statement("end", "COMMIT;");
+	SQLRES(sqlite3_step(stmt), SQLITE_DONE,
+		"Failed to commit SQLite3 transaction");
+	sqlite3_reset(stmt);
+}
+
+/*
 void Database_SQLite3::endSave()
 {
 	verifyDatabase();
@@ -127,7 +288,52 @@ void Database_SQLite3::endSave()
 		"Failed to commit SQLite3 transaction");
 	sqlite3_reset(m_stmt_end);
 }
+*/
 
+void Database_SQLite3::openDatabase()
+{
+	m_open_database_mutex.lock();
+	if (m_ready) {
+		m_open_database_mutex.unlock();
+		return;
+	}
+
+	sqlite3 *connection = nullptr;
+	std::string dbp = m_savedir + DIR_DELIM + m_dbname + ".sqlite";
+
+	// First do preparation : creation or update
+	if (!fs::CreateAllDirs(m_savedir)) {
+		infostream << "Database_SQLite3: Failed to create directory \""
+				<< m_savedir << "\"" << std::endl;
+		m_open_database_mutex.unlock();
+		throw FileNotGoodException("Failed to create database save directory");
+	}
+
+	if (!fs::PathExists(dbp)) {
+		// TODO : Is sqlerrm working when closing / openning connection ??
+		SQLOKC(sqlite3_open_v2(dbp.c_str(), &connection,
+			SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL),
+		std::string("Failed to open SQLite3 database file (initialization)") + dbp,
+			connection);
+		createDatabase(connection);
+	} else {
+		SQLOKC(sqlite3_open_v2(dbp.c_str(), &connection,
+			SQLITE_OPEN_READWRITE, NULL),
+		std::string("Failed to open SQLite3 database file (initialization)") + dbp,
+			connection);
+	}
+	updateDatabase(connection);
+
+	// TODO : Is sqlerrm working when closing / openning connection ??
+	SQLOKC(sqlite3_close_v2(connection),
+		std::string("Failed to close SQLite3 connection (initialization)"),
+		connection);
+
+	m_ready = true;
+	m_open_database_mutex.unlock();
+}
+
+/*
 void Database_SQLite3::openDatabase()
 {
 	if (m_database) return;
@@ -163,7 +369,9 @@ void Database_SQLite3::openDatabase()
 	SQLOK(sqlite3_exec(m_database, "PRAGMA foreign_keys = ON", NULL, NULL, NULL),
 		"Failed to enable sqlite3 foreign key support");
 }
+*/
 
+/* (Removed)
 void Database_SQLite3::verifyDatabase()
 {
 	if (m_initialized) return;
@@ -177,7 +385,20 @@ void Database_SQLite3::verifyDatabase()
 
 	m_initialized = true;
 }
+*/
 
+Database_SQLite3::~Database_SQLite3()
+{
+	// Finalize statements and close connections
+	for (auto & cit : m_connections) {
+		for (auto & sit : cit.second.statements)
+			SQLOK_ERRSTREAM(sqlite3_finalize(sit.second), \
+				std::string("Failed to finalize statement ") + sit.first)
+		SQLOK_ERRSTREAM(sqlite3_close(cit.second.connection), \
+			"Failed to close database connection");
+	}
+}
+/*
 Database_SQLite3::~Database_SQLite3()
 {
 	FINALIZE_STATEMENT(m_stmt_begin)
@@ -185,14 +406,16 @@ Database_SQLite3::~Database_SQLite3()
 
 	SQLOK_ERRSTREAM(sqlite3_close(m_database), "Failed to close database");
 }
+*/
+// << KIDSCODE - Threading
 
-bool Database_SQLite3::tableExists(const std::string &table_name)
+bool Database_SQLite3::tableExists(sqlite3 *connection, const std::string &table_name)
 {
-	sqlite3_stmt * stmt;
+	sqlite3_stmt *stmt;
 
-	assert(m_database); // Pre-condition
+	assert(connection); // Pre-condition
 
-	SQLOK(sqlite3_prepare_v2(m_database,
+	SQLOK(sqlite3_prepare_v2(connection,
 			"SELECT * FROM `sqlite_master` where type='table' and name=?;",
 			-1, &stmt, NULL),
 		"tableExists: Failed to verify existence of table (prepare)");
@@ -203,6 +426,7 @@ bool Database_SQLite3::tableExists(const std::string &table_name)
 	return res;
 }
 
+// >> KIDSCODE - Map versionning
 /*
  * Map data purge thread
  */
@@ -210,7 +434,8 @@ bool Database_SQLite3::tableExists(const std::string &table_name)
 class PurgeDataSQLite3Thread : public Thread
 {
 public:
-	PurgeDataSQLite3Thread(sqlite3 *database):
+	PurgeDataSQLite3Thread(MapDatabaseSQLite3 *database):
+		Thread("PurgeData"),
 		m_database(database)
 	{
 		time(&m_lastpurge);
@@ -219,13 +444,12 @@ public:
 	void *run();
 
 private:
-	sqlite3 *m_database;
+	MapDatabaseSQLite3 *m_database;
 	time_t m_lastpurge;
 };
 
 void *PurgeDataSQLite3Thread::run() {
-	sqlite3_stmt * stmt;
-	int res;
+	m_database->setThreadWriteAccess(true);
 
 	while (!stopRequested()) {
 
@@ -236,84 +460,9 @@ void *PurgeDataSQLite3Thread::run() {
 			sleep_ms(100);
 			continue;
 		}
-		// Make sure to advance last purge time
-		time(&m_lastpurge);
 
-		// Mark for purge deleted versions with no child
-		res = sqlite3_exec(m_database,
-			"UPDATE versions SET status = 'P' WHERE status = 'D'"
-				" AND NOT EXISTS (SELECT 1 FROM versions AS v"
-				"  WHERE v.status <> 'P' and v.parent_id = versions.id);",
-			NULL, NULL, NULL);
-
-		if (res == SQLITE_BUSY) {
-			sleep_ms(100);
-			continue;
-		} else if (res != SQLITE_OK ) {
-			throw DatabaseException(
-					std::string("purgeDataThread:Failed to mark versions for purge: ") +
-					sqlite3_errmsg(m_database));
-		}
-
-		// Delete already purged versions
-		res = sqlite3_exec(m_database,
-			"DELETE FROM versions WHERE status = 'P'"
-				" AND NOT EXISTS (SELECT 1 FROM versioned_blocks"
-				"  WHERE versioned_blocks.version_id = versions.id);",
-			NULL, NULL, NULL);
-
-		if (res == SQLITE_BUSY) {
-			sleep_ms(100);
-			continue;
-		} else if (res != SQLITE_OK ) {
-			throw DatabaseException(
-					std::string("purgeDataThread:Failed to clean up versions table: ") +
-					sqlite3_errmsg(m_database));
-		}
-
-		// Get first version to purge
-		SQLOK(sqlite3_prepare_v2(m_database,
-			"SELECT id FROM versions WHERE status = 'P' LIMIT 1",
-			-1, &stmt, NULL),
-			"purgeDataThread: Failed to find version to purge (prepare)");
-
-		res = sqlite3_step(stmt);
-		if (res == SQLITE_DONE) {
-			sqlite3_finalize(stmt);
-			continue; // Nothing to do for now
-		}
-		if (res != SQLITE_ROW) {
-			sqlite3_finalize(stmt);
-			throw DatabaseException(
-				std::string("purgeDataThread: Failed to find version to purge (step): ") +
-				std::string(sqlite3_errmsg(m_database)));
-		}
-		int version =  sqlite3_column_int(stmt, 0);
-		sqlite3_finalize(stmt);
-
-		SQLOK(sqlite3_prepare_v2(m_database,
-			"DELETE FROM versioned_blocks WHERE version_id = ? "
-			"  AND pos IN (SELECT pos FROM versioned_blocks"
-			"    WHERE version_id = ? LIMIT 10000)",
-			-1, &stmt, NULL),
-				"purgeDataThread: Failed to delete blocks (prepare)");
-		SQLOK(sqlite3_bind_int(stmt, 1, version),
-			"purgeDataThread: Failed to delete blocks (bind 1)");
-		SQLOK(sqlite3_bind_int(stmt, 2, version),
-			"purgeDataThread: Failed to delete blocks (bind 2)");
-
-		res = sqlite3_step(stmt);
-		if (res == SQLITE_BUSY) {
-			sqlite3_finalize(stmt);
-			sleep_ms(100);
-			continue;
-		} else if (res != SQLITE_DONE ) {
-			sqlite3_finalize(stmt);
-			throw DatabaseException(
-				"purgeDataThread: Failed to delete blocks (step): " +
-				std::string(sqlite3_errmsg(m_database)));
-		}
-		sqlite3_finalize(stmt);
+		// Purge some blocks
+		m_database->purgeUnreferencedBlocks(10000);
 
 		// Actually count purge time in last purge time
 		time(&m_lastpurge);
@@ -321,45 +470,62 @@ void *PurgeDataSQLite3Thread::run() {
 
 	return nullptr;
 }
+// << KIDSCODE - Map versionning
 
 /*
  * Map database
  */
 
+// >> KIDSCODE
+const char *c_qry_load_block = "SELECT `data` FROM `blocks` WHERE `pos` = ? LIMIT 1";
+// << KIDSCODE
+
 MapDatabaseSQLite3::MapDatabaseSQLite3(const std::string &savedir):
 	Database_SQLite3(savedir, "map"),
 	MapDatabase()
 {
+	// >> KIDSCODE - Map versionning
+	// Map data purge thread
+	m_purgethread = new PurgeDataSQLite3Thread(this);
+	m_purgethread->start();
+	// << KIDSCODE
 }
 
 MapDatabaseSQLite3::~MapDatabaseSQLite3()
 {
 
+	// >> KIDSCODE - Map versionning
 	infostream<<"Sqlite3: Stopping and waiting purge thread"<<std::endl;
 	m_purgethread->stop();
 	m_purgethread->wait();
 	delete m_purgethread;
 	infostream<<"Sqlite3: Purge thread stopped"<<std::endl;
+	// << KIDSCODE - Map versionning
 
+	// >> KIDSCODE - Threads
+	/*
 	FINALIZE_STATEMENT(m_stmt_read)
 	FINALIZE_STATEMENT(m_stmt_write)
 	FINALIZE_STATEMENT(m_stmt_list)
 	FINALIZE_STATEMENT(m_stmt_delete)
+	*/
+	// << KIDSCODE
 }
 
+// >> KIDSCODE - Map versionning
 // This method creates or upgrades database structures
-void MapDatabaseSQLite3::upgradeDatabaseStructure()
+void MapDatabaseSQLite3::upgradeDatabaseStructure(sqlite3 *connection)
 {
-	assert(m_database);
+	assert(connection);
 
 	// Rely on this clue to determine if the database have been upgraded to
 	// versioned blocks version.
-	if (tableExists("versioned_blocks"))
+	if (tableExists(connection, "versioned_blocks"))
 		return;
 
 	printf("Starting database migration. This may take some time.\n");
 
-	SQLOK(sqlite3_exec(m_database, R""""(
+	SQLOKC(sqlite3_exec(connection, R""""(
 		CREATE TABLE versioned_blocks (
 		  pos INT,
 		  version_id INT,
@@ -432,25 +598,33 @@ void MapDatabaseSQLite3::upgradeDatabaseStructure()
 		   DELETE FROM versioned_blocks WHERE pos = old.pos;
 		END;
 		)"""", NULL, NULL, NULL),
-		"Unable to upgrade database");
+		"Unable to upgrade database", connection);
 
 	printf("Database migration: create first version.\n");
 
-	setCurrentVersion(1);
+	beginSave();
+	setCurrentVersion(1, connection);
+	endSave();
 
 	printf("Database migration done.\n");
 
 }
+// << KIDSCODE - Map versionning
 
-void MapDatabaseSQLite3::createDatabase()
+
+// >> KIDSCODE - Threading
+void MapDatabaseSQLite3::createDatabase(sqlite3 *connection)
+//void MapDatabaseSQLite3::createDatabase()
+// << KIDSCODE - Threading
 {
-	upgradeDatabaseStructure();
+	upgradeDatabaseStructure(connection); // KIDSCODE - Map versionning
 }
 
+// >> KIDSCODE - Threading (statements are per thread now)
+/*
 void MapDatabaseSQLite3::initStatements()
 {
-	// May be not the best place but it will be ok for now
-	upgradeDatabaseStructure();
+	upgradeDatabaseStructure(connection); // KIDSCODE - Map versionning
 
 	PREPARE_STATEMENT(read, "SELECT `data` FROM `blocks` WHERE `pos` = ? LIMIT 1");
 #ifdef __ANDROID__
@@ -462,10 +636,13 @@ void MapDatabaseSQLite3::initStatements()
 	PREPARE_STATEMENT(list, "SELECT `pos` FROM `blocks`");
 
 	verbosestream << "ServerMap: SQLite3 database opened." << std::endl;
+}
+*/
+// << KIDSCODE - Threading
 
-	// Map data purge thread
-	m_purgethread = new PurgeDataSQLite3Thread(m_database);
-	m_purgethread->start();
+void MapDatabaseSQLite3::updateDatabase(sqlite3 *connection)
+{
+	upgradeDatabaseStructure(connection); // KIDSCODE - Map versionning
 }
 
 inline void MapDatabaseSQLite3::bindPos(sqlite3_stmt *stmt, const v3s16 &pos, int index)
@@ -476,23 +653,39 @@ inline void MapDatabaseSQLite3::bindPos(sqlite3_stmt *stmt, const v3s16 &pos, in
 
 bool MapDatabaseSQLite3::deleteBlock(const v3s16 &pos)
 {
+	// >> KIDSCODE - Threading
+	sqlite3_stmt *stmt = statement("delete",
+		"DELETE FROM `blocks` WHERE `pos` = ?");
+
+	bindPos(stmt, pos);
+
+	bool good = sqlite3_step(stmt) == SQLITE_DONE;
+	sqlite3_reset(stmt);
+
+	/*
 	verifyDatabase();
 
 	bindPos(m_stmt_delete, pos);
 
 	bool good = sqlite3_step(m_stmt_delete) == SQLITE_DONE;
 	sqlite3_reset(m_stmt_delete);
+	*/
+	// << KIDSCODE - Threading
 
 	if (!good) {
 		warningstream << "deleteBlock: Block failed to delete "
-			<< PP(pos) << ": " << sqlite3_errmsg(m_database) << std::endl;
+			<< PP(pos) << ": " << sqlite3_errmsg(getConnection()) << std::endl; // KIDSCODE - Threading
+//			<< PP(pos) << ": " << sqlite3_errmsg(m_database) << std::endl;
 	}
 	return good;
 }
 
 bool MapDatabaseSQLite3::saveBlock(const v3s16 &pos, const std::string &data)
 {
-	verifyDatabase();
+	// >> KIDSCODE - Threading
+	sqlite3_stmt *stmt;
+	// verifyDatabase();
+	// << KIDSCODE - Threading
 
 #ifdef __ANDROID__
 // TODO: TO BE UPGRADED AND TESTED, WONT WORK WITH 'versions' TABLE
@@ -500,26 +693,72 @@ bool MapDatabaseSQLite3::saveBlock(const v3s16 &pos, const std::string &data)
 	 * Note: For some unknown reason SQLite3 fails to REPLACE blocks on Android,
 	 * deleting them and then inserting works.
 	 */
+	// >> KIDSCODE - Threading
+	stmt = statement("load", c_qry_load_block);
+
+	bindPos(stmt, pos);
+
+	if (sqlite3_step(stmt) == SQLITE_ROW) {
+		deleteBlock(pos);
+	}
+	sqlite3_reset(stmt);
+
+	stmt = statement("save", "INSERT INTO `blocks`"
+		"(`pos`, `data`) VALUES (?, ?)");
+
+#else
+	stmt = statement("save", "INSERT OR REPLACE INTO blocks"
+		" SELECT ?, id, ? FROM versions WHERE status = 'C'");
+	/*
 	bindPos(m_stmt_read, pos);
 
 	if (sqlite3_step(m_stmt_read) == SQLITE_ROW) {
 		deleteBlock(pos);
 	}
 	sqlite3_reset(m_stmt_read);
+	*/
+	// << KIDSCODE - Threading
 #endif
+	// >> KIDSCODE - Threading
+	bindPos(stmt, pos);
+	SQLOK(sqlite3_bind_blob(stmt, 2, data.data(), data.size(), NULL),
+		"Internal error: failed to bind query at " __FILE__ ":" TOSTRING(__LINE__));
 
+	SQLRES(sqlite3_step(stmt), SQLITE_DONE, "Failed to save block")
+	sqlite3_reset(stmt);
+	/*
 	bindPos(m_stmt_write, pos);
 	SQLOK(sqlite3_bind_blob(m_stmt_write, 2, data.data(), data.size(), NULL),
 		"Internal error: failed to bind query at " __FILE__ ":" TOSTRING(__LINE__));
 
 	SQLRES(sqlite3_step(m_stmt_write), SQLITE_DONE, "Failed to save block")
 	sqlite3_reset(m_stmt_write);
+	*/
+	// << KIDSCODE - Threading
 
 	return true;
 }
 
 void MapDatabaseSQLite3::loadBlock(const v3s16 &pos, std::string *block)
 {
+	// >> KIDSCODE - Threading
+	sqlite3_stmt *stmt = statement("load", c_qry_load_block);
+	bindPos(stmt, pos);
+
+	if (sqlite3_step(stmt) != SQLITE_ROW) {
+		sqlite3_reset(stmt);
+		return;
+	}
+
+	const char *data = (const char *) sqlite3_column_blob(stmt, 0);
+	size_t len = sqlite3_column_bytes(stmt, 0);
+
+	*block = (data) ? std::string(data, len) : "";
+
+	sqlite3_step(stmt);
+	// We should never get more than 1 row, so ok to reset
+	sqlite3_reset(stmt);
+	/*
 	verifyDatabase();
 
 	bindPos(m_stmt_read, pos);
@@ -537,30 +776,47 @@ void MapDatabaseSQLite3::loadBlock(const v3s16 &pos, std::string *block)
 	sqlite3_step(m_stmt_read);
 	// We should never get more than 1 row, so ok to reset
 	sqlite3_reset(m_stmt_read);
+	*/
+	// << KIDSCODE - Threading
 }
 
 void MapDatabaseSQLite3::listAllLoadableBlocks(std::vector<v3s16> &dst)
 {
+	// >> KIDSCODE - Threading
+	sqlite3_stmt *stmt = statement("list", "SELECT `pos` FROM `blocks`");
+
+	while (sqlite3_step(stmt) == SQLITE_ROW)
+		dst.push_back(getIntegerAsBlock(sqlite3_column_int64(stmt, 0)));
+
+	sqlite3_reset(stmt);
+
+	/*
 	verifyDatabase();
 
 	while (sqlite3_step(m_stmt_list) == SQLITE_ROW)
 		dst.push_back(getIntegerAsBlock(sqlite3_column_int64(m_stmt_list, 0)));
 
 	sqlite3_reset(m_stmt_list);
+	*/
+	// << KIDSCODE - Threading
 }
 
-
-void MapDatabaseSQLite3::setCurrentVersion(int id)
+// >> KIDSCODE - Map versionning
+// Should be called inside a transaction (between beginSave() and endSave())
+void MapDatabaseSQLite3::setCurrentVersion(int id, sqlite3* connection)
 {
-	sqlite3_stmt * stmt;
+	if (! connection) {
+		connection = getConnection();
+	}
+	sqlite3_stmt *stmt;
 
 	// Mark old current for purge
-	SQLOK(sqlite3_exec(m_database,
+	SQLOK(sqlite3_exec(connection,
 		"UPDATE versions SET status = 'P' WHERE status = 'C'", NULL, NULL, NULL),
 		"setCurrentVersion: Failed to mark old current for purge");
 
 	// Create new current
-	SQLOK(sqlite3_prepare_v2(m_database,
+	SQLOK(sqlite3_prepare_v2(connection,
 		"INSERT INTO versions SELECT MAX(id)+1, 'C', '.current', ? FROM versions",
 		-1, &stmt, NULL),
 		"setCurrentVersion: Failed to create new current version (prepare)");
@@ -569,21 +825,21 @@ void MapDatabaseSQLite3::setCurrentVersion(int id)
 		sqlite3_finalize(stmt);
 		throw DatabaseException(
 			"setCurrentVersion: Failed to create new current version (step): " +
-			std::string(sqlite3_errmsg(m_database)));
+			std::string(sqlite3_errmsg(connection)));
 	}
 
 	// Rebuild current_versions table
-	SQLOK(sqlite3_exec(m_database,
+	SQLOK(sqlite3_exec(connection,
 		"DELETE FROM current_versions", NULL, NULL, NULL),
 		"setCurrentVersion: Rebuild current_versions table (delete)");
 
-	SQLOK(sqlite3_exec(m_database,
+	SQLOK(sqlite3_exec(connection,
 		"INSERT INTO current_versions SELECT * FROM version_tree "
 		"WHERE start_status = 'C'", NULL, NULL, NULL),
 		"setCurrentVersion: Rebuild current_versions table (insert)");
 
 	// Update blocks visibility
-	SQLOK(sqlite3_exec(m_database,
+	SQLOK(sqlite3_exec(connection,
 		"UPDATE versioned_blocks SET visible = 1, mtime = strftime('%s', 'now')"
 		" WHERE visible = 0 AND version_id = ("
 		"      SELECT version_id FROM versioned_blocks b, current_versions v"
@@ -591,13 +847,13 @@ void MapDatabaseSQLite3::setCurrentVersion(int id)
 		"       ORDER BY b.version_id DESC LIMIT 1)", NULL, NULL, NULL),
 		"setCurrentVersion: Unable to update blocks to invisible");
 
-	SQLOK(sqlite3_exec(m_database,
+	SQLOK(sqlite3_exec(connection,
 		"UPDATE versioned_blocks SET visible = 0"
 		" WHERE visible = 1 AND version_id NOT IN( "
 		"  SELECT version_id FROM current_versions)", NULL, NULL, NULL),
 		"setCurrentVersion: Unable to update blocks to visible");
 
-	SQLOK(sqlite3_exec(m_database,
+	SQLOK(sqlite3_exec(connection,
 		"UPDATE versioned_blocks SET visible = 0"
 		" WHERE visible = 1 AND version_id <> ("
 		"      SELECT version_id FROM versioned_blocks b, current_versions v"
@@ -610,12 +866,11 @@ void MapDatabaseSQLite3::setCurrentVersion(int id)
 
 int MapDatabaseSQLite3::getVersionByName(const std::string &name)
 {
-	sqlite3_stmt * stmt;
+	sqlite3 *connection = getConnection();
+	sqlite3_stmt *stmt;
 	int id;
 
-	assert(m_database);
-
-	SQLOK(sqlite3_prepare_v2(m_database,
+	SQLOK(sqlite3_prepare_v2(connection,
 			"SELECT id FROM versions WHERE status = 'A' AND name = ?",
 			-1, &stmt, NULL),
 		"getVersionByName: Failed to find version (prepare)");
@@ -632,18 +887,17 @@ int MapDatabaseSQLite3::getVersionByName(const std::string &name)
 		default:
 			sqlite3_finalize(stmt);
 			throw DatabaseException("getVersionByName: Failed to find version: " +
-				std::string(sqlite3_errmsg(m_database)));
+				std::string(sqlite3_errmsg(connection)));
 	}
 }
 
 // Backups list
 void MapDatabaseSQLite3::listBackups(std::vector<std::string> &dst)
 {
-	sqlite3_stmt * stmt;
+	sqlite3 *connection = getConnection();
+	sqlite3_stmt *stmt;
 
-	assert(m_database);
-
-	SQLOK(sqlite3_prepare_v2(m_database,
+	SQLOK(sqlite3_prepare_v2(connection,
 		"SELECT name FROM versions WHERE status = 'A'",
 		-1, &stmt, NULL),
 		"listSavepoversionningListBackupsints: Failed to get list of backups (prepare)");
@@ -654,13 +908,15 @@ void MapDatabaseSQLite3::listBackups(std::vector<std::string> &dst)
 	sqlite3_finalize(stmt);
 }
 
-bool MapDatabaseSQLite3::createBackup(const std::string &name) {
-	sqlite3_stmt * stmt;
+bool MapDatabaseSQLite3::createBackup(const std::string &name)
+{
+	sqlite3 *connection = getConnection();
+	sqlite3_stmt *stmt;
 	int id;
 
-	assert(m_database);
+	beginSave();
 
-	SQLOK(sqlite3_prepare_v2(m_database,
+	SQLOK(sqlite3_prepare_v2(connection,
 		"SELECT 1 FROM versions WHERE status = 'A' AND name = ?",
 		-1, &stmt, NULL),
 		"newBackup: Failed to check existing backup (prepare)");
@@ -675,11 +931,11 @@ bool MapDatabaseSQLite3::createBackup(const std::string &name) {
 		default:
 			throw DatabaseException(
 				"newBackup: Failed to check existing backup (step): " +
-				std::string(sqlite3_errmsg(m_database)));
+				std::string(sqlite3_errmsg(connection)));
 	}
 	sqlite3_finalize(stmt);
 
-	SQLOK(sqlite3_prepare_v2(m_database,
+	SQLOK(sqlite3_prepare_v2(connection,
 		"SELECT id FROM versions WHERE status = 'C'", -1, &stmt, NULL),
 		"newBackup: Failed to get current version (prepare)");
 	switch (sqlite3_step(stmt))
@@ -695,38 +951,43 @@ bool MapDatabaseSQLite3::createBackup(const std::string &name) {
 			sqlite3_finalize(stmt);
 			throw DatabaseException(
 				"newBackup: Failed to get current version (step): " +
-				std::string(sqlite3_errmsg(m_database)));
+				std::string(sqlite3_errmsg(connection)));
 	}
 
-	SQLOK(sqlite3_prepare_v2(m_database,
+	SQLOK(sqlite3_prepare_v2(connection,
 		"UPDATE versions SET status = 'A', name = ? WHERE id = ?;",
 		-1, &stmt, NULL),
-		"newBackup: To change current version to backup (prepare)");
-  str_to_sqlite(stmt, 1, name);
+		"newBackup: Failed to change current version to backup (prepare)");
+	str_to_sqlite(stmt, 1, name);
 	int_to_sqlite(stmt, 2, id);
 	if (sqlite3_step(stmt) != SQLITE_DONE) {
 		sqlite3_finalize(stmt);
 		throw DatabaseException(
 			"newCurrentVersion: Failed to activate versions (step): " +
-			std::string(sqlite3_errmsg(m_database)));
+			std::string(sqlite3_errmsg(connection)));
 	}
 
 	sqlite3_finalize(stmt);
 
 	setCurrentVersion(id);
 
+	endSave();
+
 	return true;
 }
 
 void MapDatabaseSQLite3::restoreBackup(const std::string &name)
 {
+	beginSave();
 	setCurrentVersion(getVersionByName(name));
+	endSave();
 }
 
 void MapDatabaseSQLite3::deleteBackup(const std::string &name) {
 	int id = getVersionByName(name);
-	sqlite3_stmt * stmt;
-	SQLOK(sqlite3_prepare_v2(m_database,
+	sqlite3 *connection = getConnection();
+	sqlite3_stmt *stmt;
+	SQLOK(sqlite3_prepare_v2(connection,
 			"UPDATE versions SET status = 'D' WHERE id = ?",
 			-1, &stmt, NULL),
 		"deleteBackup: Failed mark version for deletion (prepare)");
@@ -734,10 +995,91 @@ void MapDatabaseSQLite3::deleteBackup(const std::string &name) {
 	if (sqlite3_step(stmt) != SQLITE_DONE) {
 		sqlite3_finalize(stmt);
 		throw DatabaseException("deleteBackup: Failed mark version for deletion (step): " +
-			std::string(sqlite3_errmsg(m_database)));
+			std::string(sqlite3_errmsg(connection)));
 	}
 	sqlite3_finalize(stmt);
 }
+
+void MapDatabaseSQLite3::purgeUnreferencedBlocks(int limit)
+{
+	sqlite3 *connection = getConnection();
+	sqlite3_stmt *stmt;
+	int res;
+
+	beginSave();
+
+	try {
+		// Mark for purge deleted versions with no child
+		if ((res = sqlite3_exec(connection,
+				"UPDATE versions SET status = 'P' WHERE status = 'D'"
+				" AND NOT EXISTS (SELECT 1 FROM versions AS v"
+				"  WHERE v.status <> 'P' and v.parent_id = versions.id);",
+				NULL, NULL, NULL)))
+			throw(res);
+
+		// Delete already purged versions
+		if ((res = sqlite3_exec(connection,
+				"DELETE FROM versions WHERE status = 'P'"
+				" AND NOT EXISTS (SELECT 1 FROM versioned_blocks"
+				"  WHERE versioned_blocks.version_id = versions.id);",
+				NULL, NULL, NULL)))
+			throw(res);
+
+		// Get first version to purge
+		if ((res = sqlite3_prepare_v2(connection,
+				"SELECT id FROM versions WHERE status = 'P' LIMIT 1",
+				-1, &stmt, NULL)))
+			throw(res);
+
+		res = sqlite3_step(stmt);
+		if (res == SQLITE_DONE) {
+			endSave();
+			sqlite3_finalize(stmt);
+			return;
+		}
+		if (res != SQLITE_ROW)
+			throw(res);
+
+		int version =  sqlite3_column_int(stmt, 0);
+		sqlite3_finalize(stmt);
+
+		if ((res = sqlite3_prepare_v2(connection,
+				"DELETE FROM versioned_blocks WHERE version_id = ? "
+				"  AND pos IN (SELECT pos FROM versioned_blocks"
+				"    WHERE version_id = ? LIMIT ?)",
+				-1, &stmt, NULL)))
+			throw(res);
+
+		if ((res = sqlite3_bind_int(stmt, 1, version)))
+			throw(res);
+		if ((res = sqlite3_bind_int(stmt, 2, version)))
+			throw(res);
+		if ((res = sqlite3_bind_int(stmt, 3, limit)))
+			throw(res);
+
+		res = sqlite3_step(stmt);
+		if (res != SQLITE_DONE)
+			throw(res);
+
+	} catch (int res) {
+		switch(res) {
+		case SQLITE_LOCKED:
+			printf("SQLITE_LOCKED");
+			break;
+		case SQLITE_BUSY:
+			printf("SQLITE_BUSY");
+			break;
+		default:
+			printf("SQLCODE %d\n", res);
+			SQLFATAL("purgeUnreferencedBlocks");
+		}
+	}
+
+	sqlite3_finalize(stmt);
+	endSave();
+}
+
+// << KIDSCODE - Map versionning
 
 /*
  * Player Database
@@ -747,10 +1089,16 @@ PlayerDatabaseSQLite3::PlayerDatabaseSQLite3(const std::string &savedir):
 	Database_SQLite3(savedir, "players"),
 	PlayerDatabase()
 {
+	// >> KIDSCODE - Threading
+	// Open read write connection for this thread
+	openConnection(true);
+	// << KIDSCODE - Threading
 }
 
 PlayerDatabaseSQLite3::~PlayerDatabaseSQLite3()
 {
+	// >> KIDSCODE - Threading
+	/*
 	FINALIZE_STATEMENT(m_stmt_player_load)
 	FINALIZE_STATEMENT(m_stmt_player_add)
 	FINALIZE_STATEMENT(m_stmt_player_update)
@@ -765,14 +1113,19 @@ PlayerDatabaseSQLite3::~PlayerDatabaseSQLite3()
 	FINALIZE_STATEMENT(m_stmt_player_metadata_load)
 	FINALIZE_STATEMENT(m_stmt_player_metadata_add)
 	FINALIZE_STATEMENT(m_stmt_player_metadata_remove)
+	*/
+	// << KIDSCODE - Threading
 };
 
 
-void PlayerDatabaseSQLite3::createDatabase()
+void PlayerDatabaseSQLite3::createDatabase(sqlite3 *connection) // KIDSCODE - Threading
+// void PlayerDatabaseSQLite3::createDatabase()
 {
-	assert(m_database); // Pre-condition
+	assert(connection); // Pre-condition // KIDSCODE - Threading
+//	assert(m_database); // Pre-condition
 
-	SQLOK(sqlite3_exec(m_database,
+	SQLOK(sqlite3_exec(connection, // KIDSCODE - Threading
+//	SQLOK(sqlite3_exec(m_database,
 		"CREATE TABLE IF NOT EXISTS `player` ("
 			"`name` VARCHAR(50) NOT NULL,"
 			"`pitch` NUMERIC(11, 4) NOT NULL,"
@@ -788,7 +1141,8 @@ void PlayerDatabaseSQLite3::createDatabase()
 		NULL, NULL, NULL),
 		"Failed to create player table");
 
-	SQLOK(sqlite3_exec(m_database,
+	SQLOK(sqlite3_exec(connection, // KIDSCODE - Threading
+//	SQLOK(sqlite3_exec(m_database,
 		"CREATE TABLE IF NOT EXISTS `player_metadata` ("
 			"    `player` VARCHAR(50) NOT NULL,"
 			"    `metadata` VARCHAR(256) NOT NULL,"
@@ -798,7 +1152,8 @@ void PlayerDatabaseSQLite3::createDatabase()
 		NULL, NULL, NULL),
 		"Failed to create player metadata table");
 
-	SQLOK(sqlite3_exec(m_database,
+	SQLOK(sqlite3_exec(connection, // KIDSCODE - Threading
+//	SQLOK(sqlite3_exec(m_database,
 		"CREATE TABLE IF NOT EXISTS `player_inventories` ("
 			"   `player` VARCHAR(50) NOT NULL,"
 			"	`inv_id` INT NOT NULL,"
@@ -810,7 +1165,8 @@ void PlayerDatabaseSQLite3::createDatabase()
 		NULL, NULL, NULL),
 		"Failed to create player inventory table");
 
-	SQLOK(sqlite3_exec(m_database,
+	SQLOK(sqlite3_exec(connection, // KIDSCODE - Threading
+//	SQLOK(sqlite3_exec(m_database,
 		"CREATE TABLE `player_inventory_items` ("
 			"   `player` VARCHAR(50) NOT NULL,"
 			"	`inv_id` INT NOT NULL,"
@@ -859,7 +1215,7 @@ void PlayerDatabaseSQLite3::initStatements()
 
 bool PlayerDatabaseSQLite3::playerDataExists(const std::string &name)
 {
-	verifyDatabase();
+//	verifyDatabase(); // KIDSCODE - Threading
 	str_to_sqlite(m_stmt_player_load, 1, name);
 	bool res = (sqlite3_step(m_stmt_player_load) == SQLITE_ROW);
 	sqlite3_reset(m_stmt_player_load);
@@ -956,7 +1312,7 @@ void PlayerDatabaseSQLite3::savePlayer(RemotePlayer *player)
 
 bool PlayerDatabaseSQLite3::loadPlayer(RemotePlayer *player, PlayerSAO *sao)
 {
-	verifyDatabase();
+//	verifyDatabase(); // KIDSCODE - Threading
 
 	str_to_sqlite(m_stmt_player_load, 1, player->getName());
 	if (sqlite3_step(m_stmt_player_load) != SQLITE_ROW) {
@@ -1020,7 +1376,7 @@ bool PlayerDatabaseSQLite3::removePlayer(const std::string &name)
 
 void PlayerDatabaseSQLite3::listPlayers(std::vector<std::string> &res)
 {
-	verifyDatabase();
+//	verifyDatabase(); // KIDSCODE - Threading
 
 	while (sqlite3_step(m_stmt_player_list) == SQLITE_ROW)
 		res.push_back(sqlite_to_string(m_stmt_player_list, 0));
@@ -1035,10 +1391,16 @@ void PlayerDatabaseSQLite3::listPlayers(std::vector<std::string> &res)
 AuthDatabaseSQLite3::AuthDatabaseSQLite3(const std::string &savedir) :
 		Database_SQLite3(savedir, "auth"), AuthDatabase()
 {
+	// >> KIDSCODE - Threading
+	// Open read write connection for this thread
+	openConnection(true);
+	// << KIDSCODE - Threading
 }
 
 AuthDatabaseSQLite3::~AuthDatabaseSQLite3()
 {
+	// >> KIDSCODE - Threading
+	/*
 	FINALIZE_STATEMENT(m_stmt_read)
 	FINALIZE_STATEMENT(m_stmt_write)
 	FINALIZE_STATEMENT(m_stmt_create)
@@ -1048,13 +1410,18 @@ AuthDatabaseSQLite3::~AuthDatabaseSQLite3()
 	FINALIZE_STATEMENT(m_stmt_write_privs)
 	FINALIZE_STATEMENT(m_stmt_delete_privs)
 	FINALIZE_STATEMENT(m_stmt_last_insert_rowid)
+	*/
+	// << KIDSCODE - Threading
 }
 
-void AuthDatabaseSQLite3::createDatabase()
+void AuthDatabaseSQLite3::createDatabase(sqlite3 *connection) // KIDSCODE - Threading
+//void AuthDatabaseSQLite3::createDatabase()
 {
-	assert(m_database); // Pre-condition
+	assert(connection); // Pre-condition // KIDSCODE - Threading
+//	assert(m_database); // Pre-condition
 
-	SQLOK(sqlite3_exec(m_database,
+	SQLOK(sqlite3_exec(connection, // KIDSCODE - Threading
+	//	SQLOK(sqlite3_exec(m_database,
 		"CREATE TABLE IF NOT EXISTS `auth` ("
 			"`id` INTEGER PRIMARY KEY AUTOINCREMENT,"
 			"`name` VARCHAR(32) UNIQUE,"
@@ -1064,7 +1431,8 @@ void AuthDatabaseSQLite3::createDatabase()
 		NULL, NULL, NULL),
 		"Failed to create auth table");
 
-	SQLOK(sqlite3_exec(m_database,
+	SQLOK(sqlite3_exec(connection, // KIDSCODE - Threading
+//	SQLOK(sqlite3_exec(m_database,
 		"CREATE TABLE IF NOT EXISTS `user_privileges` ("
 			"`id` INTEGER,"
 			"`privilege` VARCHAR(32),"
@@ -1093,7 +1461,7 @@ void AuthDatabaseSQLite3::initStatements()
 
 bool AuthDatabaseSQLite3::getAuth(const std::string &name, AuthEntry &res)
 {
-	verifyDatabase();
+//	verifyDatabase(); // KIDSCODE - Threading
 	str_to_sqlite(m_stmt_read, 1, name);
 	if (sqlite3_step(m_stmt_read) != SQLITE_ROW) {
 		sqlite3_reset(m_stmt_read);
@@ -1155,11 +1523,11 @@ bool AuthDatabaseSQLite3::createAuth(AuthEntry &authEntry)
 
 bool AuthDatabaseSQLite3::deleteAuth(const std::string &name)
 {
-	verifyDatabase();
+//	verifyDatabase(); // KIDSCODE - Threading
 
 	str_to_sqlite(m_stmt_delete, 1, name);
 	sqlite3_vrfy(sqlite3_step(m_stmt_delete), SQLITE_DONE);
-	int changes = sqlite3_changes(m_database);
+	int changes = sqlite3_changes(getConnection());
 	sqlite3_reset(m_stmt_delete);
 
 	// privileges deleted by foreign key on delete cascade
@@ -1169,7 +1537,7 @@ bool AuthDatabaseSQLite3::deleteAuth(const std::string &name)
 
 void AuthDatabaseSQLite3::listNames(std::vector<std::string> &res)
 {
-	verifyDatabase();
+//	verifyDatabase(); // KIDSCODE - Threading
 
 	while (sqlite3_step(m_stmt_list_names) == SQLITE_ROW) {
 		res.push_back(sqlite_to_string(m_stmt_list_names, 0));

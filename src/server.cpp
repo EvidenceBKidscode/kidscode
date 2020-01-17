@@ -73,6 +73,50 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #define MAX_FILE_SIZE 15728640
 // << KIDSCODE
 
+// >> KIDSCODE - Threading
+class LiquidThread : public Thread
+{
+public:
+	LiquidThread(Server *server):
+		Thread("Liquid"),
+		m_server(server)
+	{}
+
+	void *run();
+
+private:
+	Server *m_server;
+};
+
+void *LiquidThread::run()
+{
+	if (!m_server->getEnv().getServerMap().isThreadCapable())
+		return nullptr;
+
+	m_server->getEnv().getServerMap().setThreadWriteAccess(true);
+
+	while (!stopRequested()) {
+		if(m_server->m_liquid_transform_timer >= m_server->m_liquid_transform_every) {
+			m_server->m_liquid_transform_timer -= m_server->m_liquid_transform_every;
+
+			std::map<v3s16, MapBlock*> modified_blocks;
+			m_server->getEnv().getMap().transformLiquids(modified_blocks, &m_server->getEnv());
+			/*
+			Set the modified blocks unsent for all the clients
+			*/
+			if(!modified_blocks.empty()) {
+				MutexAutoLock lock(m_server->m_env_mutex);
+				m_server->SetBlocksNotSent(modified_blocks);
+			}
+		} else {
+			sleep_ms(50);
+		}
+	}
+
+	return nullptr;
+}
+// << KIDSCODDE - Threading
+
 class ClientNotFoundException : public BaseException
 {
 public:
@@ -345,6 +389,11 @@ void Server::init()
 	// Create emerge manager
 	m_emerge = new EmergeManager(this);
 
+	// >> KIDSCODE - Threading
+	// Create liquid thread
+	m_liquid_thread = new LiquidThread(this);
+	// << KIDSCODE - Threading
+
 	// Create ban manager
 	std::string ban_path = m_path_world + DIR_DELIM "ipban.txt";
 	m_banmanager = new BanManager(ban_path);
@@ -440,6 +489,9 @@ void Server::start()
 	// Start thread
 	m_thread->start();
 
+	m_liquid_thread->start(); // KIDSCODE - Threading
+
+
 // >> KIDSCODE
 /*
 	// ASCII art for the win!
@@ -465,8 +517,13 @@ void Server::stop()
 	// Stop threads (set run=false first so both start stopping)
 	m_thread->stop();
 	//m_emergethread.setRun(false);
+
+	m_liquid_thread->stop(); // KIDSCODE - Threading
+
 	m_thread->wait();
 	//m_emergethread.stop();
+
+	m_liquid_thread->wait(); // KIDSCODE - Threading
 
 	infostream<<"Server: Threads stopped"<<std::endl;
 }
@@ -564,9 +621,16 @@ void Server::AsyncRunStep(bool initial_step)
 		MutexAutoLock lock(m_env_mutex);
 		// Run Map's timers and unload unused data
 		ScopeProfiler sp(g_profiler, "Server: map timer and unload");
+		// >> KIDSCODE - Threading
+		m_env->getServerMap().unloadOutdatedBlocks(map_timer_and_unload_dtime,
+			g_settings->getFloat("server_unload_unused_data_timeout"));
+		/*
 		m_env->getMap().timerUpdate(map_timer_and_unload_dtime,
 			g_settings->getFloat("server_unload_unused_data_timeout"),
 			U32_MAX);
+		*/
+		// << KIDSCODE - Threading
+
 	}
 
 	/*
@@ -591,7 +655,11 @@ void Server::AsyncRunStep(bool initial_step)
 
 	/* Transform liquids */
 	m_liquid_transform_timer += dtime;
-	if(m_liquid_transform_timer >= m_liquid_transform_every)
+
+	// Transform here only if not threaded
+	// TODO:Put that in thread class
+	if ((!m_env->getServerMap().isThreadCapable()) && // KIDSCODE - Threading
+		(m_liquid_transform_timer >= m_liquid_transform_every))
 	{
 		m_liquid_transform_timer -= m_liquid_transform_every;
 
@@ -914,8 +982,10 @@ void Server::AsyncRunStep(bool initial_step)
 				m_banmanager->save();
 			}
 
-			// Save changed parts of map
-			m_env->getMap().save(MOD_STATE_WRITE_NEEDED);
+			// Save changed parts of map if not done by thread
+			if (!m_env->getServerMap().isThreadCapable()) // KIDSCODE - Threading
+				m_env->getServerMap().save(MOD_STATE_WRITE_NEEDED);
+
 
 			// Save players
 			m_env->saveLoadedPlayers();
@@ -2371,6 +2441,9 @@ void Server::SendBlockNoLock(session_t peer_id, MapBlock *block, u8 ver,
 void Server::SendBlocks(float dtime)
 {
 	MutexAutoLock envlock(m_env_mutex);
+
+	m_env->getServerMap().lockMap(); // KIDSCODE - Threading
+
 	//TODO check if one big lock could be faster then multiple small ones
 
 	std::vector<PrioritySortedBlockTransfer> queue;
@@ -2430,10 +2503,14 @@ void Server::SendBlocks(float dtime)
 		total_sending++;
 	}
 	m_clients.unlock();
+
+	m_env->getServerMap().unlockMap(); // KIDSCODE - Threading
 }
 
 bool Server::SendBlock(session_t peer_id, const v3s16 &blockpos)
 {
+	m_env->getServerMap().lockMap(); // KIDSCODE - Threading
+
 	MapBlock *block = m_env->getMap().getBlockNoCreateNoEx(blockpos);
 	if (!block)
 		return false;
@@ -2447,6 +2524,8 @@ bool Server::SendBlock(session_t peer_id, const v3s16 &blockpos)
 	SendBlockNoLock(peer_id, block, client->serialization_version,
 			client->net_proto_version);
 	m_clients.unlock();
+
+	m_env->getServerMap().unlockMap(); // KIDSCODE - Threading
 
 	return true;
 }

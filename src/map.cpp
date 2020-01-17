@@ -314,6 +314,8 @@ bool Map::removeNodeWithEvent(v3s16 p)
 	return succeeded;
 }
 
+// >> KIDSCODE - Threading (moved to clientmap.cpp and ServerMap)
+/*
 struct TimeOrderedMapBlock {
 	MapSector *sect;
 	MapBlock *block;
@@ -329,9 +331,9 @@ struct TimeOrderedMapBlock {
 	};
 };
 
-/*
+/ *
 	Updates usage timers
-*/
+* /
 void Map::timerUpdate(float dtime, float unload_timeout, u32 max_loaded_blocks,
 		std::vector<v3s16> *unloaded_blocks)
 {
@@ -467,6 +469,8 @@ void Map::unloadUnreferencedBlocks(std::vector<v3s16> *unloaded_blocks)
 {
 	timerUpdate(0.0, -1.0, 0, unloaded_blocks);
 }
+*/
+// << KIDSCODE - Threading
 
 void Map::deleteSectors(std::vector<v2s16> &sectorList)
 {
@@ -490,6 +494,8 @@ void Map::transforming_liquid_add(v3s16 p) {
 	m_liquid_logic->addTransforming(p);
 }
 
+// >> KIDSCODE - Threading - Moved to ServerMap
+/*
 void Map::enableLiquidsTransform(bool enabled) {
 	m_liquid_transform_enabled = enabled;
 }
@@ -500,6 +506,8 @@ void Map::transformLiquids(std::map<v3s16, MapBlock*> &modified_blocks,
 	if (m_liquid_transform_enabled)
 		m_liquid_logic->transform(modified_blocks, env);
 }
+*/
+// << KIDSCODE - Threading ?
 
 std::vector<v3s16> Map::findNodesWithMetadata(v3s16 p1, v3s16 p2)
 {
@@ -799,6 +807,44 @@ bool Map::isBlockOccluded(MapBlock *block, v3s16 cam_pos_nodes)
 	return true;
 }
 
+// KIDSCODE - Threading
+// TODO : Add an internal mutex to avoid conflicts instead of using exlusive for that
+void SharedMutex::lock() {
+	m_exclusive_mutex.lock();
+	while (m_shared_count) {
+		m_exclusive_mutex.unlock();
+		std::this_thread::yield();
+		m_exclusive_mutex.lock();
+	}
+	m_thread = std::this_thread::get_id();
+}
+
+void SharedMutex::unlock() {
+	m_thread = std::thread::id();
+	m_exclusive_mutex.unlock();
+}
+
+void SharedMutex::lock_shared() {
+	if (m_thread == std::this_thread::get_id()) {
+		m_shared_count++;
+	} else {
+		std::unique_lock<std::mutex> lock(m_exclusive_mutex);
+		m_shared_count++;
+	}
+}
+
+void SharedMutex::unlock_shared() {
+	if (m_thread == std::this_thread::get_id()) {
+		if (m_shared_count > 0)
+			m_shared_count--;
+	} else {
+		std::unique_lock<std::mutex> lock(m_exclusive_mutex);
+		if (m_shared_count > 0)
+			m_shared_count--;
+	}
+}
+// << KIDSCODE - Threading
+
 /*
 	ServerMap
 */
@@ -806,7 +852,8 @@ ServerMap::ServerMap(const std::string &savedir, IGameDef *gamedef,
 		EmergeManager *emerge):
 	Map(dout_server, gamedef),
 	settings_mgr(g_settings, savedir + DIR_DELIM + "map_meta.txt"),
-	m_emerge(emerge)
+	m_emerge(emerge),
+	m_map_save_thread(this) // KIDSCODE - Threading
 {
 	verbosestream<<FUNCTION_NAME<<std::endl;
 
@@ -860,7 +907,7 @@ ServerMap::ServerMap(const std::string &savedir, IGameDef *gamedef,
 
 				m_map_saving_enabled = true;
 				// Map loaded, not creating new one
-				return;
+				// return; // KIDSCODE - Threading
 			}
 		}
 		// If directory doesn't exist, it is safe to save to it
@@ -875,6 +922,12 @@ ServerMap::ServerMap(const std::string &savedir, IGameDef *gamedef,
 		infostream<<"Please remove the map or fix it."<<std::endl;
 		warningstream<<"Map saving will be disabled."<<std::endl;
 	}
+
+	// >> KIDSCODE - Threading
+	if (m_map_saving_enabled && isThreadCapable()) {
+		m_map_save_thread.start();
+	}
+	// << KIDSCODE - Threading
 }
 
 ServerMap::~ServerMap()
@@ -884,8 +937,18 @@ ServerMap::~ServerMap()
 	try
 	{
 		if (m_map_saving_enabled) {
-			// Save only changed parts
-			save(MOD_STATE_WRITE_AT_UNLOAD);
+			// >> KIDSCODE - Threading
+			if (isThreadCapable()) {
+				// Stop continuous saving thread
+				m_map_save_thread.stop();
+				m_map_save_thread.wait();
+			} else {
+				// Save only changed parts
+				save(MOD_STATE_WRITE_AT_UNLOAD);
+			}
+		//	// Save only changed parts
+		//	save(MOD_STATE_WRITE_AT_UNLOAD);
+			// << KIDSCODE - Threading
 			infostream << "ServerMap: Saved map to " << m_savedir << std::endl;
 		} else {
 			infostream << "ServerMap: Map not saved" << std::endl;
@@ -916,6 +979,126 @@ ServerMap::~ServerMap()
 	}
 #endif
 }
+
+// >> KIDSCODE - Threading
+s64 getBlockAsInteger(const v3s16 &pos)
+{
+	return (u64) pos.Z * 0x1000000 +
+			(u64) pos.Y * 0x1000 +
+			(u64) pos.X;
+}
+
+void ServerMap::lockBlock(const v3s16 &pos)
+{
+	s64 key = getBlockAsInteger(pos);
+	auto holding = m_debug_locking_threads[key];
+	if (holding != std::thread::id() &&
+			holding != std::this_thread::get_id())
+
+		m_block_mutexes[getBlockAsInteger(pos)].lock();
+	// Debug purpose
+	m_debug_locking_threads[getBlockAsInteger(pos)] = std::this_thread::get_id();
+}
+
+bool ServerMap::tryLockBlock(const v3s16 &pos)
+{
+	return m_block_mutexes[getBlockAsInteger(pos)].try_lock();
+}
+
+void ServerMap::unlockBlock(const v3s16 &pos)
+{
+	s64 key = getBlockAsInteger(pos);
+	auto it = m_block_mutexes.find(key);
+	if (it != m_block_mutexes.end()) {
+		m_debug_locking_threads[key] = std::thread::id();
+		it->second.unlock();
+	}
+}
+
+/*
+	Unload outdated blocks
+*/
+
+// Must be protected behind exlusive map_mutex
+void ServerMap::unloadBlocks(float dtime, float unload_timeout,
+		std::vector<v3s16> *unloaded_blocks)
+{
+	std::vector<v2s16> sector_deletion_queue;
+	u32 deleted_blocks_count = 0;
+	u32 block_count_all = 0;
+
+	for (auto &sector_it : m_sectors) {
+		MapSector *sector = sector_it.second;
+		bool all_blocks_deleted = true;
+
+		MapBlockVect blocks;
+		sector->getBlocks(blocks);
+
+		for (MapBlock *block : blocks) {
+			block->incrementUsageTimer(dtime);
+
+			if (block->refGet() == 0
+					&& block->getUsageTimer() > unload_timeout) {
+				v3s16 p = block->getPos();
+
+				// Delete only saved (blocks will be saved by save thread)
+				if (block->getModified() == MOD_STATE_CLEAN) {
+
+					// Make sure nobody else is using this block
+					if (tryLockBlock(p)) {
+						// Delete from memory
+						sector->deleteBlock(block);
+
+						if (unloaded_blocks)
+							unloaded_blocks->push_back(p);
+
+						deleted_blocks_count++;
+						unlockBlock(p);
+						continue; // Dont count this block as remaining
+					}
+				}
+			}
+
+			all_blocks_deleted = false;
+			block_count_all++;
+		}
+
+		if (all_blocks_deleted) {
+			sector_deletion_queue.push_back(sector_it.first);
+		}
+	}
+
+	// Finally delete the empty sectors
+	deleteSectors(sector_deletion_queue);
+
+	if(deleted_blocks_count != 0)
+	{
+
+		PrintInfo(infostream); // ServerMap/ClientMap:
+		infostream<<"Unloaded "<<deleted_blocks_count
+		<<" blocks from memory";
+		infostream<<", "<<block_count_all<<" blocks in memory";
+		infostream<<"."<<std::endl;
+	}
+}
+
+void ServerMap::unloadUnreferencedBlocks(std::vector<v3s16> *unloaded_blocks)
+{
+	lockMapExclusive();
+	save(MOD_STATE_WRITE_NEEDED);
+	unloadBlocks(0.0, -1.0, unloaded_blocks);
+	unlockMapExclusive();
+}
+
+void ServerMap::unloadOutdatedBlocks(float dtime, float unload_timeout,
+		std::vector<v3s16> *unloaded_blocks)
+{
+	// It could be acheived with block lock
+	lockMapExclusive();
+	unloadBlocks(dtime, unload_timeout, unloaded_blocks);
+	unlockMapExclusive();
+}
+// << KIDSCODE - Threading
 
 MapgenParams *ServerMap::getMapgenParams()
 {
@@ -949,6 +1132,7 @@ bool ServerMap::blockpos_over_mapgen_limit(v3s16 p)
 
 bool ServerMap::initBlockMake(v3s16 blockpos, BlockMakeData *data)
 {
+	lockMap(); // KIDSCODE - Threading
 	s16 csize = getMapgenParams()->chunksize;
 	v3s16 bpmin = EmergeManager::getContainingChunk(blockpos, csize);
 	v3s16 bpmax = bpmin + v3s16(1, 1, 1) * (csize - 1);
@@ -1061,12 +1245,14 @@ void ServerMap::finishBlockMake(BlockMakeData *data,
 		/*
 			Update day/night difference cache of the MapBlocks
 		*/
+		block->lockBlock(); // KIDSCODE - Threading
 		block->expireDayNightDiff();
 		/*
 			Set block as modified
 		*/
 		block->raiseModified(MOD_STATE_WRITE_NEEDED,
 			MOD_REASON_EXPIRE_DAYNIGHTDIFF);
+		block->unlockBlock(); // KIDSCODE - Threading
 	}
 
 	/*
@@ -1087,6 +1273,7 @@ void ServerMap::finishBlockMake(BlockMakeData *data,
 		NOTE: Will be saved later.
 	*/
 	//save(MOD_STATE_WRITE_AT_UNLOAD);
+	unlockMap(); // KIDSCODE - Threading
 }
 
 MapSector *ServerMap::createSector(v2s16 p2d)
@@ -1384,6 +1571,88 @@ void ServerMap::createDirs(const std::string &path)
 	}
 }
 
+// >> KIDSCODE - Threading
+// Must be protected behind exlusive map_mutex
+void ServerMap::save(ModifiedState save_level, int timelimitms)
+{
+	std::chrono::time_point<std::chrono::system_clock> endtime;
+	if (!m_map_saving_enabled) {
+		warningstream<<"Not saving map, saving disabled."<<std::endl;
+		return;
+	}
+
+	if(save_level == MOD_STATE_CLEAN)
+		infostream<<"ServerMap: Saving whole map, this can take time."
+				<<std::endl;
+
+	if (m_map_metadata_changed || save_level == MOD_STATE_CLEAN) {
+		if (settings_mgr.saveMapMeta())
+			m_map_metadata_changed = false;
+	}
+
+	// Profile modified reasons
+	Profiler modprofiler;
+
+	u32 block_count = 0;
+
+	// Don't do anything with sqlite unless something is really saved
+	bool save_started = false;
+
+	bool out_of_time = false;
+
+	for (auto &sector_it : m_sectors) {
+		MapSector *sector = sector_it.second;
+
+		MapBlockVect blocks;
+		sector->getBlocks(blocks);
+
+		for (MapBlock *block : blocks) {
+			if(block->getModified() < (u32)save_level)
+				continue;
+
+			// Lazy beginSave()
+			if(save_started) {
+				if (timelimitms)
+					out_of_time = std::chrono::system_clock::now() > endtime;
+			} else {
+				// Start transaction and compute max end time
+				beginSave();
+				if (timelimitms)
+					endtime = std::chrono::system_clock::now() +
+						std::chrono::milliseconds(timelimitms);
+				save_started = true;
+			}
+			if(out_of_time)
+				break;
+
+			modprofiler.add(block->getModifiedReasonString(), 1);
+			saveBlock(block);
+			block_count++;
+		}
+		if(out_of_time)
+			break;
+	}
+
+	if(save_started)
+		endSave();
+
+	if(block_count && out_of_time)
+		// TODO: Put that in infostream
+		printf("Could only save %d blocks (more to save)\n", block_count);
+
+	/*
+		Only print if something happened or saved whole map
+	*/
+	if(save_level == MOD_STATE_CLEAN || block_count != 0) {
+		infostream<<"ServerMap: Written: "
+				<<block_count<<" blocks"<<std::endl;
+		PrintInfo(infostream); // ServerMap/ClientMap:
+		infostream<<"Blocks modified by: "<<std::endl;
+		modprofiler.print(infostream);
+	}
+
+}
+/*
 void ServerMap::save(ModifiedState save_level)
 {
 	if (!m_map_saving_enabled) {
@@ -1436,9 +1705,9 @@ void ServerMap::save(ModifiedState save_level)
 	if(save_started)
 		endSave();
 
-	/*
+	/ *
 		Only print if something happened or saved whole map
-	*/
+	* /
 	if(save_level == MOD_STATE_CLEAN
 			|| block_count != 0) {
 		infostream<<"ServerMap: Written: "
@@ -1450,6 +1719,8 @@ void ServerMap::save(ModifiedState save_level)
 		modprofiler.print(infostream);
 	}
 }
+*/
+// << KIDSCODE - Threading
 
 void ServerMap::listAllLoadableBlocks(std::vector<v3s16> &dst)
 {
@@ -1501,6 +1772,18 @@ MapDatabase *ServerMap::createDatabase(
 	throw BaseException(std::string("Database backend ") + name + " not supported.");
 }
 
+// >> KIDSCODE - Threading
+bool ServerMap::isThreadCapable()
+{
+	return dbase->isThreadCapable();
+}
+
+void ServerMap::setThreadWriteAccess(bool writeaccess)
+{
+	dbase->setThreadWriteAccess(writeaccess);
+}
+// << KIDSCODE - Threading
+
 void ServerMap::beginSave()
 {
 	dbase->beginSave();
@@ -1513,9 +1796,17 @@ void ServerMap::endSave()
 
 bool ServerMap::saveBlock(MapBlock *block)
 {
-	return saveBlock(block, dbase);
+	// >> KIDSCODE - Threading
+	lockMap();
+	bool ret = saveBlock(block, dbase);
+	unlockMap();
+	return ret;
+//	return saveBlock(block, dbase);
+	// << KIDSCODE - Threading
 }
 
+// Cannot lock map, this version is static. It is used for map conversion at
+// starting. // KIDSCODE - Threading
 bool ServerMap::saveBlock(MapBlock *block, MapDatabase *db)
 {
 	v3s16 p3d = block->getPos();
@@ -1536,6 +1827,7 @@ bool ServerMap::saveBlock(MapBlock *block, MapDatabase *db)
 	*/
 	std::ostringstream o(std::ios_base::binary);
 	o.write((char*) &version, 1);
+	block->lockBlock(); // KIDSCODE - Threading
 	block->serialize(o, version, true);
 
 	bool ret = db->saveBlock(p3d, o.str());
@@ -1543,6 +1835,7 @@ bool ServerMap::saveBlock(MapBlock *block, MapDatabase *db)
 		// We just wrote it to the disk so clear modified flag
 		block->resetModified();
 	}
+	block->unlockBlock(); // KIDSCODE - Threading
 	return ret;
 }
 
@@ -1575,7 +1868,6 @@ void ServerMap::loadBlock(std::string *blob, v3s16 p3d, MapSector *sector, bool 
 			sector->insertBlock(block);
 			m_liquid_logic->scanBlock(block);
 		}
-
 		/*
 			Save blocks loaded in old format in new format
 		*/
@@ -1608,7 +1900,11 @@ void ServerMap::loadBlock(std::string *blob, v3s16 p3d, MapSector *sector, bool 
 
 MapBlock* ServerMap::loadBlock(v3s16 blockpos)
 {
+	lockMap(); // KIDSCODE - Threading
+
 	bool created_new = (getBlockNoCreateNoEx(blockpos) == NULL);
+
+	lockBlock(blockpos); // KIDSCODE - Threading
 
 	v2s16 p2d(blockpos.X, blockpos.Z);
 
@@ -1617,13 +1913,18 @@ MapBlock* ServerMap::loadBlock(v3s16 blockpos)
 	if (!ret.empty()) {
 		loadBlock(&ret, blockpos, createSector(p2d), false);
 	} else if (dbase_ro) {
+		//TODO: Unknown compatibility between RO db and threaded db
 		dbase_ro->loadBlock(blockpos, &ret);
 		if (!ret.empty()) {
 			loadBlock(&ret, blockpos, createSector(p2d), false);
 		}
 	} else {
-		return NULL;
+		unlockMap(); // KIDSCODE - Threading
+		unlockBlock(blockpos); // KIDSCODE - Threading
+		return nullptr;
 	}
+
+	unlockBlock(blockpos); // KIDSCODE - Threading
 
 	MapBlock *block = getBlockNoCreateNoEx(blockpos);
 	if (created_new && (block != NULL)) {
@@ -1641,25 +1942,46 @@ MapBlock* ServerMap::loadBlock(v3s16 blockpos)
 			dispatchEvent(event);
 		}
 	}
+	unlockMap(); // KIDSCODE - Threading
 	return block;
 }
 
 bool ServerMap::deleteBlock(v3s16 blockpos)
 {
-	if (!dbase->deleteBlock(blockpos))
+	lockMap(); // KIDSCODE - Threading
+	lockBlock(blockpos); // KIDSCODE - Threading
+
+	if (!dbase->deleteBlock(blockpos)) {
+		unlockBlock(blockpos); // KIDSCODE - Threading
+		unlockMap(); // KIDSCODE - Threading
 		return false;
+	}
 
 	MapBlock *block = getBlockNoCreateNoEx(blockpos);
 	if (block) {
 		v2s16 p2d(blockpos.X, blockpos.Z);
 		MapSector *sector = getSectorNoGenerate(p2d);
-		if (!sector)
+		if (!sector) {
+			unlockBlock(blockpos); // KIDSCODE - Threading
+			unlockMap(); // KIDSCODE - Threading
 			return false;
+		}
 		sector->deleteBlock(block);
 	}
 
+	unlockBlock(blockpos); // KIDSCODE - Threading
+	unlockMap(); // KIDSCODE - Threading
 	return true;
 }
+
+// >> KIDSCODE - Threading
+void ServerMap::transformLiquids(std::map<v3s16, MapBlock*> &modified_blocks,
+		ServerEnvironment *env)
+{
+	if (!m_frozen)
+		m_liquid_logic->transform(modified_blocks, env);
+}
+// << KIDSCODE - Threading
 
 void ServerMap::PrintInfo(std::ostream &out)
 {
@@ -1669,21 +1991,59 @@ void ServerMap::PrintInfo(std::ostream &out)
 bool ServerMap::repairBlockLight(v3s16 blockpos,
 	std::map<v3s16, MapBlock *> *modified_blocks)
 {
+	lockMap(); // KIDSCODE - Threading
+
 	MapBlock *block = emergeBlock(blockpos, false);
-	if (!block || !block->isGenerated())
+	if (!block || !block->isGenerated()) {
+		unlockMap(); // KIDSCODE - Threading
 		return false;
+	}
+
+	block->lockBlock(); // KIDSCODE - Threading
 	voxalgo::repair_block_light(this, block, modified_blocks);
+	block->unlockBlock(); // KIDSCODE - Threading
+
+	unlockMap(); // KIDSCODE - Threading
 	return true;
 }
 
-void ServerMap::createBackup(const std::string &backup_name)
+// >> KIDSCODE - Threading
+void ServerMap::rwCreateBackup(const std::string &backup_name, ServerEnvironment *env)
+{
+	lockMapExclusive();
+
+	// Force loaded entities to hibernate
+	env->clearActiveBlocks();
+	env->deactivateFarObjects(false);
+	save(MOD_STATE_WRITE_NEEDED);
+	unloadBlocks(0.0, -1.0, nullptr);
+
+	// TODO: Return if backup has been saved
+	dbase->createBackup(backup_name);
+	unlockMapExclusive();
+}
+
+/*void ServerMap::createBackup(const std::string &backup_name)
 {
 	// TODO: Return if backup has been saved
 	dbase->createBackup(backup_name);
 }
+*/
+// << KIDSCODE - Threading
 
-void ServerMap::restoreBackup(const std::string &backup_name)
+// >> KIDSCODE - Threading
+void ServerMap::rwRestoreBackup(const std::string &backup_name, ServerEnvironment *env)
 {
+	lockMapExclusive();
+	m_liquid_logic->reset();
+	env->clearObjects(CLEAR_OBJECTS_MODE_LOADED_ONLY);
+	env->clearActiveBlocks();
+
+/*
+void ServerMap::restoreBackup(const std::string &backup_name)
+{*/
+// << KIDSCODE - Threading
+
 	// Prepare a map event to tell to client that blocks have changed
 	MapEditEvent event;
 	event.type = MEET_OTHER;
@@ -1716,19 +2076,75 @@ void ServerMap::restoreBackup(const std::string &backup_name)
 	// Restore map table to wanted savepoint state
 	dbase->restoreBackup(backup_name);
 
+	unlockMapExclusive(); // KIDSCODE - Threading
+
 	// Send map event to client
 	dispatchEvent(event);
 }
 
-void ServerMap::deleteBackup(const std::string &backup_name)
+void ServerMap::rwDeleteBackup(const std::string &backup_name, ServerEnvironment *env) // >> KIDSCODE - Threading
+//void ServerMap::deleteBackup(const std::string &backup_name)
 {
+	env->clearActiveBlocks();  // ?? // KIDSCODE - Threading
 	dbase->deleteBackup(backup_name);
 }
+// << KIDSCODE - Threading
 
 void ServerMap::listBackups(std::vector<std::string> &dst)
 {
 	dbase->listBackups(dst);
 }
+
+// >> KIDSCODE - Threading
+/*
+ * Map save thread
+ */
+
+void *ServerMapSaveThread::run()
+{
+	if (!m_map->isThreadCapable())
+		return nullptr;
+
+	m_map->setThreadWriteAccess(true);
+
+	while (!stopRequested()) {
+		switch(m_pending_op) {
+		case PO_CREATE_BACKUP:
+			m_map->rwCreateBackup(m_name, m_env);
+			m_pending_op = PO_NONE;
+			break;
+		case PO_RESTORE_BACKUP:
+			m_map->rwRestoreBackup(m_name, m_env);
+			m_pending_op = PO_NONE;
+			break;
+		case PO_DELETE_BACKUP:
+			m_map->rwDeleteBackup(m_name, m_env);
+			m_pending_op = PO_NONE;
+			break;
+		default:
+	//              if (!m_map->is_frozen()) {
+			m_map->lockMap();
+			m_map->save(MOD_STATE_WRITE_NEEDED, 100);
+			m_map->unlockMap();
+			sleep_ms(100);
+		}
+	}
+
+	// Perform a complete save before exiting
+	m_map->save(MOD_STATE_WRITE_AT_UNLOAD);
+	return nullptr;
+}
+
+void ServerMapSaveThread::setOp(PendingOps op, const std::string &name, ServerEnvironment *env)
+{
+	MutexAutoLock lock(m_pending_op_mutex);
+	while (m_pending_op != PO_NONE)
+		std::this_thread::yield();
+	m_name = name;
+	m_env = env;
+	m_pending_op = op;
+}
+// << KIDSCODE - Threading
 
 MMVManip::MMVManip(Map *map):
 		VoxelManipulator(),
@@ -1825,6 +2241,8 @@ void MMVManip::blitBackAll(std::map<v3s16, MapBlock*> *modified_blocks,
 	if(m_area.getExtent() == v3s16(0,0,0))
 		return;
 
+	m_map->lockMap(); // KIDSCODE - Threading
+
 	/*
 		Copy data of all blocks
 	*/
@@ -1836,12 +2254,15 @@ void MMVManip::blitBackAll(std::map<v3s16, MapBlock*> *modified_blocks,
 			(!overwrite_generated && block->isGenerated()))
 			continue;
 
+		block->lockBlock(); // KIDSCODE - Threading
 		block->copyFrom(*this);
 		block->raiseModified(MOD_STATE_WRITE_NEEDED, MOD_REASON_VMANIP);
+		block->unlockBlock(); // KIDSCODE - Threading
 
 		if(modified_blocks)
 			(*modified_blocks)[p] = block;
 	}
+	m_map->unlockMap(); // KIDSCODE - Threading
 }
 
 //END

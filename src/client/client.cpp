@@ -382,7 +382,10 @@ void Client::step(float dtime)
 	const float map_timer_and_unload_dtime = 5.25;
 	if(m_map_timer_and_unload_interval.step(dtime, map_timer_and_unload_dtime)) {
 		std::vector<v3s16> deleted_blocks;
-		m_env.getMap().timerUpdate(map_timer_and_unload_dtime,
+		// >> KIDSCODE - Threading
+		m_env.getClientMap().unloadOutdatedBlocks(map_timer_and_unload_dtime,
+		// m_env.getMap().timerUpdate(map_timer_and_unload_dtime,
+		// << KIDSCODE
 			g_settings->getFloat("client_unload_unused_data_timeout"),
 			g_settings->getS32("client_mapblock_limit"),
 			&deleted_blocks);

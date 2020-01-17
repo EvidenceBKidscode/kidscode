@@ -34,6 +34,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "nodetimer.h"
 #include "map_settings_manager.h"
 #include "debug.h"
+#include "util/thread.h" // KIDSCODE - Threading
 
 class Settings;
 class MapDatabase;
@@ -139,6 +140,15 @@ public:
 		delete this;
 	}
 
+	// >> KIDSCODE - Threading
+	virtual inline void lockMap() {};
+	virtual inline void unlockMap() {};
+
+	virtual void lockBlock(const v3s16 &pos) {};
+	virtual bool tryLockBlock(const v3s16 &pos) { return true; };
+	virtual void unlockBlock(const v3s16 &pos) {};
+	// << KIDSCODE - Threading
+
 	void addEventReceiver(MapEventReceiver *event_receiver);
 	void removeEventReceiver(MapEventReceiver *event_receiver);
 	// event shall be deleted by caller after the call.
@@ -209,18 +219,20 @@ public:
 	virtual bool saveBlock(MapBlock *block) { return false; }
 	virtual bool deleteBlock(v3s16 blockpos) { return false; }
 
-	/*
+/* KIDSCODE - Threading
+	/ *
 		Updates usage timers and unloads unused blocks and sectors.
 		Saves modified blocks before unloading on MAPTYPE_SERVER.
-	*/
+	* /
 	void timerUpdate(float dtime, float unload_timeout, u32 max_loaded_blocks,
 			std::vector<v3s16> *unloaded_blocks=NULL);
 
-	/*
+	/ *
 		Unloads all blocks with a zero refCount().
 		Saves modified blocks before unloading on MAPTYPE_SERVER.
-	*/
+	* /
 	void unloadUnreferencedBlocks(std::vector<v3s16> *unloaded_blocks=NULL);
+*/
 
 	// Deletes sectors and their blocks from memory
 	// Takes cache into account
@@ -230,10 +242,22 @@ public:
 	// For debug printing. Prints "Map: ", "ServerMap: " or "ClientMap: "
 	virtual void PrintInfo(std::ostream &out);
 
+ 	// >> KIDSCODE - Threading
+	// Stops all operations on map (usefull for big bulk map operations such as
+	// map fill)
+	inline void freeze(bool frozen) { m_frozen = frozen; }; // KIDSCODE - Threading
+
+	inline bool is_frozen() { return m_frozen; };
+
+	virtual void transformLiquids(std::map<v3s16, MapBlock*> & modified_blocks,
+			ServerEnvironment *env) { printf("wrong transformLiquids\n"); };
+	/*
 	void enableLiquidsTransform(bool enabled);
 
 	void transformLiquids(std::map<v3s16, MapBlock*> & modified_blocks,
-			ServerEnvironment *env);
+		ServerEnvironment *env);
+	*/
+	// << KIDSCODE - Threading
 
 	/*
 		Node metadata
@@ -285,6 +309,8 @@ public:
 	inline LiquidLogic * getLiquidLogic() { return m_liquid_logic; }
 
 protected:
+	bool m_frozen = false; // KIDSCODE - Threading?
+
 	friend class LuaVoxelManip;
 
 	std::ostream &m_dout; // A bit deprecated, could be removed
@@ -300,7 +326,7 @@ protected:
 	v2s16 m_sector_cache_p;
 
 	// Queued transforming water nodes
-//	UniqueQueue<v3s16> m_transforming_liquid;
+//	UniqueQueue<v3s16> m_transforming_liquid; // KIDSCODE - Liquid Logic
 
 	// This stores the properties of the nodes on the map.
 	const NodeDefManager *m_nodedef;
@@ -311,25 +337,86 @@ protected:
 		float step, float stepfac, float start_offset, float end_offset,
 		u32 needed_count);
 
-	LiquidLogic *m_liquid_logic;
-	bool m_liquid_transform_enabled = true;
-
+	LiquidLogic *m_liquid_logic;  // KIDSCODE - Liquid Logic
 private:
-//	f32 m_transforming_liquid_loop_count_multiplier = 1.0f;
-//	u32 m_unprocessed_count = 0;
-//	u64 m_inc_trending_up_start_time = 0; // milliseconds
-//	bool m_queue_size_timer_started = false;
+/* KIDSCODE - Liquid Logic
+	f32 m_transforming_liquid_loop_count_multiplier = 1.0f;
+	u32 m_unprocessed_count = 0;
+	u64 m_inc_trending_up_start_time = 0; // milliseconds
+	bool m_queue_size_timer_started = false;
+*/
 };
 
+// >> KIDSCODE - Threading
 /*
-	ServerMap
++       ServerMapSaveThread
++
++       Thread continuously saving map data.
++*/
+class SharedMutex
+{
+public:
+	void lock();
+	void unlock();
+	void lock_shared();
+	void unlock_shared();
+private:
+	std::mutex m_exclusive_mutex;
+	int m_shared_count = 0;
+	std::thread::id m_thread;
+};
 
-	This is the only map class that is able to generate map.
-*/
+class ServerMap;
+class ServerMapSaveThread : public Thread
+{
+public:
+	ServerMapSaveThread(ServerMap *map):
+		Thread("MapSave"),
+		m_map(map)
+	{
+	}
+
+	void *run();
+
+	// Other write operations not permitted in main thread
+	void createBackup(const std::string &name, ServerEnvironment *env)
+		{ setOp(PO_CREATE_BACKUP,  name, env); };
+	void restoreBackup(const std::string &name, ServerEnvironment *env)
+		{ setOp(PO_RESTORE_BACKUP, name, env); };
+	void deleteBackup(const std::string &name, ServerEnvironment *env)
+		{ setOp(PO_DELETE_BACKUP,  name, env); };
+
+private:
+	enum PendingOps {
+		PO_NONE,
+		PO_CREATE_BACKUP,
+		PO_RESTORE_BACKUP,
+		PO_DELETE_BACKUP
+	};
+	void setOp(PendingOps op, const std::string &name, ServerEnvironment *env);
+
+	std::mutex m_pending_op_mutex;
+	PendingOps m_pending_op = PO_NONE;
+	std::string m_name;
+
+	ServerMap *m_map;
+	ServerEnvironment *m_env;
+	bool m_stop();
+ };
+
+// << KIDSCODE - Threading
+
+ /*
+ 	ServerMap
+
+ 	This is the only map class that is able to generate map.
+ */
 
 class ServerMap : public Map
 {
 public:
+	friend class ServerMapSaveThread; // KIDSCODE - Threading
+
 	/*
 		savedir: directory to which map data should be saved
 	*/
@@ -340,6 +427,24 @@ public:
 	{
 		return MAPTYPE_SERVER;
 	}
+
+	// >> KIDSCODE - Threading
+	// Ensure map is not modified inbetween lock and unlock
+	inline void lockMap() { m_map_mutex.lock_shared(); };
+	inline void unlockMap() { m_map_mutex.unlock_shared(); };
+	inline void lockMapExclusive() { m_map_mutex.lock(); };
+	inline void unlockMapExclusive() { m_map_mutex.unlock(); };
+
+	void lockBlock(const v3s16 &pos);
+	void unlockBlock(const v3s16 &pos);
+	bool tryLockBlock(const v3s16 &pos);
+
+	/*
+	Unloads all blocks with a zero refCount().
+	Saves modified blocks before unloading.
+	*/
+	void unloadUnreferencedBlocks(std::vector<v3s16> *unloaded_blocks=NULL);
+	// << KIDSCODE - Threading
 
 	/*
 		Get a sector from somewhere.
@@ -395,11 +500,15 @@ public:
 	*/
 	static MapDatabase *createDatabase(const std::string &name, const std::string &savedir, Settings &conf);
 
+	bool isThreadCapable(); // KIDSCODE - Threading
+	void setThreadWriteAccess(bool writeaccess); // KIDSCODE - Threading
+
 	// Call these before and after saving of blocks
 	void beginSave();
 	void endSave();
 
-	void save(ModifiedState save_level);
+	void save(ModifiedState save_level, int timelimitms = 0); // KIDSCODE - Threading
+	//void save(ModifiedState save_level);
 	void listAllLoadableBlocks(std::vector<v3s16> &dst);
 	void listAllLoadedBlocks(std::vector<v3s16> &dst);
 
@@ -433,12 +542,48 @@ public:
 	bool repairBlockLight(v3s16 blockpos,
 		std::map<v3s16, MapBlock *> *modified_blocks);
 
+// >> KIDSCODE - Threading
+	void transformLiquids(std::map<v3s16, MapBlock*> &modified_blocks,
+			ServerEnvironment *env);
+
+	void createBackup(const std::string &backup_name, ServerEnvironment *env)
+		{ m_map_save_thread.createBackup(backup_name, env); };
+	void restoreBackup(const std::string &backup_name, ServerEnvironment *env)
+		{ m_map_save_thread.restoreBackup(backup_name, env); };
+	void deleteBackup(const std::string &backup_name, ServerEnvironment *env)
+		{ m_map_save_thread.deleteBackup(backup_name, env); };
+	/*
 	void createBackup(const std::string &backup_name);
 	void restoreBackup(const std::string &backup_name);
 	void deleteBackup(const std::string &backup_name);
+	*/
+// << KIDSCODE - Threading
+
 	void listBackups(std::vector<std::string> &dst);
 
 	MapSettingsManager settings_mgr;
+
+// >> KIDSCODE - Threading
+	/*
+	Unload outdated saved blocks
+	*/
+	// Trhead safe
+	void unloadOutdatedBlocks(float dtime, float unload_timeout,
+		std::vector<v3s16> *unloaded_blocks=NULL);
+
+	// Must be protected behind exlusive map_mutex
+	void unloadBlocks(float dtime, float unload_timeout,
+		std::vector<v3s16> *unloaded_blocks=NULL);
+
+protected:
+
+
+	// Load block from database
+	void loadBlock(std::string *blob, v3s16 p3d, MapSector *sector);
+	void rwCreateBackup(const std::string &backup_name, ServerEnvironment *env);
+	void rwRestoreBackup(const std::string &backup_name, ServerEnvironment *env);
+	void rwDeleteBackup(const std::string &backup_name, ServerEnvironment *env);
+// << KIDSCODE - Threading
 
 private:
 	// Emerge manager
@@ -446,6 +591,15 @@ private:
 
 	std::string m_savedir;
 	bool m_map_saving_enabled;
+
+// >> KIDSCODE - Threading
+	// Multithread management
+	SharedMutex m_map_mutex;
+	std::map<s64, std::recursive_mutex> m_block_mutexes;
+	std::map<s64, std::thread::id> m_debug_locking_threads;
+
+	ServerMapSaveThread m_map_save_thread;
+// << KIDSCODE - Threading
 
 #if 0
 	// Chunk size in MapSectors

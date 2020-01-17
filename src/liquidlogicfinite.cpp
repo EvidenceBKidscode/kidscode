@@ -28,6 +28,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "gamedef.h"
 #include "voxelalgorithms.h"
 #include "emerge.h"
+#include "server.h" // KIDSCODE - Threading
 #include <algorithm>
 #include <chrono>
 
@@ -78,14 +79,42 @@ LiquidLogicFinite::LiquidLogicFinite(Map *map, IGameDef *gamedef) :
 {
 }
 
+// >> KIDSCODE - Threading
+// Thread management methods
+void LiquidLogicFinite::lockBlock(v3s16 pos)
+{
+	u64 key = pos_to_key(pos);
+	auto it = m_locked_blocks.find(key);
+	if (it == m_locked_blocks.end()) {
+		m_map->lockBlock(pos);
+		m_locked_blocks.insert(key);
+	}
+}
+
+void LiquidLogicFinite::unlockAllBlocks()
+{
+	for (auto key : m_locked_blocks)
+		m_map->unlockBlock(key_to_pos(key));
+	m_locked_blocks.clear();
+}
+// << KIDSCODE - Threading
+
 void LiquidLogicFinite::addTransforming(v3s16 p) {
-	m_liquid_queue.push_back(p);
+	// >> KIDSCODE - Threading
+	MutexAutoLock lock(m_extra_liquid_queue_mutex);
+	m_extra_liquid_queue.push_back(p);
+//	m_liquid_queue.push_back(p);
+	// << KIDSCODE - Threading
 }
 
 void LiquidLogicFinite::addTransformingFromData(BlockMakeData *data)
 {
+	MutexAutoLock lock(m_extra_liquid_queue_mutex); // KIDSCODE - Threading
 	while (data->transforming_liquid.size()) {
-		m_liquid_queue.push_back(data->transforming_liquid.front());
+		// >> KIDSCODE - Threading
+		m_extra_liquid_queue.push_back(data->transforming_liquid.front());
+	//	m_liquid_queue.push_back(data->transforming_liquid.front());
+		// << KIDSCODE - Threading
 		data->transforming_liquid.pop_front();
 	}
 }
@@ -99,17 +128,23 @@ void LiquidLogicFinite::scanBlock(MapBlock *block)
 	m_block_pos = block->getPos();
 	m_rel_block_pos = block->getPosRelative();
 
+	MutexAutoLock lock(m_extra_liquid_queue_mutex); // KIDSCODE - Threading
+
 	for (s16 z = 0; z < MAP_BLOCKSIZE; z++)
 	for (s16 y = 0; y < MAP_BLOCKSIZE; y++)
 	for (s16 x = 0; x < MAP_BLOCKSIZE; x++) {
 		MapNode node = block->getNodeNoCheck(x, y, z, &valid_position);
 		if (m_ndef->get(node).isLiquid())
-			m_liquid_queue.push_back(m_rel_block_pos + v3s16(x, y, z));
+			// >> KIDSCODE - Threading
+			m_extra_liquid_queue.push_back(m_rel_block_pos + v3s16(x, y, z));
+		//	m_liquid_queue.push_back(m_rel_block_pos + v3s16(x, y, z));
+			// << KIDSCODE - Threading
+
 	}
 }
 
 void LiquidLogicFinite::scanVoxelManip(UniqueQueue<v3s16> *liquid_queue,
-	MMVManip *vm, v3s16 nmin, v3s16 nmax)
+		MMVManip *vm, v3s16 nmin, v3s16 nmax)
 {
 	for (s16 z = nmin.Z + 1; z <= nmax.Z - 1; z++)
 	for (s16 y = nmax.Y; y >= nmin.Y; y--) {
@@ -125,7 +160,11 @@ void LiquidLogicFinite::scanVoxelManip(UniqueQueue<v3s16> *liquid_queue,
 
 void LiquidLogicFinite::scanVoxelManip(MMVManip *vm, v3s16 nmin, v3s16 nmax)
 {
-	scanVoxelManip(&m_liquid_queue, vm, nmin, nmax);
+	// >> KIDSCODE - Threading
+	MutexAutoLock lock(m_extra_liquid_queue_mutex);
+	scanVoxelManip(&m_extra_liquid_queue, vm, nmin, nmax);
+	// << KIDSCODE - Threading
+//	scanVoxelManip(&m_liquid_queue, vm, nmin, nmax);
 }
 
 void LiquidLogicFinite::add_flow(v3s16 pos, s8 amount,
@@ -139,6 +178,11 @@ void LiquidLogicFinite::add_flow(v3s16 pos, s8 amount,
 				pos.X, pos.Y, pos.Z, liquid.c_source, flow.c_liquid_source);
 		return;
 	}
+
+	// >> KIDSCODE - Threading
+	// Lock block that will be modified
+	lockBlock(getNodeBlockPos(pos));
+	// << KIDSCODE - Threading
 
 	flow.c_liquid_source = liquid.c_source;
 	if (amount > 0)
@@ -214,7 +258,7 @@ LiquidInfo LiquidLogicFinite::get_liquid_info(v3s16 pos) {
 }
 
 // TODO: Could be improved by caching some node info in flows (level, space)
-NodeInfo LiquidLogicFinite::get_node_info(v3s16 pos, const LiquidInfo &liquid) {
+NodeInfo LiquidLogicFinite::get_node_info(const v3s16 &pos, const LiquidInfo &liquid) {
 	NodeInfo info;
 	info.pos = pos;
 	info.node = m_map->getNode(pos);
@@ -286,6 +330,35 @@ NodeInfo LiquidLogicFinite::get_node_info(v3s16 pos, const LiquidInfo &liquid) {
 	return info;
 }
 
+// >> KIDSCODE - Threading
+void LiquidLogicFinite::defer_lua_trigger(LuaTriggerType type, const v3s16 &pos,
+const MapNode &old_node, const MapNode &new_node)
+{
+	LuaTrigger trigger = { type, pos, new_node, old_node };
+	m_lua_triggers.push_back(trigger);
+}
+
+void LiquidLogicFinite::run_lua_triggers(ServerEnvironment *env)
+{
+	while (m_lua_triggers.size()) {
+		auto trigger = m_lua_triggers.front();
+		m_lua_triggers.pop_front();
+		switch (trigger.type) {
+		case LTT_ON_FLOOD:
+			env->getScriptIface()
+				->node_on_flood(trigger.pos, trigger.old_node, trigger.new_node);
+			break;
+		case LTT_ON_LIQUIFY:
+			env->getScriptIface()
+				->node_on_liquify(trigger.pos, trigger.new_node);
+			break;
+		default:
+			;
+		}
+	}
+}
+// << KIDSCODE - Threading
+
 void LiquidLogicFinite::set_node(v3s16 pos, MapNode node,
 	std::map<v3s16, MapBlock*> &modified_blocks,
 	ServerEnvironment *env)
@@ -298,6 +371,16 @@ void LiquidLogicFinite::set_node(v3s16 pos, MapNode node,
 	// Ignore light (because calling voxalgo::update_lighting_nodes)
 	node.setLight(LIGHTBANK_DAY, 0, m_ndef);
 	node.setLight(LIGHTBANK_NIGHT, 0, m_ndef);
+
+	// PROBLEM HERE !!
+
+	// rollback interface must be behind m_env_mutex
+	// but it causes deadlocks (many locks on blocks + env and other thread getting env + locks on blocks)
+
+//	 MutexAutoLock lock(env->getGameDef()->m_env_mutex); // KIDSCODE - Threading
+
+	// In Kidscode, rollback interface is not used but have to solve it for a Minetest PR
+
 
 	// Find out whether there is a suspect for this action
 	std::string suspect;
@@ -456,8 +539,12 @@ bool LiquidLogicFinite::try_liquify(v3s16 pos, const LiquidInfo &liquid,
 	}
 
 	// Tirgger "on_liquify"
-	if (env->getScriptIface()->node_on_liquify(pos, node))
-		return true;
+	// >> KIDSCODE - Threading
+	defer_lua_trigger(LTT_ON_LIQUIFY, pos, node, node);
+//	if (env->getScriptIface()->node_on_liquify(pos, node))
+//		return true;
+	// << KIDSCODE - Threading
+
 
 	dbg_liquid++;
 
@@ -713,18 +800,42 @@ void LiquidLogicFinite::apply_flow(v3s16 pos, FlowInfo flow,
 	// on_flood() the node
 	// TODO: Check this, not sure of triggering conds
 	const ContentFeatures &cf = m_ndef->get(nold);
+
+	// >> KIDSCODE - Threading
+	if (nold.getContent() != CONTENT_AIR && cf.liquid_type == LIQUID_NONE)
+		defer_lua_trigger(LTT_ON_FLOOD, pos, nold, info.node);
+
+	try {
+		set_node(info.pos, info.node, modified_blocks, env);
+	} catch (InvalidPositionException e) {
+		printf("InvalidPositionException set node at %d %d %d\n", info.pos.X, info.pos.Y, info.pos.Z);
+		printf("Locked blocks: ");
+		for (auto key : m_locked_blocks)
+			printf("(%d, %d, %d) ", key_to_pos(key).X, key_to_pos(key).Y, key_to_pos(key).Z);
+		printf("\n");
+		throw(e);
+	}
+
+	/*
 	if (nold.getContent() != CONTENT_AIR && cf.liquid_type == LIQUID_NONE) {
 		if (env->getScriptIface()->node_on_flood(info.pos, nold, info.node))
 			return;
 	}
 
 	set_node(info.pos, info.node, modified_blocks, env);
+	*/
+	// << KIDSCODE - Threading
 }
 
 void LiquidLogicFinite::transform(
 	std::map<v3s16, MapBlock*> &modified_blocks,
 	ServerEnvironment *env)
 {
+	// >> KIDSCODE - Threading
+	m_map->lockMap();
+	MutexAutoLock lock(m_logic_mutex);
+	// << KIDSCODE - Threading
+
 	u32 loopcount = 0;
 	u32 initial_size = m_liquid_queue.size();
 	NodeInfo info;
@@ -789,6 +900,11 @@ void LiquidLogicFinite::transform(
 
 	voxalgo::update_lighting_nodes(m_map, m_changed_nodes, modified_blocks);
 
+	// >> KIDSCODE - Threading
+	unlockAllBlocks();
+	m_map->unlockMap();
+	// << KIDSCODE - Threading
+
 	/* ----------------------------------------------------------------------
 	 * Manage the queue so that it does not grow indefinately
 	 */
@@ -837,3 +953,13 @@ void LiquidLogicFinite::transform(
 		m_unprocessed_count = m_liquid_queue.size();
 	}
 }
+
+// Totally reset liquid logic. Usefull for map restoring
+void LiquidLogicFinite::reset() {
+	MutexAutoLock lock(m_logic_mutex);
+	while (!m_liquid_queue.size())
+		m_liquid_queue.pop_front();
+
+	while (!m_extra_liquid_queue.size())
+		m_extra_liquid_queue.pop_front();
+};
