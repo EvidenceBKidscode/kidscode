@@ -224,7 +224,7 @@ local function main_button_handler(this, fields, name, tabdata)
 		if selected ~= nil then
 			local configdialog =
 				create_configure_world_dlg(
-						menudata.worldlist:get_raw_index(selected))
+					menudata.worldlist:get_raw_index(selected))
 
 			if (configdialog ~= nil) then
 				configdialog:set_parent(this)
@@ -238,7 +238,11 @@ local function main_button_handler(this, fields, name, tabdata)
 
 	if fields.world_import then
 		core.show_path_select_dialog("dlg_browse_path", fgettext_ne("Select file"), true)
-		return true
+	end
+
+	if fields.dlg_browse_path_accepted then
+		this.data.selected_path = fields.dlg_browse_path_accepted
+		core.update_formspec(this:get_formspec())
 	end
 end
 
