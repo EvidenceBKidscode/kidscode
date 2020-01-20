@@ -58,6 +58,13 @@ local function get_formspec(tabview, name, tabdata)
 		"table[0,0.25;5.1,4.3;pkglist;" ..
 		pkgmgr.render_packagelist(packages) ..
 		";" .. tabdata.selected_pkg .. "]" ..
+
+		"tooltip[0,4.75;3,0.6;" ..
+			minetest.wrap_text("Enrichissez votre expérience de jeu avec des contenus créés " ..
+				"par la communauté Minetest. ATTENTION : Kidscode n'est pas responsable " ..
+				"si les contenus que vous ajoutez s'avèrent être incompatibles, " ..
+				"défectueux ou offensants.", 80) ..
+		"]" ..
 		"button[0,4.75;3,0.6;btn_contentdb;".. fgettext("Browse online content") .. "]"
 
 

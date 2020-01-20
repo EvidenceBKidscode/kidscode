@@ -38,20 +38,21 @@ local function get_formspec(tabview, name, tabdata)
 		--"image_button[7,0.1;0.6,0.6;" .. core.formspec_escape(defaulttexturedir .. "refresh.png") .. ";btn_mp_refresh;]" ..
 
 		-- Address / Port
-		"label[7.8,0.3;" .. fgettext("Address / Port") .. "]" ..
-		"field[7.8,0.5;3,0.5;te_address;;" ..
+		"label[7.8,0.3;" .. fgettext("Adresse / Port (obligatoire)") .. "]" ..
+		"field[7.8,0.5;2.9,0.5;te_address;;" ..
 			core.formspec_escape(core.settings:get("address")) .. "]" ..
 		"field[10.8,0.5;1.1,0.5;te_port;;" ..
 			core.formspec_escape(core.settings:get("remote_port")) .. "]" ..
 
 		-- Name / Password
-		"label[7.8,1.3;" .. fgettext("Name / Password") .. "]" ..
+		"label[7.8,1.3;" .. fgettext("Pseudonyme (obligatoire)") .. "]" ..
 		"field[7.8,1.5;3,0.5;te_name;;" ..
 			core.formspec_escape(core.settings:get("name")) .. "]" ..
-		"pwdfield[10.8,1.5;1.1,0.5;te_pwd;]" ..
+		"label[7.8,2.3;" .. fgettext("Mot de passe") .. "]" ..
+		"pwdfield[7.8,2.5;3,0.5;te_pwd;]" ..
 
 		-- Description Background
-		"box[7.8,2.25;4.1,2.3;#999999]"..
+		"box[7.8,3.25;4.1,1.3;#999999]"..
 
 		-- Connect
 		"button[9.88,4.7;2,0.6;btn_mp_connect;" .. fgettext("Connect") .. "]"
@@ -62,7 +63,7 @@ local function get_formspec(tabview, name, tabdata)
 				fgettext("Del. Favorite") .. "]"
 		end
 		if fav_selected.description then
-			retval = retval .. "textarea[7.9,2.3;4.1,2.2;;;" ..
+			retval = retval .. "textarea[7.9,3.3;4.1,1.2;;;" ..
 				core.formspec_escape((gamedata.serverdescription or ""), true) .. "]"
 		end
 	end

@@ -789,9 +789,8 @@ msgid "Waving Leaves"
 msgstr "Feuilles ondulantes"
 
 #: builtin/mainmenu/tab_settings.lua
-#, fuzzy
 msgid "Waving Liquids"
-msgstr "Environnement mouvant"
+msgstr "Flot des liquides"
 
 #: builtin/mainmenu/tab_settings.lua
 msgid "Waving Plants"

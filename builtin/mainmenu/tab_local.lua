@@ -25,10 +25,24 @@ local function get_formspec(tabview, name, tabdata)
 
 	retval = retval ..
 			"button[9.4,4;2.3,0.6;world_delete;".. fgettext("Delete") .. "]" ..
-			"button[6.3,4;3,0.6;advanced_options;".. fgettext("Advanced Options") .. "]" ..
+			"button[6.3,4;3,0.6;advanced_options;".. fgettext("Options avancées") .. "]" ..
 			"label[4,-0.25;".. fgettext("Select World:") .. "]"..
+
+			"tooltip[0.25,0.5;2,0.2;" ..
+				minetest.wrap_text("Laissez le mode  créatif coché par défaut pour désactiver " ..
+				"la perte de vie en cas de chute ou noyade et donner accès à " ..
+				"l'inventaire complet pour tous les élèves.", 80) ..
+			"]" ..
 			"checkbox[0.25,0.5;cb_creative_mode;".. fgettext("Creative Mode") .. ";" ..
 				dump(core.settings:get_bool("creative_mode")) .. "]"..
+
+			"tooltip[0.25,1;2,0.2;" ..
+				minetest.wrap_text("Si vous êtes enseignant, cochez cette case " ..
+					"pour que votre ordinateur fasse office de serveur. " ..
+					"Vos élèves pourront ensuite rejoindre votre partie depuis " ..
+					"le menu 'Rejoindre une partie', en indiquant l'adresse IP de votre poste " ..
+					" et le port (30000 par défaut).", 80) ..
+			"]" ..
 			"checkbox[0.25,1;cb_server;".. fgettext("Host Server") ..";" ..
 				dump(core.settings:get_bool("enable_server")) .. "]" ..
 			"textlist[4,0.25;7.7,3.7;sp_worlds;" ..
@@ -43,10 +57,11 @@ local function get_formspec(tabview, name, tabdata)
 	if core.settings:get_bool("enable_server") then
 		retval = retval ..
 				"button[4,4;2.2,0.6;play;".. fgettext("Host Game") .. ";#0000ff]" ..
-				"label[0.25,1.6;" .. fgettext("Name / Password") .. "]" ..
+				"label[0.25,1.7;" .. fgettext("Nom / Pseudonyme") .. "]" ..
 				"field[0.25,1.9;3.5,0.5;te_playername;;" ..
 					core.formspec_escape(core.settings:get("name")) .. "]" ..
-				"pwdfield[0.25,2.5;3.5,0.5;te_passwd;]"
+				"label[0.25,2.7;" .. fgettext("Mot de passe (optionnel)") .. "]" ..
+				"pwdfield[0.25,2.9;3.5,0.5;te_passwd;]"
 
 		local bind_addr = core.settings:get("bind_address")
 		if bind_addr ~= nil and bind_addr ~= "" then
@@ -57,7 +72,7 @@ local function get_formspec(tabview, name, tabdata)
 					core.formspec_escape(core.settings:get("port")) .. "]"
 		else
 			retval = retval ..
-				"field[0.25,3.7;3.5,0.5;te_serverport;" .. fgettext("Server Port") .. ";" ..
+				"field[0.25,3.85;3.5,0.5;te_serverport;" .. fgettext("Server Port") .. ";" ..
 				core.formspec_escape(core.settings:get("port")) .. "]"
 		end
 	else
