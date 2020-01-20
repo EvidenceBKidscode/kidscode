@@ -20,48 +20,58 @@ local function get_formspec(tabview, name, tabdata)
 	local retval = ""
 
 	local index = filterlist.get_current_index(menudata.worldlist,
-				tonumber(core.settings:get("mainmenu_last_selected_world"))
-				)
+			tonumber(core.settings:get("mainmenu_last_selected_world")))
 
+	local worldlist = menu_render_worldlist()
+
+	if worldlist ~= "" then
+		retval = retval ..
+			"button[9.4,4;2.3,0.6;world_delete;".. fgettext("Delete") .. "]"
+	end
+ 
 	retval = retval ..
-			"button[9.4,4;2.3,0.6;world_delete;".. fgettext("Delete") .. "]" ..
-			"button[6.3,4;3,0.6;advanced_options;".. fgettext("Options avancées") .. "]" ..
-			"label[4,-0.25;".. fgettext("Select World:") .. "]"..
+		"button[6.3,4;3,0.6;advanced_options;".. fgettext("Options avancées") .. "]" ..
+		"label[4,-0.25;".. fgettext("Select World:") .. "]"..
 
-			"tooltip[0.25,0.5;2,0.2;" ..
-				minetest.wrap_text("Laissez le mode  créatif coché par défaut pour désactiver " ..
-				"la perte de vie en cas de chute ou noyade et donner accès à " ..
-				"l'inventaire complet pour tous les élèves.", 80) ..
-			"]" ..
-			"checkbox[0.25,0.5;cb_creative_mode;".. fgettext("Creative Mode") .. ";" ..
-				dump(core.settings:get_bool("creative_mode")) .. "]"..
+		"tooltip[0.25,0.5;2,0.2;" ..
+			core.wrap_text("Laissez le mode  créatif coché par défaut pour désactiver " ..
+			"la perte de vie en cas de chute ou noyade et donner accès à " ..
+			"l'inventaire complet pour tous les élèves.", 80) ..
+		"]" ..
+		"checkbox[0.25,0.5;cb_creative_mode;".. fgettext("Creative Mode") .. ";" ..
+			dump(core.settings:get_bool("creative_mode")) .. "]"..
 
-			"tooltip[0.25,1;2,0.2;" ..
-				minetest.wrap_text("Si vous êtes enseignant, cochez cette case " ..
-					"pour que votre ordinateur fasse office de serveur. " ..
-					"Vos élèves pourront ensuite rejoindre votre partie depuis " ..
-					"le menu 'Rejoindre une partie', en indiquant l'adresse IP de votre poste " ..
-					" et le port (30000 par défaut).", 80) ..
-			"]" ..
-			"checkbox[0.25,1;cb_server;".. fgettext("Host Server") ..";" ..
-				dump(core.settings:get_bool("enable_server")) .. "]" ..
-			"textlist[4,0.25;7.7,3.7;sp_worlds;" ..
-				menu_render_worldlist() .. ";" .. index .. "]"
+		"tooltip[0.25,1;2,0.2;" ..
+			core.wrap_text("Si vous êtes enseignant, cochez cette case " ..
+				"pour que votre ordinateur fasse office de serveur. " ..
+				"Vos élèves pourront ensuite rejoindre votre partie depuis " ..
+				"le menu 'Rejoindre une partie', en indiquant l'adresse IP " ..
+				"de votre poste et le port (30000 par défaut).", 80) ..
+		"]" ..
+		"checkbox[0.25,1;cb_server;".. fgettext("Host Server") ..";" ..
+			dump(core.settings:get_bool("enable_server")) .. "]" ..
+		"textlist[4,0.25;7.7,3.7;sp_worlds;" .. worldlist .. ";" .. index .. "]" ..
+
+		"tooltip[4,4.7;2.2,0.6;" ..
+			core.wrap_text("Cliquez ici pour ajouter une carte téléchargée " ..
+				"depuis le site de l'IGN (formats ZIP et RAR acceptés)", 80) ..
+		"]" ..
+		"button[4,4.7;2.2,0.6;world_import;".. fgettext("Importer") .. "]"
 
 	if core.settings:get_bool("advanced_options") then
 		retval = retval ..
-			"button[4,4.7;2.2,0.6;world_configure;".. fgettext("Configure") .. "]" ..
-			"button[6.3,4.7;2.2,0.6;world_create;".. fgettext("New") .. "]"
+			"button[6.3,4.7;2.2,0.6;world_configure;".. fgettext("Configure") .. "]" ..
+			"button[8.6,4.7;2.2,0.6;world_create;".. fgettext("New") .. "]"
 	end
 
 	if core.settings:get_bool("enable_server") then
 		retval = retval ..
-				"button[4,4;2.2,0.6;play;".. fgettext("Host Game") .. ";#0000ff]" ..
-				"label[0.25,1.7;" .. fgettext("Nom / Pseudonyme") .. "]" ..
-				"field[0.25,1.9;3.5,0.5;te_playername;;" ..
-					core.formspec_escape(core.settings:get("name")) .. "]" ..
-				"label[0.25,2.7;" .. fgettext("Mot de passe (optionnel)") .. "]" ..
-				"pwdfield[0.25,2.9;3.5,0.5;te_passwd;]"
+			"button[4,4;2.2,0.6;play;".. fgettext("Host Game") .. ";#0000ff]" ..
+			"label[0.25,1.7;" .. fgettext("Nom / Pseudonyme") .. "]" ..
+			"field[0.25,1.9;3.5,0.5;te_playername;;" ..
+				core.formspec_escape(core.settings:get("name")) .. "]" ..
+			"label[0.25,2.7;" .. fgettext("Mot de passe (optionnel)") .. "]" ..
+			"pwdfield[0.25,2.9;3.5,0.5;te_passwd;]"
 
 		local bind_addr = core.settings:get("bind_address")
 		if bind_addr ~= nil and bind_addr ~= "" then
@@ -223,6 +233,11 @@ local function main_button_handler(this, fields, name, tabdata)
 			end
 		end
 
+		return true
+	end
+
+	if fields.world_import then
+		core.show_path_select_dialog("dlg_browse_path", fgettext_ne("Select file"), true)
 		return true
 	end
 end
