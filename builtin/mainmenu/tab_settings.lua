@@ -263,6 +263,13 @@ local function formspec(tabview, name, tabdata)
 					fgettext("Waving Plants")) .. "]"
 	end
 
+	tab_string = tab_string ..
+		"label[8,0.5;" .. minetest.wrap_text(
+			"Les réglages graphiques améliorent grandement la qualité visuelle du jeu mais " ..
+			"impacte sévèrement les performances de votre ordinateur. Si votre salle informatique " ..
+			"n'est pas équipée d'ordinateurs récents, laissez toutes les options décochées.", 35) ..
+		"]"
+
 	return tab_string
 end
 

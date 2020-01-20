@@ -134,6 +134,15 @@ local function get_formspec(tabview, name, tabdata)
 						fgettext("Disable Texture Pack") .. "]"
 				else
 					retval = retval ..
+						"tooltip[3.15,4.75;3,0.6;" ..
+							core.wrap_text(
+								"Le pack de textures modifie l'apparence des blocs/menus et objets dans " ..
+								"le jeu. Ils sont téléchargeables depuis le bouton 'Parcourir contenu en ligne'. " ..
+								"Une fois un pack installé, sélectionnez-le dans la liste ci-dessus puis cliquez " ..
+								"sur 'Utiliser pack de textures' pour l'activer.", 80) ..
+						"]"
+
+					retval = retval ..
 						"button[3.15,4.75;3,0.6;btn_mod_mgr_use_txp;" ..
 						fgettext("Use Texture Pack") .. "]"
 				end
