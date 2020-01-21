@@ -119,6 +119,11 @@ local function init_globals()
 		menudata.worldlist:add_sort_mechanism("alphabetic", sort_worlds_alphabetic)
 		menudata.worldlist:set_sortmode("alphabetic")
 
+		if not core.settings:get("menu_current_game") then
+			local default_game = core.settings:get("default_game") or "minetest"
+			core.settings:set("menu_current_game", default_game)
+		end
+
 		gamemenu.init()
 	end
 
