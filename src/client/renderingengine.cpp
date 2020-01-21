@@ -174,7 +174,7 @@ RenderingEngine::RenderingEngine(IEventReceiver *receiver)
 	m_device->getGUIEnvironment()->setSkin(skin);
 	skin->drop();
 
-	std::string tippath = porting::path_user + DIR_DELIM + "tips.txt";
+	std::string tippath = porting::path_share + DIR_DELIM + "tips.txt";
 	getFileContent(tippath, m_tips);
 }
 
