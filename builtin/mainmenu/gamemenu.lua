@@ -152,12 +152,12 @@ end
 function gamemenu.update()
 	local properties = gamemenu.get_properties()
 	core.set_background("overlay", properties.overlay or "")
-	core.set_background("background", properties.background or "")
+	local has_bg = core.set_background("background", properties.background or "")
 	core.set_background("header", properties.header or "")
 	core.set_background("footer", properties.footer or "")
 	core.set_clouds(properties.clouds)
 
-	if not properties.has_bg and not properties.clouds then
+	if not has_bg and not properties.clouds then
 		if gamemenu.texturepack ~= nil then
 			local path = gamemenu.texturepack .. DIR_DELIM .."default_dirt.png"
 			if core.set_background("background", path, true, 128) then
