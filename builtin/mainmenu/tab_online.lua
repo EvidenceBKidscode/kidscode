@@ -70,18 +70,18 @@ local function get_formspec(tabview, name, tabdata)
 
 	--favourites
 	retval = retval .. "tablecolumns[" ..
-		image_column(fgettext("Favorite"), "favorite") .. ";" ..
-		image_column(fgettext("Ping")) .. ",padding=0.25;" ..
-		"color,span=3;" ..
-		"text,align=right;" ..                -- clients
-		"text,align=center,padding=0.25;" ..  -- "/"
-		"text,align=right,padding=0.25;" ..   -- clients_max
-		image_column(fgettext("Creative mode"), "creative") .. ",padding=1;" ..
-		image_column(fgettext("Damage enabled"), "damage") .. ",padding=0.25;" ..
-		image_column(fgettext("PvP enabled"), "pvp") .. ",padding=0.25;" ..
-		"color,span=1;" ..
-		"text,padding=1]" ..
-		"table[0.15,0.15;7.45,5.2;favourites;"
+			image_column(fgettext("Favorite"), "favorite") .. ";" ..
+			image_column(fgettext("Ping")) .. ",padding=0.25;" ..
+			"color,span=3;" ..
+			"text,align=right;" ..                -- clients
+			"text,align=center,padding=0.25;" ..  -- "/"
+			"text,align=right,padding=0.25;" ..   -- clients_max
+			image_column(fgettext("Creative mode"), "creative") .. ",padding=1;" ..
+			image_column(fgettext("Damage enabled"), "damage") .. ",padding=0.25;" ..
+			image_column(fgettext("PvP enabled"), "pvp") .. ",padding=0.25;" ..
+			"color,span=1;" ..
+			"text,padding=1]" ..
+		"table[0.15,0.15;7.45,3.5;favourites;"
 
 	if menudata.search_result then
 		for i = 1, #menudata.search_result do
