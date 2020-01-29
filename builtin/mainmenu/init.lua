@@ -41,7 +41,7 @@ dofile(menupath .. DIR_DELIM .. "gamemenu.lua")
 
 dofile(menupath .. DIR_DELIM .. "dlg_config_world.lua")
 dofile(menupath .. DIR_DELIM .. "dlg_settings_advanced.lua")
-dofile(menupath .. DIR_DELIM .. "dlg_contentstore.lua")
+--dofile(menupath .. DIR_DELIM .. "dlg_contentstore.lua")
 dofile(menupath .. DIR_DELIM .. "dlg_change_game.lua")
 if menustyle ~= "simple" then
 	dofile(menupath .. DIR_DELIM .. "dlg_create_world.lua")
@@ -52,7 +52,7 @@ end
 
 local tabs = {}
 tabs.settings = dofile(menupath .. DIR_DELIM .. "tab_settings.lua")
-tabs.content  = dofile(menupath .. DIR_DELIM .. "tab_content.lua")
+--tabs.content  = dofile(menupath .. DIR_DELIM .. "tab_content.lua")
 tabs.quit     = dofile(menupath .. DIR_DELIM .. "tab_quit.lua")
 
 if menustyle == "simple" then
@@ -132,7 +132,7 @@ local function init_globals()
 		tv_main:add(tabs.play_online)
 	end
 
-	tv_main:add(tabs.content)
+	--tv_main:add(tabs.content)
 	tv_main:add(tabs.settings)
 	tv_main:add(tabs.quit)
 

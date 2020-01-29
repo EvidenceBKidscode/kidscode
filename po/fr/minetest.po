@@ -661,7 +661,7 @@ msgstr "Êtes-vous sûr de vouloir réinitialiser votre monde ?"
 
 #: builtin/mainmenu/tab_settings.lua
 msgid "Autosave Screen Size"
-msgstr "Sauvegarder automatiquement la taille d'écran"
+msgstr "Sauv. auto. taille de l'écran"
 
 #: builtin/mainmenu/tab_settings.lua
 msgid "Bilinear Filter"
