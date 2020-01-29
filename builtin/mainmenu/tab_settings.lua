@@ -173,6 +173,10 @@ local function showconfirm_reset(tabview)
 end
 
 local function formspec(tabview, name, tabdata)
+	local video_driver = core.settings:get("video_driver")
+	local shaders_supported = video_driver == "opengl"
+	local shaders_enabled = core.settings:get_bool("enable_shaders")
+
 	local tab_string =
 		"box[0,0.1;3.75,4.5;#999999]" ..
 		"checkbox[0.25,0.4;cb_smooth_lighting;" .. fgettext("Smooth Lighting") .. ";"
@@ -181,8 +185,8 @@ local function formspec(tabview, name, tabdata)
 				.. dump(core.settings:get_bool("enable_particles")) .. "]" ..
 		"checkbox[0.25,1.4;cb_3d_clouds;" .. fgettext("3D Clouds") .. ";"
 				.. dump(core.settings:get_bool("enable_3d_clouds")) .. "]" ..
-		"checkbox[0.25,1.9;cb_opaque_water;" .. fgettext("Opaque Water") .. ";"
-				.. dump(core.settings:get_bool("opaque_water")) .. "]" ..
+		"checkbox[0.25,1.9;cb_shaders;" .. fgettext("Shaders") .. ";"
+				.. tostring(shaders_enabled) .. "]" ..
 		"checkbox[0.25,2.4;cb_connected_glass;" .. fgettext("Connected Glass") .. ";"
 				.. dump(core.settings:get_bool("connected_glass")) .. "]" ..
 		"checkbox[0.25,2.9;cb_autosave_screensize;" .. fgettext("Autosave Screen Size") .. ";"
@@ -190,23 +194,7 @@ local function formspec(tabview, name, tabdata)
 		"dropdown[0.25,3.3;3.3,0.5;dd_node_highlighting;" .. dd_options.node_highlighting[1] .. ";"
 				.. getSettingIndex.NodeHighlighting() .. "]" ..
 		"dropdown[0.25,3.9;3.3,0.5;dd_leaves_style;" .. dd_options.leaves[1] .. ";"
-				.. getSettingIndex.Leaves() .. "]" ..
-		"box[4,0.1;3.75,4.5;#999999]"
-
-	local video_driver = core.settings:get("video_driver")
-	local shaders_supported = video_driver == "opengl"
-	local shaders_enabled = false
-	if shaders_supported then
-		shaders_enabled = core.settings:get_bool("enable_shaders")
-		tab_string = tab_string ..
-			"checkbox[4.25,0.4;cb_shaders;" .. fgettext("Shaders") .. ";"
-					.. tostring(shaders_enabled) .. "]"
-	else
-		core.settings:set_bool("enable_shaders", false)
-		tab_string = tab_string ..
-			"label[4.25,0.4;" .. core.colorize("#888888",
-				fgettext("Shaders (unavailable)")) .. "]"
-	end
+				.. getSettingIndex.Leaves() .. "]"
 
 	if core.settings:get("main_menu_style") == "simple" then
 		-- 'Reset singleplayer world' only functions with simple menu
@@ -231,44 +219,29 @@ local function formspec(tabview, name, tabdata)
 
 	if shaders_enabled then
 		tab_string = tab_string ..
-			"checkbox[4.25,1;cb_bumpmapping;" .. fgettext("Bump Mapping") .. ";"
+			"box[4,0.1;3.75,3.9;#999999]" ..
+			"checkbox[4.25,0.5;cb_bumpmapping;" .. fgettext("Bump Mapping") .. ";"
 					.. dump(core.settings:get_bool("enable_bumpmapping")) .. "]" ..
-			"checkbox[4.25,1.5;cb_tonemapping;" .. fgettext("Tone Mapping") .. ";"
+			"checkbox[4.25,1;cb_tonemapping;" .. fgettext("Tone Mapping") .. ";"
 					.. dump(core.settings:get_bool("tone_mapping")) .. "]" ..
-			"checkbox[4.25,2;cb_generate_normalmaps;" .. fgettext("Generate Normal Maps") .. ";"
+			"checkbox[4.25,1.5;cb_generate_normalmaps;" .. fgettext("Generate Normal Maps") .. ";"
 					.. dump(core.settings:get_bool("generate_normalmaps")) .. "]" ..
-			"checkbox[4.25,2.5;cb_parallax;" .. fgettext("Parallax Occlusion") .. ";"
+			"checkbox[4.25,2;cb_parallax;" .. fgettext("Parallax Occlusion") .. ";"
 					.. dump(core.settings:get_bool("enable_parallax_occlusion")) .. "]" ..
-			"checkbox[4.25,3;cb_waving_water;" .. fgettext("Waving Liquids") .. ";"
+			"checkbox[4.25,2.5;cb_waving_water;" .. fgettext("Waving Liquids") .. ";"
 					.. dump(core.settings:get_bool("enable_waving_water")) .. "]" ..
-			"checkbox[4.25,3.5;cb_waving_leaves;" .. fgettext("Waving Leaves") .. ";"
+			"checkbox[4.25,3;cb_waving_leaves;" .. fgettext("Waving Leaves") .. ";"
 					.. dump(core.settings:get_bool("enable_waving_leaves")) .. "]" ..
-			"checkbox[4.25,4;cb_waving_plants;" .. fgettext("Waving Plants") .. ";"
+			"checkbox[4.25,3.5;cb_waving_plants;" .. fgettext("Waving Plants") .. ";"
 					.. dump(core.settings:get_bool("enable_waving_plants")) .. "]"
-	else
-		tab_string = tab_string ..
-			"label[4.38,1;" .. core.colorize("#888888",
-					fgettext("Bump Mapping")) .. "]" ..
-			"label[4.38,1.5;" .. core.colorize("#888888",
-					fgettext("Tone Mapping")) .. "]" ..
-			"label[4.38,2;" .. core.colorize("#888888",
-					fgettext("Generate Normal Maps")) .. "]" ..
-			"label[4.38,2.5;" .. core.colorize("#888888",
-					fgettext("Parallax Occlusion")) .. "]" ..
-			"label[4.38,3;" .. core.colorize("#888888",
-					fgettext("Waving Liquids")) .. "]" ..
-			"label[4.38,3.5;" .. core.colorize("#888888",
-					fgettext("Waving Leaves")) .. "]" ..
-			"label[4.38,4;" .. core.colorize("#888888",
-					fgettext("Waving Plants")) .. "]"
 	end
 
 	tab_string = tab_string ..
-		"label[8,0.5;" .. minetest.wrap_text(
+		"label[" .. (shaders_enabled and 8 or 4) .. ",0.5;" .. minetest.wrap_text(
 			"Les réglages graphiques améliorent grandement la qualité visuelle du jeu mais " ..
 			"impactent sévèrement les performances de votre ordinateur. Si votre salle informatique " ..
-			"n'est pas équipée d'ordinateurs récents, laissez toutes les options décochées.", 35) ..
-		"]"
+			"n'est pas équipée d'ordinateurs récents, laissez toutes les options décochées.",
+			(shaders_enabled and 35 or 70)) .. "]"
 
 	return tab_string
 end
