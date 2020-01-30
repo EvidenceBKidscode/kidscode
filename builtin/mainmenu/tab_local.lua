@@ -15,6 +15,7 @@
 --with this program; if not, write to the Free Software Foundation, Inc.,
 --51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+local import_map = dofile(core.get_mainmenu_path() .. DIR_DELIM .. "mapimport.lua")
 
 local function get_formspec(tabview, name, tabdata)
 	local retval = ""
@@ -28,7 +29,7 @@ local function get_formspec(tabview, name, tabdata)
 		retval = retval ..
 			"button[9.4,4;2.3,0.6;world_delete;".. fgettext("Delete") .. "]"
 	end
- 
+
 	retval = retval ..
 		"button[6.3,4;3,0.6;advanced_options;".. fgettext("Options avancées") .. "]" ..
 		"label[4,-0.25;".. fgettext("Select World:") .. "]"..
@@ -228,16 +229,16 @@ local function main_button_handler(this, fields, name, tabdata)
 		return true
 	end
 
-	if fields.world_import then
-		core.show_path_select_dialog("dlg_browse_path", fgettext_ne("Select file"), true)
+	if fields["world_import"] then
+		core.show_path_select_dialog("dlg_browse_path",
+			fgettext_ne("Select file"), true)
+		return true
 	end
 
-	if fields.dlg_browse_path_accepted then
-		this.data.selected_path = fields.dlg_browse_path_accepted
-		core.update_formspec(this:get_formspec())
+	if fields["dlg_browse_path_accepted"] then
+		return import_map(this, fields["dlg_browse_path_accepted"])
 	end
 end
-
 --------------------------------------------------------------------------------
 return {
 	name = "local",

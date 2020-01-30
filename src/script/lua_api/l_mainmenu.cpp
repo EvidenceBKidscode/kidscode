@@ -682,6 +682,15 @@ int ModApiMainMenu::l_get_gamepath(lua_State *L)
 }
 
 /******************************************************************************/
+int ModApiMainMenu::l_get_worldpath(lua_State *L)
+{
+	std::string modpath = fs::RemoveRelativePathComponents(
+		porting::path_user + DIR_DELIM + "worlds" + DIR_DELIM);
+	lua_pushstring(L, modpath.c_str());
+	return 1;
+}
+
+/******************************************************************************/
 int ModApiMainMenu::l_get_texturepath(lua_State *L)
 {
 	std::string gamepath = fs::RemoveRelativePathComponents(
@@ -1076,6 +1085,7 @@ void ModApiMainMenu::Initialize(lua_State *L, int top)
 	API_FCT(get_modpath);
 	API_FCT(get_clientmodpath);
 	API_FCT(get_gamepath);
+	API_FCT(get_worldpath);
 	API_FCT(get_texturepath);
 	API_FCT(get_texturepath_share);
 	API_FCT(get_cache_path);
@@ -1106,6 +1116,7 @@ void ModApiMainMenu::InitializeAsync(lua_State *L, int top)
 	API_FCT(get_modpath);
 	API_FCT(get_clientmodpath);
 	API_FCT(get_gamepath);
+	API_FCT(get_worldpath);
 	API_FCT(get_texturepath);
 	API_FCT(get_texturepath_share);
 	API_FCT(get_cache_path);
