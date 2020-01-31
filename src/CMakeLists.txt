@@ -333,6 +333,26 @@ configure_file(
 	"${PROJECT_BINARY_DIR}/cmake_config.h"
 )
 
+# >> KIDSCODE - Mods encryption
+
+# ENCRYPT_MODS_KEYS should hold absolute path of a cmake file defining
+# encryption keys to be used.
+# Keys are defined in variables ENCRYPTION_KEY_0 to ENCRYPTION_KEY_7 and
+# ENCRYPTION_PRIME_0 to ENCRYPTION_PRIME_7
+
+if(ENCRYPT_MODS_KEYS)
+	set(ENCRYPT_MODS true)
+	include(${ENCRYPT_MODS_KEYS})
+	set(ENCRYPTION_COMMENT "Keep this file absolutely private!")
+	configure_file(
+		"${PROJECT_SOURCE_DIR}/encryption_data.h.in"
+		"${PROJECT_BINARY_DIR}/encryption_data.h"
+	)
+else()
+	set(ENCRYPT_MODS false)
+endif()
+
+# << KIDSCODE - Mods encryption
 
 # Add a target that always rebuilds cmake_config_githash.h
 add_custom_target(GenerateVersion
