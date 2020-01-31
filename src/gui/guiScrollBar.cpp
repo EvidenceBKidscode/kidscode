@@ -97,7 +97,8 @@ bool GUIScrollBar::OnEvent(const SEvent &event)
 			bool is_inside = isPointInside(p);
 			switch (event.MouseInput.Event) {
 			case EMIE_MOUSE_WHEEL:
-				if (Environment->hasFocus(this)) {
+				/* KIDSCODE - Make wheel scroll when hover
+				if (Environment->hasFocus(this))*/ {
 					s8 d = event.MouseInput.Wheel < 0 ? -1 : 1;
 					s8 h = is_horizontal ? 1 : -1;
 					setPos(getPos() + (d * small_step * h));
