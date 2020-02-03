@@ -3,8 +3,10 @@
 #pragma once
 
 #include "aes.h"
-#include "encryption_data.h"
 
+#if ENCRYPT_MODS
+#include "encryption_data.h"
+#endif
 
 #define ENCRYPTION_TAG 0x04030501
 #define ENCRYPTION_HEADER_SIZE 16
@@ -76,6 +78,8 @@ static inline const char *getFileName(const char *file_path)
 
 static inline void makeKey(unsigned *key, const char *file_name)
 {
+#if ENCRYPT_MODS
+
 	unsigned int file_name_length = strlen(file_name);
 
 	key[0] = ENCRYPTION_KEY_0;
@@ -86,11 +90,11 @@ static inline void makeKey(unsigned *key, const char *file_name)
 	key[5] = ENCRYPTION_KEY_5;
 	key[6] = ENCRYPTION_KEY_6;
 	key[7] = ENCRYPTION_KEY_7;
-	
+
 	for (unsigned i = 0; i < file_name_length; ++i) {
 		key[i % ENCRYPTION_KEY_SIZE] += file_name[i];
 	}
-	
+
 	key[0] = key[0] + ENCRYPTION_PRIME_7;
 	key[1] = (key[1] ^ key[0] * ENCRYPTION_PRIME_1) + ENCRYPTION_PRIME_0;
 	key[2] = (key[2] ^ key[1] * ENCRYPTION_PRIME_2) + ENCRYPTION_PRIME_1;
@@ -99,6 +103,8 @@ static inline void makeKey(unsigned *key, const char *file_name)
 	key[5] = (key[5] ^ key[4] * ENCRYPTION_PRIME_5) + ENCRYPTION_PRIME_4;
 	key[6] = (key[6] ^ key[5] * ENCRYPTION_PRIME_6) + ENCRYPTION_PRIME_5;
 	key[7] = (key[7] ^ key[6] * ENCRYPTION_PRIME_7) + ENCRYPTION_PRIME_6;
+
+#endif
 }
 
 
@@ -110,18 +116,19 @@ static inline const bool isCryptedText(const char *text, size_t size)
 
 static inline const char *encryptText(const char *text, size_t &size, const char *file_path)
 {
+#if ENCRYPT_MODS
 	if (isCryptedText(text, size))
 		return text;
 
 	const char *file_name = getFileName(file_path);
 
 	unsigned decrypted_size = size;
-	unsigned encrypted_size = (((decrypted_size + ENCRYPTION_BUFFER_SIZE - 1) / 
+	unsigned encrypted_size = (((decrypted_size + ENCRYPTION_BUFFER_SIZE - 1) /
 				ENCRYPTION_BUFFER_SIZE) * ENCRYPTION_BUFFER_SIZE);
 	unsigned file_name_size = strlen(file_name) + 1;
 
 	size = ENCRYPTION_HEADER_SIZE + encrypted_size + file_name_size;
-		
+
 	char *encrypted_text = new char[size];
 
 	*((unsigned *)encrypted_text) = ENCRYPTION_TAG;
@@ -139,7 +146,7 @@ static inline const char *encryptText(const char *text, size_t &size, const char
 
 	aes256_context ctx;
 	aes256_init(&ctx, (unsigned char *)key);
-	
+
 	for (unsigned i = 0; i < encrypted_size; i += ENCRYPTION_BUFFER_SIZE) {
 		for (unsigned j = 0; j < ENCRYPTION_BUFFER_SIZE; ++j) {
 			buffer[j] = (i + j < decrypted_size) ? input[i + j] : 0;
@@ -157,17 +164,21 @@ static inline const char *encryptText(const char *text, size_t &size, const char
 	delete[] text;
 
 	return encrypted_text;
+#else
+	return text;
+#endif
 }
 
 
 static inline const char *decryptText(const char *text, size_t &size, const char *file_path)
 {
+#if ENCRYPT_MODS
 	if (!isCryptedText(text, size))
 		return text;
 
 	unsigned decrypted_size = ((unsigned *)text)[ 1 ];
 	unsigned encrypted_size = ((unsigned *)text)[ 2 ];
-	
+
 	const char *file_name = text + ENCRYPTION_HEADER_SIZE + encrypted_size;
 
 	size = decrypted_size;
@@ -203,4 +214,7 @@ static inline const char *decryptText(const char *text, size_t &size, const char
 	delete[] text;
 
 	return decrypted_text;
+#else
+	return text;
+#endif
 }

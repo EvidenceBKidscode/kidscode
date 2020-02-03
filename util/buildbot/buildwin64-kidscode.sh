@@ -2,7 +2,7 @@
 set -e
 
 CORE_GIT=https://github.com/EvidenceBKidscode/kidscode
-CORE_BRANCH=rebase-luajit
+CORE_BRANCH=rebase
 CORE_NAME=kidscode
 GAME_GIT=https://github.com/EvidenceBKidscode/minetest_game
 GAME_BRANCH=master
@@ -27,7 +27,7 @@ curl_version=7.65.3
 gettext_version=0.19.8.1
 freetype_version=2.9.1
 sqlite3_version=3.27.2
-leveldb_version=1.20
+#leveldb_version=1.20
 zlib_version=1.2.11
 
 mkdir -p $packagedir
@@ -52,8 +52,8 @@ cd $builddir
 	-c -O $packagedir/freetype2-$freetype_version.zip
 [ -e $packagedir/sqlite3-$sqlite3_version.zip ] || wget http://minetest.kitsunemimi.pw/sqlite3-$sqlite3_version-win64.zip \
 	-c -O $packagedir/sqlite3-$sqlite3_version.zip
-[ -e $packagedir/libleveldb-$leveldb_version.zip ] || wget http://minetest.kitsunemimi.pw/libleveldb-$leveldb_version-win64.zip \
-	-c -O $packagedir/libleveldb-$leveldb_version.zip
+#[ -e $packagedir/libleveldb-$leveldb_version.zip ] || wget http://minetest.kitsunemimi.pw/libleveldb-$leveldb_version-win64.zip \
+#	-c -O $packagedir/libleveldb-$leveldb_version.zip
 [ -e $packagedir/openal_stripped.zip ] || wget http://minetest.kitsunemimi.pw/openal_stripped64.zip \
 	-c -O $packagedir/openal_stripped.zip
 
@@ -92,6 +92,7 @@ cd $builddir/$CORE_NAME
 [ -d _build ] && rm -Rf _build/
 mkdir _build
 cd _build
+
 cmake .. \
 	-DCMAKE_TOOLCHAIN_FILE=$toolchain_file \
 	-DCMAKE_INSTALL_PREFIX=/tmp \
@@ -149,10 +150,11 @@ cmake .. \
 	-DSQLITE3_LIBRARY=$libdir/sqlite3/lib/libsqlite3.dll.a \
 	-DSQLITE3_DLL=$libdir/sqlite3/bin/libsqlite3-0.dll \
 	\
-	-DLEVELDB_INCLUDE_DIR=$libdir/leveldb/include \
-	-DLEVELDB_LIBRARY=$libdir/leveldb/lib/libleveldb.dll.a \
-	-DLEVELDB_DLL=$libdir/leveldb/bin/libleveldb.dll
+	-DENCRYPT_MODS_KEYS="$CRYPT_KEYS_CMAKE" # KIDSCODE
 
+#	-DLEVELDB_INCLUDE_DIR=$libdir/leveldb/include \
+#	-DLEVELDB_LIBRARY=$libdir/leveldb/lib/libleveldb.dll.a \
+#	-DLEVELDB_DLL=$libdir/leveldb/bin/libleveldb.dll
 make -j$(nproc)
 
 [ "x$NO_PACKAGE" = "x" ] && make package
