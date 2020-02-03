@@ -1,6 +1,6 @@
 return {
 	name = "quit",
-	caption = fgettext("Quit"),
+	caption = fgettext("Quitter"),
 	cbf_formspec = function()
 		os.exit(0)
 		return ""

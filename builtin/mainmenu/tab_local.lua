@@ -27,12 +27,12 @@ local function get_formspec(tabview, name, tabdata)
 
 	if worldlist ~= "" then
 		retval = retval ..
-			"button[9.4,4;2.3,0.6;world_delete;".. fgettext("Delete") .. "]"
+			"button[9.4,4;2.3,0.6;world_delete;".. fgettext("Supprimer") .. "]"
 	end
 
 	retval = retval ..
 		"button[6.3,4;3,0.6;advanced_options;".. fgettext("Options avancées") .. "]" ..
-		"label[4,-0.25;".. fgettext("Select World:") .. "]"..
+		"label[4,-0.25;".. fgettext("Sélectionner un monde :") .. "]"..
 
 		"tooltip[0.25,0.5;2,0.2;" ..
 			core.wrap_text("Si vous êtes enseignant, cochez cette case " ..
@@ -41,7 +41,7 @@ local function get_formspec(tabview, name, tabdata)
 				"le menu 'Rejoindre une partie', en indiquant l'adresse IP " ..
 				"de votre poste et le port (30000 par défaut).", 80) ..
 		"]" ..
-		"checkbox[0.25,0.5;cb_server;".. fgettext("Host Server") ..";" ..
+		"checkbox[0.25,0.5;cb_server;".. fgettext("Héberger un serveur") ..";" ..
 			dump(core.settings:get_bool("enable_server")) .. "]" ..
 		"textlist[4,0.25;7.7,3.7;sp_worlds;" .. worldlist .. ";" .. index .. "]" ..
 
@@ -53,13 +53,13 @@ local function get_formspec(tabview, name, tabdata)
 
 	if core.settings:get_bool("advanced_options") then
 		retval = retval ..
-			"button[6.3,4.7;2.2,0.6;world_configure;".. fgettext("Configure") .. "]" ..
-			"button[8.6,4.7;2.2,0.6;world_create;".. fgettext("New") .. "]"
+			"button[6.3,4.7;2.2,0.6;world_configure;".. fgettext("Configurer") .. "]" ..
+			"button[8.6,4.7;2.2,0.6;world_create;".. fgettext("Nouveau") .. "]"
 	end
 
 	if core.settings:get_bool("enable_server") then
 		retval = retval ..
-			"button[4,4;2.2,0.6;play;".. fgettext("Host Game") .. ";#0000ff]" ..
+			"button[4,4;2.2,0.6;play;".. fgettext("Jouer") .. ";#0000ff]" ..
 			"label[0.25,1.2;" .. fgettext("Nom / Pseudonyme") .. "]" ..
 			"field[0.25,1.4;3.5,0.5;te_playername;;" ..
 				core.formspec_escape(core.settings:get("name")) .. "]" ..
@@ -75,12 +75,12 @@ local function get_formspec(tabview, name, tabdata)
 					core.formspec_escape(core.settings:get("port")) .. "]"
 		else
 			retval = retval ..
-				"field[0.25,3.35;3.5,0.5;te_serverport;" .. fgettext("Server Port") .. ";" ..
+				"field[0.25,3.35;3.5,0.5;te_serverport;" .. fgettext("Port du serveur") .. ";" ..
 				core.formspec_escape(core.settings:get("port")) .. "]"
 		end
 	else
 		retval = retval ..
-			"button[4,4;2.2,0.6;play;".. fgettext("Play Game") .. ";#0000ff]"
+			"button[4,4;2.2,0.6;play;".. fgettext("Jouer") .. ";#0000ff]"
 	end
 
 	return retval
@@ -231,7 +231,7 @@ local function main_button_handler(this, fields, name, tabdata)
 
 	if fields["world_import"] then
 		core.show_path_select_dialog("dlg_browse_path",
-			fgettext_ne("Select file"), true)
+			fgettext_ne("Sélectionner un fichier"), true)
 		return true
 	end
 
@@ -242,7 +242,7 @@ end
 --------------------------------------------------------------------------------
 return {
 	name = "local",
-	caption = fgettext("Start Game"),
+	caption = fgettext("Lancer une session"),
 	cbf_formspec = get_formspec,
 	cbf_button_handler = main_button_handler,
 }

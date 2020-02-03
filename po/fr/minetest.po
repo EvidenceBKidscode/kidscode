@@ -617,7 +617,7 @@ msgstr "Favori"
 
 #: builtin/mainmenu/tab_online.lua
 msgid "Join Game"
-msgstr "Rejoindre une partie"
+msgstr "Rejoindre un serveur"
 
 #: builtin/mainmenu/tab_online.lua builtin/mainmenu/tab_simple_main.lua
 msgid "Name / Password"
