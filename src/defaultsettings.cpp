@@ -288,11 +288,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("aux1_descends", "false");
 	settings->setDefault("doubletap_jump", "true"); // KIDSCODE Changed
 	settings->setDefault("always_fly_fast", "true");
-#ifdef __ANDROID__
-	settings->setDefault("autojump", "true");
-#else
-	settings->setDefault("autojump", "false");
-#endif
+	settings->setDefault("autojump", "true"); // KIDSCODE Changed
 	settings->setDefault("continuous_forward", "false");
 	settings->setDefault("enable_joysticks", "false");
 	settings->setDefault("joystick_id", "0");
