@@ -34,6 +34,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "version.h"
 #include "renderingengine.h"
 #include "network/networkexceptions.h"
+#include "network/upnpserver.h"
 
 #if USE_SOUND
 	#include "sound_openal.h"
@@ -105,7 +106,7 @@ bool ClientLauncher::run(GameParams &game_params, const Settings &cmd_args)
 	}
 
 	RenderingEngine::get_instance()->setupTopLevelWindow(PROJECT_NAME_C);
-	
+
 	/*
 		This changes the minimum allowed number of vertices in a VBO.
 		Default is 500.
@@ -421,7 +422,9 @@ bool ClientLauncher::launch_game(std::string &error_message,
 	/* Show the GUI menu
 	 */
 	if (!skip_main_menu) {
+		upnp_discovery_start(); // KIDSCODE - Local network servers discovery
 		main_menu(&menudata);
+		upnp_discovery_stop(); // KIDSCODE - Local network servers discovery
 
 		// Skip further loading if there was an exit signal.
 		if (*porting::signal_handler_killstatus())

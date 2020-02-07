@@ -36,3 +36,5 @@
 #cmakedefine01 CURSES_HAVE_NCURSESW_CURSES_H
 // KIDSCODE - Mods encryption
 #cmakedefine01 ENCRYPT_MODS
+// KIDSCODE - Local network server announcement
+#cmakedefine01 USE_UPNP

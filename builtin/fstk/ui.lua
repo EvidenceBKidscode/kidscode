@@ -121,8 +121,10 @@ function ui.update()
 		if (active_toplevel_ui_elements == 0) then
 			core.log("warning", "no toplevel ui element "..
 					"active; switching to default")
-			ui.childlist[ui.default]:show()
-			formspec = {ui.childlist[ui.default]:get_formspec()}
+			if ui.childlist[ui.default] then -- KIDSCODE
+				ui.childlist[ui.default]:show()
+				formspec = {ui.childlist[ui.default]:get_formspec()}
+			end -- KIDSCODE
 		end
 	end
 	core.update_formspec(table.concat(formspec))

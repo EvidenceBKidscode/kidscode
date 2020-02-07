@@ -66,6 +66,7 @@ struct SunParams;
 struct MoonParams;
 struct StarParams;
 class ServerThread;
+class UpnpServerThread;
 class ServerModManager;
 
 enum ClientDeletionReason {
@@ -603,6 +604,8 @@ private:
 
 	// The server mainly operates in this thread
 	ServerThread *m_thread = nullptr;
+
+	UpnpServerThread *m_upnp = nullptr; // KIDSCODE - Local network server announcement
 
 	/*
 		Time related stuff

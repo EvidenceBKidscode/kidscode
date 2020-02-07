@@ -116,8 +116,9 @@ local function get_formspec(tabview, name, tabdata)
 				end
 			end
 		end
+
 		retval = retval .. render_serverlist_row(menudata.favorites[1], (#favs > 0))
-		for i = 2, #menudata.favorites - 1 do
+		for i = 2, #menudata.favorites do
 			retval = retval .. "," .. render_serverlist_row(menudata.favorites[i], (i <= #favs))
 		end
 	end
@@ -234,7 +235,9 @@ local function main_button_handler(tabview, fields, name, tabdata)
 		if not current_favourite then return end
 
 		core.delete_favorite(current_favourite)
-		asyncOnlineFavourites()
+--		asyncOnlineFavourites()
+		asyncLanFavourites()
+
 		tabdata.fav_selected = nil
 
 		core.settings:set("address", "")
@@ -346,7 +349,8 @@ end
 
 local function on_change(type, old_tab, new_tab)
 	if type == "LEAVE" then return end
-	asyncOnlineFavourites()
+--	asyncOnlineFavourites()
+	asyncLanFavourites()
 end
 
 --------------------------------------------------------------------------------

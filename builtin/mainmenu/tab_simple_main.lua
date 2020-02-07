@@ -142,7 +142,8 @@ local function main_button_handler(tabview, fields, name, tabdata)
 		if not current_favourite then return end
 
 		core.delete_favorite(current_favourite)
-		asyncOnlineFavourites()
+		asyncLanFavourites()
+--		asyncOnlineFavourites()
 		tabdata.fav_selected = nil
 
 		core.settings:set("address", "")
@@ -207,7 +208,8 @@ end
 --------------------------------------------------------------------------------
 local function on_activate(type,old_tab,new_tab)
 	if type == "LEAVE" then return end
-	asyncOnlineFavourites()
+--	asyncOnlineFavourites()
+	asyncLanFavourites()
 end
 
 --------------------------------------------------------------------------------
