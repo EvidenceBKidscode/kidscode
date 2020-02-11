@@ -226,6 +226,37 @@ function menu_handle_key_up_down(fields, textlist, settingname)
 	return false
 end
 
+
+--------------------------------------------------------------------------------
+
+local timer = 0
+
+function asyncLanFavourites(result)
+	if (os.time() - timer) > 2 then
+		timer = os.time()
+		local favs = order_favorite_list(core.get_favorites("lan"))
+
+		menudata.favorites_is_public = true
+
+		if favs[1] then
+			menudata.public_known = favs
+			menudata.favorites = menudata.public_known
+		else
+			menudata.public_known = {{
+				name = fgettext("Pas de serveur sur le réseau local."),
+				description = fgettext_ne("Attendez qu'un serveur soit démarré pour pouvoir s'y connecter.")
+			}}
+			menudata.favorites = menudata.public_known
+		end
+		core.event_handler("Refresh")
+	end
+	core.handle_async(
+		function() end,
+		nil,
+		asyncLanFavourites
+	)
+end
+
 --------------------------------------------------------------------------------
 function asyncOnlineFavourites()
 	if not menudata.public_known then
@@ -245,7 +276,7 @@ function asyncOnlineFavourites()
 
 	core.handle_async(
 		function(param)
-			return {} --core.get_favorites("online") -- KIDSCODE
+			return core.get_favorites("online")
 		end,
 		nil,
 		function(result)

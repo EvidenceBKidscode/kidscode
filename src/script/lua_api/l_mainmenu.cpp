@@ -40,6 +40,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <IFileSystem.h>
 #include "client/renderingengine.h"
 #include "network/networkprotocol.h"
+#include "network/upnpserver.h"
 
 
 /******************************************************************************/
@@ -288,6 +289,10 @@ int ModApiMainMenu::l_get_favorites(lua_State *L)
 
 	if(listtype == "online") {
 		servers = ServerList::getOnline();
+	// >> KIDSCODE - Local network server announcement
+	} else if (listtype == "lan") {
+		servers = upnp_get_server_list();
+	// << KIDSCODE - Local network server announcement
 	} else {
 		servers = ServerList::getLocal();
 	}

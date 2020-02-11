@@ -65,6 +65,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "chatmessage.h"
 #include "chat_interface.h"
 #include "remoteplayer.h"
+#include "network/upnpserver.h"
 
 // >> KIDSCODE : Limit file size to 15Mb
 // String size (data size) is limited to 64Mb
@@ -252,6 +253,11 @@ Server::Server(
 
 Server::~Server()
 {
+	// >> KIDSCODE - Local network server announcement
+	#if USE_UPNP
+		upnp_server_shutdown();
+	#endif
+	// << KIDSCODE - Local network server announcement
 
 	// Send shutdown message
 	SendChatMessage(PEER_ID_INEXISTENT, ChatMessage(CHATMESSAGE_TYPE_ANNOUNCE,
@@ -440,6 +446,13 @@ void Server::start()
 	// Start thread
 	m_thread->start();
 
+	// >> KIDSCODE - Local network server announcement
+	#if USE_UPNP
+		upnp_server_start(this, m_clients.getPlayerNames());
+	#endif
+	// << KIDSCODE - Local network server announcement
+
+
 // >> KIDSCODE
 /*
 	// ASCII art for the win!
@@ -461,6 +474,12 @@ void Server::start()
 void Server::stop()
 {
 	infostream<<"Server: Stopping and waiting threads"<<std::endl;
+
+	// >> KIDSCODE - Local network server announcement
+	#if USE_UPNP
+		upnp_server_shutdown();
+	#endif
+	// << KIDSCODE - Local network server announcement
 
 	// Stop threads (set run=false first so both start stopping)
 	m_thread->stop();

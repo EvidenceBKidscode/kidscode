@@ -231,6 +231,26 @@ if(ENABLE_SPATIAL)
 	endif(SPATIAL_LIBRARY AND SPATIAL_INCLUDE_DIR)
 endif(ENABLE_SPATIAL)
 
+# >> KIDSCODE - Local network server announcement
+OPTION(ENABLE_UPNP "Enable UPNP server announcement" FALSE)
+set(USE_UPNP FALSE)
+
+if(ENABLE_UPNP)
+	find_library(UPNP_LIBRARY upnp)
+	find_library(IXML_LIBRARY ixml)
+	find_path(UPNP_INCLUDE_DIR NAMES upnp.h PATH_SUFFIXES upnp)
+	find_path(IXML_INCLUDE_DIR NAMES ixml.h PATH_SUFFIXES upnp)
+	if(UPNP_LIBRARY AND IXML_LIBRARY AND UPNP_INCLUDE_DIR AND IXML_INCLUDE_DIR)
+		set(USE_UPNP TRUE)
+		message(STATUS "Upnp enabled.")
+		include_directories(${UPNP_INCLUDE_DIR})
+		include_directories(${IXML_INCLUDE_DIR})
+	else(UPNP_LIBRARY AND IXML_LIBRARY AND UPNP_INCLUDE_DIR AND IXML_INCLUDE_DIR)
+		message(STATUS "Upnp or Ixml not found!")
+	endif(UPNP_LIBRARY AND IXML_LIBRARY AND UPNP_INCLUDE_DIR AND IXML_INCLUDE_DIR)
+endif(ENABLE_UPNP)
+
+# << KIDSCODE - Local network server announcement
 
 if(NOT MSVC)
 	set(USE_GPROF FALSE CACHE BOOL "Use -pg flag for g++")
@@ -621,6 +641,13 @@ if(BUILD_CLIENT)
 	if (USE_SPATIAL)
 		target_link_libraries(${PROJECT_NAME} ${SPATIAL_LIBRARY})
 	endif()
+	if (USE_UPNP)
+		target_link_libraries(${PROJECT_NAME} ${UPNP_LIBRARY})
+		target_link_libraries(${PROJECT_NAME} ${IXML_LIBRARY})
+		if (WIN32)
+			target_link_libraries(${PROJECT_NAME} iphlpapi ws2_32)
+		endif()
+	endif()
 endif(BUILD_CLIENT)
 
 
@@ -657,6 +684,13 @@ if(BUILD_SERVER)
 	if (USE_SPATIAL)
 		target_link_libraries(${PROJECT_NAME}server ${SPATIAL_LIBRARY})
 	endif()
+# >> KIDSCODE - Local network server announcement
+	if (USE_UPNP)
+		target_link_libraries(${PROJECT_NAME}server ${UPNP_LIBRARY})
+		target_link_libraries(${PROJECT_NAME}server ${IXML_LIBRARY})
+		target_link_libraries(${PROJECT_NAME}server iphlpapi ws2_32)
+	endif()
+# << KIDSCODE - Local network server announcement
 	if(USE_CURL)
 		target_link_libraries(
 			${PROJECT_NAME}server
@@ -737,6 +771,9 @@ else()
 	if(MINGW)
 		set(OTHER_FLAGS "${OTHER_FLAGS} -mthreads -fexceptions")
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DWIN32_LEAN_AND_MEAN")
+		# >> KIDSCODE - Avoid to have MingW DLL installed
+		SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -static-libstdc++" )
+		# << KIDSCODE
 	endif()
 
 	set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG ${RELEASE_WARNING_FLAGS} ${WARNING_FLAGS} ${OTHER_FLAGS} -Wall -pipe -funroll-loops")
