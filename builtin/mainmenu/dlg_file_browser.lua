@@ -16,6 +16,7 @@
 --51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 
+local import_map = dofile(core.get_mainmenu_path() .. DIR_DELIM .. "mapimport.lua")
 local PATH = os.getenv("HOME")
 local tabdata = {}
 
@@ -72,7 +73,6 @@ end
 local function make_fs()
 	local dirs = minetest.get_dir_list(PATH)
 	dirs = clean_list(dirs, tabdata.show_zip)
-	local sel = tabdata.filename or ""
 
 	local _path = strip_accents(PATH)
 	_path = _path:gsub("%w+", " <action name=%1>%1</action> ")
@@ -87,7 +87,8 @@ local function make_fs()
 			"," ..
 			"1=" .. core.formspec_escape(defaulttexturedir .. "file.png") ..
 			";text;text,align=right,padding=1]" ..
-		"field[0.2,5.7;6.8,0.5;select;Nom du fichier :;" .. sel .. "]" ..
+		"field[0.2,5.7;6.8,0.5;select;Nom du fichier sélectionné :;" ..
+			(tabdata.filename or "") .. "]" ..
 		"dropdown[7.2,5.7;2.6,0.5;extension;Tous les fichiers,ZIP ou RAR;" ..
 			(tabdata.dd_selected or 1) .. "]" ..
 		"button[2.8,6.35;2,0.5;ok;Ouvrir]" ..
@@ -103,7 +104,7 @@ local function make_fs()
 			local size = filesize(PATH .. DIR_DELIM .. f) / 1000
 			local unit = "KB"
 
-			if size >= 1000000 then
+			if size >= 1000 then
 				unit = "MB"
 				size = size / 1000
 			end
@@ -121,7 +122,18 @@ local function make_fs()
 end
 
 local function fields_handler(this, fields)
-	print(dump(fields))
+	--print(dump(fields))
+
+	if fields.cancel then
+		this:delete()
+		return true
+
+	elseif fields.ok and tabdata.filename and tabdata.filename ~= "" then
+		this:delete()
+		import_map(this, PATH .. DIR_DELIM .. tabdata.filename)
+		return true
+	end
+
 	local dirs = minetest.get_dir_list(PATH)
 	dirs = clean_list(dirs, tabdata.show_zip)
 
@@ -166,7 +178,7 @@ local function fields_handler(this, fields)
 
 		for _, v in ipairs(PATH) do
 			newpath = newpath .. v .. DIR_DELIM
-			if v == dir then break end
+			if strip_accents(v) == dir then break end
 		end
 
 		PATH = newpath:sub(1,-2)

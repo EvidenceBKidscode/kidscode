@@ -15,7 +15,6 @@
 --with this program; if not, write to the Free Software Foundation, Inc.,
 --51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-local import_map = dofile(core.get_mainmenu_path() .. DIR_DELIM .. "mapimport.lua")
 
 local function get_formspec(tabview, name, tabdata)
 	local retval = ""
@@ -230,19 +229,12 @@ local function main_button_handler(this, fields, name, tabdata)
 	end
 
 	if fields["world_import"] then
-		--core.show_path_select_dialog("dlg_browse_path",
-		--	fgettext_ne("Sélectionner un fichier"), true)
-
 		local file_browser_dlg = create_file_browser_dlg()
 		file_browser_dlg:set_parent(this)
 		this:hide()
 		file_browser_dlg:show()
 
 		return true
-	end
-
-	if fields["dlg_browse_path_accepted"] then
-		return import_map(this, fields["dlg_browse_path_accepted"])
 	end
 end
 --------------------------------------------------------------------------------
