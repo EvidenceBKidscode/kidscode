@@ -594,7 +594,7 @@ void MapDatabaseSQLite3::setCurrentVersion(int id)
 	SQLOK(sqlite3_exec(m_database,
 		"UPDATE versioned_blocks SET visible = 0"
 		" WHERE visible = 1 AND version_id NOT IN( "
-		"  SELECT version_id FROM current_versions)", NULL, NULL, NULL),
+		"  SELECT id FROM current_versions)", NULL, NULL, NULL),
 		"setCurrentVersion: Unable to update blocks to visible");
 
 	SQLOK(sqlite3_exec(m_database,
