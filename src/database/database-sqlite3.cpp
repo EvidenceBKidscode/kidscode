@@ -360,17 +360,26 @@ void MapDatabaseSQLite3::upgradeDatabaseStructure()
 	printf("Starting database migration. This may take some time.\n");
 
 	SQLOK(sqlite3_exec(m_database, R""""(
+		PRAGMA foreign_keys=off;
+		BEGIN TRANSACTION;
+
 		CREATE TABLE versioned_blocks (
 		  pos INT,
 		  version_id INT,
-			visible BOOLEAN,
-			mtime INT,
-		  data BLOB,
+		  visible BOOLEAN,
+		  mtime INT,
+		  x SMALLINT,
+		  y SMALLINT,
+		  z SMALLINT,
 		  PRIMARY KEY(pos, version_id)
 		);
 
-		CREATE INDEX versioned_blocks_mtime_ix ON versioned_blocks(mtime);
-		CREATE INDEX versioned_blocks_version_id_ix ON versioned_blocks(version_id);
+		CREATE TABLE blocks_data (
+		  pos INT,
+		  version_id INT,
+		  data BLOB,
+		  PRIMARY KEY(pos, version_id)
+		);
 
 		CREATE TABLE versions (
 		  id INT PRIMARY KEY,
@@ -396,20 +405,48 @@ void MapDatabaseSQLite3::upgradeDatabaseStructure()
 
 		-- Migration if already populated map
 		CREATE TABLE IF NOT EXISTS blocks(pos INT, data BLOB);
-		INSERT INTO versioned_blocks SELECT pos, 0, 0, 0, data FROM blocks;
+
+		INSERT INTO blocks_data SELECT pos, 0, data FROM blocks;
 		DROP TABLE blocks;
 
-		CREATE VIEW blocks AS
-		  SELECT pos, data, mtime
-		    FROM versioned_blocks
-		   WHERE visible = 1;
+		CREATE TABLE temp(pos INT, i INT, x SMALLINT, y SMALLINT, z SMALLINT);
+		INSERT INTO temp SELECT pos, pos, NULL, NULL, NULL FROM blocks_data;
 
+		UPDATE temp SET i = pos;
+		UPDATE temp SET x = i % 4096 WHERE i >= 0;
+		UPDATE temp SET x = 4096 - ((-i) % 4096) WHERE i < 0;
+		UPDATE temp SET x = x - 4096 WHERE x >= 2048;
+		UPDATE temp SET i = (i - x) / 4096;
+		UPDATE temp SET y = i % 4096 WHERE i >= 0;
+		UPDATE temp SET y = 4096 - ((-i) % 4096) WHERE i < 0;
+		UPDATE temp SET y = y - 4096 WHERE y >= 2048;
+		UPDATE temp SET i = (i - y) / 4096;
+		UPDATE temp SET z = i % 4096 WHERE i >= 0;
+		UPDATE temp SET z = 4096 - ((-i) % 4096) WHERE i < 0;
+		UPDATE temp SET z = z - 4096 WHERE z >= 2048;
+
+		INSERT INTO versioned_blocks SELECT pos, 0, 0, 0, x, y, z FROM temp;
+		DROP TABLE temp;
+
+		CREATE INDEX versioned_blocks_mtime_ix ON versioned_blocks(mtime);
+		CREATE INDEX versioned_blocks_version_id_ix ON versioned_blocks(version_id);
+		CREATE INDEX versioned_blocks_xzy ON versioned_blocks(x, z, y);
+
+		CREATE VIEW blocks AS
+		  SELECT bd.pos, bd.data, vb.mtime, vb.x, vb.y, vb.z
+		    FROM versioned_blocks vb, blocks_data bd
+		   WHERE vb.pos = bd.pos AND vb.version_id = bd.version_id
+		     AND vb.visible = 1;
 
 		CREATE TRIGGER blocks_insert INSTEAD OF INSERT ON blocks FOR EACH ROW
 		BEGIN
-		  INSERT OR REPLACE INTO versioned_blocks(pos, version_id, visible, mtime, data)
-		    SELECT new.pos, id, 1, strftime('%s', 'now'), new.data
+		  INSERT OR REPLACE INTO versioned_blocks(pos, version_id, visible, mtime, x, y, z)
+		    SELECT new.pos, id, 1, strftime('%s', 'now'), new.x, new.y, new.z
 		      FROM versions WHERE status = 'C';
+
+		  INSERT OR REPLACE INTO blocks_data(pos, version_id, data)
+		    SELECT new.pos, id, new.data FROM versions WHERE status = 'C';
+
 		  UPDATE versioned_blocks SET visible = 0
 		   WHERE pos = new.pos
 		     AND version_id <> (SELECT id FROM versions WHERE status = 'C');
@@ -417,9 +454,13 @@ void MapDatabaseSQLite3::upgradeDatabaseStructure()
 
 		CREATE TRIGGER blocks_update INSTEAD OF UPDATE ON blocks FOR EACH ROW
 		BEGIN
-		  INSERT OR REPLACE INTO versioned_blocks(pos, version_id, visible, mtime, data)
-		    SELECT new.pos, id, 1, strftime('%s', 'now'), new.data
+		  INSERT OR REPLACE INTO versioned_blocks(pos, version_id, visible, mtime, x, y, z)
+		    SELECT new.pos, id, 1, strftime('%s', 'now'), new.x, new.y, new.z
 		      FROM versions WHERE status = 'C';
+
+		  INSERT OR REPLACE INTO blocks_data(pos, version_id, data)
+		    SELECT new.pos, id, new.data FROM versions WHERE status = 'C';
+
 		  UPDATE versioned_blocks SET visible = 0
 		   WHERE pos = new.pos
 		  AND version_id <> (SELECT id FROM versions WHERE status = 'C');
@@ -431,6 +472,10 @@ void MapDatabaseSQLite3::upgradeDatabaseStructure()
 		  -- a version without showing the previous one. So we delete all in all versions
 		   DELETE FROM versioned_blocks WHERE pos = old.pos;
 		END;
+
+		COMMIT;
+		PRAGMA foreign_keys=on;
+
 		)"""", NULL, NULL, NULL),
 		"Unable to upgrade database");
 
@@ -456,7 +501,7 @@ void MapDatabaseSQLite3::initStatements()
 #ifdef __ANDROID__
 	PREPARE_STATEMENT(write,  "INSERT INTO `blocks` (`pos`, `data`) VALUES (?, ?)");
 #else
-	PREPARE_STATEMENT(write, "REPLACE INTO `blocks` (`pos`, `data`) VALUES (?, ?)");
+	PREPARE_STATEMENT(write, "REPLACE INTO `blocks` (`pos`, `data`, `x`, `y`, `z`) VALUES (?, ?, ?, ?, ?)");
 #endif
 	PREPARE_STATEMENT(delete, "DELETE FROM `blocks` WHERE `pos` = ?");
 	PREPARE_STATEMENT(list, "SELECT `pos` FROM `blocks`");
@@ -509,6 +554,10 @@ bool MapDatabaseSQLite3::saveBlock(const v3s16 &pos, const std::string &data)
 #endif
 
 	bindPos(m_stmt_write, pos);
+	sqlite3_bind_int64(m_stmt_write, 3, pos.X);
+	sqlite3_bind_int64(m_stmt_write, 4, pos.Y);
+	sqlite3_bind_int64(m_stmt_write, 5, pos.Z);
+
 	SQLOK(sqlite3_bind_blob(m_stmt_write, 2, data.data(), data.size(), NULL),
 		"Internal error: failed to bind query at " __FILE__ ":" TOSTRING(__LINE__));
 
