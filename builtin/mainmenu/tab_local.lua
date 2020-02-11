@@ -230,8 +230,14 @@ local function main_button_handler(this, fields, name, tabdata)
 	end
 
 	if fields["world_import"] then
-		core.show_path_select_dialog("dlg_browse_path",
-			fgettext_ne("Sélectionner un fichier"), true)
+		--core.show_path_select_dialog("dlg_browse_path",
+		--	fgettext_ne("Sélectionner un fichier"), true)
+
+		local file_browser_dlg = create_file_browser_dlg()
+		file_browser_dlg:set_parent(this)
+		this:hide()
+		file_browser_dlg:show()
+
 		return true
 	end
 
