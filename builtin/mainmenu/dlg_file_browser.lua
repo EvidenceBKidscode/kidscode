@@ -18,7 +18,7 @@
 
 local import_map = dofile(core.get_mainmenu_path() .. DIR_DELIM .. "mapimport.lua")
 local PATH = os.getenv("HOME")
-local tabdata = {}
+local tabdata = {show_zip = true}
 
 local function strip_accents(str)
 	local accents = {}
@@ -60,6 +60,7 @@ local function clean_list(dirs, only_zip)
 	for _, f in ipairs(dirs) do
 		if f:sub(1,1) ~= "." then
 			local is_file = f:match("^.+(%..+)$")
+
 			if not only_zip or (only_zip and
 					(is_file == ".zip" or is_file == ".rar" or not is_file)) then
 				new[#new + 1] = f
@@ -74,9 +75,8 @@ end
 local function make_fs()
 	local dirs = minetest.get_dir_list(PATH)
 	dirs = clean_list(dirs, tabdata.show_zip)
-
-	local _path = strip_accents(PATH)
-	_path = _path:gsub("[%w%s_:%+%-]+", " <action name=%1>%1</action> ")
+	local _path = PATH:gsub(" ", "_"):gsub(
+		"[^%s%" .. DIR_DELIM .. "]*", " <action name=%1>%1</action>")
 
 	local fs = "size[10,7]" ..
 		"real_coordinates[true]" ..
@@ -92,7 +92,7 @@ local function make_fs()
 			";text;text,align=right,padding=1]" ..
 		"field[0.2,5.7;6.8,0.5;select;Nom du fichier sélectionné :;" ..
 			(tabdata.filename or "") .. "]" ..
-		"dropdown[7.2,5.7;2.6,0.5;extension;Tous les fichiers,ZIP ou RAR;" ..
+		"dropdown[7.2,5.7;2.6,0.5;extension;ZIP / RAR,Tous les fichiers;" ..
 			(tabdata.dd_selected or 1) .. "]" ..
 		"button[2.8,6.35;2,0.5;ok;Ouvrir]" ..
 		"button[5,6.35;2,0.5;cancel;Annuler]"
@@ -136,7 +136,6 @@ local function fields_handler(this, fields)
 		return true
 
 	elseif fields.ok and tabdata.filename and tabdata.filename ~= "" then
-		this:delete()
 		import_map(this, PATH .. DIR_DELIM .. tabdata.filename)
 		return true
 	end
@@ -147,9 +146,9 @@ local function fields_handler(this, fields)
 	if fields.dirs then
 		local event, idx = fields.dirs:sub(1,3), tonumber(fields.dirs:match("%d+"))
 		local filename = dirs[idx]
+		local is_file = filename:find("^.+(%..+)$")
 
 		if event == "CHG" then
-			local is_file = filename:find("^.+(%..+)$")
 			tabdata.filename = is_file and filename or ""
 			tabdata.selected = idx
 
@@ -157,7 +156,6 @@ local function fields_handler(this, fields)
 			return true
 
 		elseif event == "DCL" and filename then
-			local is_file = filename:find("^.+(%..+)$")
 			if not is_file then
 				PATH = PATH .. (PATH == DIR_DELIM and "" or DIR_DELIM) .. filename
 				tabdata.selected = 1
@@ -166,6 +164,7 @@ local function fields_handler(this, fields)
 			core.update_formspec(this:get_formspec())
 			return true
 		end
+
 	elseif fields.updir then
 		PATH = string.split(PATH, DIR_DELIM)
 		PATH[#PATH] = nil
@@ -178,14 +177,14 @@ local function fields_handler(this, fields)
 		return true
 
 	elseif fields.path then
-		local dir = fields.path:match(":(%w+)$")
+		local dir = fields.path:match(":(.*)$")
 
 		PATH = string.split(PATH, DIR_DELIM)
 		local newpath = DIR_DELIM
 
 		for _, v in ipairs(PATH) do
 			newpath = newpath .. v .. DIR_DELIM
-			if strip_accents(v) == dir then break end
+			if v == dir then break end
 		end
 
 		PATH = newpath:sub(1,-2)
@@ -193,15 +192,15 @@ local function fields_handler(this, fields)
 		core.update_formspec(this:get_formspec())
 		return true
 
-	elseif fields.extension == "Tous les fichiers" then
-		tabdata.show_zip = nil
+	elseif fields.extension == "ZIP / RAR" then
+		tabdata.show_zip = true
 		tabdata.dd_selected = 1
 
 		core.update_formspec(this:get_formspec())
 		return true
 
-	elseif fields.extension == "ZIP ou RAR" then
-		tabdata.show_zip = true
+	elseif fields.extension == "Tous les fichiers" then
+		tabdata.show_zip = nil
 		tabdata.dd_selected = 2
 
 		core.update_formspec(this:get_formspec())

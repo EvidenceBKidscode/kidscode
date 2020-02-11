@@ -32,6 +32,7 @@ local function dlg_mapimport_formspec(data)
 			fs = fs .. "button[4,2;2.8,0.5;dlg_mapimport_formspec_cancel;" .. data.buttons.cancel .. "]"
 		end
 	end
+
 	return fs
 end
 
@@ -56,7 +57,7 @@ local function show_message(parent, errmsg)
 		dlg_mapimport_btnhandler,
 		nil)
 	dlg.data.message = errmsg
-	dlg.data.buttons = { ok = "Ok" }
+	dlg.data.buttons = {ok = "OK"}
 	dlg:set_parent(parent)
 	parent:hide()
 	dlg:show()
@@ -67,11 +68,12 @@ local function show_question(parent, errmsg, default, cb_ok, cb_cancel)
 		dlg_mapimport_formspec,
 		dlg_mapimport_btnhandler,
 		nil)
+
 	dlg.data.message = errmsg
 	dlg.data.message = errmsg
 	dlg.data.field = default or ""
-	dlg.data.buttons = { ok = "Valider", cancel = "Annuler" }
-	dlg.data.callbacks = { ok = cb_ok, cancel = cb_cancel }
+	dlg.data.buttons = {ok = "Valider", cancel = "Annuler"}
+	dlg.data.callbacks = {ok = cb_ok, cancel = cb_cancel}
 	dlg:set_parent(parent)
 	parent:hide()
 	dlg:show()
@@ -82,6 +84,7 @@ local function dir_exists(path)
 	if not ok and code == 13 then
 		return true
 	end
+
 	return ok
 end
 
@@ -90,7 +93,7 @@ local function install_map(parent, tempdir, mapname)
 
 	if dir_exists(mappath) then
 		show_question(parent,
-			("Une carte %s existe déja. Choisisez un autre nom :"):
+			("Une carte %s existe déja. Choisissez un autre nom :"):
 			format(core.colorize("#EE0", mapname)), mapname,
 			function(this, fields)
 				return install_map(this, tempdir, fields.dlg_mapimport_formspec_value)
@@ -106,13 +109,13 @@ local function install_map(parent, tempdir, mapname)
 	end
 
 	if core.copy_dir(tempdir, mappath) then
-		core.log("info", "New map installed: ".. mapname)
+		core.log("info", "New map installed: " .. mapname)
 		menudata.worldlist:refresh()
 		show_message(parent,
 			("La carte %s a bien été importée."):
 			format(core.colorize("#EE0", mapname)))
 	else
-		core.log("error", "Error when copying ".. tempdir.." to "..mappath)
+		core.log("error", "Error when copying " .. tempdir .. " to " .. mappath)
 		show_message(parent,
 			"Erreur lors de l'import, la carte n'a pas été importée.")
 	end
@@ -121,7 +124,7 @@ local function install_map(parent, tempdir, mapname)
 end
 
 local function import_map(parent, zippath)
-	local zipname = string.match(zippath, "([^\\/]*)$")
+	local zipname = string.match(zippath, "([^%/]*)$")
 
 	-- Create a temp directory for decompressing zip file in it
 	local tempdir = os.tempfolder() .. DIR_DELIM .. "TEST";
@@ -129,7 +132,7 @@ local function import_map(parent, zippath)
 
 	-- Extract archive
 	if not core.extract_zip(zippath, tempdir) then
-		core.log("warning", "Unable to extract zipfile "..zippath.." to "..tempdir)
+		core.log("warning", "Unable to extract zipfile " .. zippath .. " to " .. tempdir)
 		show_message(parent,
 			("Impossible d'ouvrir l'archive %s."):
 			format(core.colorize("#EE0", zipname)))
@@ -147,7 +150,7 @@ local function import_map(parent, zippath)
 	end
 
 	if #files ~= 1 then
-		core.log("warning", "Too many files in "..zippath)
+		core.log("warning", "Too many files in " .. zippath)
 		show_message(parent,
 			("L'archive %s doit contenir un dossier seul."):
 			format(core.colorize("#EE0", zipname)))
