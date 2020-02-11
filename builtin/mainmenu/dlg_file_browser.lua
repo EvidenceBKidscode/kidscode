@@ -41,6 +41,7 @@ local function strip_accents(str)
 	accents["ï"] = "i"
 	accents["ô"] = "o"
 	accents["ö"] = "o"
+	accents[" "] = "_"
 
 	return str:gsub("[%z\1-\127\194-\244][\128-\191]*", accents)
 end
@@ -75,7 +76,7 @@ local function make_fs()
 	dirs = clean_list(dirs, tabdata.show_zip)
 
 	local _path = strip_accents(PATH)
-	_path = _path:gsub("%w+", " <action name=%1>%1</action> ")
+	_path = _path:gsub("[%w%s_:%+%-]+", " <action name=%1>%1</action> ")
 
 	local fs = "size[10,7]" ..
 		"real_coordinates[true]" ..
@@ -86,6 +87,8 @@ local function make_fs()
 			"0=" .. core.formspec_escape(defaulttexturedir .. "folder.png") ..
 			"," ..
 			"1=" .. core.formspec_escape(defaulttexturedir .. "file.png") ..
+			"," ..
+			"2=" .. core.formspec_escape(defaulttexturedir .. "blank.png") ..
 			";text;text,align=right,padding=1]" ..
 		"field[0.2,5.7;6.8,0.5;select;Nom du fichier sélectionné :;" ..
 			(tabdata.filename or "") .. "]" ..
@@ -95,6 +98,10 @@ local function make_fs()
 		"button[5,6.35;2,0.5;cancel;Annuler]"
 
 	local _dirs = ""
+
+	if not next(dirs) then
+		_dirs = "2,,"
+	end
 
 	for _, f in ipairs(dirs) do
 		local is_file = f:match("^.+(%..+)$")
@@ -149,7 +156,7 @@ local function fields_handler(this, fields)
 			core.update_formspec(this:get_formspec())
 			return true
 
-		elseif event == "DCL" then
+		elseif event == "DCL" and filename then
 			local is_file = filename:find("^.+(%..+)$")
 			if not is_file then
 				PATH = PATH .. (PATH == DIR_DELIM and "" or DIR_DELIM) .. filename
