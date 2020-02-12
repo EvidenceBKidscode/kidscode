@@ -26,11 +26,10 @@ local function get_formspec(tabview, name, tabdata)
 
 	if worldlist ~= "" then
 		retval = retval ..
-			"button[9.4,4;2.3,0.6;world_delete;".. fgettext("Supprimer") .. "]"
+			"button[9,4;2.3,0.6;world_delete;".. fgettext("Supprimer") .. "]"
 	end
 
 	retval = retval ..
-		"button[6.3,4;3,0.6;advanced_options;".. fgettext("Options avancées") .. "]" ..
 		"label[4,-0.25;".. fgettext("Sélectionner un monde :") .. "]"..
 
 		"tooltip[0.25,0.5;2,0.2;" ..
@@ -40,7 +39,9 @@ local function get_formspec(tabview, name, tabdata)
 				"le menu 'Rejoindre une partie', en indiquant l'adresse IP " ..
 				"de votre poste et le port (30000 par défaut).", 80) ..
 		"]" ..
-		"checkbox[0.25,0.5;cb_server;".. fgettext("Héberger un serveur") ..";" ..
+		"checkbox[0.25,0.5;advanced_options;" .. fgettext("Options avancées") .. ";" ..
+			dump(core.settings:get_bool("advanced_options")) .. "]" ..
+		"checkbox[0.25,1;cb_server;".. fgettext("Héberger un serveur") ..";" ..
 			dump(core.settings:get_bool("enable_server")) .. "]" ..
 		"textlist[4,0.25;7.7,3.7;sp_worlds;" .. worldlist .. ";" .. index .. "]" ..
 
@@ -48,38 +49,35 @@ local function get_formspec(tabview, name, tabdata)
 			core.wrap_text("Cliquez ici pour ajouter une carte téléchargée " ..
 				"depuis le site de l'IGN (formats ZIP et RAR acceptés)", 80) ..
 		"]" ..
-		"button[4,4.7;2.2,0.6;world_import;".. fgettext("Importer") .. "]"
+		"button[6.7,4;2.2,0.6;world_import;".. fgettext("Importer") .. "]" ..
+		"button[4.4,4;2.2,0.6;play;".. fgettext("Jouer") .. ";#0000ff]"
 
 	if core.settings:get_bool("advanced_options") then
 		retval = retval ..
-			"button[6.3,4.7;2.2,0.6;world_configure;".. fgettext("Configurer") .. "]" ..
-			"button[8.6,4.7;2.2,0.6;world_create;".. fgettext("Nouveau") .. "]"
+			"button[5.5,4.7;2.2,0.6;world_configure;".. fgettext("Configurer") .. "]" ..
+			"button[7.8,4.7;2.2,0.6;world_create;".. fgettext("Nouveau") .. "]"
 	end
 
 	if core.settings:get_bool("enable_server") then
 		retval = retval ..
-			"button[4,4;2.2,0.6;play;".. fgettext("Jouer") .. ";#0000ff]" ..
-			"label[0.25,1.2;" .. fgettext("Nom / Pseudonyme") .. "]" ..
-			"field[0.25,1.4;3.5,0.5;te_playername;;" ..
+			"label[0.25,1.7;" .. fgettext("Nom / Pseudonyme") .. "]" ..
+			"field[0.25,1.9;3.5,0.5;te_playername;;" ..
 				core.formspec_escape(core.settings:get("name")) .. "]" ..
-			"label[0.25,2.2;" .. fgettext("Mot de passe (optionnel)") .. "]" ..
-			"pwdfield[0.25,2.4;3.5,0.5;te_passwd;]"
+			"label[0.25,2.7;" .. fgettext("Mot de passe (optionnel)") .. "]" ..
+			"pwdfield[0.25,2.9;3.5,0.5;te_passwd;]"
 
 		local bind_addr = core.settings:get("bind_address")
 		if bind_addr ~= nil and bind_addr ~= "" then
 			retval = retval ..
-				"field[0.55,4.7;2.25,0.5;te_serveraddr;" .. fgettext("Bind Address") .. ";" ..
+				"field[0.55,5.2;2.25,0.5;te_serveraddr;" .. fgettext("Bind Address") .. ";" ..
 					core.formspec_escape(core.settings:get("bind_address")) .. "]" ..
-				"field[2.8,4.7;1.25,0.5;te_serverport;" .. fgettext("Port") .. ";" ..
+				"field[2.8,5.2;1.25,0.5;te_serverport;" .. fgettext("Port") .. ";" ..
 					core.formspec_escape(core.settings:get("port")) .. "]"
 		else
 			retval = retval ..
-				"field[0.25,3.35;3.5,0.5;te_serverport;" .. fgettext("Port du serveur") .. ";" ..
+				"field[0.25,3.85;3.5,0.5;te_serverport;" .. fgettext("Port du serveur") .. ";" ..
 				core.formspec_escape(core.settings:get("port")) .. "]"
-		end
-	else
-		retval = retval ..
-			"button[4,4;2.2,0.6;play;".. fgettext("Jouer") .. ";#0000ff]"
+		end	
 	end
 
 	return retval
