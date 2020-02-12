@@ -125,7 +125,7 @@ local function install_map(parent, tempdir, mapname)
 end
 
 local function import_map(parent, zippath)
-	local zipname = string.match(zippath, "([^%/]*)$")
+	local zipname = zippath:match("([^" .. DIR_DELIM .. "]*)$")
 
 	-- Create a temp directory for decompressing zip file in it
 	local tempdir = os.tempfolder() .. DIR_DELIM .. "TEST";
