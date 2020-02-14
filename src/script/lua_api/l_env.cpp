@@ -1063,9 +1063,9 @@ int ModApiEnvMod::l_clear_objects(lua_State *L)
 		mode = (ClearObjectsMode)getenumfield(L, 1, "mode",
 			ModApiEnvMod::es_ClearObjectsMode, mode);
 	}
-	env->getServerMap().lockMap(); // KIDSCODE - Threading
+	env->getServerMap().lockMultiple(); // KIDSCODE - Threading
 	env->clearObjects(mode);
-	env->getServerMap().unlockMap(); // KIDSCODE - Threading
+	env->getServerMap().unlockMultiple(); // KIDSCODE - Threading
 	return 0;
 }
 

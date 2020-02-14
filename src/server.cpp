@@ -2442,7 +2442,7 @@ void Server::SendBlocks(float dtime)
 {
 	MutexAutoLock envlock(m_env_mutex);
 
-	m_env->getServerMap().lockMap(); // KIDSCODE - Threading
+	m_env->getServerMap().lockMultiple(); // KIDSCODE - Threading
 
 	//TODO check if one big lock could be faster then multiple small ones
 
@@ -2504,12 +2504,12 @@ void Server::SendBlocks(float dtime)
 	}
 	m_clients.unlock();
 
-	m_env->getServerMap().unlockMap(); // KIDSCODE - Threading
+	m_env->getServerMap().unlockMultiple(); // KIDSCODE - Threading
 }
 
 bool Server::SendBlock(session_t peer_id, const v3s16 &blockpos)
 {
-	m_env->getServerMap().lockMap(); // KIDSCODE - Threading
+	m_env->getServerMap().lockSingle(); // KIDSCODE - Threading
 
 	MapBlock *block = m_env->getMap().getBlockNoCreateNoEx(blockpos);
 	if (!block)
@@ -2525,7 +2525,7 @@ bool Server::SendBlock(session_t peer_id, const v3s16 &blockpos)
 			client->net_proto_version);
 	m_clients.unlock();
 
-	m_env->getServerMap().unlockMap(); // KIDSCODE - Threading
+	m_env->getServerMap().unlockSingle(); // KIDSCODE - Threading
 
 	return true;
 }

@@ -415,10 +415,10 @@ bool Database_SQLite3::tableExists(sqlite3 *connection, const std::string &table
 
 	assert(connection); // Pre-condition
 
-	SQLOK(sqlite3_prepare_v2(connection,
+	SQLOKC(sqlite3_prepare_v2(connection,
 			"SELECT * FROM `sqlite_master` where type='table' and name=?;",
 			-1, &stmt, NULL),
-		"tableExists: Failed to verify existence of table (prepare)");
+		"tableExists: Failed to verify existence of table (prepare)", connection);
 
 	str_to_sqlite(stmt, 1, table_name);
 	bool res = (sqlite3_step(stmt) == SQLITE_ROW);
@@ -516,14 +516,20 @@ MapDatabaseSQLite3::~MapDatabaseSQLite3()
 // This method creates or upgrades database structures
 void MapDatabaseSQLite3::upgradeDatabaseStructure(sqlite3 *connection)
 {
+	printf("[SQLITE] Checking if database needs upgrade.\n");
 	assert(connection);
 
 	// Rely on this clue to determine if the database have been upgraded to
 	// versioned blocks version.
-	if (tableExists(connection, "versioned_blocks"))
+	if (tableExists(connection, "versioned_blocks")) {
+		printf("[SQLITE] Database does not need to be upgraded.\n");
 		return;
+	}
 
-	printf("Starting database migration. This may take some time.\n");
+	printf("[SQLITE] Upgrading database, please wait, this may take some time.\n");
+
+	SQLOKC(sqlite3_exec(connection, "BEGIN;", NULL, NULL, NULL),
+		"upgradeDatabaseStructure: Failed to start SQLite3 transaction", connection);
 
 	SQLOKC(sqlite3_exec(connection, R""""(
 		CREATE TABLE versioned_blocks (
@@ -570,7 +576,6 @@ void MapDatabaseSQLite3::upgradeDatabaseStructure(sqlite3 *connection)
 		    FROM versioned_blocks
 		   WHERE visible = 1;
 
-
 		CREATE TRIGGER blocks_insert INSTEAD OF INSERT ON blocks FOR EACH ROW
 		BEGIN
 		  INSERT OR REPLACE INTO versioned_blocks(pos, version_id, visible, mtime, data)
@@ -598,15 +603,16 @@ void MapDatabaseSQLite3::upgradeDatabaseStructure(sqlite3 *connection)
 		   DELETE FROM versioned_blocks WHERE pos = old.pos;
 		END;
 		)"""", NULL, NULL, NULL),
-		"Unable to upgrade database", connection);
+		"upgradeDatabaseStructure: Unable to upgrade database", connection);
 
-	printf("Database migration: create first version.\n");
+	printf("[SQLITE] Database upgrade: creating first version.\n");
 
-	beginSave();
 	setCurrentVersion(1, connection);
-	endSave();
 
-	printf("Database migration done.\n");
+	SQLOKC(sqlite3_exec(connection, "COMMIT;", NULL, NULL, NULL),
+		"upgradeDatabaseStructure: Failed to commit SQLite3 transaction", connection);
+
+	printf("[SQLITE] Database upgrade done.\n");
 
 }
 // << KIDSCODE - Map versionning
@@ -707,8 +713,8 @@ bool MapDatabaseSQLite3::saveBlock(const v3s16 &pos, const std::string &data)
 		"(`pos`, `data`) VALUES (?, ?)");
 
 #else
-	stmt = statement("save", "INSERT OR REPLACE INTO blocks"
-		" SELECT ?, id, ? FROM versions WHERE status = 'C'");
+	stmt = statement("save",
+		"REPLACE INTO `blocks` (`pos`, `data`) VALUES (?, ?)");
 	/*
 	bindPos(m_stmt_read, pos);
 

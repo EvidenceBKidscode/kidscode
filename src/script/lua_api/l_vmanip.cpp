@@ -144,7 +144,9 @@ int LuaVoxelManip::l_write_to_map(lua_State *L)
 	GET_ENV_PTR;
 	ServerMap *map = &(env->getServerMap());
 	if (o->is_mapgen_vm || !update_light) {
+		map->lockMultiple(); // KIDSCODE - Threading
 		o->vm->blitBackAll(&(o->modified_blocks));
+		map->unlockMultiple(); // KIDSCODE - Threading
 	} else {
 		voxalgo::blit_back_with_light(map, o->vm,
 			&(o->modified_blocks));

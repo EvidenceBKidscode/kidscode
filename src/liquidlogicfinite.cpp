@@ -832,7 +832,7 @@ void LiquidLogicFinite::transform(
 	ServerEnvironment *env)
 {
 	// >> KIDSCODE - Threading
-	m_map->lockMap();
+	m_map->lockMultiple();
 	MutexAutoLock lock(m_logic_mutex);
 	// << KIDSCODE - Threading
 
@@ -902,7 +902,7 @@ void LiquidLogicFinite::transform(
 
 	// >> KIDSCODE - Threading
 	unlockAllBlocks();
-	m_map->unlockMap();
+	m_map->unlockMultiple();
 	// << KIDSCODE - Threading
 
 	/* ----------------------------------------------------------------------
@@ -952,14 +952,17 @@ void LiquidLogicFinite::transform(
 		m_queue_size_timer_started = false; // optimistically assume we can keep up now
 		m_unprocessed_count = m_liquid_queue.size();
 	}
+
+	#warning IL SEMBLE QU IL MANQUE LE TRANSFERT de extra_liquid_queue vers liquid_queue
 }
 
 // Totally reset liquid logic. Usefull for map restoring
 void LiquidLogicFinite::reset() {
-	MutexAutoLock lock(m_logic_mutex);
+	MutexAutoLock logic_lock(m_logic_mutex);
+	MutexAutoLock queue_lock(m_extra_liquid_queue_mutex);
+
 	while (!m_liquid_queue.size())
 		m_liquid_queue.pop_front();
-
 	while (!m_extra_liquid_queue.size())
 		m_extra_liquid_queue.pop_front();
 };

@@ -141,8 +141,8 @@ public:
 	}
 
 	// >> KIDSCODE - Threading
-	virtual inline void lockMap() {};
-	virtual inline void unlockMap() {};
+	virtual inline void lockMultiple() {};
+	virtual inline void unlockMultiple() {};
 
 	virtual void lockBlock(const v3s16 &pos) {};
 	virtual bool tryLockBlock(const v3s16 &pos) { return true; };
@@ -348,23 +348,50 @@ private:
 };
 
 // >> KIDSCODE - Threading
+
 /*
 +       ServerMapSaveThread
 +
 +       Thread continuously saving map data.
 +*/
-class SharedMutex
+
+// This is a special mutex for managing different levels of map lock :
+// - Exclusive : Everybody keeps your hands off the map !
+// - Multiple : I want to acquire several maplocks locks, but other single locks
+//              are ok (this specific case is for avoiding deadlocks if two
+//              threads acquire multiple mablock locks).
+// - Single : I just want to acquire a lock on a single mapblock.
+
+// No mechanisme enforces these rules and it's up to you to take care of using
+// the right lock according what you do next with mapblock locks.
+
+class ServerMapMutex
 {
 public:
-	void lock();
-	void unlock();
-	void lock_shared();
-	void unlock_shared();
+	// Acquire lock on the whole map. No concurrent for writing
+	void lock_exclusive();
+	void unlock_exclusive();
+
+	// Acquire lock that allows to lock one mapblock
+	void lock_single();
+	void unlock_single();
+
+	// Acquire lock for locking many mapblocks (no concurrent will be allowed
+	// to do same but some may lock single blocks)
+	void lock_multiple();
+	void unlock_multiple();
 private:
-	std::mutex m_exclusive_mutex;
-	int m_shared_count = 0;
+	// If exclusive or multiple lock, this is the locking thread.
+	// If only signle locks, its value is std::thread::id().
 	std::thread::id m_thread;
+
+	// Number of multiple and single shared lock
+	int m_shared_count = 0;
+
+	std::mutex m_multiple_mutex;
+	std::mutex m_exclusive_mutex;
 };
+
 
 class ServerMap;
 class ServerMapSaveThread : public Thread
@@ -430,10 +457,13 @@ public:
 
 	// >> KIDSCODE - Threading
 	// Ensure map is not modified inbetween lock and unlock
-	inline void lockMap() { m_map_mutex.lock_shared(); };
-	inline void unlockMap() { m_map_mutex.unlock_shared(); };
-	inline void lockMapExclusive() { m_map_mutex.lock(); };
-	inline void unlockMapExclusive() { m_map_mutex.unlock(); };
+	// Please see ServerMapMutex definition for different locking modes
+	inline void lockSingle() { m_map_mutex.lock_single(); };
+	inline void unlockSingle() { m_map_mutex.unlock_single(); };
+	inline void lockMultiple() { m_map_mutex.lock_multiple(); };
+	inline void unlockMultiple() { m_map_mutex.unlock_multiple(); };
+	inline void lockExclusive() { m_map_mutex.lock_exclusive(); };
+	inline void unlockExclusive() { m_map_mutex.unlock_exclusive(); };
 
 	void lockBlock(const v3s16 &pos);
 	void unlockBlock(const v3s16 &pos);
@@ -594,7 +624,7 @@ private:
 
 // >> KIDSCODE - Threading
 	// Multithread management
-	SharedMutex m_map_mutex;
+	ServerMapMutex m_map_mutex;
 	std::map<s64, std::recursive_mutex> m_block_mutexes;
 	std::map<s64, std::thread::id> m_debug_locking_threads;
 

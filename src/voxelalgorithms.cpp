@@ -1061,7 +1061,7 @@ void blit_back_with_light(ServerMap *map, MMVManip *vm,
 	// Dummy boolean.
 	bool is_valid;
 
-	map->lockMap(); // KIDSCODE - Threading
+	map->lockMultiple(); // KIDSCODE - Threading
 
 	// --- STEP 1: reset everything to sunlight
 
@@ -1147,7 +1147,7 @@ void blit_back_with_light(ServerMap *map, MMVManip *vm,
 	finish_bulk_light_update(map, minblock, maxblock, unlight, relight,
 		modified_blocks);
 
-	map->unlockMap(); // KIDSCODE - Threading
+	map->unlockMultiple(); // KIDSCODE - Threading
 }
 
 /*!
