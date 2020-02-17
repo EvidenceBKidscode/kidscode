@@ -87,7 +87,7 @@ std::string writeFlagString(u32 flags, const FlagDesc *flagdesc, u32 flagmask);
 size_t mystrlcpy(char *dst, const char *src, size_t size);
 char *mystrtok_r(char *s, const char *sep, char **lasts);
 u64 read_seed(const char *str);
-void parseTextString(const std::string &value, std::string &text, std::string &params, 
+void parseTextString(const std::string &value, std::string &text, std::string &params,
 		const char sep, const char esc='\\');
 bool parseColorString(const std::string &value, video::SColor &color, bool quiet,
 		unsigned char default_alpha = 0xff);
@@ -889,11 +889,19 @@ inline std::string str_join(const std::vector<std::string> &list,
 }
 
 /**
- * Create a std::string from a irr::core::stringw.
+ * Create a UTF8 std::string from a irr::core::stringw.
  */
-std::string strwtostr(const irr::core::stringw &str);
+inline std::string stringw_to_utf8(const irr::core::stringw &input)
+{
+	std::wstring str(input.c_str());
+	return wide_to_utf8(str);
+}
 
-/**
- * Create a irr::core:stringw from a std::string.
- */
-irr::core::stringw strtostrw(const std::string &str);
+ /**
+  * Create a irr::core:stringw from a UTF8 std::string.
+  */
+inline irr::core::stringw utf8_to_stringw(const std::string &input)
+{
+	std::wstring str = utf8_to_wide(input);
+	return irr::core::stringw(str.c_str());
+}

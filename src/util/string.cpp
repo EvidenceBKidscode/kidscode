@@ -810,31 +810,6 @@ std::wstring translate_string(const std::wstring &s) {
 	return res;
 }
 
-/**
- * Create a std::string from a irr::core:stringw.
- */
-std::string strwtostr(const irr::core::stringw &str)
-{
-	std::string text = core::stringc(str.c_str()).c_str();
-	return text;
-}
-
-/**
- * Create a irr::core:stringw from a std::string.
- */
-irr::core::stringw strtostrw(const std::string &str)
-{
-	size_t size = str.size();
-	// s.size() doesn't include NULL terminator
-	wchar_t *text = new wchar_t[size + sizeof(wchar_t)];
-	const char *data = &str[0];
-
-	mbsrtowcs(text, &data, size, NULL);
-
-	text[size] = L'\0';
-	return text;
-}
-
 void fix_accented_characters(std::wstring &s,
 	std::vector<irr::video::SColor> *colors) { // :PATCH:
 	int l = s.size();
