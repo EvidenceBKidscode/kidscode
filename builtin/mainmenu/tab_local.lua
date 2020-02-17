@@ -32,7 +32,7 @@ local function get_formspec(tabview, name, tabdata)
 	retval = retval ..
 		"label[4,-0.25;".. fgettext("Sélectionner un monde :") .. "]"..
 
-		"tooltip[0.25,0.5;2,0.2;" ..
+		"tooltip[0.25,1;2,0.2;" ..
 			core.wrap_text("Si vous êtes enseignant, cochez cette case " ..
 				"pour que votre ordinateur fasse office de serveur. " ..
 				"Vos élèves pourront ensuite rejoindre votre partie depuis " ..
@@ -45,7 +45,7 @@ local function get_formspec(tabview, name, tabdata)
 			dump(core.settings:get_bool("enable_server")) .. "]" ..
 		"textlist[4,0.25;7.7,3.7;sp_worlds;" .. worldlist .. ";" .. index .. "]" ..
 
-		"tooltip[4,4.7;2.2,0.6;" ..
+		"tooltip[6.7,4;2.2,0.6;" ..
 			core.wrap_text("Cliquez ici pour ajouter une carte téléchargée " ..
 				"depuis le site de l'IGN (formats ZIP et RAR acceptés)", 80) ..
 		"]" ..
