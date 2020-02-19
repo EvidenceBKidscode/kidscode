@@ -20,32 +20,6 @@ local import_map = dofile(core.get_mainmenu_path() .. DIR_DELIM .. "mapimport.lu
 local PATH = os.getenv("HOME") or os.getenv("HOMEPATH") or core.get_worldpath();
 local tabdata = {show_zip = true}
 
-local function strip_accents(str)
-	local accents = {}
-
-	accents["À"] = "A"
-	accents["Ç"] = "C"
-	accents["È"] = "E"
-	accents["É"] = "E"
-	accents["Ê"] = "E"
-	accents["Ë"] = "E"
-	accents["Ô"] = "O"
-	accents["à"] = "a"
-	accents["æ"] = "ae"
-	accents["ç"] = "c"
-	accents["è"] = "e"
-	accents["é"] = "e"
-	accents["ê"] = "e"
-	accents["ë"] = "e"
-	accents["î"] = "i"
-	accents["ï"] = "i"
-	accents["ô"] = "o"
-	accents["ö"] = "o"
-	accents[" "] = "_"
-
-	return str:gsub("[%z\1-\127\194-\244][\128-\191]*", accents)
-end
-
 local function filesize(name)
 	local f = io.open(name)
 	if not f then return end
@@ -55,14 +29,22 @@ local function filesize(name)
 	return size
 end
 
-local function clean_list(dirs, only_zip)
+local function get_dirs()
+	local dirs
+
+	if PATH == "\\" then -- F*** windows root dir
+		dirs = minetest.get_dir_list(os.getenv("HOMEDRIVE"))
+	else
+		dirs = minetest.get_dir_list(PATH)
+	end
+
 	local new = {}
 	for _, f in ipairs(dirs) do
 		if f:sub(1,1) ~= "." then
 			local is_file = f:match("^.+(%..+)$")
 
-			if not only_zip or (only_zip and
-					(is_file == ".zip" or is_file == ".rar" or not is_file)) then
+			if not tabdata.show_zip or not is_file or
+					is_file == ".zip" or is_file == ".rar" then
 				new[#new + 1] = f
 			end
 		end
@@ -73,10 +55,15 @@ local function clean_list(dirs, only_zip)
 end
 
 local function make_fs()
-	local dirs = minetest.get_dir_list(PATH)
-	dirs = clean_list(dirs, tabdata.show_zip)
-	local _path = PATH:gsub(" ", "_"):gsub(
-		"[^%s%" .. DIR_DELIM .. "]*", " <action name=%1>%1</action>")
+	local dirs = get_dirs()
+
+	local _path = ""
+	local value = ""
+	for dirname in string.gmatch(PATH, "([^" .. DIR_DELIM .. "]+)") do
+		value = value .. DIR_DELIM:gsub("\\", "\\\\") .. (dirname:gsub("_", "_u"):gsub(" ", "_s"))
+		_path = ("%s %s <action name=%s>%s</action>")
+			:format(_path, DIR_DELIM:gsub("\\", "\\\\\\\\"), value, dirname)
+	end
 
 	local fs = "size[10,7]" ..
 		"real_coordinates[true]" ..
@@ -108,15 +95,20 @@ local function make_fs()
 		_dirs = _dirs .. (is_file and "1," or "0,") .. f .. ","
 
 		if is_file then
-			local size = filesize(PATH .. DIR_DELIM .. f) / 1000
-			local unit = "KB"
-
-			if size >= 1000 then
-				unit = "MB"
+			local size = filesize(PATH .. DIR_DELIM .. f)
+			if size ~= nil then
 				size = size / 1000
-			end
+				local unit = "KB"
 
-			_dirs = _dirs .. string.format("%.1f", size) .. " " .. unit .. ","
+				if size >= 1000 then
+					unit = "MB"
+					size = size / 1000
+				end
+
+				_dirs = _dirs .. string.format("%.1f", size) .. " " .. unit .. ","
+			else
+				_dirs = _dirs .. ","
+			end
 		else
 			_dirs = _dirs .. ","
 		end
@@ -129,8 +121,6 @@ local function make_fs()
 end
 
 local function fields_handler(this, fields)
-	--print(dump(fields))
-
 	if fields.cancel then
 		this:delete()
 		return true
@@ -140,13 +130,12 @@ local function fields_handler(this, fields)
 		return true
 	end
 
-	local dirs = minetest.get_dir_list(PATH)
-	dirs = clean_list(dirs, tabdata.show_zip)
+	local dirs = get_dirs()
 
 	if fields.dirs then
 		local event, idx = fields.dirs:sub(1,3), tonumber(fields.dirs:match("%d+"))
 		local filename = dirs[idx]
-		local is_file = filename:find("^.+(%..+)$")
+		local is_file = (filename ~= nil) and filename:find("^.+(%..+)$")
 
 		if event == "CHG" then
 			tabdata.filename = is_file and filename or ""
@@ -177,18 +166,8 @@ local function fields_handler(this, fields)
 		return true
 
 	elseif fields.path then
-		local dir = fields.path:match(":(.*)$")
-
-		PATH = string.split(PATH, DIR_DELIM)
-		local newpath = DIR_DELIM
-
-		for _, v in ipairs(PATH) do
-			newpath = newpath .. v .. DIR_DELIM
-			if v == dir then break end
-		end
-
-		PATH = newpath:sub(1,-2)
-
+		local dir = fields.path:match("action:(.*)$")
+		PATH = dir:gsub("_s", " "):gsub("_u", "_")
 		core.update_formspec(this:get_formspec())
 		return true
 
