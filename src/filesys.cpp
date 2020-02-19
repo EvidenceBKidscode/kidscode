@@ -43,15 +43,14 @@ namespace fs
 std::vector<DirListNode> GetDirListing(const std::string &pathstring)
 {
 	std::vector<DirListNode> listing;
-
-	WIN32_FIND_DATA FindFileData;
+	WIN32_FIND_DATAW FindFileData;
 	HANDLE hFind = INVALID_HANDLE_VALUE;
 	DWORD dwError;
 
 	std::string dirSpec = pathstring + "\\*";
 
 	// Find the first file in the directory.
-	hFind = FindFirstFile(dirSpec.c_str(), &FindFileData);
+	hFind = FindFirstFileW(utf8_to_wide(dirSpec).c_str(), &FindFileData);
 
 	if (hFind == INVALID_HANDLE_VALUE) {
 		dwError = GetLastError();
@@ -65,15 +64,15 @@ std::vector<DirListNode> GetDirListing(const std::string &pathstring)
 		// result in an epic failure when deleting stuff.
 
 		DirListNode node;
-		node.name = FindFileData.cFileName;
+		node.name = wide_to_utf8(FindFileData.cFileName);
 		node.dir = FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY;
 		if (node.name != "." && node.name != "..")
 			listing.push_back(node);
 
 		// List all the other files in the directory.
-		while (FindNextFile(hFind, &FindFileData) != 0) {
+		while (FindNextFileW(hFind, &FindFileData) != 0) {
 			DirListNode node;
-			node.name = FindFileData.cFileName;
+			node.name = wide_to_utf8(FindFileData.cFileName);
 			node.dir = FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY;
 			if(node.name != "." && node.name != "..")
 				listing.push_back(node);
@@ -93,7 +92,7 @@ std::vector<DirListNode> GetDirListing(const std::string &pathstring)
 
 bool CreateDir(const std::string &path)
 {
-	bool r = CreateDirectory(path.c_str(), NULL);
+	bool r = CreateDirectoryW(utf8_to_wide(path).c_str(), NULL);
 	if(r == true)
 		return true;
 	if(GetLastError() == ERROR_ALREADY_EXISTS)
@@ -103,17 +102,17 @@ bool CreateDir(const std::string &path)
 
 bool PathExists(const std::string &path)
 {
-	return (GetFileAttributes(path.c_str()) != INVALID_FILE_ATTRIBUTES);
+	return (GetFileAttributesW(utf8_to_wide(path).c_str()) != INVALID_FILE_ATTRIBUTES);
 }
 
 bool IsPathAbsolute(const std::string &path)
 {
-	return !PathIsRelative(path.c_str());
+	return !PathIsRelativeW(utf8_to_wide(path).c_str());
 }
 
 bool IsDir(const std::string &path)
 {
-	DWORD attr = GetFileAttributes(path.c_str());
+	DWORD attr = GetFileAttributesW(utf8_to_wide(path).c_str());
 	return (attr != INVALID_FILE_ATTRIBUTES &&
 			(attr & FILE_ATTRIBUTE_DIRECTORY));
 }
@@ -125,10 +124,12 @@ bool IsDirDelimiter(char c)
 
 bool RecursiveDelete(const std::string &path)
 {
+	std::wstring pathw = utf8_to_wide(path);
+
 	infostream << "Recursively deleting \"" << path << "\"" << std::endl;
 	if (!IsDir(path)) {
 		infostream << "RecursiveDelete: Deleting file  " << path << std::endl;
-		if (!DeleteFile(path.c_str())) {
+		if (!DeleteFileW(pathw.c_str())) {
 			errorstream << "RecursiveDelete: Failed to delete file "
 					<< path << std::endl;
 			return false;
@@ -147,7 +148,7 @@ bool RecursiveDelete(const std::string &path)
 		}
 	}
 	infostream << "RecursiveDelete: Deleting directory " << path << std::endl;
-	if (!RemoveDirectory(path.c_str())) {
+	if (!RemoveDirectoryW(pathw.c_str())) {
 		errorstream << "Failed to recursively delete directory "
 				<< path << std::endl;
 		return false;
@@ -157,17 +158,19 @@ bool RecursiveDelete(const std::string &path)
 
 bool DeleteSingleFileOrEmptyDirectory(const std::string &path)
 {
-	DWORD attr = GetFileAttributes(path.c_str());
+	std::wstring pathw = utf8_to_wide(path);
+
+	DWORD attr = GetFileAttributesW(pathw.c_str());
 	bool is_directory = (attr != INVALID_FILE_ATTRIBUTES &&
 			(attr & FILE_ATTRIBUTE_DIRECTORY));
 	if(!is_directory)
 	{
-		bool did = DeleteFile(path.c_str());
+		bool did = DeleteFileW(pathw.c_str());
 		return did;
 	}
 	else
 	{
-		bool did = RemoveDirectory(path.c_str());
+		bool did = RemoveDirectoryW(pathw.c_str());
 		return did;
 	}
 }
@@ -750,4 +753,3 @@ bool Rename(const std::string &from, const std::string &to)
 }
 
 } // namespace fs
-
