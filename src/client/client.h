@@ -218,9 +218,6 @@ public:
 	void handleCommand_HudSetFlags(NetworkPacket* pkt);
 	void handleCommand_HudSetParam(NetworkPacket* pkt);
 	void handleCommand_HudSetSky(NetworkPacket* pkt);
-	void handleCommand_HudSetSun(NetworkPacket* pkt);
-	void handleCommand_HudSetMoon(NetworkPacket* pkt);
-	void handleCommand_HudSetStars(NetworkPacket* pkt);
 	void handleCommand_CloudParams(NetworkPacket* pkt);
 	void handleCommand_OverrideDayNightRatio(NetworkPacket* pkt);
 	void handleCommand_LocalPlayerAnimations(NetworkPacket* pkt);
