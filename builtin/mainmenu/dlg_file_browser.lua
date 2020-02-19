@@ -17,7 +17,7 @@
 
 
 local import_map = dofile(core.get_mainmenu_path() .. DIR_DELIM .. "mapimport.lua")
-local PATH = os.getenv("HOME")
+local PATH = os.getenv("HOME") or os.getenv("HOMEPATH") or core.get_worldpath();
 local tabdata = {show_zip = true}
 
 local function strip_accents(str)
