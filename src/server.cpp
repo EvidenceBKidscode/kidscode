@@ -101,16 +101,13 @@ void *LiquidThread::run()
 
 			std::map<v3s16, MapBlock*> modified_blocks;
 			m_server->getEnv().getMap().transformLiquids(modified_blocks, &m_server->getEnv());
-			/*
-			Set the modified blocks unsent for all the clients
-			*/
+			// Set the modified blocks unsent for all the clients
 			if(!modified_blocks.empty()) {
 				MutexAutoLock lock(m_server->m_env_mutex);
 				m_server->SetBlocksNotSent(modified_blocks);
 			}
-		} else {
-			sleep_ms(50);
 		}
+		std::this_thread::yield();
 	}
 
 	return nullptr;
@@ -2512,13 +2509,16 @@ bool Server::SendBlock(session_t peer_id, const v3s16 &blockpos)
 	m_env->getServerMap().lockSingle(); // KIDSCODE - Threading
 
 	MapBlock *block = m_env->getMap().getBlockNoCreateNoEx(blockpos);
-	if (!block)
+	if (!block) {
+		m_env->getServerMap().unlockSingle();
 		return false;
+	}
 
 	m_clients.lock();
 	RemoteClient *client = m_clients.lockedGetClientNoEx(peer_id, CS_Active);
 	if (!client || client->isBlockSent(blockpos)) {
 		m_clients.unlock();
+		m_env->getServerMap().unlockSingle();
 		return false;
 	}
 	SendBlockNoLock(peer_id, block, client->serialization_version,
