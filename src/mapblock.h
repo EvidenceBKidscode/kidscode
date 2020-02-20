@@ -337,7 +337,7 @@ public:
 		lockBlock(); // KIDSCODE - Threading
 		data[z * zstride + y * ystride + x] = n;
 		raiseModified(MOD_STATE_WRITE_NEEDED, MOD_REASON_SET_NODE_NO_CHECK);
-		lockBlock(); // KIDSCODE - Threading
+		unlockBlock(); // KIDSCODE - Threading
 	}
 
 	inline void setNodeNoCheck(v3s16 p, MapNode & n)
