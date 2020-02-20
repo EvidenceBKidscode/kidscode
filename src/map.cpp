@@ -813,6 +813,7 @@ void ServerMapMutex::lock_exclusive() {
 //	printf("ServerMapMutex %lx wants exclusive\n", std::this_thread::get_id());
 	m_multiple_mutex.lock();
 	m_exclusive_mutex.lock();
+//	if (m_shared_count) printf("ServerMapMutex %lx waits for %d shared locks to be released\n", std::this_thread::get_id(), m_shared_count);
 	while (m_shared_count) {
 		m_exclusive_mutex.unlock();
 		m_multiple_mutex.unlock();
@@ -2100,8 +2101,8 @@ void *ServerMapSaveThread::run()
 			m_map->lockMultiple();
 			m_map->save(MOD_STATE_WRITE_NEEDED, 100);
 			m_map->unlockMultiple();
-			sleep_ms(100);
 		}
+		std::this_thread::yield();
 	}
 
 	// Perform a complete save before exiting

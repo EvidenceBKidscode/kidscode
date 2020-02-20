@@ -452,20 +452,16 @@ void *PurgeDataSQLite3Thread::run() {
 	m_database->setThreadWriteAccess(true);
 
 	while (!stopRequested()) {
+		// This is done to avoid waiting end of sleep time in case of
+		// thread stop.
+		if (difftime(time(nullptr), m_lastpurge) > 1.0f) {
+			// Purge some blocks
+			m_database->purgeUnreferencedBlocks(10000);
 
-		// This is done to avoid waiting end of sleep time in case of thread
-		// stop. Max wait in that case is 100ms, but purge atempts still occure
-		// max each seconds.
-		if (difftime(time(nullptr), m_lastpurge) < 1.0f) {
-			sleep_ms(100);
-			continue;
+			// Actually count purge time in last purge time
+			time(&m_lastpurge);
 		}
-
-		// Purge some blocks
-		m_database->purgeUnreferencedBlocks(10000);
-
-		// Actually count purge time in last purge time
-		time(&m_lastpurge);
+		std::this_thread::yield();
 	}
 
 	return nullptr;
