@@ -1019,25 +1019,38 @@ s64 getBlockAsInteger(const v3s16 &pos)
 			(u64) pos.X;
 }
 
+// This is a debug/check function to track "locks leaks"
+bool ServerMap::hasBlockLocks()
+{
+	MutexAutoLock lock(m_lock_block_mutex);
+	for (auto it : m_debug_locking_threads)
+		if (it.second == std::this_thread::get_id())
+			return true;
+	return false;
+}
+
 void ServerMap::lockBlock(const v3s16 &pos)
 {
+	MutexAutoLock lock(m_lock_block_mutex);
 	s64 key = getBlockAsInteger(pos);
 	auto holding = m_debug_locking_threads[key];
 	if (holding != std::thread::id() &&
 			holding != std::this_thread::get_id())
-
 		m_block_mutexes[getBlockAsInteger(pos)].lock();
+
 	// Debug purpose
 	m_debug_locking_threads[getBlockAsInteger(pos)] = std::this_thread::get_id();
 }
 
 bool ServerMap::tryLockBlock(const v3s16 &pos)
 {
+	MutexAutoLock lock(m_lock_block_mutex);
 	return m_block_mutexes[getBlockAsInteger(pos)].try_lock();
 }
 
 void ServerMap::unlockBlock(const v3s16 &pos)
 {
+	MutexAutoLock lock(m_lock_block_mutex);
 	s64 key = getBlockAsInteger(pos);
 	auto it = m_block_mutexes.find(key);
 	if (it != m_block_mutexes.end()) {

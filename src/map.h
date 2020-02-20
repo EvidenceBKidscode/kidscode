@@ -605,6 +605,7 @@ public:
 	void unloadBlocks(float dtime, float unload_timeout,
 		std::vector<v3s16> *unloaded_blocks=NULL);
 
+	bool hasBlockLocks()
 protected:
 
 
@@ -624,7 +625,8 @@ private:
 
 // >> KIDSCODE - Threading
 	// Multithread management
-	ServerMapMutex m_map_mutex;
+	ServerMapMutex m_map_mutex; // Protects operations on blocs
+	std::mutex m_lock_block_mutex; // Protects operations on m_block_mutexes
 	std::map<s64, std::recursive_mutex> m_block_mutexes;
 	std::map<s64, std::thread::id> m_debug_locking_threads;
 

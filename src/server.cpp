@@ -993,6 +993,10 @@ void Server::AsyncRunStep(bool initial_step)
 	}
 
 	m_shutdown_state.tick(dtime, this);
+
+	if (m_env->getServerMap().hasBlockLocks()) {
+		FATAL_ERROR("AsyncRunStep (Server Thread) did not release all block locks!\n");
+	}
 }
 
 void Server::Receive()
