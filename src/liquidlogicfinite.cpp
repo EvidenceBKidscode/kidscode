@@ -853,7 +853,7 @@ void LiquidLogicFinite::transform(
 #endif
 
 	// First compute flows from nodes to others
-	while (m_liquid_queue.size() != 0) {
+	while (m_liquid_queue.size() > 0) {
 		// This should be done here so that it is done when continue is used
 		if (loopcount >= initial_size || loopcount >= loop_max)
 			break;
@@ -863,6 +863,7 @@ void LiquidLogicFinite::transform(
 		m_liquid_queue.pop_front();
 		compute_flow(pos);
 	}
+
 
 //	printf("Liquify flow size = %ld\n", m_flows.size());
 
@@ -960,9 +961,8 @@ void LiquidLogicFinite::transform(
 void LiquidLogicFinite::reset() {
 	MutexAutoLock logic_lock(m_logic_mutex);
 	MutexAutoLock queue_lock(m_extra_liquid_queue_mutex);
-
-	while (!m_liquid_queue.size())
+	while (m_liquid_queue.size() > 0)
 		m_liquid_queue.pop_front();
-	while (!m_extra_liquid_queue.size())
+	while (m_extra_liquid_queue.size() > 0)
 		m_extra_liquid_queue.pop_front();
 };
