@@ -182,6 +182,7 @@ MapNode Map::getNode(v3s16 p, bool *is_valid_position)
 	return node;
 }
 
+// KIDSCODE: Must be protected behind any map mutex (if server map)
 // throws InvalidPositionException if not found
 void Map::setNode(v3s16 p, MapNode & n)
 {
@@ -204,6 +205,11 @@ void Map::addNodeAndUpdate(v3s16 p, MapNode n,
 		std::map<v3s16, MapBlock*> &modified_blocks,
 		bool remove_metadata)
 {
+	// >> KIDSCODE - Map threading
+	lockMultiple(); // Light propagation may put some more locks
+	lockBlock(p);
+	// << KIDSCODE - Map threading
+
 	// Collect old node for rollback
 	RollbackNode rollback_oldnode(this, p, m_gamedef);
 
@@ -255,6 +261,10 @@ void Map::addNodeAndUpdate(v3s16 p, MapNode n,
 			transforming_liquid_add(p2);
 	}
 
+	// >> KIDSCODE - Map threading
+	unlockBlock(p);
+	unlockMultiple();
+	// << KIDSCODE - Map threading
 }
 
 void Map::removeNodeAndUpdate(v3s16 p,
@@ -809,68 +819,216 @@ bool Map::isBlockOccluded(MapBlock *block, v3s16 cam_pos_nodes)
 
 // >> KIDSCODE - Threading
 
-void ServerMapMutex::lock_exclusive() {
-//	printf("ServerMapMutex %lx wants exclusive\n", std::this_thread::get_id());
-	m_multiple_mutex.lock();
-	m_exclusive_mutex.lock();
-//	if (m_shared_count) printf("ServerMapMutex %lx waits for %d shared locks to be released\n", std::this_thread::get_id(), m_shared_count);
-	while (m_shared_count) {
-		m_exclusive_mutex.unlock();
-		m_multiple_mutex.unlock();
+void ServerMapMutex::lock_exclusive()
+{
+	MutexAutoLock lock(m_inner_mutex);
+	auto start = std::chrono::steady_clock::now();
+
+//	printf("%lx wants exclusive lock\n", std::this_thread::get_id());
+
+	if (m_thread == std::this_thread::get_id()) {
+		if (!m_exclusive_count)
+		  // Upgrading from multiple to exclusive, just wait for other block locks
+			// to be released.
+			while (other_blocks_locked()) {
+				auto now = std::chrono::steady_clock::now();
+				if (std::chrono::duration_cast<std::chrono::seconds>(now - start).count() > 1) {
+					start = now;
+					printf("%lx waiting loop 1, total locked blocks = %d\n", std::this_thread::get_id(), m_locked_blocks.size());
+				}
+				m_inner_mutex.unlock();
+				std::this_thread::yield();
+				m_inner_mutex.lock();
+			}
+
+	} else {
+		// Not holding any exclusive or multiple lock yet
+
+		if (has_locked_blocks())
+			// Must unlock single block before getting multiple or exclusive lock
+			// (this condition is essential to avoid deadlock situations)
+			throw std::runtime_error("ServerMapMutex: Trying to get exclusive lock "
+				"but has locked block yet.");
+
+		while (m_thread != std::thread::id() || m_locked_blocks.size() > 0) {
+			auto now = std::chrono::steady_clock::now();
+			if (std::chrono::duration_cast<std::chrono::seconds>(now - start).count() > 1) {
+				start = now;
+				printf("%lx waiting loop 2, thread %lx total locked blocks = %d\n", std::this_thread::get_id(), m_thread, m_locked_blocks.size());
+			}
+			m_inner_mutex.unlock();
+			std::this_thread::yield();
+			m_inner_mutex.lock();
+		}
+
+		// Can get the exclusive or multiple lock
+		m_thread = std::this_thread::get_id();
+	}
+
+	m_exclusive_count++;
+//	printf("%lx got exclusive lock\n", std::this_thread::get_id());
+}
+
+void ServerMapMutex::unlock_exclusive()
+{
+	MutexAutoLock lock(m_inner_mutex);
+
+	if (m_thread != std::this_thread::get_id() || !m_exclusive_count)
+		throw std::runtime_error("ServerMapMutex: Releasing exclusive lock "
+			"but not holding any.");
+
+	m_exclusive_count--;
+	if (!m_exclusive_count && !m_multiple_count) {
+		m_thread = std::thread::id();
+		if (has_locked_blocks())
+			throw std::runtime_error("ServerMapMutex: Releasing exclusive lock "
+				"but blocks still locked.");
+	}
+
+//	printf("%lx unlocked exclusive lock\n", std::this_thread::get_id());
+}
+
+void ServerMapMutex::lock_multiple()
+{
+	MutexAutoLock lock(m_inner_mutex);
+//	printf("%lx wants multiple lock\n", std::this_thread::get_id());
+	auto start = std::chrono::steady_clock::now();
+
+	if (m_thread != std::this_thread::get_id()) {
+		// Not holding any exclusive or multiple lock yet
+
+		if (has_locked_blocks())
+			// Must unlock single block before getting multiple or exclusive lock
+			throw std::runtime_error("ServerMapMutex: Trying to get multiple lock "
+				"but has locked block yet.");
+
+		while (m_thread != std::thread::id()) {
+			auto now = std::chrono::steady_clock::now();
+			if (std::chrono::duration_cast<std::chrono::seconds>(now - start).count() > 1) {
+				start = now;
+				printf("%lx waiting loop 3, thread %lx\n", std::this_thread::get_id(), m_thread);
+			}
+			m_inner_mutex.unlock();
+			std::this_thread::yield();
+			m_inner_mutex.lock();
+		}
+
+		// Can get the exclusive or multiple lock
+		m_thread = std::this_thread::get_id();
+	}
+	m_multiple_count++;
+
+//	printf("%lx got multiple lock\n", std::this_thread::get_id());
+}
+
+void ServerMapMutex::unlock_multiple()
+{
+	MutexAutoLock lock(m_inner_mutex);
+
+	if (!m_multiple_count)
+		throw std::runtime_error("ServerMapMutex: Releasing multiple lock "
+			"but not holding any.");
+
+	m_multiple_count--;
+	if (!m_exclusive_count && !m_multiple_count) {
+		m_thread = std::thread::id();
+		if (has_locked_blocks())
+			throw std::runtime_error("ServerMapMutex: Releasing multiple lock "
+				"but blocks still locked.");
+
+	}
+
+//	printf("%lx unlocked multiple lock\n", std::this_thread::get_id());
+}
+
+bool ServerMapMutex::try_lock_block(s64 block)
+{
+	MutexAutoLock lock(m_inner_mutex);
+	std::thread::id me = std::this_thread::get_id();
+
+	// If there is a exclusive lock from another thread, I cant lock any block
+	if (m_exclusive_count && m_thread != me)
+		return false;
+
+	// If I dont have multiple or exclusive lock (none or not mine), I can only
+	// lock one block at a time.
+	if ((!m_exclusive_count && !m_multiple_count) || m_thread != me)
+		for (auto it : m_locked_blocks)
+			if (it.first != block && it.second.thread == me)
+				// This illegal to try locking any other block
+				throw std::runtime_error("ServerMapMutex: Tried to lock multiple "
+						"blocks without holding exclusive or multiple mutex.");
+
+	// If block is already locked, I cant lock it.
+	auto it = m_locked_blocks.find(block);
+	if (it != m_locked_blocks.end() && it->second.thread != me)
+		return false;
+
+	// At last I can lock this block (or increase recursive locks counter)
+	if (it == m_locked_blocks.end())
+		m_locked_blocks[block] = {me, 1};
+	else
+		it->second.count++;
+
+	return true;
+}
+
+void ServerMapMutex::lock_block(s64 block)
+{
+//	printf("%lx wants lock on block %ld\n", std::this_thread::get_id(), block);
+	while (!try_lock_block(block))
 		std::this_thread::yield();
-		m_multiple_mutex.lock();
-		m_exclusive_mutex.lock();
-	}
-	m_thread = std::this_thread::get_id();
-//	printf("ServerMapMutex %lx got exclusive\n", std::this_thread::get_id());
+//	printf("%lx got lock on block %ld\n", std::this_thread::get_id(), block);
 }
 
-void ServerMapMutex::unlock_exclusive() {
-//	printf("ServerMapMutex %lx releases exclusive\n", std::this_thread::get_id());
-	m_thread = std::thread::id();
-	m_exclusive_mutex.unlock();
-	m_multiple_mutex.unlock();
+void ServerMapMutex::unlock_block(s64 block)
+{
+	MutexAutoLock lock(m_inner_mutex);
+	std::thread::id me = std::this_thread::get_id();
+
+	// Should not unlock not locked blocks
+	auto it = m_locked_blocks.find(block);
+	if (it == m_locked_blocks.end() || it->second.thread != me)
+		throw std::runtime_error("ServerMapMutex: Tried to unlock a block not yet locked.");
+
+	it->second.count--;
+
+	if (!it->second.count)
+		m_locked_blocks.erase(it);
+
+//	printf("%lx unlocked block %ld\n", std::this_thread::get_id(), block);
 }
 
-void ServerMapMutex::lock_single() {
-//	printf("ServerMapMutex %lx     wants single\n", std::this_thread::get_id());
-	if (m_thread == std::this_thread::get_id()) {
-		m_shared_count++;
-	} else {
-		std::unique_lock<std::mutex> lock(m_exclusive_mutex);
-		m_shared_count++;
-	}
-//	printf("ServerMapMutex %lx     got single\n", std::this_thread::get_id());
+void ServerMapMutex::unlock_all_blocks() {
+	MutexAutoLock lock(m_inner_mutex);
+	std::thread::id me = std::this_thread::get_id();
+
+	for (auto it = m_locked_blocks.cbegin() ; it != m_locked_blocks.cend() ; )
+		it = (it->second.thread == me) ? m_locked_blocks.erase(it) : std::next(it);
+//	printf("%lx unlocked all block\n", std::this_thread::get_id());
 }
 
-void ServerMapMutex::unlock_single() {
-//	printf("ServerMapMutex %lx     releases single\n", std::this_thread::get_id());
-	if (m_thread == std::this_thread::get_id()) {
-		if (m_shared_count > 0)
-			m_shared_count--;
-	} else {
-		std::unique_lock<std::mutex> lock(m_exclusive_mutex);
-		if (m_shared_count > 0)
-			m_shared_count--;
-	}
+bool ServerMapMutex::thread_lock_block() {
+	MutexAutoLock lock(m_inner_mutex);
+	return has_locked_blocks();
 }
 
-void ServerMapMutex::lock_multiple() {
-//	printf("ServerMapMutex %lx   wants multiple\n", std::this_thread::get_id());
-	m_multiple_mutex.lock();
-	std::unique_lock<std::mutex> lock(m_exclusive_mutex);
-	m_shared_count++;
-//	printf("ServerMapMutex %lx   got multiple\n", std::this_thread::get_id());
+bool ServerMapMutex::has_locked_blocks() {
+	std::thread::id me = std::this_thread::get_id();
+
+	for (auto it : m_locked_blocks)
+		if (it.second.thread == me)
+			return true;
+	return false;
 }
 
-void ServerMapMutex::unlock_multiple() {
-//	printf("ServerMapMutex %lx   releases multiple\n", std::this_thread::get_id());
-	{
-		std::unique_lock<std::mutex> lock(m_exclusive_mutex);
-		if (m_shared_count > 0)
-			m_shared_count--;
-	}
-	m_multiple_mutex.unlock();
+bool ServerMapMutex::other_blocks_locked() {
+	std::thread::id me = std::this_thread::get_id();
+
+	for (auto it : m_locked_blocks)
+		if (it.second.thread != me)
+			return true;
+	return false;
 }
 // << KIDSCODE - Threading
 
@@ -1009,54 +1167,6 @@ ServerMap::~ServerMap()
 		delete chunk;
 	}
 #endif
-}
-
-// >> KIDSCODE - Threading
-s64 getBlockAsInteger(const v3s16 &pos)
-{
-	return (u64) pos.Z * 0x1000000 +
-			(u64) pos.Y * 0x1000 +
-			(u64) pos.X;
-}
-
-// This is a debug/check function to track "locks leaks"
-bool ServerMap::hasBlockLocks()
-{
-	MutexAutoLock lock(m_lock_block_mutex);
-	for (auto it : m_debug_locking_threads)
-		if (it.second == std::this_thread::get_id())
-			return true;
-	return false;
-}
-
-void ServerMap::lockBlock(const v3s16 &pos)
-{
-	MutexAutoLock lock(m_lock_block_mutex);
-	s64 key = getBlockAsInteger(pos);
-	auto holding = m_debug_locking_threads[key];
-	if (holding != std::thread::id() &&
-			holding != std::this_thread::get_id())
-		m_block_mutexes[getBlockAsInteger(pos)].lock();
-
-	// Debug purpose
-	m_debug_locking_threads[getBlockAsInteger(pos)] = std::this_thread::get_id();
-}
-
-bool ServerMap::tryLockBlock(const v3s16 &pos)
-{
-	MutexAutoLock lock(m_lock_block_mutex);
-	return m_block_mutexes[getBlockAsInteger(pos)].try_lock();
-}
-
-void ServerMap::unlockBlock(const v3s16 &pos)
-{
-	MutexAutoLock lock(m_lock_block_mutex);
-	s64 key = getBlockAsInteger(pos);
-	auto it = m_block_mutexes.find(key);
-	if (it != m_block_mutexes.end()) {
-		m_debug_locking_threads[key] = std::thread::id();
-		it->second.unlock();
-	}
 }
 
 /*
@@ -1621,14 +1731,8 @@ void ServerMap::save(ModifiedState save_level, int timelimitms)
 			break;
 	}
 
-	if(save_started) {
+	if(save_started)
 		endSave();
-		printf("ServerMap::save: Saved %d blocks\n", block_count);
-	}
-
-	if(block_count && out_of_time)
-		// TODO: Put that in infostream
-		printf("Could only save %d blocks (more to save)\n", block_count);
 
 	/*
 		Only print if something happened or saved whole map
@@ -1786,13 +1890,7 @@ void ServerMap::endSave()
 
 bool ServerMap::saveBlock(MapBlock *block)
 {
-	// >> KIDSCODE - Threading
-	lockSingle();
-	bool ret = saveBlock(block, dbase);
-	unlockSingle();
-	return ret;
-//	return saveBlock(block, dbase);
-	// << KIDSCODE - Threading
+	return saveBlock(block, dbase);
 }
 
 // Cannot lock map, this version is static. It is used for map conversion at
@@ -1892,9 +1990,7 @@ MapBlock* ServerMap::loadBlock(v3s16 blockpos)
 
 	bool created_new = (getBlockNoCreateNoEx(blockpos) == NULL);
 
-	lockSingle(); // KIDSCODE - Threading
 	lockBlock(blockpos); // KIDSCODE - Threading
-
 	v2s16 p2d(blockpos.X, blockpos.Z);
 
 	std::string ret;
@@ -1909,12 +2005,10 @@ MapBlock* ServerMap::loadBlock(v3s16 blockpos)
 		}
 	} else {
 		unlockBlock(blockpos); // KIDSCODE - Threading
-		unlockSingle(); // KIDSCODE - Threading
 		return nullptr;
 	}
 
 	unlockBlock(blockpos); // KIDSCODE - Threading
-	unlockSingle(); // KIDSCODE - Threading
 
 	MapBlock *block = getBlockNoCreateNoEx(blockpos);
 	if (created_new && (block != NULL)) {
@@ -1932,17 +2026,16 @@ MapBlock* ServerMap::loadBlock(v3s16 blockpos)
 			dispatchEvent(event);
 		}
 	}
+
 	return block;
 }
 
 bool ServerMap::deleteBlock(v3s16 blockpos)
 {
-	lockSingle(); // KIDSCODE - Threading
 	lockBlock(blockpos); // KIDSCODE - Threading
 
 	if (!dbase->deleteBlock(blockpos)) {
 		unlockBlock(blockpos); // KIDSCODE - Threading
-		unlockSingle(); // KIDSCODE - Threading
 		return false;
 	}
 
@@ -1952,14 +2045,12 @@ bool ServerMap::deleteBlock(v3s16 blockpos)
 		MapSector *sector = getSectorNoGenerate(p2d);
 		if (!sector) {
 			unlockBlock(blockpos); // KIDSCODE - Threading
-			unlockSingle(); // KIDSCODE - Threading
 			return false;
 		}
 		sector->deleteBlock(block);
 	}
 
 	unlockBlock(blockpos); // KIDSCODE - Threading
-	unlockSingle(); // KIDSCODE - Threading
 	return true;
 }
 
@@ -1980,18 +2071,13 @@ void ServerMap::PrintInfo(std::ostream &out)
 bool ServerMap::repairBlockLight(v3s16 blockpos,
 	std::map<v3s16, MapBlock *> *modified_blocks)
 {
-	lockSingle(); // KIDSCODE - Threading
-
 	MapBlock *block = emergeBlock(blockpos, false);
-	if (!block || !block->isGenerated()) {
-		unlockSingle(); // KIDSCODE - Threading
+	if (!block || !block->isGenerated())
 		return false;
-	}
 
 	block->lockBlock(); // KIDSCODE - Threading
 	voxalgo::repair_block_light(this, block, modified_blocks);
 	block->unlockBlock(); // KIDSCODE - Threading
-	unlockSingle(); // KIDSCODE - Threading
 
 	return true;
 }
@@ -2023,8 +2109,8 @@ void ServerMap::rwCreateBackup(const std::string &backup_name, ServerEnvironment
 // >> KIDSCODE - Threading
 void ServerMap::rwRestoreBackup(const std::string &backup_name, ServerEnvironment *env)
 {
-	lockExclusive();
 	m_liquid_logic->reset();
+	lockExclusive();
 	env->clearObjects(CLEAR_OBJECTS_MODE_LOADED_ONLY);
 	env->clearActiveBlocks();
 
@@ -2115,6 +2201,8 @@ void *ServerMapSaveThread::run()
 			m_map->save(MOD_STATE_WRITE_NEEDED, 100);
 			m_map->unlockMultiple();
 		}
+		if (m_map->hasBlockLocks())
+			FATAL_ERROR("ServerMapSaveThread did not release all block locks!\n");
 		std::this_thread::yield();
 	}
 

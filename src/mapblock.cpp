@@ -584,6 +584,7 @@ void MapBlock::deSerializeNetworkSpecific(std::istream &is)
 	Legacy serialization
 */
 
+// KIDSCODE: Must be protected behind any map mutex (if server map)
 void MapBlock::deSerialize_pre22(std::istream &is, u8 version, bool disk)
 {
 	// Initialize default flags

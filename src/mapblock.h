@@ -279,6 +279,7 @@ public:
 		return getNode(p.X, p.Y, p.Z, &is_valid);
 	}
 
+	// KIDSCODE: Must be protected behind any map mutex (if server map)
 	inline void setNode(s16 x, s16 y, s16 z, MapNode & n)
 	{
 		if (!isValidPosition(x, y, z))
@@ -290,6 +291,7 @@ public:
 		unlockBlock(); // KIDSCODE - Threading
 	}
 
+	// KIDSCODE: Must be protected behind any map mutex (if server map)
 	inline void setNode(v3s16 p, MapNode & n)
 	{
 		setNode(p.X, p.Y, p.Z, n);
@@ -329,6 +331,7 @@ public:
 		return getNodeUnsafe(p.X, p.Y, p.Z);
 	}
 
+	// KIDSCODE: Must be protected behind any map mutex (if server map)
 	inline void setNodeNoCheck(s16 x, s16 y, s16 z, MapNode & n)
 	{
 		if (!data)
@@ -340,6 +343,7 @@ public:
 		unlockBlock(); // KIDSCODE - Threading
 	}
 
+	// KIDSCODE: Must be protected behind any map mutex (if server map)
 	inline void setNodeNoCheck(v3s16 p, MapNode & n)
 	{
 		setNodeNoCheck(p.X, p.Y, p.Z, n);
@@ -351,6 +355,7 @@ public:
 	MapNode getNodeParent(v3s16 p, bool *is_valid_position = NULL);
 	void setNodeParent(v3s16 p, MapNode & n);
 
+	// KIDSCODE: Must be protected behind any map mutex (if server map)
 	inline void drawbox(s16 x0, s16 y0, s16 z0, s16 w, s16 h, s16 d, MapNode node)
 	{
 		lockBlock(); // KIDSCODE - Threading

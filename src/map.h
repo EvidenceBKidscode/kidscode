@@ -349,21 +349,20 @@ private:
 
 // >> KIDSCODE - Threading
 
-/*
-+       ServerMapSaveThread
-+
-+       Thread continuously saving map data.
-+*/
-
 // This is a special mutex for managing different levels of map lock :
 // - Exclusive : Everybody keeps your hands off the map !
 // - Multiple : I want to acquire several maplocks locks, but other single locks
 //              are ok (this specific case is for avoiding deadlocks if two
 //              threads acquire multiple mablock locks).
-// - Single : I just want to acquire a lock on a single mapblock.
-
-// No mechanisme enforces these rules and it's up to you to take care of using
-// the right lock according what you do next with mapblock locks.
+// Default : I can lock one block at a time.
+//
+// Exception are thrown if try to lock blocks you are not allowed to (mutliple
+// blocks without multiple or exclusive lock for example).
+//
+// All locks are recurisve (exclusive, multiple, bloc)
+// Exclusive and multiple can acquire other exclusive and multiple locks.
+// A mutliple lock can become exclusive (lock_exclusive then waits for blocks
+// unlocking from other threads)
 
 class ServerMapMutex
 {
@@ -372,26 +371,41 @@ public:
 	void lock_exclusive();
 	void unlock_exclusive();
 
-	// Acquire lock that allows to lock one mapblock
-	void lock_single();
-	void unlock_single();
-
 	// Acquire lock for locking many mapblocks (no concurrent will be allowed
 	// to do same but some may lock single blocks)
 	void lock_multiple();
 	void unlock_multiple();
+
+	// Block level mutexes
+	// If not having exclusive or multiple lock, only one block lock at a time
+	void lock_block(s64 block);
+	bool try_lock_block(s64 block);
+	void unlock_block(s64 block);
+	void unlock_all_blocks();
+
+	bool thread_lock_block();
 private:
-	// If exclusive or multiple lock, this is the locking thread.
-	// If only signle locks, its value is std::thread::id().
+	bool has_locked_blocks();
+	bool other_blocks_locked();
+
+	std::mutex m_inner_mutex;
+
+	struct LockInfo {
+		std::thread::id thread;
+		int count;
+	};
+
+	unsigned int m_exclusive_count = 0;
+	unsigned int m_multiple_count = 0;
 	std::thread::id m_thread;
-
-	// Number of multiple and single shared lock
-	int m_shared_count = 0;
-
-	std::mutex m_multiple_mutex;
-	std::mutex m_exclusive_mutex;
+	std::map<s64, LockInfo> m_locked_blocks;
 };
 
+/*
+       ServerMapSaveThread
+
+       Thread continuously saving map data.
+*/
 
 class ServerMap;
 class ServerMapSaveThread : public Thread
@@ -458,16 +472,17 @@ public:
 	// >> KIDSCODE - Threading
 	// Ensure map is not modified inbetween lock and unlock
 	// Please see ServerMapMutex definition for different locking modes
-	inline void lockSingle() { m_map_mutex.lock_single(); };
-	inline void unlockSingle() { m_map_mutex.unlock_single(); };
 	inline void lockMultiple() { m_map_mutex.lock_multiple(); };
 	inline void unlockMultiple() { m_map_mutex.unlock_multiple(); };
 	inline void lockExclusive() { m_map_mutex.lock_exclusive(); };
 	inline void unlockExclusive() { m_map_mutex.unlock_exclusive(); };
 
-	void lockBlock(const v3s16 &pos);
-	void unlockBlock(const v3s16 &pos);
-	bool tryLockBlock(const v3s16 &pos);
+	inline void lockBlock(const v3s16 &pos)
+		{ m_map_mutex.lock_block((u64) pos.Z * 0x1000000 + (u64) pos.Y * 0x1000 + (u64) pos.X); };
+	inline void unlockBlock(const v3s16 &pos)
+		{ m_map_mutex.unlock_block((u64) pos.Z * 0x1000000 + (u64) pos.Y * 0x1000 + (u64) pos.X); };
+	inline bool tryLockBlock(const v3s16 &pos)
+		{ return m_map_mutex.try_lock_block((u64) pos.Z * 0x1000000 + (u64) pos.Y * 0x1000 + (u64) pos.X); };
 
 	/*
 	Unloads all blocks with a zero refCount().
@@ -605,7 +620,7 @@ public:
 	void unloadBlocks(float dtime, float unload_timeout,
 		std::vector<v3s16> *unloaded_blocks=NULL);
 
-	bool hasBlockLocks()
+	inline bool hasBlockLocks() { return m_map_mutex.thread_lock_block(); };
 protected:
 
 
@@ -626,9 +641,6 @@ private:
 // >> KIDSCODE - Threading
 	// Multithread management
 	ServerMapMutex m_map_mutex; // Protects operations on blocs
-	std::mutex m_lock_block_mutex; // Protects operations on m_block_mutexes
-	std::map<s64, std::recursive_mutex> m_block_mutexes;
-	std::map<s64, std::thread::id> m_debug_locking_threads;
 
 	ServerMapSaveThread m_map_save_thread;
 // << KIDSCODE - Threading

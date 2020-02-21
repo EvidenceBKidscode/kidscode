@@ -651,6 +651,9 @@ void *EmergeThread::run()
 
 		if (!modified_blocks.empty())
 			m_server->SetBlocksNotSent(modified_blocks);
+		if (m_map->hasBlockLocks())
+			FATAL_ERROR("EmergeThread did not release all block locks!\n");
+
 	}
 	} catch (VersionMismatchException &e) {
 		std::ostringstream err;
