@@ -832,8 +832,9 @@ void LiquidLogicFinite::transform(
 	ServerEnvironment *env)
 {
 	// >> KIDSCODE - Threading
-	m_map->lockMultiple();
 	MutexAutoLock lock(m_logic_mutex);
+
+	m_map->lockMultiple();
 	// << KIDSCODE - Threading
 
 	u32 loopcount = 0;
@@ -845,6 +846,18 @@ void LiquidLogicFinite::transform(
 
 	u32 liquid_loop_max = g_settings->getS32("liquid_loop_max");
 	u32 loop_max = liquid_loop_max;
+
+	/*
+	 * Add extra node queue to actual node queue
+	 */
+
+	{
+		MutexAutoLock lock(m_extra_liquid_queue_mutex);
+		while (m_extra_liquid_queue.size() != 0) {
+			m_liquid_queue.push_back(m_extra_liquid_queue.front());
+			m_extra_liquid_queue.pop_front();
+		}
+	}
 
 //	printf("Liquid queue size = %d\n", m_liquid_queue.size());
 
@@ -953,8 +966,6 @@ void LiquidLogicFinite::transform(
 		m_queue_size_timer_started = false; // optimistically assume we can keep up now
 		m_unprocessed_count = m_liquid_queue.size();
 	}
-
-	#warning IL SEMBLE QU IL MANQUE LE TRANSFERT de extra_liquid_queue vers liquid_queue
 }
 
 // Totally reset liquid logic. Usefull for map restoring
