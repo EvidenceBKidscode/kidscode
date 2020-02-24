@@ -156,6 +156,12 @@ extern std::string path_locale;
 extern std::string path_cache;
 
 /*
+	Path to directory for files... screenshots, maybe base path for getting
+	maps to import. Likely to be the user home dir.
+*/
+extern std::string path_files;
+
+/*
 	Get full path of stuff in data directory.
 	Example: "stone.png" -> "../data/stone.png"
 */
