@@ -500,7 +500,7 @@ bool setSystemPaths()
 		+ "/Library/Application Support/"
 		+ PROJECT_NAME;
 
-	path_screenshots = std::string(getenv("HOME")) + DIR_DELIM + PROJECT_NAME; // KIDSCODE - Screenshots path
+	path_screenshot = std::string(getenv("HOME")) + DIR_DELIM + PROJECT_NAME; // KIDSCODE - Screenshots path
 
 	return true;
 }
@@ -513,7 +513,7 @@ bool setSystemPaths()
 	path_share = STATIC_SHAREDIR;
 	path_user  = std::string(getHomeOrFail()) + DIR_DELIM "."
 		+ lowercase(PROJECT_NAME);
-	path_screenshots = std::string(getenv("HOME")) + DIR_DELIM
+	path_screenshot = std::string(getenv("HOME")) + DIR_DELIM
 		+ lowercase(PROJECT_NAME); // KIDSCODE - Screenshots path
 
 	return true;
@@ -559,12 +559,12 @@ void initializePaths()
 
 		path_share = execpath + DIR_DELIM "..";
 		path_user  = execpath + DIR_DELIM "..";
-		path_screenshots = execpath + DIR_DELIM ".."; // KIDSCODE - Screenshots path
+		path_screenshot = execpath + DIR_DELIM ".."; // KIDSCODE - Screenshots path
 
 		if (detectMSVCBuildDir(execpath)) {
 			path_share += DIR_DELIM "..";
 			path_user  += DIR_DELIM "..";
-			path_screenshots += DIR_DELIM ".."; // KIDSCODE - Screenshots path
+			path_screenshot += DIR_DELIM ".."; // KIDSCODE - Screenshots path
 		}
 	} else {
 		errorstream << "Failed to get paths by executable location, "
@@ -586,7 +586,7 @@ void initializePaths()
 
 		path_share = execpath;
 		path_user  = execpath;
-		path_screenshots = execpath; // KIDSCODE - Screenshots path
+		path_screenshot = execpath; // KIDSCODE - Screenshots path
 	}
 	path_cache = path_user + DIR_DELIM + "cache";
 #else
