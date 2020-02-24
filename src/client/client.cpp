@@ -1771,22 +1771,18 @@ void Client::makeScreenshot()
 	strftime(timetstamp_c, sizeof(timetstamp_c), "%Y%m%d_%H%M%S", tm);
 
 // >> KIDSCODE - Specific screenshot dir
-	std::string screenshot_dir = porting::path_files
-			+ DIR_DELIM "screenshots" DIR_DELIM;
-
-	if (!fs::CreateAllDirs(screenshot_dir)) {
+	if (!fs::CreateAllDirs(porting::path_screenshot)) {
 		std::ostringstream sstr;
-		sstr << "Failed to create directory '" << screenshot_dir << "'";
+		sstr << "Failed to create directory '" << porting::path_screenshot << "'";
 		pushToChatQueue(new ChatMessage(CHATMESSAGE_TYPE_SYSTEM,
 				narrow_to_wide(sstr.str())));
 		return;
 	}
 
-	std::string filename_base = screenshot_dir
-
+	std::string filename_base = porting::path_screenshot
 	//	std::string filename_base = g_settings->get("screenshot_path")
-	//			+ DIR_DELIM
 // << KIDSCODE - Specific screenshot dir
+			+ DIR_DELIM
 			+ std::string("screenshot_")
 			+ std::string(timetstamp_c);
 	std::string filename_ext = "." + g_settings->get("screenshot_format");

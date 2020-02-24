@@ -33,6 +33,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 	#include <wincrypt.h>
 	#include <algorithm>
 	#include <shlwapi.h>
+	#include <shlobj.h>
 #endif
 #if !defined(_WIN32)
 	#include <unistd.h>
@@ -141,7 +142,7 @@ std::string path_share = "..";
 std::string path_user = "..";
 std::string path_locale = path_share + DIR_DELIM + "locale";
 std::string path_cache = path_user + DIR_DELIM + "cache";
-std::string path_files = path_user; // KIDSCODE - Files path
+std::string path_screenshot = path_user; // KIDSCODE - Screenshots path
 
 std::string getDataPath(const char *subpath)
 {
@@ -400,7 +401,15 @@ bool setSystemPaths()
 	len = GetEnvironmentVariable("HOMEPATH", buf, sizeof(buf));
 	FATAL_ERROR_IF(len == 0 || len > sizeof(buf), "Failed to get HOMEPATH");
 
-	path_files = std::string(buf) + DIR_DELIM + PROJECT_NAME_C; // KIDSCODE - Files path
+	// >> KIDSCODE - Screenshots path
+	LPWSTR path;
+	if (SHGetKnownFolderPath(FOLDERID_Pictures, 0, nullptr, &path) == S_OK)
+		path_screenshot = wide_to_utf8(std::wstring(path))
+				+ DIR_DELIM + PROJECT_NAME_C;
+	else
+		path_screenshot = std::string(buf)
+				+ DIR_DELIM + PROJECT_NAME_C;
+	// << KIDSCODE - Screenshots path
 
 	return true;
 }
@@ -464,7 +473,7 @@ bool setSystemPaths()
 	path_user = std::string(getHomeOrFail()) + DIR_DELIM "."
 		+ PROJECT_NAME;
 
-	path_files = std::string(getenv("HOME")) + DIR_DELIM + PROJECT_NAME; // KIDSCODE - Files path
+	path_screenshot = std::string(getenv("HOME")) + DIR_DELIM + PROJECT_NAME; // KIDSCODE - Screenshot path
 #endif
 
 	return true;
@@ -491,7 +500,7 @@ bool setSystemPaths()
 		+ "/Library/Application Support/"
 		+ PROJECT_NAME;
 
-	path_files = std::string(getenv("HOME")) + DIR_DELIM + PROJECT_NAME; // KIDSCODE - Files path
+	path_screenshots = std::string(getenv("HOME")) + DIR_DELIM + PROJECT_NAME; // KIDSCODE - Screenshots path
 
 	return true;
 }
@@ -504,8 +513,8 @@ bool setSystemPaths()
 	path_share = STATIC_SHAREDIR;
 	path_user  = std::string(getHomeOrFail()) + DIR_DELIM "."
 		+ lowercase(PROJECT_NAME);
-	path_files = std::string(getenv("HOME")) + DIR_DELIM
-		+ lowercase(PROJECT_NAME); // KIDSCODE - Files path
+	path_screenshots = std::string(getenv("HOME")) + DIR_DELIM
+		+ lowercase(PROJECT_NAME); // KIDSCODE - Screenshots path
 
 	return true;
 }
@@ -550,12 +559,12 @@ void initializePaths()
 
 		path_share = execpath + DIR_DELIM "..";
 		path_user  = execpath + DIR_DELIM "..";
-		path_files = execpath + DIR_DELIM ".."; // KIDSCODE - Files path
+		path_screenshots = execpath + DIR_DELIM ".."; // KIDSCODE - Screenshots path
 
 		if (detectMSVCBuildDir(execpath)) {
 			path_share += DIR_DELIM "..";
 			path_user  += DIR_DELIM "..";
-			path_files += DIR_DELIM ".."; // KIDSCODE - Files path
+			path_screenshots += DIR_DELIM ".."; // KIDSCODE - Screenshots path
 		}
 	} else {
 		errorstream << "Failed to get paths by executable location, "
@@ -577,7 +586,7 @@ void initializePaths()
 
 		path_share = execpath;
 		path_user  = execpath;
-		path_files = execpath; // KIDSCODE - Files path
+		path_screenshots = execpath; // KIDSCODE - Screenshots path
 	}
 	path_cache = path_user + DIR_DELIM + "cache";
 #else
@@ -612,7 +621,6 @@ void initializePaths()
 	infostream << "Detected share path: " << path_share << std::endl;
 	infostream << "Detected user path: " << path_user << std::endl;
 	infostream << "Detected cache path: " << path_cache << std::endl;
-	infostream << "Detected files path: " << path_files << std::endl; // KIDSCODE - Files path
 
 #if USE_GETTEXT
 	bool found_localedir = false;

@@ -27,7 +27,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 	#ifdef _WIN32_WINNT
 		#undef _WIN32_WINNT
 	#endif
-	#define _WIN32_WINNT 0x0501 // We need to do this before any other headers
+	#define _WIN32_WINNT 0x0600 // KIDSCODE - Windows Vista and above
+//	#define _WIN32_WINNT 0x0501 // We need to do this before any other headers
 		// because those might include sdkddkver.h which defines _WIN32_WINNT if not already set
 #endif
 
@@ -156,10 +157,9 @@ extern std::string path_locale;
 extern std::string path_cache;
 
 /*
-	Path to directory for files... screenshots, maybe base path for getting
-	maps to import. Likely to be the user home dir.
+	Path to directory for screenshots.
 */
-extern std::string path_files;
+extern std::string path_screenshot;
 
 /*
 	Get full path of stuff in data directory.
