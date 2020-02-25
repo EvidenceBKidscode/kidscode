@@ -96,9 +96,7 @@ bool GUIScrollBar::OnEvent(const SEvent &event)
 			const core::position2di p(event.MouseInput.X, event.MouseInput.Y);
 			bool is_inside = isPointInside(p);
 			switch (event.MouseInput.Event) {
-			case EMIE_MOUSE_WHEEL:
-				/* KIDSCODE - Make wheel scroll when hover
-				if (Environment->hasFocus(this))*/ {
+			case EMIE_MOUSE_WHEEL: {
 					s8 d = event.MouseInput.Wheel < 0 ? -1 : 1;
 					s8 h = is_horizontal ? 1 : -1;
 					setPos(getPos() + (d * small_step * h));
@@ -119,13 +117,6 @@ bool GUIScrollBar::OnEvent(const SEvent &event)
 					core::vector2di corner = slider_rect.UpperLeftCorner;
 					drag_offset = is_horizontal ? p.X - corner.X : p.Y - corner.Y;
 					tray_clicked = !dragged_by_slider;
-
-					// >> KIDSCODE : forbid slider dragging
-					dragged_by_slider = false;
-					tray_clicked = true;
-					is_dragging = false;
-					// << KIDSCODE
-
 					if (tray_clicked) {
 						const s32 new_pos = getPosFromMousePos(p);
 						const s32 old_pos = scroll_pos;
