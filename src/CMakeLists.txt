@@ -429,7 +429,6 @@ set(common_SRCS
 	liquidlogic.cpp
 	liquidlogicclassic.cpp
 	liquidlogicfinite.cpp
-	liquidlogicpreserve.cpp
 	log.cpp
 	main.cpp
 	map.cpp
