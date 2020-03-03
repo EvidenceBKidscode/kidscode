@@ -33,11 +33,11 @@ local function get_formspec(tabview, name, tabdata)
 		"label[4,-0.25;".. fgettext("Sélectionner un monde :") .. "]"..
 
 		"tooltip[0.25,1;2,0.2;" ..
-			core.wrap_text("Si vous êtes enseignant, cochez cette case " ..
-				"pour que votre ordinateur fasse office de serveur. " ..
-				"Vos élèves pourront ensuite rejoindre votre partie depuis " ..
-				"le menu 'Rejoindre une partie', en indiquant l'adresse IP " ..
-				"de votre poste et le port (30000 par défaut).", 80) ..
+			core.wrap_text("Cochez cette case pour que votre poste fasse office de serveur local. " ..
+				"Indiquez votre pseudonyme et laissez le port tel quel. " ..
+				"Sélectionnez une carte et lancez le serveur. " ..
+				"Vos élèves peuvent ensuite rejoindre votre monde depuis le menu \"Rejoindre un serveur\". " ..
+				"Si votre serveur est en cours d'éxécution, il sera visible par tous les élèves.", 80) ..
 		"]" ..
 		"checkbox[0.25,0.5;advanced_options;" .. fgettext("Options avancées") .. ";" ..
 			dump(core.settings:get_bool("advanced_options")) .. "]" ..
