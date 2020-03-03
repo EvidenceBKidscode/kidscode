@@ -1716,9 +1716,8 @@ msgid "Toggle noclip"
 msgstr "Mode sans collision"
 
 #: src/gui/guiKeyChangeMenu.cpp
-#, fuzzy
 msgid "Toggle pitchmove"
-msgstr "Afficher/retirer le canal de discussion"
+msgstr "Déplacement à la souris"
 
 #: src/gui/guiKeyChangeMenu.cpp
 msgid "press key"

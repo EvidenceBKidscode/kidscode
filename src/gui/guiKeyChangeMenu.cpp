@@ -144,7 +144,7 @@ void GUIKeyChangeMenu::regenerateGui(v2u32 screensize)
 		core::rect < s32 > rect(size.X / (show_advanced_buttons ? 3 : 4), 0, 1300 * s, 40 * s);
 		rect += topleft + v2s32(25 * s, 3 * s);
 		//gui::IGUIStaticText *t =
-		const wchar_t *text = wgettext("Keybindings.");
+		const wchar_t *text = wgettext("Keybindings");
 		Environment->addStaticText(text,
 								   rect, false, true, this, -1);
 		delete[] text;
