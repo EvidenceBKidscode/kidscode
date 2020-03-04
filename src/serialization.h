@@ -85,7 +85,7 @@ inline bool ser_ver_supported(s32 v) {
 	Misc. serialization functions
 */
 
-void compressZlib(const u8 *data, size_t data_size, std::ostream &os, int level = -1);
+void compressZlib(const u8 *data, size_t data_size, std::ostream &os, int level = 1);  // KIDSCODE level set to 1 (fastest)
 void compressZlib(const std::string &data, std::ostream &os, int level = -1);
 void decompressZlib(std::istream &is, std::ostream &os);
 

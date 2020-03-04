@@ -1427,8 +1427,15 @@ void ServerMap::save(ModifiedState save_level)
 
 				saveBlock(block);
 				block_count++;
+
 			}
+			// KIDSCODE : avoid long saves at once
+			if (block_count > 500 && save_level == MOD_STATE_WRITE_NEEDED)
+				break;
 		}
+		// KIDSCODE : avoid long saves at once
+		if (block_count > 500 && save_level == MOD_STATE_WRITE_NEEDED)
+			break;
 	}
 
 	if(save_started)
