@@ -71,11 +71,12 @@ private:
 	void add_key(int id, const wchar_t *button_name, const std::string &setting_name, bool advanced);
 
 	bool shift_down = false;
+
 	bool show_advanced_buttons = false;
 	s32 activeKey = -1;
 	u16 KMaxButtonPerColumns = 7;
 
-	std::vector<KeyPress> key_used;
+	key_setting *active_key = nullptr;
 	gui::IGUIStaticText *key_used_text = nullptr;
 	std::vector<key_setting *> key_settings;
 };

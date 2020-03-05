@@ -32,6 +32,7 @@ public:
 		const irr::video::SColor &color = irr::video::SColor(255, 255, 255, 255));
 	EnrichedString(const std::wstring &string,
 		const std::vector<irr::video::SColor> &colors);
+	void clear();
 	void operator=(const wchar_t *str);
 	void addAtEnd(const std::wstring &s, const irr::video::SColor &color);
 
@@ -50,9 +51,15 @@ public:
 	const wchar_t *c_str() const;
 	const std::vector<irr::video::SColor> &getColors() const;
 	const std::wstring &getString() const;
-	const std::wstring getFixedString() const; // :PATCH:
-	const EnrichedString getFixedEnrichedString() const; // :PATCH:
-	void fix(); // :PATCH:
+	const std::wstring getFixedString() const; // KIDSCODE
+	const EnrichedString getFixedEnrichedString() const; // KIDSCODE
+	void fix(); // KIDSCODE
+	void setDefaultColor(const irr::video::SColor &color);
+	void updateDefaultColor();
+	inline const irr::video::SColor &getDefaultColor() const
+	{
+		return m_default_color;
+	}
 	inline bool operator==(const EnrichedString &other) const
 	{
 		return (m_string == other.m_string && m_colors == other.m_colors);
@@ -60,12 +67,6 @@ public:
 	inline bool operator!=(const EnrichedString &other) const
 	{
 		return !(*this == other);
-	}
-	inline void clear()
-	{
-		m_string.clear();
-		m_colors.clear();
-		m_has_background = false;
 	}
 	inline bool empty() const
 	{
@@ -75,6 +76,7 @@ public:
 	{
 		return m_string.size();
 	}
+
 	inline bool hasBackground() const
 	{
 		return m_has_background;
@@ -83,9 +85,19 @@ public:
 	{
 		return m_background;
 	}
+	inline void setBackground(const irr::video::SColor &color)
+	{
+		m_background = color;
+		m_has_background = true;
+	}
+
 private:
 	std::wstring m_string;
 	std::vector<irr::video::SColor> m_colors;
-	bool m_has_background = false;
+	bool m_has_background;
+	irr::video::SColor m_default_color;
 	irr::video::SColor m_background;
+	// This variable defines the length of the default-colored text.
+	// Change this to a std::vector if an "end coloring" tag is wanted.
+	size_t m_default_length = 0;
 };

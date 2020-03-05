@@ -24,6 +24,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "config.h"
 #include "constants.h"
 #include "porting.h"
+#include "mapgen/mapgen.h" // Mapgen::setDefaultSettings
 #include "util/string.h"
 
 void set_default_settings(Settings *settings)
@@ -442,6 +443,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("fixed_map_seed", "");
 	settings->setDefault("max_block_generate_distance", "7"); // KIDSCODE Changed
 	settings->setDefault("enable_mapgen_debug_info", "false");
+	Mapgen::setDefaultSettings(settings);
 
 	// Server list announcing
 	settings->setDefault("server_announce", "false");
@@ -508,12 +510,4 @@ void set_default_settings(Settings *settings)
 #else
 	settings->setDefault("screen_dpi", "72");
 #endif
-}
-
-void override_default_settings(Settings *settings, Settings *from)
-{
-	std::vector<std::string> names = from->getNames();
-	for (const auto &name : names) {
-		settings->setDefault(name, from->get(name));
-	}
 }

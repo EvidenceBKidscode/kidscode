@@ -25,11 +25,11 @@ msgstr "Vous êtes mort"
 #: builtin/fstk/ui.lua
 #, fuzzy
 msgid "An error occurred in a Lua script:"
-msgstr "Une erreur est survenue dans un script Lua (comme un mod) :"
+msgstr "Une erreur est survenue dans un script Lua (comme un mod) :"
 
 #: builtin/fstk/ui.lua
 msgid "An error occurred:"
-msgstr "Une erreur est survenue :"
+msgstr "Une erreur est survenue :"
 
 #: builtin/fstk/ui.lua
 msgid "Main menu"
@@ -1214,12 +1214,12 @@ msgstr "Distance de vue réglée sur %d%1"
 #: src/client/game.cpp
 #, c-format
 msgid "Viewing range is at maximum: %d"
-msgstr "Distance de vue maximale : %d"
+msgstr "Distance de vue maximale : %d"
 
 #: src/client/game.cpp
 #, c-format
 msgid "Viewing range is at minimum: %d"
-msgstr "Distance de vue minimale : %d"
+msgstr "Distance de vue minimale : %d"
 
 #: src/client/game.cpp
 #, c-format
@@ -1908,14 +1908,14 @@ msgid ""
 "Note that the interlaced mode requires shaders to be enabled."
 msgstr ""
 "Support 3D.\n"
-"Actuellement supporté :\n"
-"-    aucun : pas de sortie 3D.\n"
-"-    anaglyphe : couleur 3D bleu turquoise/violet.\n"
-"-    entrelacé : polarisation basée sur des lignes avec support de l'écran.\n"
-"-    horizontal : partage haut/bas de l'écran.\n"
-"-    vertical : séparation côte à côte de l'écran.\n"
-"-    vue mixte : 3D binoculaire.\n"
-"-    pageflip : 3D basé sur quadbuffer.\n"
+"Actuellement supporté :\n"
+"-    aucun : pas de sortie 3D.\n"
+"-    anaglyphe : couleur 3D bleu turquoise/violet.\n"
+"-    entrelacé : polarisation basée sur des lignes avec support de l'écran.\n"
+"-    horizontal : partage haut/bas de l'écran.\n"
+"-    vertical : séparation côte à côte de l'écran.\n"
+"-    vue mixte : 3D binoculaire.\n"
+"-    pageflip : 3D basé sur quadbuffer.\n"
 "Notez que le mode entrelacé nécessite que les shaders soient activés."
 
 #: src/settings_translation_file.cpp
@@ -4837,11 +4837,11 @@ msgid ""
 msgstr ""
 "Attributs de génération du monde spécifiques au générateur Valleys.\n"
 "‹altitude_chill› : Réduit la chaleur avec l’altitude.\n"
-"‹humid_rivers› : Augmente l’humidité autour des rivières.\n"
-"‹vary_river_depth› : Si activé, une humidité basse et une forte chaleur "
+"‹humid_rivers› : Augmente l’humidité autour des rivières.\n"
+"‹vary_river_depth› : Si activé, une humidité basse et une forte chaleur "
 "rendent\n"
 "les rivières moins profondes et parfois asséchées.\n"
-"‹altitude_dry› : Réduit l’humidité avec l’altitude."
+"‹altitude_dry› : Réduit l’humidité avec l’altitude."
 
 #: src/settings_translation_file.cpp
 #, fuzzy
@@ -5032,7 +5032,7 @@ msgid ""
 "max_total = ceil((#clients + max_users) * per_client / 4)"
 msgstr ""
 "Le nombre maximal de blocs qui sont envoyés simultanément par client.\n"
-"Le compte total maximum est calculé dynamiquement :\n"
+"Le compte total maximum est calculé dynamiquement :\n"
 "max_total = ceil((nbre clients + max_users) * per_client / 4)"
 
 #: src/settings_translation_file.cpp
@@ -5241,7 +5241,7 @@ msgstr ""
 "Nom du générateur de terrain qui sera utilisé à la création d’un nouveau "
 "monde.\n"
 "Créer un nouveau monde depuis le menu principal ignorera ceci.\n"
-"Les générateurs actuellement stables sont :\n"
+"Les générateurs actuellement stables sont :\n"
 "v5, v6, v7 (sauf îles flottantes), bloc unique.\n"
 "‹stable› signifie que la génération d’un monde préexistant ne sera pas "
 "changée\n"
@@ -5336,12 +5336,12 @@ msgid ""
 "'on_generated'. For many users the optimum setting may be '1'."
 msgstr ""
 "Nombre de threads à utiliser.\n"
-"Rien ou 0 :\n"
+"Rien ou 0 :\n"
 "— Sélection automatique. Le nombre de threads sera\n"
 "« nombre de processeurs − 2 », avec une limite inférieure de 1.\n"
-"Toute autre valeur :\n"
+"Toute autre valeur :\n"
 "— Spécifie le nombre de threads, avec une limite inférieure de 1.\n"
-"Avertissement : Augmenter le nombre de threads augmente la génération du "
+"Avertissement : Augmenter le nombre de threads augmente la génération du "
 "terrain du moteur\n"
 "mais cela peut nuire à la performance du jeu en interférant avec d’autres.\n"
 "processus, en particulier en mode solo ou lors de l’exécution du code Lua en "
