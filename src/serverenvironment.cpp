@@ -1818,10 +1818,10 @@ void ServerEnvironment::activateObjects(MapBlock *block, u32 dtime_s)
 		<<" objects)"<<std::endl;
 	bool large_amount = (block->m_static_objects.m_stored.size() > g_settings->getU16("max_objects_per_block"));
 	if (large_amount) {
-		errorstream<<"suspiciously large amount of objects detected: "
-			<<block->m_static_objects.m_stored.size()<<" in "
-			<<PP(block->getPos())
-			<<"; removing all of them."<<std::endl;
+		warningstream << "suspiciously large amount of objects detected: "
+			<< block->m_static_objects.m_stored.size() << " in "
+			<< PP(block->getPos())
+			<< "; removing all of them." << std::endl;
 		// Clear stored list
 		block->m_static_objects.m_stored.clear();
 		block->raiseModified(MOD_STATE_WRITE_NEEDED,
