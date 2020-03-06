@@ -392,7 +392,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("time_speed", "0"); // KIDSCODE Changed
 	settings->setDefault("world_start_time", "8000"); // KIDSCODE Changed
 	settings->setDefault("server_unload_unused_data_timeout", "29");
-	settings->setDefault("max_objects_per_block", "128"); // KIDSCODE Changed
+	settings->setDefault("max_objects_per_block", "256"); // KIDSCODE Changed
 	settings->setDefault("server_map_save_interval", "5.3");
 	settings->setDefault("chat_message_max_size", "500");
 	settings->setDefault("chat_message_limit_per_10sec", "8.0");
