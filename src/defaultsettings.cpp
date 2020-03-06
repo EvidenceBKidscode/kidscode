@@ -379,7 +379,7 @@ void set_default_settings(Settings *settings)
 
 	settings->setDefault("chat_message_format", "<@name> @message");
 	settings->setDefault("profiler_print_interval", "0");
-	settings->setDefault("active_object_send_range_blocks", "4");
+	settings->setDefault("active_object_send_range_blocks", "8"); // Kidscode changed
 	settings->setDefault("active_block_range", "3");
 	//settings->setDefault("max_simultaneous_block_sends_per_client", "1");
 	// This causes frametime jitter on client side, or does it?
