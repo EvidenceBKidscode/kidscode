@@ -90,6 +90,23 @@ local function dir_exists(path)
 end
 
 local function install_map(parent, tempdir, mapname)
+	if not mapname then
+		show_question(parent,
+			("Choisissez le nom de la carte qui va être importée :"):
+			format(core.colorize("#EE0", mapname)), mapname,
+			function(this, fields)
+				return install_map(this, tempdir, fields.dlg_mapimport_formspec_value)
+			end,
+			function(this)
+				core.delete_dir(tempdir)
+				this.parent:show()
+				this:hide()
+				this:delete()
+				return true
+			end)
+		return true
+	end
+
 	local mappath = core.get_worldpath() .. DIR_DELIM .. mapname
 
 	if dir_exists(mappath) then
@@ -159,7 +176,7 @@ local function import_map(parent, zippath)
 	end
 
 	-- Install map (ie copy unique folder to world dir)
-	return install_map(parent, tempdir .. DIR_DELIM .. files[1], files[1])
+	return install_map(parent, tempdir .. DIR_DELIM .. files[1])
 end
 
 return import_map
