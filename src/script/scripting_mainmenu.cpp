@@ -95,4 +95,3 @@ unsigned int MainMenuScripting::queueAsync(const std::string &serialized_func,
 {
 	return asyncEngine.queueAsyncJob(serialized_func, serialized_param);
 }
-

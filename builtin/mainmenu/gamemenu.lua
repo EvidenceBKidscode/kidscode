@@ -49,7 +49,8 @@ function gamemenu.set_game(new_game)
 	gamemenu.current_id = new_id
 
 	-- Update world filter list
-	menudata.worldlist:set_filtercriteria(new_id)
+-- TODO: Filter criteria wont be on game_id any more ?
+--	menudata.worldlist:set_filtercriteria(new_id)
 	menudata.worldlist:refresh()
 
 	gamemenu.update()
