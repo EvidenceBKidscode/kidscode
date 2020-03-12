@@ -15,6 +15,7 @@
 --with this program; if not, write to the Free Software Foundation, Inc.,
 --51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+dofile(core.get_mainmenu_path() .. DIR_DELIM .. "maputils.lua")
 
 local function get_formspec(tabview, name, tabdata)
 	local retval = ""
@@ -77,7 +78,7 @@ local function get_formspec(tabview, name, tabdata)
 			retval = retval ..
 				"field[0.25,3.85;3.5,0.5;te_serverport;" .. fgettext("Port du serveur") .. ";" ..
 				core.formspec_escape(core.settings:get("port")) .. "]"
-		end	
+		end
 	end
 
 	return retval

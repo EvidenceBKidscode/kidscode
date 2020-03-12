@@ -106,8 +106,10 @@ local function init_globals()
 		gamedata.worldindex = world_index
 	else
 		menudata.worldlist = filterlist.create(
-			core.get_worlds,
-			compare_worlds,
+--			core.get_worlds,
+--			compare_worlds,
+			mapmgr.preparemaplist,
+			mapmgr.compare_map,
 			-- Unique id comparison function
 			function(element, uid)
 				return element.name == uid
@@ -115,7 +117,10 @@ local function init_globals()
 			-- Filter function
 			function(element, gameid)
 				return element.gameid == gameid
-			end
+			end,
+			{
+--				token = ""
+			}
 		)
 
 		menudata.worldlist:add_sort_mechanism("alphabetic", sort_worlds_alphabetic)
