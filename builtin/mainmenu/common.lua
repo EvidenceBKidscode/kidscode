@@ -196,14 +196,39 @@ os.tempfolder = function()
 end
 
 --------------------------------------------------------------------------------
+
+local status_translate = {
+	installed = "Installée",
+	cancelled = "Annulée",
+	prepare   = "En préparation",
+	ready     = "Prête",
+}
+
+local origin_translate = {
+	ign   = "GAR / IGN",
+	["local"] = "Local",
+}
+
 function menu_render_worldlist()
 	local retval = ""
 	local current_worldlist = menudata.worldlist:get_list()
 
 	for i, v in ipairs(current_worldlist) do
 		if retval ~= "" then retval = retval .. "," end
-		retval = retval .. core.formspec_escape(v.name) ..
-				" \\[" .. core.formspec_escape(v.gameid) .. "\\]"
+
+		retval = retval ..
+			"#ffffff" .. "," ..
+			core.formspec_escape(v.name):sub(1,30) .. "," ..
+			"#ffffff" .. "," ..
+			core.formspec_escape(
+				(v.alac and (v.alac.delivered_on and v.alac.delivered_on:match("%S*")) or "?")) .. "," ..
+			"#ffffff" .. "," ..
+			core.formspec_escape(origin_translate[v.origin]) .. "," ..
+			(v.status == "installed" and "#00ff00" or
+			 v.status == "cancelled" and "#ff0000" or
+			 v.status == "ready"     and "#ffff00" or
+			 v.status == "prepare"   and "#ffa500" or "ffffff")  .. "," ..
+			core.formspec_escape(status_translate[v.status])
 	end
 
 	return retval
