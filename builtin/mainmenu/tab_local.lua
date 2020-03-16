@@ -27,7 +27,7 @@ local function get_formspec(tabview, name, tabdata)
 
 	if worldlist ~= "" then
 		retval = retval ..
-			"button[9,4;2.3,0.6;world_delete;".. fgettext("Supprimer") .. "]"
+			"button[9.4,4;2.3,0.6;world_delete;".. fgettext("Supprimer") .. "]"
 	end
 
 	retval = retval ..
@@ -44,28 +44,35 @@ local function get_formspec(tabview, name, tabdata)
 			dump(core.settings:get_bool("advanced_options")) .. "]" ..
 		"checkbox[0.25,1;cb_server;".. fgettext("Héberger un serveur") ..";" ..
 			dump(core.settings:get_bool("enable_server")) .. "]" ..
-		"textlist[4,0.25;7.7,3.7;sp_worlds;" .. worldlist .. ";" .. index .. "]" ..
-
 		"tooltip[6.7,4;2.2,0.6;" ..
 			core.wrap_text("Cliquez ici pour ajouter une carte téléchargée " ..
 				"depuis le site de l'IGN (formats ZIP et RAR acceptés)", 80) ..
 		"]" ..
-		"button[6.7,4;2.2,0.6;world_import;".. fgettext("Importer") .. "]" ..
-		"button[4.4,4;2.2,0.6;play;".. fgettext("Jouer") .. ";#0000ff]"
+		"button[7.1,4;2.2,0.6;world_import;".. fgettext("Importer") .. "]" ..
+		"button[3.5,4;2.2,0.6;play;".. fgettext("Jouer") .. ";#0000ff]" ..
+
+		"tablecolumns[color;text;color;text,padding=1;color;text,align=center,padding=1;color;text,align=center,padding=1]"
+
+
+	local wl = "#ff00ff,Carte,#ff00ff,Demande,#ff00ff,Origine,#ff00ff,Etat"
+	wl = wl .. "," .. worldlist
+
+	retval = retval ..
+		"table[3.5,0.25;8.2,3.7;sp_worlds;" .. wl .. ";" .. index .. "]"
 
 	if core.settings:get_bool("advanced_options") then
 		retval = retval ..
-			"button[5.5,4.7;2.2,0.6;world_configure;".. fgettext("Configurer") .. "]" ..
-			"button[7.8,4.7;2.2,0.6;world_create;".. fgettext("Nouveau") .. "]"
+			"button[7.1,4.7;2.2,0.6;world_configure;".. fgettext("Configurer") .. "]" ..
+			"button[9.4,4.7;2.3,0.6;world_create;".. fgettext("Nouveau") .. "]"
 	end
 
 	if core.settings:get_bool("enable_server") then
 		retval = retval ..
 			"label[0.25,1.7;" .. fgettext("Nom / Pseudonyme") .. "]" ..
-			"field[0.25,1.9;3.5,0.5;te_playername;;" ..
+			"field[0.25,1.9;3,0.5;te_playername;;" ..
 				core.formspec_escape(core.settings:get("name")) .. "]" ..
 			"label[0.25,2.7;" .. fgettext("Mot de passe (optionnel)") .. "]" ..
-			"pwdfield[0.25,2.9;3.5,0.5;te_passwd;]"
+			"pwdfield[0.25,2.9;3,0.5;te_passwd;]"
 
 		local bind_addr = core.settings:get("bind_address")
 		if bind_addr ~= nil and bind_addr ~= "" then
@@ -76,7 +83,7 @@ local function get_formspec(tabview, name, tabdata)
 					core.formspec_escape(core.settings:get("port")) .. "]"
 		else
 			retval = retval ..
-				"field[0.25,3.85;3.5,0.5;te_serverport;" .. fgettext("Port du serveur") .. ";" ..
+				"field[0.25,3.85;3,0.5;te_serverport;" .. fgettext("Port du serveur") .. ";" ..
 				core.formspec_escape(core.settings:get("port")) .. "]"
 		end
 	end
