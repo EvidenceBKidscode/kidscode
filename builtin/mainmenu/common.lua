@@ -205,7 +205,7 @@ local status_translate = {
 }
 
 local origin_translate = {
-	ign   = "GAR / IGN",
+	ign       = "GAR / IGN",
 	["local"] = "Local",
 }
 

@@ -97,7 +97,7 @@ local function main_button_handler(this, fields, name, tabdata)
 
 	local world_doubleclick = false
 
-	if fields["worlds"] ~= nil then
+	if fields["sp_worlds"] ~= nil then
 		local event = core.explode_textlist_event(fields["sp_worlds"])
 		local selected = core.get_textlist_index("sp_worlds")
 
