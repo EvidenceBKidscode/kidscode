@@ -25,6 +25,11 @@ local baseurl = "https://minetest-qualif.ign.fr/rest/public/api/orders/"
 
 local tempfolder = os.tempfolder()
 
+local transcode_status = {
+	finished = "ready",
+	ongoing = "prepare"
+}
+
 local function dlg_mapimport_formspec(data)
 	local fs = "size[8,3]"
 	if data.field then
@@ -105,9 +110,10 @@ function Map:new_from_json(json_data)
 	local map = {
 		demand = true,
 		name = "",
-		status = "prepare", -- TODO: Adapt to IGN improvements
+		status = transcode_status[json_data.status] or "unknown",
+		order_id =  json_data.order_id,
 		origin = "ign", -- TODO: Adapt to IGN improvements
-		alac = table.copy(json_data)
+		alac = table.copy(json_data),
 	}
 	setmetatable(map, self)
 
@@ -117,11 +123,7 @@ function Map:new_from_json(json_data)
 		-- TODO : Beter coordinate display (degrees+minutes)
 		map.name = json_data.coordinates
 	end
-	if json_data.package then -- TODO: Adapt to IGN improvements
-		map.status = "ready"
-	end
 
-	map.order_id = map.alac.order_id
 	map.alac.requested_by = nil -- Dont store token
 
 	return map
@@ -415,4 +417,10 @@ function mapmgr.import_map_from_file(parent_dlg, zippath)
 
 	-- Install map (ie copy unique folder to world dir)
 	return install_map(parent_dlg, result.dir, true)
+end
+
+function mapmgr.test(parent)
+	local ix = core.settings:get("mainmenu_last_selected_world")
+	local map = menudata.worldlist:get_raw_element(ix)
+	mapmgr.install_map_from_web(parent, map)
 end
