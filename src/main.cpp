@@ -220,6 +220,10 @@ int main(int argc, char *argv[])
 	retval = 0;
 #endif
 
+	// >> KIDSCODE - GAR interface
+	g_settings->remove("gartoken");
+	// << KIDSCODE - GAR interface
+
 	// Update configuration file
 	if (!g_settings_path.empty())
 		g_settings->updateConfigFile(g_settings_path.c_str());
@@ -315,6 +319,11 @@ static void set_allowed_options(OptionList *allowed_options)
 	allowed_options->insert(std::make_pair("console", ValueSpec(VALUETYPE_FLAG,
 		_("Starts with the console (Windows only)"))));
 #endif
+
+	// >> KIDSCODE - GAR interface
+	allowed_options->insert(std::make_pair("gartoken", ValueSpec(VALUETYPE_STRING,
+			_("GAR token to be used (IGN/Kidscode)"))));
+	// << KIDSCODE - GAR interface
 
 }
 
@@ -492,6 +501,13 @@ static bool init_common(const Settings &cmd_args, int argc, char *argv[])
 
 	init_gettext(porting::path_locale.c_str(),
 		g_settings->get("language"), argc, argv);
+
+	// >> KIDSCODE - GAR interface
+	if (cmd_args.exists("gartoken"))
+		g_settings->set("gartoken", cmd_args.get("gartoken"));
+	else
+		g_settings->remove("gartoken");
+	// << KIDSCODE - GAR interface
 
 	return true;
 }

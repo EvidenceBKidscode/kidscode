@@ -250,8 +250,9 @@ end
 -- Data : token
 mapmgr.preparemaplist = function(data)
 	local maps = get_local_maps()
-	if data.token then
-		local demands = download_map_demands_list(data.token)
+	local token = core.settings:get("gartoken")
+	if token then
+		local demands = download_map_demands_list(token)
 		for _, demand in ipairs(demands or {}) do
 			if demand.order_id then
 				local already_listed = false
