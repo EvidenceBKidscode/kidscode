@@ -23,7 +23,7 @@ local json_alac_file = "alac.json"
 
 local baseurl = "https://minetest-qualif.ign.fr/rest/public/api/orders/"
 
-
+local tempfolder = os.tempfolder()
 
 local function dlg_mapimport_formspec(data)
 	local fs = "size[8,3]"
@@ -200,10 +200,13 @@ function Map:can_install()
 end
 
 local function download_map_demands_list(token)
-	local tmpfile = os.tmpname()
+	local tmpfile = tempfolder .. DIR_DELIM .. os.date("weblist%Y%m%d%H%M%S");
+	core.create_dir(tempfolder)
+
 	if not core.download_file(baseurl .. token, tmpfile)
 	then
 		minetest.log("error", "Unable to download ign.json file.")
+		core.delete_dir(tempfolder)
 		return
 	end
 
@@ -211,12 +214,14 @@ local function download_map_demands_list(token)
 	if not file then
 		minetest.log("error", "Unable to open ign.json file.")
 		os.remove(tmpfile)
+		core.delete_dir(tempfolder)
 		return
 	end
 
 	local data = file:read("*all")
 	file:close()
 	os.remove(tmpfile)
+	core.delete_dir(tempfolder)
 
 	local jsonlist = minetest.parse_json(data)
 	if jsonlist == nil or type(jsonlist) ~= "table" then
@@ -280,7 +285,8 @@ local function unzip_map(zippath)
 	local zipname = zippath:match("([^" .. DIR_DELIM .. "]*)$")
 
 	-- Create a temp directory for decompressing zip file in it
-	local tempdir = os.tempfolder() .. DIR_DELIM .. os.date("mapimport%Y%m%d%H%M%S");
+	local tempdir = tempfolder .. DIR_DELIM .. os.date("mapimport%Y%m%d%H%M%S");
+	core.create_dir(tempfolder)
 	core.create_dir(tempdir)
 
 	-- Extract archive
@@ -294,12 +300,14 @@ local function unzip_map(zippath)
 	local files = core.get_dir_list(tempdir, true)
 	if (files == nil or #files == 0) then
 		core.delete_dir(tempdir)
+		core.delete_dir(tempfolder)
 		return { log = "No directory found in "..zippath,
 			error = "Impossible d'installer la carte : Aucun dossier dans l'archive." }
 	end
 
 	if #files ~= 1 then
 		core.delete_dir(tempdir)
+		core.delete_dir(tempfolder)
 		return { log = "Too many directories in "..zippath,
 			error = "Impossible d'installer la carte : L'archive ne doit contenir qu'un seul dossier." }
 	end
@@ -355,6 +363,7 @@ local function install_map(parent, tempdir, askname, mapname)
 			"Erreur lors de l'import, la carte n'a pas été importée.")
 	end
 	core.delete_dir(tempdir)
+	core.delete_dir(tempfolder)
 
 	return true
 end
@@ -367,10 +376,12 @@ function mapmgr.install_map_from_web(parent_dlg, map)
 		return true
 	end
 
-	local tmpfile = os.tmpname()
+	local tmpfile = tempfolder .. DIR_DELIM .. os.date("webimport%Y%m%d%H%M%S");
+	core.create_dir(tempfolder)
 
 	if not core.download_file(map.alac.package, tmpfile) then
 		show_message(parent_dlg, "Impossible de télécharger la carte.")
+		core.delete_dir(tempfolder)
 		return true
 	end
 
@@ -380,6 +391,7 @@ function mapmgr.install_map_from_web(parent_dlg, map)
 	if result.error then
 		core.log("warning", result.log)
 		show_message(parent_dlg, result.error)
+		core.delete_dir(tempfolder)
 		return true
 	end
 
