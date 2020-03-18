@@ -503,8 +503,16 @@ static bool init_common(const Settings &cmd_args, int argc, char *argv[])
 		g_settings->get("language"), argc, argv);
 
 	// >> KIDSCODE - GAR interface
-	if (cmd_args.exists("gartoken"))
-		g_settings->set("gartoken", cmd_args.get("gartoken"));
+	if (cmd_args.exists("gartoken")) {
+		std::string token = cmd_args.get("gartoken");
+
+		// Remove ULR protocol part if url given
+		size_t pos = token.find("://");
+		if (pos)
+			token = token.substr(pos+3);
+
+		g_settings->set("gartoken", token);
+	}
 	else
 		g_settings->remove("gartoken");
 	// << KIDSCODE - GAR interface
