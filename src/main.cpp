@@ -508,7 +508,7 @@ static bool init_common(const Settings &cmd_args, int argc, char *argv[])
 
 		// Remove ULR protocol part if url given
 		size_t pos = token.find("://");
-		if (pos)
+		if (pos != std::string::npos)
 			token = token.substr(pos+3);
 
 		g_settings->set("gartoken", token);
