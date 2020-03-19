@@ -1128,7 +1128,7 @@ void ModApiMainMenu::InitializeAsync(lua_State *L, int top)
 	API_FCT(create_dir);
 	API_FCT(delete_dir);
 	API_FCT(copy_dir);
-	//API_FCT(extract_zip); //TODO remove dependency to GuiEngine
+	API_FCT(extract_zip);
 	API_FCT(may_modify_path);
 	API_FCT(download_file);
 	//API_FCT(gettext); (gettext lib isn't threadsafe)

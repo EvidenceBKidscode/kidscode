@@ -66,6 +66,20 @@ local function dlg_mapimport_btnhandler(this, fields, data)
 	return true
 end
 
+local function show_status(parent, msg)
+	local dlg = dialog_create("dlg_mapimport",
+		dlg_mapimport_formspec,
+		dlg_mapimport_btnhandler,
+		nil)
+	dlg.data.message = msg
+	dlg.data.buttons = {}
+	dlg:set_parent(parent)
+	parent:hide()
+	dlg:show()
+	ui.update()
+	return dlg
+end
+
 local function show_message(parent, errmsg)
 	local dlg = dialog_create("dlg_mapimport",
 		dlg_mapimport_formspec,
@@ -76,6 +90,7 @@ local function show_message(parent, errmsg)
 	dlg:set_parent(parent)
 	parent:hide()
 	dlg:show()
+	ui.update()
 end
 
 local function show_question(parent, errmsg, default, cb_ok, cb_cancel)
@@ -92,6 +107,7 @@ local function show_question(parent, errmsg, default, cb_ok, cb_cancel)
 	dlg:set_parent(parent)
 	parent:hide()
 	dlg:show()
+	ui.update()
 end
 
 local function dir_exists(path)
@@ -154,31 +170,6 @@ function Map:new_from_core_map(core_map_desc)
 	end
 
 	return map
-end
-
-function Map:save_alac_data(destpath)
-	local path = destpath or self.path
-	if not self.alac or not path then
-		return
-	end
-
-	path = path .. DIR_DELIM .. "alac.json"
-
-	local file = io.open(path, "wb")
-	if  not file then
-		minetest.log("error", "Unable to open " .. path .. " for writing.")
-		return
-	end
-
-	if file then
-		local data = minetest.write_json(self.alac)
-		if not data then
-			minetest.log("error", "Unable to encode json data for map.")
-			return
-		end
-		file:write(data)
-		io.close(file)
-	end
 end
 
 function Map:is_demand()
@@ -283,48 +274,118 @@ mapmgr.compare_map = function (a, b)
 	return a and b and a.path == b.path and a.order_id == b.order_id
 end
 
-local function unzip_map(zippath)
-	local zipname = zippath:match("([^" .. DIR_DELIM .. "]*)$")
+local function save_alac_data(map, destpath)
+	local path = destpath or map.path
+	if not map.alac or not path then
+		return
+	end
 
+	path = path .. DIR_DELIM .. "alac.json"
+
+	local file = io.open(path, "wb")
+	if  not file then
+		minetest.log("error", "Unable to open " .. path .. " for writing.")
+		return
+	end
+
+	if file then
+		local data = minetest.write_json(map.alac)
+		if not data then
+			minetest.log("error", "Unable to encode json data for map.")
+			return
+		end
+		file:write(data)
+		io.close(file)
+	end
+end
+
+-- Check error after an async call
+local function check_error(parent, params)
+	if params.log then
+		core.log("warning", params.log)
+	end
+	if params.error then
+		core.delete_dir(params.tempfolder)
+		show_message(parent, params.error)
+		ui.update()
+		return false
+	end
+	return true
+end
+
+-- Params:
+--   IN  tempfolder
+--   OUT zippath
+local function async_download(params)
+	local zippath = params.tempfolder .. DIR_DELIM .. os.date("webimport%Y%m%d%H%M%S");
+	if not core.download_file(params.map.alac.package, zippath) then
+		params.log = "Unable to download url " .. params.map.alac.package ..
+			" to " .. tmpfile
+		params.error = "Cette carte n'est pas téléchargeable."
+	else
+		params.zippath = zippath
+	end
+	return params
+end
+
+-- Params:
+--   IN  zippath
+--   IN  tempfolder
+--   OUT unzipedmap
+local function async_unzip(params)
 	-- Create a temp directory for decompressing zip file in it
-	local tempdir = tempfolder .. DIR_DELIM .. os.date("mapimport%Y%m%d%H%M%S");
-	core.create_dir(tempfolder)
-	core.create_dir(tempdir)
+	local unzippath = params.tempfolder .. DIR_DELIM .. os.date("mapimport%Y%m%d%H%M%S");
+	core.create_dir(unzippath)
 
 	-- Extract archive
-	if not core.extract_zip(zippath, tempdir) then
-		core.delete_dir(tempdir)
-		return { log = "Unable to extract zipfile " .. zippath .. " to " .. tempdir,
-			error = "Impossible d'installer la carte : Impossible d'ouvrir l'archive." }
+	if not core.extract_zip(params.zippath, unzippath) then
+		params.log = "Unable to extract zipfile " .. zippath ..
+			" to " .. unzippath
+		params.error = "Impossible d'installer la carte : Impossible d'ouvrir l'archive."
+		return params
 	end
 
 	-- Check content
-	local files = core.get_dir_list(tempdir, true)
+	local files = core.get_dir_list(unzippath, true)
 	if (files == nil or #files == 0) then
-		core.delete_dir(tempdir)
-		core.delete_dir(tempfolder)
-		return { log = "No directory found in "..zippath,
-			error = "Impossible d'installer la carte : Aucun dossier dans l'archive." }
+		params.log = "No directory found in " .. params.zippath .. " (1 expected)"
+		params.error = "Impossible d'installer la carte : Aucun dossier dans l'archive."
+		return params
 	end
 
 	if #files ~= 1 then
-		core.delete_dir(tempdir)
-		core.delete_dir(tempfolder)
-		return { log = "Too many directories in "..zippath,
-			error = "Impossible d'installer la carte : L'archive ne doit contenir qu'un seul dossier." }
+		params.log = "Too many directories in " .. params.zippath .. " (1 expected)"
+		params.error = "Impossible d'installer la carte : L'archive ne doit contenir qu'un seul dossier."
+		return params
 	end
 
-	return { dir = tempdir .. DIR_DELIM .. files[1] }
+	params.unzipedmap = unzippath .. DIR_DELIM .. files[1]
+	return params
 end
 
-local function install_map(parent, tempdir, askname, mapname)
+-- Params:
+--   IN unzipedmap
+--   IN mappath
+local function async_install(params)
+	if not core.copy_dir(params.unzipedmap, params.mappath) then
+		params.log = "Error when copying " .. params.unzipedmap .. " to " .. params.mappath
+		params.error = "Erreur lors de l'import, la carte n'a pas été importée."
+	end
+	return params
+end
+
+-- params
+-- IN unzipedmap
+-- IN tempfolder
+local function install_map(parent, params, askname, mapname)
 	if askname or not mapname then
 		show_question(parent,
 			("Choisissez le nom de la carte qui va être importée :"):
 			format(core.colorize("#EE0", mapname)), mapname,
 			function(this, fields)
 				--TODO: Add os.remove(tmpfile) on cancel ?
-				return install_map(this, tempdir, false, fields.dlg_mapimport_formspec_value)
+				return install_map(this, params, false,
+					fields.dlg_mapimport_formspec_value)
 			end,
 			function(this)
 				this.parent:show()
@@ -342,7 +403,8 @@ local function install_map(parent, tempdir, askname, mapname)
 			("Une carte %s existe déja. Choisissez un autre nom :"):
 			format(core.colorize("#EE0", mapname)), mapname,
 			function(this, fields)
-				return install_map(this, tempdir, false, fields.dlg_mapimport_formspec_value)
+				return install_map(this, params, false,
+					fields.dlg_mapimport_formspec_value)
 			end,
 			function(this)
 				this.parent:show()
@@ -353,71 +415,84 @@ local function install_map(parent, tempdir, askname, mapname)
 		return true
 	end
 
-	if core.copy_dir(tempdir, mappath) then
-		core.log("info", "New map installed: " .. mapname)
-		menudata.worldlist:refresh()
-		show_message(parent,
-			("La carte %s a bien été importée."):
-			format(core.colorize("#EE0", mapname)))
-	else
-		core.log("error", "Error when copying " .. tempdir .. " to " .. mappath)
-		show_message(parent,
-			"Erreur lors de l'import, la carte n'a pas été importée.")
-	end
-	core.delete_dir(tempdir)
-	core.delete_dir(tempfolder)
-
+	params.mappath = mappath
+	local dlg = show_status(parent, "Installation de la carte")
+	core.handle_async(async_install, params,
+		function(params)
+			dlg:delete()
+			if check_error(parent, params) then
+				core.log("info", "New map installed: " .. mapname)
+				menudata.worldlist:refresh()
+				show_message(parent,
+					("La carte %s a bien été importée."):
+					format(core.colorize("#EE0", mapname)))
+			end
+			core.delete_dir(params.tempfolder)
+		end
+	)
 	return true
 end
 
+function mapmgr.import_map_from_file(parent, zippath)
+	local params = { tempfolder = os.tempfolder(), zippath = zippath }
+	core.create_dir(params.tempfolder)
 
-function mapmgr.install_map_from_web(parent_dlg, map)
+	local dlg = show_status(parent, "Décompression de la carte")
+	core.handle_async(async_unzip, params,
+		function(params)
+			dlg:delete()
+			if not check_error(parent, params) then
+				return
+			end
 
+			-- Continue common install process now
+			install_map(parent, params, true)
+		end
+	)
+end
+
+function mapmgr.install_map_from_web(parent, map)
 	if not map:can_install() then
-		show_message(parent_dlg, "Cette carte n'est pas téléchargeable.")
+		show_message(parent, "Cette carte n'est pas téléchargeable.")
 		return true
 	end
 
-	local tmpfile = tempfolder .. DIR_DELIM .. os.date("webimport%Y%m%d%H%M%S");
-	core.create_dir(tempfolder)
+	local ix = core.settings:get("mainmenu_last_selected_world")
+	local map = menudata.worldlist:get_raw_element(ix)
 
-	if not core.download_file(map.alac.package, tmpfile) then
-		show_message(parent_dlg, "Impossible de télécharger la carte.")
-		core.delete_dir(tempfolder)
-		return true
-	end
+	local dlg = show_status(parent, "Téléchargement de la carte")
+	local params = { tempfolder = os.tempfolder(), map = map }
+	core.create_dir(params.tempfolder)
 
-	local result = unzip_map(tmpfile)
-	os.remove(tmpfile)
+	-- Async is necessary to show ui statuses
+	core.handle_async(async_download, params,
+		function(params)
+			dlg:delete()
+			if not check_error(parent, params) then
+				return
+			end
+			local dlg = show_status(parent, "Décompression de la carte")
+			core.handle_async(async_unzip, params,
+				function(params)
+					dlg:delete()
+					if not check_error(parent, params) then
+						return
+					end
+					-- Add json file for tracking
+					save_alac_data(params.map, params.unzipedmap)
 
-	if result.error then
-		core.log("warning", result.log)
-		show_message(parent_dlg, result.error)
-		core.delete_dir(tempfolder)
-		return true
-	end
-
-	-- Add json file for tracking
-	map:save_alac_data(result.dir)
-
-	-- Install map (ie copy unique folder to world dir)
-	return install_map(parent_dlg, result.dir, true, map.name)
+					-- Continue common install process now
+					install_map(parent, params, true, params.map.name)
+				end
+			)
+		end
+	)
 end
 
-function mapmgr.import_map_from_file(parent_dlg, zippath)
-	local zipname = zippath:match("([^" .. DIR_DELIM .. "]*)$")
-
-	local result = unzip_map(tmpfile)
-
-	if result.error then
-		core.log("warning", result.log)
-		show_message(parent_dlg, result.error)
-		return true
-	end
-
-	-- Install map (ie copy unique folder to world dir)
-	return install_map(parent_dlg, result.dir, true)
-end
+-- Import web map:
+--   local ix = core.settings:get("mainmenu_last_selected_world")
+--   local map = menudata.worldlist:get_raw_element(ix)
+--   mapmgr.install_map_from_web(parent, map)
 
 function mapmgr.test(parent)
 	local ix = core.settings:get("mainmenu_last_selected_world")
