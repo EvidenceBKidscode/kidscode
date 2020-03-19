@@ -80,7 +80,7 @@ local function show_status(parent, msg)
 	return dlg
 end
 
-local function show_message(parent, errmsg)
+function mapmgr.show_message(parent, errmsg)
 	local dlg = dialog_create("dlg_mapimport",
 		dlg_mapimport_formspec,
 		dlg_mapimport_btnhandler,
@@ -311,7 +311,7 @@ local function async_step(parent, status, async_func, params, ok_func, end_func)
 			end
 			if params.error then
 				core.delete_dir(params.tempfolder)
-				show_message(parent, params.error)
+				mapmgr.show_message(parent, params.error)
 			else
 				if ok_func and type(ok_func) == "function" then
 					ok_func(params)
@@ -422,7 +422,7 @@ local function install_map(parent, params, askname, mapname)
 		function(params)
 			core.log("info", "New map installed: " .. mapname)
 			menudata.worldlist:refresh()
-			show_message(parent,
+			mapmgr.show_message(parent,
 				("La carte %s a bien été importée."):
 				format(core.colorize("#EE0", mapname)))
 			core.delete_dir(params.tempfolder)
@@ -446,7 +446,7 @@ end
 
 function mapmgr.install_map_from_web(parent, map)
 	if not map:can_install() then
-		show_message(parent, "Cette carte n'est pas téléchargeable.")
+		mapmgr.show_message(parent, "Cette carte n'est pas téléchargeable.")
 		return true
 	end
 

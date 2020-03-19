@@ -209,6 +209,13 @@ local origin_translate = {
 	["local"] = "Local",
 }
 
+local status_color = {
+	installed = "#00ff00",
+	cancelled = "#ff0000",
+	prepare   = "#ffa500",
+	ready     = "#ffff00",
+}
+
 function menu_render_worldlist()
 	local retval = ""
 	local current_worldlist = menudata.worldlist:get_list()
@@ -221,13 +228,11 @@ function menu_render_worldlist()
 			core.formspec_escape(v.name):sub(1,30) .. "," ..
 			"#ffffff" .. "," ..
 			core.formspec_escape(
-				(v.alac and (v.alac.delivered_on and v.alac.delivered_on:match("%S*")) or "?")) .. "," ..
+				(v.alac and (v.alac.delivered_on and
+					v.alac.delivered_on:match("%S*")) or "?")) .. "," ..
 			"#ffffff" .. "," ..
 			core.formspec_escape(origin_translate[v.origin]) .. "," ..
-			(v.status == "installed" and "#00ff00" or
-			 v.status == "cancelled" and "#ff0000" or
-			 v.status == "ready"     and "#ffff00" or
-			 v.status == "prepare"   and "#ffa500" or "ffffff")  .. "," ..
+			(status_color[v.status] or "#ffffff")  .. "," ..
 			core.formspec_escape(status_translate[v.status])
 	end
 
@@ -374,7 +379,7 @@ end
 --------------------------------------------------------------------------------
 function menu_worldmt(selected, setting, value)
 	local world = menudata.worldlist:get_list()[selected]
-	if world then
+	if world and world.path then
 		local filename = world.path .. DIR_DELIM .. "world.mt"
 		local world_conf = Settings(filename)
 
@@ -387,8 +392,6 @@ function menu_worldmt(selected, setting, value)
 		else
 			return world_conf:get(setting)
 		end
-	else
-		return nil
 	end
 end
 
