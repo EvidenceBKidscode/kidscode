@@ -19,9 +19,15 @@ dofile(core.get_mainmenu_path() .. DIR_DELIM .. "maputils.lua")
 
 local function get_formspec(tabview, name, tabdata)
 	local retval = ""
+	local selected = tonumber(core.settings:get("mainmenu_last_selected_world"))
+	local map, index
 
-	local index = filterlist.get_current_index(menudata.worldlist,
-			tonumber(core.settings:get("mainmenu_last_selected_world")))
+	if selected > 0 then
+		map = menudata.worldlist:get_raw_element(selected)
+		index = filterlist.get_current_index(menudata.worldlist, selected) + 1 -- Header
+	else
+		index = -math.random() -- Force refresh and avoid selection of title line
+	end
 
 	local worldlist = menu_render_worldlist()
 
@@ -31,28 +37,42 @@ local function get_formspec(tabview, name, tabdata)
 	end
 
 	retval = retval ..
-		"label[4,-0.25;".. fgettext("Sélectionner un monde :") .. "]"..
-
 		"tooltip[0.25,1;2,0.2;" ..
 			core.wrap_text("Cochez cette case pour que votre poste fasse office de serveur local. " ..
 				"Indiquez votre pseudonyme et laissez le port tel quel. " ..
 				"Sélectionnez une carte et lancez le serveur. " ..
 				"Vos élèves peuvent ensuite rejoindre votre monde depuis le menu \"Rejoindre un serveur\". " ..
-				"Si votre serveur est en cours d'éxécution, il sera visible par tous les élèves.", 80) ..
-		"]" ..
+				"Si votre serveur est en cours d'éxécution, il sera visible par tous les élèves.", 80) .. "]" ..
 		"checkbox[0.25,0.5;advanced_options;" .. fgettext("Options avancées") .. ";" ..
 			dump(core.settings:get_bool("advanced_options")) .. "]" ..
-		"checkbox[0.25,1;cb_server;".. fgettext("Héberger un serveur") ..";" ..
+		"checkbox[0.25,1;cb_server;" .. fgettext("Héberger un serveur") .. ";" ..
 			dump(core.settings:get_bool("enable_server")) .. "]" ..
 		"tooltip[6.7,4;2.2,0.6;" ..
 			core.wrap_text("Cliquez ici pour ajouter une carte téléchargée " ..
-				"depuis le site de l'IGN (formats ZIP et RAR acceptés)", 80) ..
-		"]" ..
-		"button[7.1,4;2.2,0.6;world_import;".. fgettext("Importer") .. "]" ..
-		"button[3.5,4;2.2,0.6;play;".. fgettext("Jouer") .. ";#0000ff]" ..
+				"depuis le site de l'IGN (formats ZIP et RAR acceptés)", 80) .. "]" ..
+		"button[7.1,4;2.2,0.6;world_import;" .. fgettext("Importer") .. "]" ..
+		"tablecolumns[color;text;color;text,padding=1;color;text,align=center,padding=1;" ..
+			     "color;text,align=center,padding=1]"
 
-		"tablecolumns[color;text;color;text,padding=1;color;text,align=center,padding=1;color;text,align=center,padding=1]"
+	if map and mapmgr.map_is_demand(map) then
+		if mapmgr.can_install_map(map) then
+			retval = retval .. "button[3.5,4;2.2,0.6;install;" ..
+				fgettext("Installer") .. ";#0000ff]"
+		end
 
+		if mapmgr.can_ask_map_again(map) then
+			retval = retval .. "button[3.5,4;2.2,0.6;reask;" ..
+				fgettext("Redemander") .. ";#0000ff]"
+		end
+
+		if mapmgr.can_cancel_map(map) then
+		end
+	end
+
+	if map and mapmgr.map_is_map(map) then
+		retval = retval .. "button[3.5,4;2.2,0.6;play;" ..
+			fgettext("Jouer") .. ";#0000ff]"
+	end
 
 	local wl = "#ff00ff,Carte,#ff00ff,Demande,#ff00ff,Origine,#ff00ff,Etat"
 	wl = wl .. "," .. worldlist
@@ -62,8 +82,8 @@ local function get_formspec(tabview, name, tabdata)
 
 	if core.settings:get_bool("advanced_options") then
 		retval = retval ..
-			"button[7.1,4.7;2.2,0.6;world_configure;".. fgettext("Configurer") .. "]" ..
-			"button[9.4,4.7;2.3,0.6;world_create;".. fgettext("Nouveau") .. "]"
+			"button[7.1,4.7;2.2,0.6;world_configure;" .. fgettext("Configurer") .. "]" ..
+			"button[9.4,4.7;2.3,0.6;world_create;" .. fgettext("Nouveau") .. "]"
 	end
 
 	if core.settings:get_bool("enable_server") then
@@ -75,7 +95,7 @@ local function get_formspec(tabview, name, tabdata)
 			"pwdfield[0.25,2.9;3,0.5;te_passwd;]"
 
 		local bind_addr = core.settings:get("bind_address")
-		if bind_addr ~= nil and bind_addr ~= "" then
+		if bind_addr and bind_addr ~= "" then
 			retval = retval ..
 				"field[0.55,5.2;2.25,0.5;te_serveraddr;" .. fgettext("Bind Address") .. ";" ..
 					core.formspec_escape(core.settings:get("bind_address")) .. "]" ..
@@ -92,93 +112,84 @@ local function get_formspec(tabview, name, tabdata)
 end
 
 local function main_button_handler(this, fields, name, tabdata)
-
 	assert(name == "local")
 
 	local world_doubleclick = false
 
-	if fields["sp_worlds"] ~= nil then
-		local event = core.explode_textlist_event(fields["sp_worlds"])
-		local selected = core.get_textlist_index("sp_worlds")
-
-		menu_worldmt_legacy(selected)
-
-		if event.type == "DCL" then
+	if fields.sp_worlds then
+		local event = core.explode_table_event(fields.sp_worlds)
+		if event.type == "DCL" and event.row > 1 then
 			world_doubleclick = true
 		end
 
-		if event.type == "CHG" and selected ~= nil then
-			core.settings:set("mainmenu_last_selected_world",
-				menudata.worldlist:get_raw_index(selected))
+		if event.type == "CHG" then
+			if event.row > 1 then
+				menu_worldmt_legacy(event.row - 1)
+				core.settings:set("mainmenu_last_selected_world",
+					menudata.worldlist:get_raw_index(event.row - 1))
+			else
+				core.settings:set("mainmenu_last_selected_world", 0)
+			end
 			return true
 		end
 	end
 
-	if menu_handle_key_up_down(fields,"sp_worlds","mainmenu_last_selected_world") then
+	local selected = tonumber(core.settings:get("mainmenu_last_selected_world"))
+	local map, index
+
+	if selected > 0 then
+		map = menudata.worldlist:get_raw_element(selected)
+		index = filterlist.get_current_index(menudata.worldlist, selected)
+	end
+
+	if menu_handle_key_up_down(fields, "sp_worlds", "mainmenu_last_selected_world") then
 		return true
 	end
 
-	if fields["cb_creative_mode"] then
-		core.settings:set("creative_mode", fields["cb_creative_mode"])
-		local selected = core.get_textlist_index("sp_worlds")
-		menu_worldmt(selected, "creative_mode", fields["cb_creative_mode"])
-
+	if fields.cb_enable_damage then
+		core.settings:set("enable_damage", fields.cb_enable_damage)
+		menu_worldmt(index, "enable_damage", fields.cb_enable_damage)
 		return true
 	end
 
-	if fields["cb_enable_damage"] then
-		core.settings:set("enable_damage", fields["cb_enable_damage"])
-		local selected = core.get_textlist_index("sp_worlds")
-		menu_worldmt(selected, "enable_damage", fields["cb_enable_damage"])
-
+	if fields.cb_server then
+		core.settings:set("enable_server", fields.cb_server)
 		return true
 	end
 
-	if fields["cb_server"] then
-		core.settings:set("enable_server", fields["cb_server"])
-
+	if fields.install or (world_doubleclick or fields.key_enter) and mapmgr.can_install_map(map) then
+		mapmgr.install_map_from_web(this, map)
 		return true
 	end
 
-	if fields["cb_server_announce"] then
-		core.settings:set("server_announce", fields["cb_server_announce"])
-		local selected = core.get_textlist_index("srv_worlds")
-		menu_worldmt(selected, "server_announce", fields["cb_server_announce"])
-
-		return true
-	end
-
-	if fields["play"] ~= nil or world_doubleclick or fields["key_enter"] then
-		local selected = core.get_textlist_index("sp_worlds")
-		gamedata.selected_world = menudata.worldlist:get_raw_index(selected)
+	if fields.play or (world_doubleclick or fields.key_enter) and mapmgr.map_is_map(map) then
+		gamedata.selected_world = map.coreindex
 
 		if core.settings:get_bool("enable_server") then
-			if selected ~= nil and gamedata.selected_world ~= 0 then
-				gamedata.playername = fields["te_playername"]
-				gamedata.password   = fields["te_passwd"]
-				gamedata.port       = fields["te_serverport"]
+			if gamedata.selected_world ~= 0 then
+				gamedata.playername = fields.te_playername
+				gamedata.password   = fields.te_passwd
+				gamedata.port       = fields.te_serverport
 				gamedata.address    = ""
 
-				core.settings:set("port",gamedata.port)
-				if fields["te_serveraddr"] ~= nil then
-					core.settings:set("bind_address",fields["te_serveraddr"])
+				core.settings:set("port", gamedata.port)
+				if fields.te_serveraddr then
+					core.settings:set("bind_address", fields.te_serveraddr)
 				end
 
 				core.start()
 			else
-				gamedata.errormessage =
-					fgettext("No world created or selected!")
+				gamedata.errormessage = fgettext("No world created or selected!")
 			end
 		else
-			if selected ~= nil and gamedata.selected_world ~= 0 then
+			if gamedata.selected_world ~= 0 then
 				gamedata.singleplayer = true
 				core.start()
 			else
-				gamedata.errormessage =
-					fgettext("No world created or selected!")
+				gamedata.errormessage = fgettext("No world created or selected!")
 			end
-			return true
 		end
+		return true
 	end
 
 	if fields.advanced_options then
@@ -187,44 +198,38 @@ local function main_button_handler(this, fields, name, tabdata)
 		else
 			core.settings:set("advanced_options", "true")
 		end
+
 		return true
 	end
 
-	if fields["world_create"] ~= nil then
+	if fields.world_create then
 		local create_world_dlg = create_create_world_dlg(true)
 		create_world_dlg:set_parent(this)
 		this:hide()
 		create_world_dlg:show()
+
 		return true
 	end
 
-	if fields["world_delete"] ~= nil then
-		local selected = core.get_textlist_index("sp_worlds")
-		if selected ~= nil and
-			selected <= menudata.worldlist:size() then
-			local world = menudata.worldlist:get_list()[selected]
-			if world ~= nil and
-				world.name ~= nil and
-				world.name ~= "" then
-				local index = menudata.worldlist:get_raw_index(selected)
-				local delete_world_dlg = create_delete_world_dlg(world.name,index)
-				delete_world_dlg:set_parent(this)
-				this:hide()
-				delete_world_dlg:show()
-			end
+
+	if fields.world_delete then
+		if mapmgr.map_is_map(map) then
+			print(map.name, map.coreindex)
+			local delete_world_dlg = create_delete_world_dlg(map.name, map.coreindex)
+			delete_world_dlg:set_parent(this)
+			this:hide()
+			delete_world_dlg:show()
 		end
 
 		return true
 	end
 
-	if fields["world_configure"] ~= nil then
-		local selected = core.get_textlist_index("sp_worlds")
-		if selected ~= nil then
-			local configdialog =
-				create_configure_world_dlg(
-					menudata.worldlist:get_raw_index(selected))
+	if fields.world_configure then
+		if index then
+			local configdialog = create_configure_world_dlg(
+				menudata.worldlist:get_raw_index(index))
 
-			if (configdialog ~= nil) then
+			if configdialog then
 				configdialog:set_parent(this)
 				this:hide()
 				configdialog:show()
@@ -234,7 +239,7 @@ local function main_button_handler(this, fields, name, tabdata)
 		return true
 	end
 
-	if fields["world_import"] then
+	if fields.world_import then
 		local file_browser_dlg = create_file_browser_dlg()
 		file_browser_dlg:set_parent(this)
 		this:hide()
