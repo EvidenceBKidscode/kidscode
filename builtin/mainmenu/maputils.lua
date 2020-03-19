@@ -52,6 +52,9 @@ local function dlg_mapimport_formspec(data)
 end
 
 local function dlg_mapimport_btnhandler(this, fields, data)
+	this.parent:show()
+	this:hide()
+	this:delete()
 	if this.data.callbacks then
 		for name, cb in pairs(this.data.callbacks) do
 			if fields["dlg_mapimport_formspec_" .. name] and
@@ -60,9 +63,6 @@ local function dlg_mapimport_btnhandler(this, fields, data)
 			end
 		end
 	end
-	this.parent:show()
-	this:hide()
-	this:delete()
 	return true
 end
 
@@ -299,18 +299,26 @@ local function save_alac_data(map, destpath)
 	end
 end
 
--- Check error after an async call
-local function check_error(parent, params)
-	if params.log then
-		core.log("warning", params.log)
-	end
-	if params.error then
-		core.delete_dir(params.tempfolder)
-		show_message(parent, params.error)
-		ui.update()
-		return false
-	end
-	return true
+
+-- Launch a function while displaying a status, check for errors
+local function async_step(parent, status, async_func, params, ok_func, end_func)
+	local dlg = show_status(parent, status)
+	core.handle_async(async_func, params,
+		function(params)
+			dlg:delete()
+			if params.log then
+				core.log("warning", params.log)
+			end
+			if params.error then
+				core.delete_dir(params.tempfolder)
+				show_message(parent, params.error)
+			else
+				if ok_func and type(ok_func) == "function" then
+					ok_func(params)
+				end
+			end
+		end
+	)
 end
 
 -- Params:
@@ -383,17 +391,13 @@ local function install_map(parent, params, askname, mapname)
 			("Choisissez le nom de la carte qui va être importée :"):
 			format(core.colorize("#EE0", mapname)), mapname,
 			function(this, fields)
-				--TODO: Add os.remove(tmpfile) on cancel ?
-				return install_map(this, params, false,
+				install_map(this, params, false,
 					fields.dlg_mapimport_formspec_value)
 			end,
 			function(this)
-				this.parent:show()
-				this:hide()
-				this:delete()
-				return true
+				core.delete_dir(params.tempfolder)
 			end)
-		return true
+		return
 	end
 
 	local mappath = core.get_worldpath() .. DIR_DELIM .. mapname
@@ -403,52 +407,41 @@ local function install_map(parent, params, askname, mapname)
 			("Une carte %s existe déja. Choisissez un autre nom :"):
 			format(core.colorize("#EE0", mapname)), mapname,
 			function(this, fields)
-				return install_map(this, params, false,
+				install_map(this, params, false,
 					fields.dlg_mapimport_formspec_value)
 			end,
 			function(this)
-				this.parent:show()
-				this:hide()
-				this:delete()
-				return true
+				core.delete_dir(params.tempfolder)
 			end)
-		return true
+		return
 	end
 
 	params.mappath = mappath
-	local dlg = show_status(parent, "Installation de la carte")
-	core.handle_async(async_install, params,
+
+	async_step(parent, "Installation de la carte", async_install, params,
 		function(params)
-			dlg:delete()
-			if check_error(parent, params) then
-				core.log("info", "New map installed: " .. mapname)
-				menudata.worldlist:refresh()
-				show_message(parent,
-					("La carte %s a bien été importée."):
-					format(core.colorize("#EE0", mapname)))
-			end
+			core.log("info", "New map installed: " .. mapname)
+			menudata.worldlist:refresh()
+			show_message(parent,
+				("La carte %s a bien été importée."):
+				format(core.colorize("#EE0", mapname)))
 			core.delete_dir(params.tempfolder)
 		end
 	)
-	return true
 end
+
 
 function mapmgr.import_map_from_file(parent, zippath)
 	local params = { tempfolder = os.tempfolder(), zippath = zippath }
 	core.create_dir(params.tempfolder)
 
-	local dlg = show_status(parent, "Décompression de la carte")
-	core.handle_async(async_unzip, params,
+	async_step(parent, "Décompression de la carte", async_unzip, params,
 		function(params)
-			dlg:delete()
-			if not check_error(parent, params) then
-				return
-			end
-
 			-- Continue common install process now
 			install_map(parent, params, true)
 		end
 	)
+	return true
 end
 
 function mapmgr.install_map_from_web(parent, map)
@@ -457,27 +450,13 @@ function mapmgr.install_map_from_web(parent, map)
 		return true
 	end
 
-	local ix = core.settings:get("mainmenu_last_selected_world")
-	local map = menudata.worldlist:get_raw_element(ix)
-
-	local dlg = show_status(parent, "Téléchargement de la carte")
 	local params = { tempfolder = os.tempfolder(), map = map }
 	core.create_dir(params.tempfolder)
 
-	-- Async is necessary to show ui statuses
-	core.handle_async(async_download, params,
+	async_step(parent, "Téléchargement de la carte", async_download, params,
 		function(params)
-			dlg:delete()
-			if not check_error(parent, params) then
-				return
-			end
-			local dlg = show_status(parent, "Décompression de la carte")
-			core.handle_async(async_unzip, params,
+			async_step(parent, "Décompression de la carte", async_unzip, params,
 				function(params)
-					dlg:delete()
-					if not check_error(parent, params) then
-						return
-					end
 					-- Add json file for tracking
 					save_alac_data(params.map, params.unzipedmap)
 
@@ -487,6 +466,7 @@ function mapmgr.install_map_from_web(parent, map)
 			)
 		end
 	)
+	return true
 end
 
 -- Import web map:
