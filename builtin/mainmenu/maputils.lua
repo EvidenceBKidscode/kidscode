@@ -52,18 +52,17 @@ local function dlg_mapimport_formspec(data)
 end
 
 local function dlg_mapimport_btnhandler(this, fields, data)
-	this.parent:show()
-	this:hide()
 	this:delete()
+	local result = true
 	if this.data.callbacks then
 		for name, cb in pairs(this.data.callbacks) do
 			if fields["dlg_mapimport_formspec_" .. name] and
 				type(cb) == "function" then
-				return cb(this, fields)
+				result = cb(this, fields)
 			end
 		end
 	end
-	return true
+	return result
 end
 
 local function show_status(parent, msg)
@@ -386,15 +385,17 @@ end
 -- IN unzipedmap
 -- IN tempfolder
 local function install_map(parent, params, askname, mapname)
+	print("install_map", parent)
 	if askname or not mapname then
 		show_question(parent,
 			("Choisissez le nom de la carte qui va être importée :"):
 			format(core.colorize("#EE0", mapname)), mapname,
 			function(this, fields)
-				install_map(this, params, false,
+				install_map(this.parent, params, false,
 					fields.dlg_mapimport_formspec_value)
 			end,
 			function(this)
+				ui.update()
 				core.delete_dir(params.tempfolder)
 			end)
 		return
@@ -407,10 +408,11 @@ local function install_map(parent, params, askname, mapname)
 			("Une carte %s existe déja. Choisissez un autre nom :"):
 			format(core.colorize("#EE0", mapname)), mapname,
 			function(this, fields)
-				install_map(this, params, false,
+				install_map(this.parent, params, false,
 					fields.dlg_mapimport_formspec_value)
 			end,
 			function(this)
+				ui.update()
 				core.delete_dir(params.tempfolder)
 			end)
 		return
@@ -441,13 +443,12 @@ function mapmgr.import_map_from_file(parent, zippath)
 			install_map(parent, params, true)
 		end
 	)
-	return true
 end
 
 function mapmgr.install_map_from_web(parent, map)
 	if not map:can_install() then
 		show_message(parent, "Cette carte n'est pas téléchargeable.")
-		return true
+		return
 	end
 
 	local params = { tempfolder = os.tempfolder(), map = map }
@@ -466,14 +467,9 @@ function mapmgr.install_map_from_web(parent, map)
 			)
 		end
 	)
-	return true
 end
 
--- Import web map:
---   local ix = core.settings:get("mainmenu_last_selected_world")
---   local map = menudata.worldlist:get_raw_element(ix)
---   mapmgr.install_map_from_web(parent, map)
-
+-- Test button code
 function mapmgr.test(parent)
 	local ix = core.settings:get("mainmenu_last_selected_world")
 	local map = menudata.worldlist:get_raw_element(ix)
