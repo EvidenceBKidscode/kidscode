@@ -119,7 +119,7 @@ local function init_globals()
 				return element.gameid == gameid
 			end,
 			{
-				token = ""
+				--token = ""
 			}
 		)
 
