@@ -31,11 +31,6 @@ local function get_formspec(tabview, name, tabdata)
 
 	local worldlist = menu_render_worldlist()
 
-	if worldlist ~= "" then
-		retval = retval ..
-			"button[9.4,4;2.3,0.6;world_delete;".. fgettext("Supprimer") .. "]"
-	end
-
 	retval = retval ..
 		"tooltip[0.25,1;2,0.2;" ..
 			core.wrap_text("Cochez cette case pour que votre poste fasse office de serveur local. " ..
@@ -50,18 +45,18 @@ local function get_formspec(tabview, name, tabdata)
 		"tooltip[6.7,4;2.2,0.6;" ..
 			core.wrap_text("Cliquez ici pour ajouter une carte téléchargée " ..
 				"depuis le site de l'IGN (formats ZIP et RAR acceptés)", 80) .. "]" ..
-		"button[7.1,4;2.2,0.6;world_import;" .. fgettext("Importer") .. "]" ..
+		"button[9.8,4.7;2,0.6;world_import;" .. fgettext("Importer") .. "]" ..
 		"tablecolumns[color;text;color;text,padding=1;color;text,align=center,padding=1;" ..
 			     "color;text,align=center,padding=1]"
 
 	if map and mapmgr.map_is_demand(map) then
 		if mapmgr.can_install_map(map) then
-			retval = retval .. "button[3.5,4;2.2,0.6;install;" ..
+			retval = retval .. "button[3.5,4;2,0.6;install;" ..
 				fgettext("Installer") .. ";#0000ff]"
 		end
 
 		if mapmgr.can_ask_map_again(map) then
-			retval = retval .. "button[3.5,4;2.2,0.6;reask;" ..
+			retval = retval .. "button[3.5,4;2,0.6;reask;" ..
 				fgettext("Redemander") .. ";#0000ff]"
 		end
 
@@ -70,8 +65,23 @@ local function get_formspec(tabview, name, tabdata)
 	end
 
 	if map and mapmgr.map_is_map(map) then
-		retval = retval .. "button[3.5,4;2.2,0.6;play;" ..
+		retval = retval .. "button[3.5,4;2,0.6;play;" ..
 			fgettext("Jouer") .. ";#0000ff]"
+	end
+
+
+	if mapmgr.map_is_map(map) then
+		retval = retval ..
+			"button[5.6,4;2,0.6;world_delete;".. fgettext("Supprimer") .. "]"
+	end
+
+	if core.settings:get_bool("advanced_options") then
+		retval = retval ..
+			"button[7.7,4.7;2,0.6;world_create;" .. fgettext("Nouveau") .. "]"
+		if mapmgr.map_is_map(map) then
+			retval = retval ..
+				"button[7.7,4;2,0.6;world_configure;" .. fgettext("Configurer") .. "]"
+		end
 	end
 
 	local wl = "#ff00ff,Carte,#ff00ff,Demande,#ff00ff,Origine,#ff00ff,Etat"
@@ -79,12 +89,6 @@ local function get_formspec(tabview, name, tabdata)
 
 	retval = retval ..
 		"table[3.5,0.25;8.2,3.7;sp_worlds;" .. wl .. ";" .. index .. "]"
-
-	if core.settings:get_bool("advanced_options") then
-		retval = retval ..
-			"button[7.1,4.7;2.2,0.6;world_configure;" .. fgettext("Configurer") .. "]" ..
-			"button[9.4,4.7;2.3,0.6;world_create;" .. fgettext("Nouveau") .. "]"
-	end
 
 	if core.settings:get_bool("enable_server") then
 		retval = retval ..
