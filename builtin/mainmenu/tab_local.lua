@@ -16,19 +16,18 @@
 --51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 dofile(core.get_mainmenu_path() .. DIR_DELIM .. "maputils.lua")
-local btn_status = "installed"
-
-local btn_msg = {
-	installed = {"Jouer", "play"},
-	ready     = {"Installer", "install"},
-	cancelled = {"Réinstaller", "reinstall"},
-}
 
 local function get_formspec(tabview, name, tabdata)
 	local retval = ""
+	local selected = tonumber(core.settings:get("mainmenu_last_selected_world"))
+	local map, index
 
-	local index = filterlist.get_current_index(menudata.worldlist,
-			tonumber(core.settings:get("mainmenu_last_selected_world")))
+	if selected > 0 then
+		map = menudata.worldlist:get_raw_element(selected)
+		index = filterlist.get_current_index(menudata.worldlist, selected) + 1 -- Header
+	else
+		index = -math.random() -- Force refresh and avoid selection of title line
+	end
 
 	local worldlist = menu_render_worldlist()
 
@@ -55,10 +54,24 @@ local function get_formspec(tabview, name, tabdata)
 		"tablecolumns[color;text;color;text,padding=1;color;text,align=center,padding=1;" ..
 			     "color;text,align=center,padding=1]"
 
-	if btn_msg[btn_status] then
-		retval = retval ..
-			"button[3.5,4;2.2,0.6;" .. btn_msg[btn_status][2] .. ";" ..
-				btn_msg[btn_status][1] .. ";#0000ff]"
+	if map and mapmgr.map_is_demand(map) then
+		if mapmgr.can_install_map(map) then
+			retval = retval .. "button[3.5,4;2.2,0.6;install;" ..
+				fgettext("Installer") .. ";#0000ff]"
+		end
+
+		if mapmgr.can_ask_map_again(map) then
+			retval = retval .. "button[3.5,4;2.2,0.6;reask;" ..
+				fgettext("Redemander") .. ";#0000ff]"
+		end
+
+		if mapmgr.can_cancel_map(map) then
+		end
+	end
+
+	if map and mapmgr.map_is_map(map) then
+		retval = retval .. "button[3.5,4;2.2,0.6;play;" ..
+			fgettext("Jouer") .. ";#0000ff]"
 	end
 
 	local wl = "#ff00ff,Carte,#ff00ff,Demande,#ff00ff,Origine,#ff00ff,Etat"
@@ -100,29 +113,33 @@ end
 
 local function main_button_handler(this, fields, name, tabdata)
 	assert(name == "local")
---	print(dump(fields))
 
 	local world_doubleclick = false
 
 	if fields.sp_worlds then
-		local event, selected = fields.sp_worlds:match("(.*):(%d+):")
-		selected = math.max(1, tonumber(selected) - 1)
-
-		menu_worldmt_legacy(selected)
-
-		if event == "DCL" then
+		local event = core.explode_table_event(fields.sp_worlds)
+		if event.type == "DCL" and event.row > 1 then
 			world_doubleclick = true
 		end
 
-		if event == "CHG" and selected then
-			local wl = menudata.worldlist
-			core.settings:set("mainmenu_last_selected_world", wl:get_raw_index(selected + 1))
-
-			local world = wl:get_list()[selected]
-			btn_status = world.status
-
+		if event.type == "CHG" then
+			if event.row > 1 then
+				menu_worldmt_legacy(event.row - 1)
+				core.settings:set("mainmenu_last_selected_world",
+					menudata.worldlist:get_raw_index(event.row - 1))
+			else
+				core.settings:set("mainmenu_last_selected_world", 0)
+			end
 			return true
 		end
+	end
+
+	local selected = tonumber(core.settings:get("mainmenu_last_selected_world"))
+	local map, index
+
+	if selected > 0 then
+		map = menudata.worldlist:get_raw_element(selected)
+		index = filterlist.get_current_index(menudata.worldlist, selected)
 	end
 
 	if menu_handle_key_up_down(fields, "sp_worlds", "mainmenu_last_selected_world") then
@@ -131,9 +148,7 @@ local function main_button_handler(this, fields, name, tabdata)
 
 	if fields.cb_enable_damage then
 		core.settings:set("enable_damage", fields.cb_enable_damage)
-		local selected = core.get_textlist_index("sp_worlds")
-		menu_worldmt(selected, "enable_damage", fields.cb_enable_damage)
-
+		menu_worldmt(index, "enable_damage", fields.cb_enable_damage)
 		return true
 	end
 
@@ -142,22 +157,16 @@ local function main_button_handler(this, fields, name, tabdata)
 		return true
 	end
 
-	if fields.install then
-		local idx = core.settings:get("mainmenu_last_selected_world")
-		local map = menudata.worldlist:get_raw_element(idx)
+	if fields.install or (world_doubleclick or fields.key_enter) and mapmgr.can_install_map(map) then
 		mapmgr.install_map_from_web(this, map)
-
-		mapmgr.show_message(this,
-			"Veuillez patienter pendant le téléchargement et l'installation de la carte.")
 		return true
 	end
 
-	if fields.play or world_doubleclick or fields.key_enter then
-		local selected = core.get_textlist_index("sp_worlds")
-		gamedata.selected_world = menudata.worldlist:get_raw_index(selected)
+	if fields.play or (world_doubleclick or fields.key_enter) and mapmgr.map_is_map(map) then
+		gamedata.selected_world = map.coreindex
 
 		if core.settings:get_bool("enable_server") then
-			if selected and gamedata.selected_world ~= 0 then
+			if gamedata.selected_world ~= 0 then
 				gamedata.playername = fields.te_playername
 				gamedata.password   = fields.te_passwd
 				gamedata.port       = fields.te_serverport
@@ -173,15 +182,14 @@ local function main_button_handler(this, fields, name, tabdata)
 				gamedata.errormessage = fgettext("No world created or selected!")
 			end
 		else
-			if selected and gamedata.selected_world ~= 0 then
+			if gamedata.selected_world ~= 0 then
 				gamedata.singleplayer = true
 				core.start()
 			else
 				gamedata.errormessage = fgettext("No world created or selected!")
 			end
-
-			return true
 		end
+		return true
 	end
 
 	if fields.advanced_options then
@@ -203,27 +211,23 @@ local function main_button_handler(this, fields, name, tabdata)
 		return true
 	end
 
+
 	if fields.world_delete then
-		local selected = core.get_textlist_index("sp_worlds")
-		if selected and selected <= menudata.worldlist:size() then
-			local world = menudata.worldlist:get_list()[selected]
-			if world and world.name and world.name ~= "" then
-				local index = menudata.worldlist:get_raw_index(selected)
-				local delete_world_dlg = create_delete_world_dlg(world.name,index)
-				delete_world_dlg:set_parent(this)
-				this:hide()
-				delete_world_dlg:show()
-			end
+		if mapmgr.map_is_map(map) then
+			print(map.name, map.coreindex)
+			local delete_world_dlg = create_delete_world_dlg(map.name, map.coreindex)
+			delete_world_dlg:set_parent(this)
+			this:hide()
+			delete_world_dlg:show()
 		end
 
 		return true
 	end
 
 	if fields.world_configure then
-		local selected = core.get_textlist_index("sp_worlds")
-		if selected then
+		if index then
 			local configdialog = create_configure_world_dlg(
-				menudata.worldlist:get_raw_index(selected))
+				menudata.worldlist:get_raw_index(index))
 
 			if configdialog then
 				configdialog:set_parent(this)
