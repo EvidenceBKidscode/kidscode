@@ -228,8 +228,8 @@ function menu_render_worldlist()
 			core.formspec_escape(v.name):sub(1,30) .. "," ..
 			"#ffffff" .. "," ..
 			core.formspec_escape(
-				(v.alac and (v.alac.delivered_on and
-					v.alac.delivered_on:match("%S*")) or "?")) .. "," ..
+				v.alac and v.alac.delivered_on and
+					v.alac.delivered_on:match("%S*") or "") .. "," ..
 			"#ffffff" .. "," ..
 			core.formspec_escape(origin_translate[v.origin]) .. "," ..
 			(status_color[v.status] or "#ffffff")  .. "," ..
