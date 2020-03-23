@@ -42,7 +42,7 @@ local function get_formspec(tabview, name, tabdata)
 			dump(core.settings:get_bool("advanced_options")) .. "]" ..
 		"checkbox[0.25,1;cb_server;" .. fgettext("Héberger un serveur") .. ";" ..
 			dump(core.settings:get_bool("enable_server")) .. "]" ..
-		"tooltip[6.7,4;2.2,0.6;" ..
+		"tooltip[9.5,4;2.2,0.6;" ..
 			core.wrap_text("Cliquez ici pour ajouter une carte téléchargée " ..
 				"depuis le site de l'IGN (formats ZIP et RAR acceptés)", 80) .. "]" ..
 		"button[9.5,4;2.2,0.6;world_import;" .. fgettext("Importer") .. "]" ..
