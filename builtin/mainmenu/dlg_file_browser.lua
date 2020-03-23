@@ -16,7 +16,6 @@
 --51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 
-local import_map = dofile(core.get_mainmenu_path() .. DIR_DELIM .. "mapimport.lua")
 local PATH = os.getenv("HOME") or os.getenv("HOMEPATH") or core.get_worldpath();
 local tabdata = {show_zip = true}
 
@@ -126,7 +125,7 @@ local function fields_handler(this, fields)
 		return true
 
 	elseif fields.ok and tabdata.filename and tabdata.filename ~= "" then
-		import_map(this, PATH .. DIR_DELIM .. tabdata.filename)
+		mapmgr.import_map_from_file(this, PATH .. DIR_DELIM .. tabdata.filename)
 		return true
 	end
 

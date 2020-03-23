@@ -118,9 +118,7 @@ local function init_globals()
 			function(element, gameid)
 				return element.gameid == gameid
 			end,
-			{
-				token = ""
-			}
+			nil
 		)
 
 		menudata.worldlist:add_sort_mechanism("alphabetic", sort_worlds_alphabetic)
