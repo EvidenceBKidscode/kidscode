@@ -231,9 +231,9 @@ function menu_render_worldlist()
 				v.alac and v.alac.delivered_on and
 					v.alac.delivered_on:match("%S*") or "") .. "," ..
 			"#ffffff" .. "," ..
-			core.formspec_escape(origin_translate[v.origin]) .. "," ..
+			core.formspec_escape(origin_translate[v.origin] or "inconue") .. "," ..
 			(status_color[v.status] or "#ffffff")  .. "," ..
-			core.formspec_escape(status_translate[v.status])
+			core.formspec_escape(status_translate[v.status] or "inconnu")
 	end
 
 	return retval

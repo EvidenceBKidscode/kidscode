@@ -29,7 +29,8 @@ local baseurl = "https://minetest-qualif.ign.fr/rest/public/api/orders/"
 
 local transcode_status = {
 	finished = "ready",
-	ongoing = "prepare"
+	ongoing = "prepare",
+	pending = "prepare"
 }
 
 function mapmgr.new_map_from_json(json_data)
