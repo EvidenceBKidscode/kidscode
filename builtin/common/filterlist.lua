@@ -290,7 +290,7 @@ function sort_worlds_by_status(self)
 		local sa = status_order[a.status] or 100
 		local sb = status_order[b.status] or 100
 		if sa == sb then
-			return a.name < b.name
+			return stripAccents(a.name):upper() < stripAccents(b.name):upper()
 		else
 			return sa < sb
 		end

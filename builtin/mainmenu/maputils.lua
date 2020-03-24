@@ -378,23 +378,13 @@ local function async_install(params)
 	return params
 end
 
--- params
--- IN unzipedmap
--- IN tempfolder
-local function install_map(parent, params, askname, mapname)
+local function get_question(params, askname, mapname)
 	if askname or not mapname then
-		show_question(parent,
-			("Choisissez le nom de la carte qui va être importée :"):
-			format(core.colorize("#EE0", mapname)), mapname,
-			function(this, fields)
-				install_map(this.parent, params, false,
-					fields.dlg_mapimport_formspec_value)
-			end,
-			function(this)
-				ui.update()
-				core.delete_dir(params.tempfolder)
-			end)
-		return
+		return "Choisissez le nom de la carte qui va être importée :"
+	end
+
+	if not mapname:match("^[ 0-9a-zA-Z!#$&'()+,.;=@^_{}]+$") then
+		return "Le nom de la carte ne doit comporter ni accents, ni caractères spéciaux"
 	end
 
 	local mappath = core.get_worldpath() .. DIR_DELIM .. mapname
@@ -402,9 +392,18 @@ local function install_map(parent, params, askname, mapname)
 	-- Test directory existence
 	local ok, err, code = os.rename(mappath, mappath)
 	if ok or code == 13 then
-		show_question(parent,
-			("Une carte %s existe déja. Choisissez un autre nom :"):
-			format(core.colorize("#EE0", mapname)), mapname,
+		return ("Une carte %s existe déja. Choisissez un autre nom :"):
+		format(core.colorize("#EE0", mapname))
+	end
+end
+
+-- params
+-- IN unzipedmap
+-- IN tempfolder
+local function install_map(parent, params, askname, mapname)
+	local question = get_question(params, askname, mapname)
+	if question then
+		show_question(parent, question, mapname,
 			function(this, fields)
 				install_map(this.parent, params, false,
 					fields.dlg_mapimport_formspec_value)
@@ -416,7 +415,7 @@ local function install_map(parent, params, askname, mapname)
 		return
 	end
 
-	params.mappath = mappath
+	params.mappath = core.get_worldpath() .. DIR_DELIM .. mapname
 
 	async_step(parent, "Installation de la carte", async_install, params,
 		function(params)
@@ -461,7 +460,7 @@ function mapmgr.install_map_from_web(parent, map)
 					save_map_alac_data(params.map, params.unzipedmap)
 
 					-- Continue common install process now
-					install_map(parent, params, true, params.map.name)
+					install_map(parent, params, true, stripAccents(params.map.name))
 				end
 			)
 		end
