@@ -121,8 +121,9 @@ local function init_globals()
 			nil
 		)
 
+		menudata.worldlist:add_sort_mechanism("status", sort_worlds_by_status)
 		menudata.worldlist:add_sort_mechanism("alphabetic", sort_worlds_alphabetic)
-		menudata.worldlist:set_sortmode("alphabetic")
+		menudata.worldlist:set_sortmode("status")
 
 		if not core.settings:get("menu_current_game") then
 			local default_game = core.settings:get("default_game") or "minetest"

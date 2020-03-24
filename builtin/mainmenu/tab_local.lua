@@ -22,15 +22,6 @@ local function get_formspec(tabview, name, tabdata)
 	local retval = ""
 	local selected = tonumber(core.settings:get("mainmenu_last_selected_world")) or 0
 	local map, index
-	local list = menudata.worldlist.m_processed_list
-
-	for i, world in ipairs(list) do
-		if world.status == "installed" then
-			table.insert(list, 1, table.remove(list, i))
-		elseif world.status == "ready" then
-			table.insert(list, 2, table.remove(list, i))
-		end
-	end
 
 	if selected > 0 then
 		map = menudata.worldlist:get_raw_element(selected)
@@ -40,14 +31,6 @@ local function get_formspec(tabview, name, tabdata)
 	end
 
 	local worldlist = menu_render_worldlist()
-
-	local wl = "#ff00ff,Carte,#ff00ff,Demande,#ff00ff,Origine,#ff00ff,Etat,"
-
-	for _, world in ipairs(worldlist) do
-	for i, data in ipairs(world) do
-		wl = wl .. world[i] .. ","
-	end
-	end
 
 	retval = retval ..
 		"tooltip[0.25,1;2,0.2;" ..
@@ -104,8 +87,11 @@ local function get_formspec(tabview, name, tabdata)
 		end
 	end
 
+	local wl = "#ff00ff,Carte,#ff00ff,Demande,#ff00ff,Origine,#ff00ff,Etat"
+	wl = wl .. "," .. worldlist
+
 	retval = retval ..
-		"table[3.5,0.25;8.2,3.7;sp_worlds;" .. wl:sub(1,-2) .. ";" .. index .. "]"
+		"table[3.5,0.25;8.2,3.7;sp_worlds;" .. wl .. ";" .. index .. "]"
 
 	if core.settings:get_bool("enable_server") then
 		retval = retval ..

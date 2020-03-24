@@ -283,6 +283,21 @@ function sort_worlds_alphabetic(self)
 end
 
 --------------------------------------------------------------------------------
+local status_order = { installed = 1, ready = 2, prepare = 3 }
+
+function sort_worlds_by_status(self)
+	table.sort(self.m_processed_list, function(a, b)
+		local sa = status_order[a.status] or 100
+		local sb = status_order[b.status] or 100
+		if sa == sb then
+			return a.name < b.name
+		else
+			return sa < sb
+		end
+	end)
+end
+
+--------------------------------------------------------------------------------
 function sort_mod_list(self)
 
 	table.sort(self.m_processed_list, function(a, b)

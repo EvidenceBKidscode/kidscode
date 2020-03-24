@@ -221,22 +221,21 @@ local status_color = {
 }
 
 function menu_render_worldlist()
-	local retval = {}
+	local retval = ""
 	local current_worldlist = menudata.worldlist:get_list()
 
 	for i, v in ipairs(current_worldlist) do
-		--if retval ~= "" then retval = retval .. "," end
+		if retval ~= "" then retval = retval .. "," end
 
-		retval[#retval + 1] = {
-			"#ffffff",
-			ESC(v.name):sub(1,30),
-			"#ffffff",
-			ESC(v.alac and v.alac.delivered_on and v.alac.delivered_on:match("%S*") or ""),
-			"#ffffff",
-			ESC(origin_translate[v.origin] or "?"),
-			status_color[v.status] or "#ffffff",
+		retval = retval ..
+			"#ffffff" .. "," ..
+			ESC(v.name):sub(1,30) .. "," ..
+			"#ffffff" .. "," ..
+			ESC(v.alac and v.alac.delivered_on and v.alac.delivered_on:match("%S*") or "") .. "," ..
+			"#ffffff" .. "," ..
+			ESC(origin_translate[v.origin] or "?") .. "," ..
+			(status_color[v.status] or "#ffffff") .. "," ..
 			ESC(status_translate[v.status] or "?")
-		}
 	end
 
 	return retval
