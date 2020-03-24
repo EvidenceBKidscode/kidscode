@@ -466,10 +466,3 @@ function mapmgr.install_map_from_web(parent, map)
 		end
 	)
 end
-
--- Test button code
-function mapmgr.test(parent)
-	local ix = core.settings:get("mainmenu_last_selected_world")
-	local map = menudata.worldlist:get_raw_element(ix)
-	mapmgr.install_map_from_web(parent, map)
-end
