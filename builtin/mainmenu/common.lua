@@ -14,6 +14,10 @@
 --You should have received a copy of the GNU Lesser General Public License along
 --with this program; if not, write to the Free Software Foundation, Inc.,
 --51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+
+local ESC = core.formspec_escape
+
 --------------------------------------------------------------------------------
 -- Global menu data
 --------------------------------------------------------------------------------
@@ -52,14 +56,14 @@ end
 
 --------------------------------------------------------------------------------
 function image_column(tooltip, flagname)
-	return "image,tooltip=" .. core.formspec_escape(tooltip) .. "," ..
-		"0=" .. core.formspec_escape(defaulttexturedir .. "blank.png") .. "," ..
-		"1=" .. core.formspec_escape(defaulttexturedir ..
+	return "image,tooltip=" .. ESC(tooltip) .. "," ..
+		"0=" .. ESC(defaulttexturedir .. "blank.png") .. "," ..
+		"1=" .. ESC(defaulttexturedir ..
 			(flagname and "server_flags_" .. flagname .. ".png" or "blank.png")) .. "," ..
-		"2=" .. core.formspec_escape(defaulttexturedir .. "server_ping_4.png") .. "," ..
-		"3=" .. core.formspec_escape(defaulttexturedir .. "server_ping_3.png") .. "," ..
-		"4=" .. core.formspec_escape(defaulttexturedir .. "server_ping_2.png") .. "," ..
-		"5=" .. core.formspec_escape(defaulttexturedir .. "server_ping_1.png")
+		"2=" .. ESC(defaulttexturedir .. "server_ping_4.png") .. "," ..
+		"3=" .. ESC(defaulttexturedir .. "server_ping_3.png") .. "," ..
+		"4=" .. ESC(defaulttexturedir .. "server_ping_2.png") .. "," ..
+		"5=" .. ESC(defaulttexturedir .. "server_ping_1.png")
 end
 
 --------------------------------------------------------------------------------
@@ -85,7 +89,7 @@ end
 function render_serverlist_row(spec, is_favorite)
 	local text = ""
 	if spec.name then
-		text = text .. core.formspec_escape(spec.name:trim())
+		text = text .. ESC(spec.name:trim())
 	elseif spec.address then
 		text = text .. spec.address:trim()
 		if spec.port then
@@ -217,23 +221,22 @@ local status_color = {
 }
 
 function menu_render_worldlist()
-	local retval = ""
+	local retval = {}
 	local current_worldlist = menudata.worldlist:get_list()
 
 	for i, v in ipairs(current_worldlist) do
-		if retval ~= "" then retval = retval .. "," end
+		--if retval ~= "" then retval = retval .. "," end
 
-		retval = retval ..
-			"#ffffff" .. "," ..
-			core.formspec_escape(v.name):sub(1,30) .. "," ..
-			"#ffffff" .. "," ..
-			core.formspec_escape(
-				v.alac and v.alac.delivered_on and
-					v.alac.delivered_on:match("%S*") or "") .. "," ..
-			"#ffffff" .. "," ..
-			core.formspec_escape(origin_translate[v.origin] or "inconue") .. "," ..
-			(status_color[v.status] or "#ffffff")  .. "," ..
-			core.formspec_escape(status_translate[v.status] or "inconnu")
+		retval[#retval + 1] = {
+			"#ffffff",
+			ESC(v.name):sub(1,30),
+			"#ffffff",
+			ESC(v.alac and v.alac.delivered_on and v.alac.delivered_on:match("%S*") or ""),
+			"#ffffff",
+			ESC(origin_translate[v.origin] or "?"),
+			status_color[v.status] or "#ffffff",
+			ESC(status_translate[v.status] or "?")
+		}
 	end
 
 	return retval
@@ -330,7 +333,7 @@ function text2textlist(xpos, ypos, width, height, tl_name, textlen, text, transp
 
 	for i = 1, #textlines do
 		textlines[i] = textlines[i]:gsub("\r", "")
-		retval = retval .. core.formspec_escape(textlines[i]) .. ","
+		retval = retval .. ESC(textlines[i]) .. ","
 	end
 
 	retval = retval .. ";0;"

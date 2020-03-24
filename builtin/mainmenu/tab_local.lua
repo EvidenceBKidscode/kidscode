@@ -30,6 +30,23 @@ local function get_formspec(tabview, name, tabdata)
 
 	local worldlist = menu_render_worldlist()
 
+	for i, world in ipairs(worldlist) do
+		local state = world[#world]
+		if state == "Installée" then
+			table.insert(worldlist, 1, table.remove(worldlist, i))
+		elseif state == "Prête" then
+			table.insert(worldlist, 2, table.remove(worldlist, i))
+		end
+	end
+
+	local wl = "#ff00ff,Carte,#ff00ff,Demande,#ff00ff,Origine,#ff00ff,Etat,"
+
+	for _, world in ipairs(worldlist) do
+	for i, data in ipairs(world) do
+		wl = wl .. world[i] .. ","
+	end
+	end
+
 	retval = retval ..
 		"tooltip[0.25,1;2,0.2;" ..
 			core.wrap_text("Cochez cette case pour que votre poste fasse office de serveur local. " ..
@@ -45,18 +62,19 @@ local function get_formspec(tabview, name, tabdata)
 			core.wrap_text("Cliquez ici pour ajouter une carte téléchargée " ..
 				"depuis le site de l'IGN (formats ZIP et RAR acceptés)", 80) .. "]" ..
 		"button[9.5,4;2.2,0.6;world_import;" .. fgettext("Importer") .. "]" ..
+		"image_button[5.9,4;0.6,0.6;" ..
+			core.formspec_escape(defaulttexturedir .. "refresh.png") .. ";refresh;]" ..
+		"tooltip[refresh;Rafraichir la liste des cartes]" ..
 		"tablecolumns[color;text;color;text,padding=1;color;text,align=center,padding=1;" ..
 			     "color;text,align=center,padding=1]"
 
 	if map and mapmgr.map_is_demand(map) then
 		if mapmgr.can_install_map(map) then
-			retval = retval .. "button[3.5,4;2,0.6;install;" ..
-				fgettext("Installer") .. ";#0000ff]"
+			retval = retval .. "button[3.5,4;2.3,0.6;install;" .. fgettext("Installer") .. ";#0000ff]"
 		end
 
 		if mapmgr.can_ask_map_again(map) then
-			retval = retval .. "button[3.5,4;2,0.6;reask;" ..
-				fgettext("Redemander") .. ";#0000ff]"
+			retval = retval .. "button[3.5,4;2,0.6;reask;" .. fgettext("Redemander") .. ";#0000ff]"
 		end
 
 		if mapmgr.can_cancel_map(map) then
@@ -71,7 +89,7 @@ local function get_formspec(tabview, name, tabdata)
 
 	if mapmgr.map_is_map(map) then
 		retval = retval ..
-			"button[7.1,4;2.3,0.6;world_delete;".. fgettext("Supprimer") .. "]"
+			"button[7.1,4;2.3,0.6;world_delete;" .. fgettext("Supprimer") .. "]"
 	end
 
 	if core.settings:get_bool("advanced_options") then
@@ -84,11 +102,8 @@ local function get_formspec(tabview, name, tabdata)
 		end
 	end
 
-	local wl = "#ff00ff,Carte,#ff00ff,Demande,#ff00ff,Origine,#ff00ff,Etat"
-	wl = wl .. "," .. worldlist
-
 	retval = retval ..
-		"table[3.5,0.25;8.2,3.7;sp_worlds;" .. wl .. ";" .. index .. "]"
+		"table[3.5,0.25;8.2,3.7;sp_worlds;" .. wl:sub(1,-2) .. ";" .. index .. "]"
 
 	if core.settings:get_bool("enable_server") then
 		retval = retval ..
@@ -150,9 +165,8 @@ local function main_button_handler(this, fields, name, tabdata)
 		return true
 	end
 
-	if fields.cb_enable_damage then
-		core.settings:set("enable_damage", fields.cb_enable_damage)
-		menu_worldmt(index, "enable_damage", fields.cb_enable_damage)
+	if fields.refresh then
+		menudata.worldlist:refresh()
 		return true
 	end
 
