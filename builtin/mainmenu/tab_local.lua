@@ -19,9 +19,8 @@ dofile(core.get_mainmenu_path() .. DIR_DELIM .. "maputils.lua")
 
 local function get_formspec(tabview, name, tabdata)
 	local retval = ""
-	local selected = tonumber(core.settings:get("mainmenu_last_selected_world"))
+	local selected = tonumber(core.settings:get("mainmenu_last_selected_world")) or 0
 	local map, index
-
 	if selected > 0 then
 		map = menudata.worldlist:get_raw_element(selected)
 		index = filterlist.get_current_index(menudata.worldlist, selected) + 1 -- Header
@@ -139,7 +138,7 @@ local function main_button_handler(this, fields, name, tabdata)
 		end
 	end
 
-	local selected = tonumber(core.settings:get("mainmenu_last_selected_world"))
+	local selected = tonumber(core.settings:get("mainmenu_last_selected_world")) or 0
 	local map, index
 
 	if selected > 0 then
