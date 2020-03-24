@@ -1,5 +1,5 @@
 --Minetest
---Copyright (C) 2014 sapier
+--Copyright (C) 2020 EvidenceBKidscode
 --
 --This program is free software; you can redistribute it and/or modify
 --it under the terms of the GNU Lesser General Public License as published by
@@ -15,12 +15,23 @@
 --with this program; if not, write to the Free Software Foundation, Inc.,
 --51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+
 dofile(core.get_mainmenu_path() .. DIR_DELIM .. "maputils.lua")
 
 local function get_formspec(tabview, name, tabdata)
 	local retval = ""
 	local selected = tonumber(core.settings:get("mainmenu_last_selected_world")) or 0
 	local map, index
+	local list = menudata.worldlist.m_processed_list
+
+	for i, world in ipairs(list) do
+		if world.status == "installed" then
+			table.insert(list, 1, table.remove(list, i))
+		elseif world.status == "ready" then
+			table.insert(list, 2, table.remove(list, i))
+		end
+	end
+
 	if selected > 0 then
 		map = menudata.worldlist:get_raw_element(selected)
 		index = filterlist.get_current_index(menudata.worldlist, selected) + 1 -- Header
@@ -29,15 +40,6 @@ local function get_formspec(tabview, name, tabdata)
 	end
 
 	local worldlist = menu_render_worldlist()
-
-	for i, world in ipairs(worldlist) do
-		local state = world[#world]
-		if state == "Installée" then
-			table.insert(worldlist, 1, table.remove(worldlist, i))
-		elseif state == "Prête" then
-			table.insert(worldlist, 2, table.remove(worldlist, i))
-		end
-	end
 
 	local wl = "#ff00ff,Carte,#ff00ff,Demande,#ff00ff,Origine,#ff00ff,Etat,"
 
