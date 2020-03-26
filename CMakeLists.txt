@@ -9,7 +9,7 @@ endif()
 
 # This can be read from ${PROJECT_NAME} after project() is called
 project(kidscode)
-set(PROJECT_NAME_CAPITALIZED "Kidscode")
+set(PROJECT_NAME_CAPITALIZED "KidscodeIGN")
 
 # Works only for cmake 3.1 and greater
 set(CMAKE_CXX_STANDARD 11)
