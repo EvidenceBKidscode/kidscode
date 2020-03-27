@@ -355,11 +355,6 @@ endif()
 
 check_include_files(endian.h HAVE_ENDIAN_H)
 
-configure_file(
-	"${PROJECT_SOURCE_DIR}/cmake_config.h.in"
-	"${PROJECT_BINARY_DIR}/cmake_config.h"
-)
-
 # >> KIDSCODE - Mods encryption
 
 # ENCRYPT_MODS_KEYS should hold absolute path of a cmake file defining
@@ -373,13 +368,20 @@ if(ENCRYPT_MODS_KEYS)
 	set(ENCRYPTION_COMMENT "Keep this file absolutely private!")
 	configure_file(
 		"${PROJECT_SOURCE_DIR}/encryption_data.h.in"
-		"${PROJECT_BINARY_DIR}/encryption_data.h"
+		"${PROJECT_SOURCE_DIR}/encryption_data.h"
 	)
+	message(STATUS "Lua encryption enabled")
 else()
 	set(ENCRYPT_MODS false)
+	message(WARNING "Lua encryption disabled")
 endif()
 
 # << KIDSCODE - Mods encryption
+
+configure_file(
+	"${PROJECT_SOURCE_DIR}/cmake_config.h.in"
+	"${PROJECT_BINARY_DIR}/cmake_config.h"
+)
 
 # Add a target that always rebuilds cmake_config_githash.h
 add_custom_target(GenerateVersion
