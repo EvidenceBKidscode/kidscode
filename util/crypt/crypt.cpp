@@ -5,6 +5,7 @@
 #include <string.h>
 #include <stdio.h>
 
+#define ENCRYPT_MODS 1
 #include "encryption.h"
 
 bool processFile(const char *path, const char option)
@@ -16,8 +17,9 @@ bool processFile(const char *path, const char option)
 	if (option == 'e') {
 		text = readText(path, size);
 
-		if (text == NULL)
+		if (text == NULL) {
 			return false;
+		}
 
 		const char *encrypted_text = encryptText(text, size, path);
 
@@ -48,17 +50,19 @@ bool processFile(const char *path, const char option)
 }
 
 
-void processFiles(int count, char **paths, char option)
+bool processFiles(int count, char **paths, char option)
 {
+	bool success = true;
+
 	if ( count == 0 ) {
 		size_t size;
 		char *list = readText("CryptList.txt", size);
-		
+
 		if (list == NULL) {
 			puts("*** ERROR : can't read CryptList.txt");
-			return;
+			return false;
 		}
-		
+
 		for (std::string path; *list; ++list) {
 			if (*list == '\n') {
 				if (path.size() > 0)
@@ -73,9 +77,11 @@ void processFiles(int count, char **paths, char option)
 		for (int i = 0; i < count; ++i) {
 			if (!processFile(paths[i], option)) {
 				printf("*** ERROR : can't process file : %s\n", paths[i]);
+				success = false;
 			}
 		}
 	}
+	return success;
 }
 
 
@@ -93,7 +99,10 @@ int main(int argc, char **argv)
 	}
 
 	if (option)
-		processFiles(argc, argv, option);
+		if (processFiles(argc, argv, option))
+			exit(0);
+		else
+			exit(2);
 	else {
 		puts("*** ERROR : missing option");
 		puts("Usage :");
@@ -101,7 +110,6 @@ int main(int argc, char **argv)
 		puts("        crypt -d file1 file2 ... : decrypt these files");
 		puts("        crypt -e : encrypt the files specified in CryptList.txt");
 		puts("        crypt -d : decrypt the files specified in CryptList.txt");
+		exit(1);
 	}
 }
-
-
