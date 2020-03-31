@@ -220,7 +220,6 @@ local function main_button_handler(this, fields, name, tabdata)
 
 	if fields.world_delete then
 		if mapmgr.map_is_map(map) then
-			print(map.name, map.coreindex)
 			local delete_world_dlg = create_delete_world_dlg(map.name, map.coreindex)
 			delete_world_dlg:set_parent(this)
 			this:hide()

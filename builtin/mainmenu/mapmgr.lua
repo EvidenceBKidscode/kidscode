@@ -216,10 +216,10 @@ end
 local function dlg_mapimport_formspec(data)
 	local fs = "size[8,3]"
 	if data.field then
-		fs = fs .. "label[0,0;" .. (data.message or "") .. "]" ..
+		fs = fs .. "label[0,0;" .. core.formspec_escape(data.message or "") .. "]" ..
 			"field[1,1;6,1;dlg_mapimport_formspec_value;;" .. data.field .."]"
 	else
-		fs = fs .. "label[0,0.5;" .. (data.message or "") .. "]"
+		fs = fs .. "label[0,0.5;" .. core.formspec_escape(data.message or "") .. "]"
 	end
 
 	if data.buttons then
@@ -383,7 +383,7 @@ local function get_question(params, askname, mapname)
 		return "Choisissez le nom de la carte qui va être importée :"
 	end
 
-	if not mapname:match("^[ 0-9a-zA-Z!#$&'()+,.;=@^_{}]+$") then
+	if not mapname:match("^[ 0-9a-zA-Z%-!#$&\"'()+,.;=@^_{}%[%]]+$") then
 		return "Le nom de la carte ne doit comporter ni accents, ni caractères spéciaux"
 	end
 
@@ -392,7 +392,7 @@ local function get_question(params, askname, mapname)
 	-- Test directory existence
 	local ok, err, code = os.rename(mappath, mappath)
 	if ok or code == 13 then
-		return ("Une carte %s existe déja. Choisissez un autre nom :"):
+		return ("Une carte \"%s\" existe déja. Choisissez un autre nom :"):
 		format(core.colorize("#EE0", mapname))
 	end
 end
@@ -422,7 +422,7 @@ local function install_map(parent, params, askname, mapname)
 			core.log("info", "New map installed: " .. mapname)
 			menudata.worldlist:refresh()
 			show_message(parent,
-				("La carte %s a bien été importée."):
+				("La carte \"%s\" a bien été importée."):
 				format(core.colorize("#EE0", mapname)))
 			core.delete_dir(params.tempfolder)
 		end
