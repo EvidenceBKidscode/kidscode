@@ -995,6 +995,30 @@ int ModApiMainMenu::l_get_video_modes(lua_State *L)
 	return 1;
 }
 
+// >> KIDSCODE - Launch browser
+/******************************************************************************/
+int ModApiMainMenu::l_launch_browser(lua_State *L)
+{
+	std::string url = luaL_checkstring(L, 1);
+	std::string cmd;
+
+#if defined(_WIN32) || defined(_WIN64)
+	cmd = "start " + url;
+#endif
+
+#ifdef __APPLE__
+// NOT TESTED
+	cmd = "open " + url;
+#endif
+
+#if defined(__linux__)
+	cmd = "xdg-open " + url;
+#endif
+	system(cmd.c_str());
+	return 0;
+}
+// << KIDSCODE - Launch browser
+
 /******************************************************************************/
 int ModApiMainMenu::l_gettext(lua_State *L)
 {
@@ -1106,6 +1130,7 @@ void ModApiMainMenu::Initialize(lua_State *L, int top)
 	API_FCT(get_video_drivers);
 	API_FCT(get_video_modes);
 	API_FCT(get_screen_info);
+	API_FCT(launch_browser);
 	API_FCT(get_min_supp_proto);
 	API_FCT(get_max_supp_proto);
 	API_FCT(do_async_callback);
