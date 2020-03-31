@@ -42,6 +42,12 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "network/networkprotocol.h"
 #include "network/upnpserver.h"
 
+// >> KIDSCODE
+#include "map.h"
+#include "database/database.h"
+#include "database/database-sqlite3.h"
+// <<KIDSCODE
+
 
 /******************************************************************************/
 std::string ModApiMainMenu::getTextData(lua_State *L, std::string name)
@@ -1019,6 +1025,39 @@ int ModApiMainMenu::l_launch_browser(lua_State *L)
 }
 // << KIDSCODE - Launch browser
 
+// >> KIDSCODE - Convert map during import
+/******************************************************************************/
+int ModApiMainMenu::l_verify_world(lua_State *L)
+{
+	// Arg 1 : world path
+	std::string savedir = luaL_checkstring(L, 1);
+
+	try {
+		// Determine which database backend to use
+		std::string conf_path = savedir + DIR_DELIM + "world.mt";
+		Settings conf;
+		bool succeeded = conf.readConfigFile(conf_path.c_str());
+		if (!succeeded || !conf.exists("backend")) {
+			errorstream << "Unable to determine backend from "
+				<< conf_path << std::endl;
+			lua_pushboolean(L,false);
+			return 1;
+		}
+		std::string backend = conf.get("backend");
+		MapDatabase *db = ServerMap::createDatabase(backend, savedir, conf);
+		if (backend == "sqlite3")
+			((MapDatabaseSQLite3 *)db)->checkDatabase();
+	} catch(...) {
+		lua_pushboolean(L,false);
+		return 1;
+	}
+
+	lua_pushboolean(L,true);
+	return 1;
+}
+// << KIDSCODE - Convert map during import
+
+
 /******************************************************************************/
 int ModApiMainMenu::l_gettext(lua_State *L)
 {
@@ -1130,7 +1169,8 @@ void ModApiMainMenu::Initialize(lua_State *L, int top)
 	API_FCT(get_video_drivers);
 	API_FCT(get_video_modes);
 	API_FCT(get_screen_info);
-	API_FCT(launch_browser);
+	API_FCT(launch_browser); // KIDSCODE
+	API_FCT(verify_world); // KIDSCODE
 	API_FCT(get_min_supp_proto);
 	API_FCT(get_max_supp_proto);
 	API_FCT(do_async_callback);
@@ -1156,5 +1196,6 @@ void ModApiMainMenu::InitializeAsync(lua_State *L, int top)
 	API_FCT(extract_zip);
 	API_FCT(may_modify_path);
 	API_FCT(download_file);
+	API_FCT(verify_world); // KIDSCODE
 	//API_FCT(gettext); (gettext lib isn't threadsafe)
 }

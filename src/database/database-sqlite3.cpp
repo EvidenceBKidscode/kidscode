@@ -128,15 +128,14 @@ void Database_SQLite3::endSave()
 	sqlite3_reset(m_stmt_end);
 }
 
-void Database_SQLite3::openDatabase()
+void Database_SQLite3::openDatabase(bool create)
 {
 	if (m_database) return;
 
 	std::string dbp = m_savedir + DIR_DELIM + m_dbname + ".sqlite";
 
 	// Open the database connection
-
-	if (!fs::CreateAllDirs(m_savedir)) {
+	if (create && !fs::CreateAllDirs(m_savedir)) {
 		infostream << "Database_SQLite3: Failed to create directory \""
 			<< m_savedir << "\"" << std::endl;
 		throw FileNotGoodException("Failed to create database "
@@ -144,6 +143,8 @@ void Database_SQLite3::openDatabase()
 	}
 
 	bool needs_create = !fs::PathExists(dbp);
+	if (needs_create && !create)
+		throw FileNotGoodException("Failed to open database file");
 
 	SQLOK(sqlite3_open_v2(dbp.c_str(), &m_database,
 			SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL),
@@ -168,7 +169,7 @@ void Database_SQLite3::verifyDatabase()
 {
 	if (m_initialized) return;
 
-	openDatabase();
+	openDatabase(true);
 
 	PREPARE_STATEMENT(begin, "BEGIN;");
 	PREPARE_STATEMENT(end, "COMMIT;");
@@ -330,6 +331,14 @@ MapDatabaseSQLite3::MapDatabaseSQLite3(const std::string &savedir):
 	Database_SQLite3(savedir, "map"),
 	MapDatabase()
 {
+}
+
+void MapDatabaseSQLite3::checkDatabase()
+{
+	if (m_database) return;
+
+	openDatabase(false);
+	upgradeDatabaseStructure();
 }
 
 MapDatabaseSQLite3::~MapDatabaseSQLite3()

@@ -44,6 +44,9 @@ protected:
 	// Open and initialize the database if needed
 	void verifyDatabase();
 
+	// Open the database
+	void openDatabase(bool create);
+
 	// Tells if a table exists in the database
 	bool tableExists(const std::string &table_name);
 
@@ -128,8 +131,6 @@ protected:
 
 	sqlite3 *m_database = nullptr;
 private:
-	// Open the database
-	void openDatabase();
 
 	bool m_initialized = false;
 
@@ -151,6 +152,9 @@ class MapDatabaseSQLite3 : private Database_SQLite3, public MapDatabase
 public:
 	MapDatabaseSQLite3(const std::string &savedir);
 	virtual ~MapDatabaseSQLite3();
+
+	// Check and upgrade database for mainmenu api
+	void checkDatabase();
 
 	bool saveBlock(const v3s16 &pos, const std::string &data);
 	void loadBlock(const v3s16 &pos, std::string *block);

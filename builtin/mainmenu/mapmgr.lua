@@ -369,11 +369,21 @@ end
 
 -- Params:
 --   IN unzipedmap
+local function async_verify(params)
+	if not core.verify_world(params.unzipedmap) then
+		params.log = "Error when verifying world " .. params.unzipedmap
+		params.error = "Erreur lors de la vérification, la carte n'a pas été importée."
+	end
+	return params
+end
+
+-- Params:
+--   IN unzipedmap
 --   IN mappath
 local function async_install(params)
 	if not core.copy_dir(params.unzipedmap, params.mappath) then
 		params.log = "Error when copying " .. params.unzipedmap .. " to " .. params.mappath
-		params.error = "Erreur lors de l'import, la carte n'a pas été importée."
+		params.error = "Erreur lors de l'installation, la carte n'a pas été importée."
 	end
 	return params
 end
@@ -417,14 +427,18 @@ local function install_map(parent, params, askname, mapname)
 
 	params.mappath = core.get_worldpath() .. DIR_DELIM .. mapname
 
-	async_step(parent, "Installation de la carte", async_install, params,
+	async_step(parent, "Vérification et conversion de la carte", async_verify, params,
 		function(params)
-			core.log("info", "New map installed: " .. mapname)
-			menudata.worldlist:refresh()
-			show_message(parent,
-				("La carte \"%s\" a bien été importée."):
-				format(core.colorize("#EE0", mapname)))
-			core.delete_dir(params.tempfolder)
+			async_step(parent, "Installation de la carte", async_install, params,
+				function(params)
+					core.log("info", "New map installed: " .. mapname)
+					menudata.worldlist:refresh()
+					show_message(parent,
+						("La carte \"%s\" a bien été importée."):
+						format(core.colorize("#EE0", mapname)))
+					core.delete_dir(params.tempfolder)
+				end
+			)
 		end
 	)
 end

@@ -142,7 +142,11 @@ private:
 
 	static int l_get_video_modes(lua_State *L);
 
+	// >> KIDSCODE
 	static int l_launch_browser(lua_State *L);
+
+	static int l_verify_world(lua_State *L);
+	// << KIDSCODE
 
 	//version compatibility
 	static int l_get_min_supp_proto(lua_State *L);
