@@ -16,7 +16,7 @@
 --51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 
-dofile(core.get_mainmenu_path() .. DIR_DELIM .. "maputils.lua")
+dofile(core.get_mainmenu_path() .. DIR_DELIM .. "mapmgr.lua")
 
 local function get_formspec(tabview, name, tabdata)
 	local retval = ""
