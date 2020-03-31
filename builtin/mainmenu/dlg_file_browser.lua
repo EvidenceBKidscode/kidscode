@@ -125,7 +125,8 @@ local function fields_handler(this, fields)
 		return true
 
 	elseif fields.ok and tabdata.filename and tabdata.filename ~= "" then
-		mapmgr.import_map_from_file(this, PATH .. DIR_DELIM .. tabdata.filename)
+		this:delete()
+		mapmgr.import_map_from_file(this.parent, PATH .. DIR_DELIM .. tabdata.filename)
 		return true
 	end
 
