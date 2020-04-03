@@ -164,13 +164,18 @@ RenderingEngine::RenderingEngine(IEventReceiver *receiver)
 	params.OGLES2ShaderPath = (porting::path_share + DIR_DELIM + rel_path + DIR_DELIM).c_str();
 #endif
 
-	m_device = createDeviceEx(params);
-	driver = m_device->getVideoDriver();
+	irr::IrrlichtDevice *device = createDeviceEx(params);
 
+	auto desktop_resolution = device->getVideoModeList()->getDesktopResolution();
+	device->drop();
+
+	params.WindowSize = core::dimension2d<u32>(desktop_resolution.Width, desktop_resolution.Height);
+	m_device = createDeviceEx(params);
+
+	driver = m_device->getVideoDriver();
 	s_singleton = this;
 
-	auto skin = createSkin(m_device->getGUIEnvironment(),
-			gui::EGST_WINDOWS_METALLIC, driver);
+	auto skin = createSkin(m_device->getGUIEnvironment(), gui::EGST_WINDOWS_METALLIC, driver);
 	m_device->getGUIEnvironment()->setSkin(skin);
 	skin->drop();
 
