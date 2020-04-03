@@ -237,16 +237,19 @@ end
 -- Generic button handler: close dialog and call callback if exists
 local function dlg_mapimport_btnhandler(this, fields, data)
 	this:delete()
-	local result = true
 	if this.data.callbacks then
 		for name, cb in pairs(this.data.callbacks) do
 			if fields["dlg_mapimport_formspec_" .. name] and
-				type(cb) == "function" then
-				result = cb(this, fields)
+					type(cb) == "function" then
+				return cb(this, fields)
 			end
 		end
+		if fields["key_enter"] and this.data.callbacks.enter and
+				type(this.data.callbacks.enter) then
+			return this.data.callbacks.enter(this, fields)
+		end
 	end
-	return result
+	return true
 end
 
 -- Display status dialog
@@ -288,8 +291,8 @@ local function show_question(parent, errmsg, default, cb_ok, cb_cancel)
 	dlg.data.message = errmsg
 	dlg.data.message = errmsg
 	dlg.data.field = default or ""
-	dlg.data.buttons = {ok = "Valider", cancel = "Annuler"}
-	dlg.data.callbacks = {ok = cb_ok, cancel = cb_cancel}
+	dlg.data.buttons = {ok = "Valider", cancel = "Annuler" }
+	dlg.data.callbacks = {ok = cb_ok, cancel = cb_cancel, enter = cb_ok }
 	dlg:set_parent(parent)
 	parent:hide()
 	dlg:show()
