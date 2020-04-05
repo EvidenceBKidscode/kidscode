@@ -181,6 +181,7 @@ bool MyEventReceiver::OnEvent(const SEvent &event)
 				std::string("Irrlicht: ") + event.LogEvent.Text);
 		return true;
 	}
+
 	/* always return false in order to continue processing events */
 	return false;
 }

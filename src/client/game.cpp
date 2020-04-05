@@ -1080,6 +1080,10 @@ bool Game::startup(bool *kill,
 	driver = device->getVideoDriver();
 	smgr = RenderingEngine::get_scene_manager();
 
+	// Shut the Irrlicht logger off 
+	ILogger *logger = device->getLogger();
+	logger->setLogLevel(ELL_NONE);
+
 	RenderingEngine::get_scene_manager()->getParameters()->
 		setAttribute(scene::OBJ_LOADER_IGNORE_MATERIAL_FILES, true);
 
