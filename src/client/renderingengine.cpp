@@ -48,11 +48,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/Xatom.h>
-#endif
 
-#ifdef _WIN32
-#include <windows.h>
-#include <winuser.h>
 #endif
 
 #if ENABLE_GLES
@@ -372,28 +368,6 @@ void RenderingEngine::setupTopLevelXorgWindow(const std::string &name)
 #endif
 }
 
-#ifdef _WIN32
-static bool getWindowHandle(irr::video::IVideoDriver *driver, HWND &hWnd)
-{
-	const video::SExposedVideoData exposedData = driver->getExposedVideoData();
-
-	switch (driver->getDriverType()) {
-	case video::EDT_DIRECT3D8:
-		hWnd = reinterpret_cast<HWND>(exposedData.D3D8.HWnd);
-		break;
-	case video::EDT_DIRECT3D9:
-		hWnd = reinterpret_cast<HWND>(exposedData.D3D9.HWnd);
-		break;
-	case video::EDT_OPENGL:
-		hWnd = reinterpret_cast<HWND>(exposedData.OpenGLWin32.HWnd);
-		break;
-	default:
-		return false;
-	}
-
-	return true;
-}
-#endif
 
 bool RenderingEngine::setWindowIcon()
 {
@@ -411,9 +385,22 @@ bool RenderingEngine::setWindowIcon()
 							       "-xorg-icon-128.png");
 #endif
 #elif defined(_WIN32)
+	const video::SExposedVideoData exposedData = driver->getExposedVideoData();
 	HWND hWnd; // Window handle
-	if (!getWindowHandle(driver, hWnd))
+
+	switch (driver->getDriverType()) {
+	case video::EDT_DIRECT3D8:
+		hWnd = reinterpret_cast<HWND>(exposedData.D3D8.HWnd);
+		break;
+	case video::EDT_DIRECT3D9:
+		hWnd = reinterpret_cast<HWND>(exposedData.D3D9.HWnd);
+		break;
+	case video::EDT_OPENGL:
+		hWnd = reinterpret_cast<HWND>(exposedData.OpenGLWin32.HWnd);
+		break;
+	default:
 		return false;
+	}
 
 	// Load the ICON from resource file
 	const HICON hicon = LoadIcon(GetModuleHandle(NULL),
@@ -716,7 +703,7 @@ const char *RenderingEngine::getVideoDriverFriendlyName(irr::video::E_DRIVER_TYP
 }
 
 #ifndef __ANDROID__
-#if defined(XORG_USED)
+#ifdef XORG_USED
 
 static float calcDisplayDensity()
 {
@@ -751,42 +738,12 @@ float RenderingEngine::getDisplayDensity()
 	return cached_display_density;
 }
 
-#elif defined(_WIN32)
-
-
-static float calcDisplayDensity(irr::video::IVideoDriver *driver)
-{
-	HWND hWnd;
-	if (getWindowHandle(driver, hWnd)) {
-		HDC hdc = GetDC(hWnd);
-		float dpi = GetDeviceCaps(hdc, LOGPIXELSX);
-		ReleaseDC(hWnd, hdc);
-		return dpi / 96.0f;
-	}
-
-	/* return manually specified dpi */
-	return g_settings->getFloat("screen_dpi") / 96.0f;
-}
-
-float RenderingEngine::getDisplayDensity()
-{
-	static bool cached = false;
-	static float display_density;
-	if (!cached) {
-		display_density = calcDisplayDensity(get_video_driver());
-		cached = true;
-	}
-	return display_density;
-}
-
-#else
-
+#else  // XORG_USED
 float RenderingEngine::getDisplayDensity()
 {
 	return g_settings->getFloat("screen_dpi") / 96.0;
 }
-
-#endif
+#endif // XORG_USED
 
 v2u32 RenderingEngine::getDisplaySize()
 {
