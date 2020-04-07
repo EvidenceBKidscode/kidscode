@@ -110,10 +110,5 @@ with this program; if not, write to the Free Software Foundation, Inc.,
     GUI related things
 */
 
-#if defined(_WIN32) || defined(_WIN64)
-	#define TTF_DEFAULT_FONT_SIZE (14)
-#else
-	#define TTF_DEFAULT_FONT_SIZE (16)
-#endif
-
+#define TTF_DEFAULT_FONT_SIZE (16)
 #define DEFAULT_FONT_SIZE (10)
