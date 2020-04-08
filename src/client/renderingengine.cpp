@@ -109,8 +109,8 @@ RenderingEngine::RenderingEngine(IEventReceiver *receiver)
 
 	// Resolution selection
 	bool fullscreen = g_settings->getBool("fullscreen");
-	u16 screen_w = g_settings->getU16("screen_w");
-	u16 screen_h = g_settings->getU16("screen_h");
+	//u16 screen_w = g_settings->getU16("screen_w"); // KIDSCODE - Maximize window
+	//u16 screen_h = g_settings->getU16("screen_h"); // KIDSCODE - Maximize window
 
 	// bpp, fsaa, vsync
 	bool vsync = g_settings->getBool("vsync");
@@ -141,7 +141,8 @@ RenderingEngine::RenderingEngine(IEventReceiver *receiver)
 
 	SIrrlichtCreationParameters params = SIrrlichtCreationParameters();
 	params.DriverType = driverType;
-	params.WindowSize = core::dimension2d<u32>(screen_w, screen_h);
+	params.WindowSize = RenderingEngine::getDisplaySize(); // KIDSCODE - Maximize window
+//	params.WindowSize = core::dimension2d<u32>(screen_w, screen_h);
 	params.Bits = bits;
 	params.AntiAlias = fsaa;
 	params.Fullscreen = fullscreen;
@@ -164,12 +165,6 @@ RenderingEngine::RenderingEngine(IEventReceiver *receiver)
 	params.OGLES2ShaderPath = (porting::path_share + DIR_DELIM + rel_path + DIR_DELIM).c_str();
 #endif
 
-	irr::IrrlichtDevice *device = createDeviceEx(params);
-
-	auto desktop_resolution = device->getVideoModeList()->getDesktopResolution();
-	device->drop();
-
-	params.WindowSize = core::dimension2d<u32>(desktop_resolution.Width, desktop_resolution.Height);
 	m_device = createDeviceEx(params);
 
 	driver = m_device->getVideoDriver();
