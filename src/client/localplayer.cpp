@@ -498,6 +498,7 @@ void LocalPlayer::applyControl(float dtime, Environment *env)
 
 	// Whether superspeed mode is used or not
 	bool superspeed = false;
+	bool megaspeed  = false;
 
 	if (always_fly_fast && free_move && fast_move)
 		superspeed = true;
@@ -535,7 +536,9 @@ void LocalPlayer::applyControl(float dtime, Environment *env)
 		if (control.aux1) {
 			if (!is_climbing) {
 				// aux1 is "Turbo button"
-				if (fast_move)
+				if (free_move && fast_move)
+					megaspeed = true;
+				else if (fast_move)
 					superspeed = true;
 			}
 		}
@@ -627,7 +630,9 @@ void LocalPlayer::applyControl(float dtime, Environment *env)
 	}
 
 	// The speed of the player (Y is ignored)
-	if (superspeed || (is_climbing && fast_climb) ||
+	if (megaspeed)
+		speedH = speedH.normalize() * 10 * movement_speed_walk;
+	else if (superspeed || (is_climbing && fast_climb) ||
 			((in_liquid || in_liquid_stable) && fast_climb))
 		speedH = speedH.normalize() * movement_speed_fast;
 	else if (control.sneak && !free_move && !in_liquid && !in_liquid_stable)
