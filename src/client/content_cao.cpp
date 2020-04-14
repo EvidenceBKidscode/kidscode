@@ -915,7 +915,12 @@ void GenericCAO::setNodeLight(u8 light)
 {
 	video::SColor color(255, light, light, light);
 
-	if (m_enable_shaders) {
+	if (m_prop.visual == "wielditem" || m_prop.visual == "item") {
+		// Since these types of visuals are using their own shader
+		// they should be handled separately
+		if (m_wield_meshnode)
+			m_wield_meshnode->setColor(color);
+	} else if (m_enable_shaders) {
 		scene::ISceneNode *node = getSceneNode();
 
 		if (node == nullptr)
@@ -939,8 +944,6 @@ void GenericCAO::setNodeLight(u8 light)
 			setMeshColor(m_meshnode->getMesh(), color);
 		} else if (m_animated_meshnode) {
 			setAnimatedMeshColor(m_animated_meshnode, color);
-		} else if (m_wield_meshnode) {
-			m_wield_meshnode->setColor(color);
 		} else if (m_spritenode) {
 			m_spritenode->setColor(color);
 		}

@@ -1080,7 +1080,7 @@ bool Game::startup(bool *kill,
 	driver = device->getVideoDriver();
 	smgr = RenderingEngine::get_scene_manager();
 
-	// Shut the Irrlicht logger off 
+	// Shut the Irrlicht logger off
 	ILogger *logger = device->getLogger();
 	logger->setLogLevel(ELL_NONE);
 

@@ -723,8 +723,9 @@ std::wstring translate_string(const std::wstring &s) {
 	return res;
 }
 
+// >> KIDSCODE
 void fix_accented_characters(std::wstring &s,
-	std::vector<irr::video::SColor> *colors) { // :PATCH:
+	std::vector<irr::video::SColor> *colors) {
 	int l = s.size();
 	int nl = 0;
 	for (int i = 0; i < l; ++i, ++nl) {
@@ -784,8 +785,9 @@ void fix_accented_characters(std::wstring &s,
 		colors->resize(nl);
 }
 
-std::wstring fix_string(const std::wstring &s) { // :PATCH:
+std::wstring fix_string(const std::wstring &s) {
 	std::wstring res(s);
 	fix_accented_characters(res, 0);
 	return res;
 }
+// << KIDSCODE

@@ -810,10 +810,12 @@ std::vector<std::basic_string<T> > split(const std::basic_string<T> &s, T delim)
 
 std::wstring translate_string(const std::wstring &s); // :PATCH:
 
+// >> KIDSCODE
 void fix_accented_characters(std::wstring &s,
-	std::vector<irr::video::SColor> *colors); // :PATCH:
+	std::vector<irr::video::SColor> *colors);
 
 std::wstring fix_string(const std::wstring &s);
+// << KIDSCODE
 
 inline std::wstring unescape_translate(const std::wstring &s) {
 	return unescape_enriched(translate_string(s));
