@@ -700,3 +700,18 @@ function core.privs_to_string(privs, delim)
 	end
 	return table.concat(list, delim)
 end
+
+--------------------------------------------------------------------------------
+-- >> KIDSCODE (removed in upstream)
+if INIT ~= "client" then
+	function file_exists(filename)
+		local f = io.open(filename, "r")
+		if f == nil then
+			return false
+		else
+			f:close()
+			return true
+		end
+	end
+end
+-- << KIDSCODE
