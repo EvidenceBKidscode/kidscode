@@ -3627,11 +3627,10 @@ void GUIFormSpecMenu::drawMenu()
 	gui::IGUIElement::draw();
 
 
-// TODO: Verify this is still needed (due to update-5.2)
-	// >> KIDSCODE - Make backgrounds able to react
-//	for (gui::IGUIElement *e : m_backgrounds) {
-//		e->setVisible(true);
-//	}
+	// >> KIDSCODE - Make backgrounds able to react (needed for image tabs)
+	for (gui::IGUIElement *e : m_backgrounds) {
+		e->setVisible(true);
+	}
 	// << KIDSCODE
 
 	for (gui::IGUIElement *e : m_clickthrough_elements)
