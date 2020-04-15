@@ -1607,7 +1607,7 @@ bool Game::connectToServer(const std::string &playername,
 				if (registration_confirmation_shown) {
 					// Keep drawing the GUI
 					RenderingEngine::draw_menu_scene(guienv, dtime, true);
-				} else {
+				} else if (!password.empty()) {
 					registration_confirmation_shown = true;
 					(new GUIConfirmRegistration(guienv, guienv->getRootGUIElement(), -1,
 						   &g_menumgr, client, playername, password, connection_aborted))->drop();
