@@ -1084,6 +1084,15 @@ static std::string unescape_string(const std::string &str, const char esc = '\\'
 	return out;
 }
 
+int percent_or_absolute(std::string str, int total) {
+	if (str.back() == '%') {
+		str.pop_back();
+		return stof(str) * total * 0.01;
+	} else {
+		return stoi(str);
+	}
+}
+
 bool TextureSource::generateImagePart(std::string part_of_name,
 		video::IImage *& baseimg)
 {
@@ -1774,6 +1783,7 @@ bool TextureSource::generateImagePart(std::string part_of_name,
 
 			Strfnd sf(part_of_name);
 			sf.next(":");
+
 			u32 w0 = stoi(sf.next("x"));
 			u32 h0 = stoi(sf.next(":"));
 			u32 x0 = stoi(sf.next(","));
@@ -1794,6 +1804,48 @@ bool TextureSource::generateImagePart(std::string part_of_name,
 			img->fill(video::SColor(0,0,0,0));
 			v2u32 vdim(tile_dim);
 			core::rect<s32> rect(v2s32(x0 * vdim.X, y0 * vdim.Y), tile_dim);
+			baseimg->copyToWithAlpha(img, v2s32(0), rect,
+					video::SColor(255,255,255,255), NULL);
+
+			// Replace baseimg
+			baseimg->drop();
+			baseimg = img;
+		}
+
+		/*
+			[crop:WxH:X,Y
+		*/
+		else if (part_of_name.substr(0,6) == "[crop:") {
+			if (baseimg == NULL) {
+				errorstream << "generateImagePart(): baseimg != NULL "
+						<< "for part_of_name=\"" << part_of_name
+						<< "\", cancelling." << std::endl;
+				return false;
+			}
+
+			core::dimension2d<u32> img_dim = baseimg->getDimension();
+
+			Strfnd sf(part_of_name);
+			sf.next(":");
+
+			u32 w0 = percent_or_absolute(sf.next("x"), img_dim.Width);
+			u32 h0 = percent_or_absolute(sf.next(":"), img_dim.Height);
+			s32 x0 = percent_or_absolute(sf.next(","), img_dim.Width);
+			s32 y0 = percent_or_absolute(sf.next(":"), img_dim.Height);
+
+			core::dimension2d<u32> result_dim(v2u32(w0, h0));
+
+			video::IImage *img = driver->createImage(
+				video::ECF_A8R8G8B8, result_dim);
+				if (!img) {
+					errorstream << "generateImagePart(): Could not create image "
+					<< "for part_of_name=\"" << part_of_name
+					<< "\", cancelling." << std::endl;
+					return false;
+				}
+			img->fill(video::SColor(0,0,0,0));
+
+			core::rect<s32> rect(v2s32(x0, y0), img_dim);
 			baseimg->copyToWithAlpha(img, v2s32(0), rect,
 					video::SColor(255,255,255,255), NULL);
 
