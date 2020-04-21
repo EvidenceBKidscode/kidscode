@@ -1345,7 +1345,7 @@
 
 #    If enabled, disable cheat prevention in multiplayer.
 #    type: bool
-# disable_anticheat = false
+# disable_anticheat = true
 
 #    If enabled, actions are recorded for rollback.
 #    This option is only read when server starts.

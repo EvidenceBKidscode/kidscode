@@ -1134,7 +1134,7 @@ static_spawnpoint (Static spawnpoint) string
 disallow_empty_password (Disallow empty passwords) bool false
 
 #    If enabled, disable cheat prevention in multiplayer.
-disable_anticheat (Disable anticheat) bool false
+disable_anticheat (Disable anticheat) bool true
 
 #    If enabled, actions are recorded for rollback.
 #    This option is only read when server starts.
