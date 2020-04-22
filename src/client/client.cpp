@@ -715,7 +715,10 @@ bool Client::loadMedia(const std::string &data, const std::string &filename)
 	if (!name.empty()) {
 		verbosestream << "Client: Loading translation: "
 				<< "\"" << filename << "\"" << std::endl;
-		g_translations->loadTranslation(data);
+
+
+		// Using unique lang_code "" for client
+		(*g_all_translations)[""].loadTranslation(data);
 		return true;
 	}
 
