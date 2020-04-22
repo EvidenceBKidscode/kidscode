@@ -2869,7 +2869,7 @@ void GUIFormSpecMenu::parseElement(parserData* data, const std::string &element)
 
 	// ugly workaround to keep compatibility
 	if (parts.size() > 2) {
-		if (trim(parts[0]) == "image") {
+		if (trim(parts[0]) == "image" || trim(parts[0]) == "image_button") {
 			for (unsigned int i=2;i< parts.size(); i++) {
 				parts[1] += "[" + parts[i];
 			}
