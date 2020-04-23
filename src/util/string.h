@@ -808,7 +808,8 @@ std::vector<std::basic_string<T> > split(const std::basic_string<T> &s, T delim)
 	return tokens;
 }
 
-std::wstring translate_string(const std::wstring &s); // :PATCH:
+std::wstring translate_string(const std::wstring &s, const std::string &lang_code);
+std::wstring translate_string(const std::wstring &s);
 
 // >> KIDSCODE
 void fix_accented_characters(std::wstring &s,

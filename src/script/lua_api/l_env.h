@@ -211,6 +211,9 @@ private:
 	// Enable or disable liquid transformation
 	static int l_enable_liquids_transform(lua_State *L);
 
+	// Get a translation server side
+	static int l_get_lang_translation(lua_State * L);
+
 public:
 	static void Initialize(lua_State *L, int top);
 	static void InitializeClient(lua_State *L, int top);

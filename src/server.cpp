@@ -66,6 +66,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "chat_interface.h"
 #include "remoteplayer.h"
 #include "network/upnpserver.h"
+#include "translation.h"
 
 // >> KIDSCODE : Limit file size to 15Mb
 // String size (data size) is limited to 64Mb
@@ -3976,6 +3977,23 @@ void Server::broadcastModChannelMessage(const std::string &channel,
 
 	if (from_peer != PEER_ID_SERVER) {
 		m_script->on_modchannel_message(channel, sender, message);
+	}
+}
+
+void Server::loadTranslationLanguage(const std::string &lang_code)
+{
+	if (g_all_translations->count(lang_code))
+		return; // Already loaded
+
+	std::string suffix = "." + lang_code + ".tr";
+	for (const auto &i : m_media) {
+		if (str_ends_with(i.first, suffix)) {
+			std::ifstream t(i.second.path);
+			std::string data((std::istreambuf_iterator<char>(t)),
+				std::istreambuf_iterator<char>());
+
+			(*g_all_translations)[lang_code].loadTranslation(data);
+		}
 	}
 }
 

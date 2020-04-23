@@ -368,6 +368,9 @@ public:
 	bool sendModChannelMessage(const std::string &channel, const std::string &message);
 	ModChannel *getModChannel(const std::string &channel);
 
+	// Load translations for a language
+	void loadTranslationLanguage(const std::string &lang_code);
+
 	// Send block to specific player only
 	bool SendBlock(session_t peer_id, const v3s16 &blockpos);
 
