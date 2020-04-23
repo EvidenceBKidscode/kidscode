@@ -3835,6 +3835,9 @@ PlayerSAO* Server::emergePlayer(const char *name, session_t peer_id, u16 proto_v
 	playersao->finalize(player, getPlayerEffectivePrivs(player->getName()));
 	player->protocol_version = proto_version;
 
+	// Set player lang_code
+	player->m_lang_code = getClient(peer_id, CS_Invalid)->m_lang_code;
+
 	/* Run scripts */
 	if (newplayer) {
 		m_script->on_newplayer(playersao);
