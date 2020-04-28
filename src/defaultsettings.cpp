@@ -74,7 +74,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("keymap_right", "KEY_KEY_D");
 	settings->setDefault("keymap_jump", "KEY_SPACE");
 	settings->setDefault("keymap_sneak", "KEY_LSHIFT");
-	settings->setDefault("keymap_drop", "KEY_KEY_G"); // KIDSCODE Changed
+	settings->setDefault("keymap_drop", ""); // KIDSCODE Changed
 	settings->setDefault("keymap_zoom", "KEY_KEY_X"); // KIDSCODE Changed
 	settings->setDefault("keymap_inventory", "KEY_KEY_I");
 	settings->setDefault("keymap_special1", "KEY_KEY_E");
