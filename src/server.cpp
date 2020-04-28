@@ -1294,7 +1294,8 @@ bool Server::getClientInfo(
 		u8*          major,
 		u8*          minor,
 		u8*          patch,
-		std::string* vers_string
+		std::string* vers_string,
+		std::string* lang_code
 	)
 {
 	*state = m_clients.getClientState(peer_id);
@@ -1314,6 +1315,7 @@ bool Server::getClientInfo(
 	*minor = client->getMinor();
 	*patch = client->getPatch();
 	*vers_string = client->getFull();
+	*lang_code = client->getLangCode();
 
 	m_clients.unlock();
 
@@ -3836,9 +3838,6 @@ PlayerSAO* Server::emergePlayer(const char *name, session_t peer_id, u16 proto_v
 	playersao->finalize(player, getPlayerEffectivePrivs(player->getName()));
 	player->protocol_version = proto_version;
 
-	// Set player lang_code
-	player->m_lang_code = getClient(peer_id, CS_Invalid)->m_lang_code;
-
 	/* Run scripts */
 	if (newplayer) {
 		m_script->on_newplayer(playersao);
@@ -3982,7 +3981,7 @@ void Server::broadcastModChannelMessage(const std::string &channel,
 
 void Server::loadTranslationLanguage(const std::string &lang_code)
 {
-	if (g_all_translations->count(lang_code))
+	if (g_server_translations->count(lang_code))
 		return; // Already loaded
 
 	std::string suffix = "." + lang_code + ".tr";
@@ -3990,9 +3989,9 @@ void Server::loadTranslationLanguage(const std::string &lang_code)
 		if (str_ends_with(i.first, suffix)) {
 			std::ifstream t(i.second.path);
 			std::string data((std::istreambuf_iterator<char>(t)),
-				std::istreambuf_iterator<char>());
+			std::istreambuf_iterator<char>());
 
-			(*g_all_translations)[lang_code].loadTranslation(data);
+			(*g_server_translations)[lang_code].loadTranslation(data);
 		}
 	}
 }

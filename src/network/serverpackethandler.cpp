@@ -312,7 +312,7 @@ void Server::handleCommand_Init2(NetworkPacket* pkt)
 	RemoteClient *client = getClient(pkt->getPeerId(), CS_InitDone);
 
 	// Keep client language for server translations
-	client->m_lang_code = lang;
+	client->setLangCode(lang);
 
 	// Send active objects
 	{

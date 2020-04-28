@@ -718,7 +718,7 @@ bool Client::loadMedia(const std::string &data, const std::string &filename)
 
 
 		// Using unique lang_code "" for client
-		(*g_all_translations)[""].loadTranslation(data);
+		g_client_translations->loadTranslation(data);
 		return true;
 	}
 

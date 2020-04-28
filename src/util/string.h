@@ -32,6 +32,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <unordered_map>
 #include <SColor.h>
 
+class Translations;
+
 #define STRINGIFY(x) #x
 #define TOSTRING(x) STRINGIFY(x)
 
@@ -808,7 +810,7 @@ std::vector<std::basic_string<T> > split(const std::basic_string<T> &s, T delim)
 	return tokens;
 }
 
-std::wstring translate_string(const std::wstring &s, const std::string &lang_code);
+std::wstring translate_string(const std::wstring &s, Translations *translations);
 std::wstring translate_string(const std::wstring &s);
 
 // >> KIDSCODE

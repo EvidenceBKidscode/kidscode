@@ -548,10 +548,12 @@ void str_replace(std::string &str, char from, char to)
  */
 
 
-void translate_all(const std::wstring &s, size_t &i, const std::string &lang_code, std::wstring &res);
+void translate_all(const std::wstring &s, size_t &i,
+		Translations *translations, std::wstring &res);
 
-void translate_string(const std::wstring &s, const std::string &lang_code,
-		const std::wstring &textdomain, size_t &i, std::wstring &res) {
+void translate_string(const std::wstring &s, Translations *translations,
+		const std::wstring &textdomain, size_t &i, std::wstring &res)
+{
 	std::wostringstream output;
 	std::vector<std::wstring> args;
 	int arg_number = 1;
@@ -605,7 +607,7 @@ void translate_string(const std::wstring &s, const std::string &lang_code,
 			if (arg_number >= 10) {
 				errorstream << "Ignoring too many arguments to translation" << std::endl;
 				std::wstring arg;
-				translate_all(s, i, lang_code, arg);
+				translate_all(s, i, translations, arg);
 				args.push_back(arg);
 				continue;
 			}
@@ -613,7 +615,7 @@ void translate_string(const std::wstring &s, const std::string &lang_code,
 			output << arg_number;
 			++arg_number;
 			std::wstring arg;
-			translate_all(s, i, lang_code, arg);
+			translate_all(s, i, translations, arg);
 			args.push_back(arg);
 		} else {
 			// This is an escape sequence *inside* the template string to translate itself.
@@ -622,8 +624,13 @@ void translate_string(const std::wstring &s, const std::string &lang_code,
 		}
 	}
 
+	std::wstring toutput;
 	// Translate the template.
-	std::wstring toutput = (*g_all_translations)[lang_code].getTranslation(textdomain, output.str());
+	if (translations != nullptr)
+		toutput = translations->getTranslation(
+				textdomain, output.str());
+	else
+		toutput = output.str();
 
 	// Put back the arguments in the translated template.
 	std::wostringstream result;
@@ -657,7 +664,9 @@ void translate_string(const std::wstring &s, const std::string &lang_code,
 	res = result.str();
 }
 
-void translate_all(const std::wstring &s, size_t &i, const std::string &lang_code, std::wstring &res) {
+void translate_all(const std::wstring &s, size_t &i,
+		Translations *translations, std::wstring &res)
+{
 	std::wostringstream output;
 	while (i < s.length()) {
 		// Not an escape sequence: just add the character.
@@ -706,7 +715,7 @@ void translate_all(const std::wstring &s, size_t &i, const std::string &lang_cod
 			if (parts.size() > 1)
 				textdomain = parts[1];
 			std::wstring translated;
-			translate_string(s, lang_code, textdomain, i, translated);
+			translate_string(s, translations, textdomain, i, translated);
 			output << translated;
 		} else {
 			// Another escape sequence, such as colors. Preserve it.
@@ -717,16 +726,23 @@ void translate_all(const std::wstring &s, size_t &i, const std::string &lang_cod
 	res = output.str();
 }
 
-std::wstring translate_string(const std::wstring &s, const std::string &lang_code) {
+// Translate string server side
+std::wstring translate_string(const std::wstring &s, Translations *translations)
+{
 	size_t i = 0;
 	std::wstring res;
-	translate_all(s, i, lang_code, res);
+	translate_all(s, i, translations, res);
 	return res;
 }
 
-// Translate string for client (using lang_code ="")
-std::wstring translate_string(const std::wstring &s) {
-	return translate_string(s, "");
+// Translate string client side
+std::wstring translate_string(const std::wstring &s)
+{
+#ifdef SERVER
+	return translate_string(s, nullptr);
+#else
+	return translate_string(s, g_client_translations);
+#endif
 }
 
 // >> KIDSCODE

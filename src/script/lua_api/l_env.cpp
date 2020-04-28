@@ -40,6 +40,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "face_position_cache.h"
 #include "remoteplayer.h"
 #include "util/string.h"
+#include "translation.h"
 #ifndef SERVER
 #include "client/client.h"
 #endif
@@ -1438,14 +1439,15 @@ int ModApiEnvMod::l_enable_liquids_transform(lua_State *L)
 	return 0;
 }
 
-// get_lang_translation(string, lang_code)
-int ModApiEnvMod::l_get_lang_translation(lua_State * L)
+// get_translated_string(lang_code, string)
+int ModApiEnvMod::l_get_translated_string(lua_State * L)
 {
 	GET_ENV_PTR;
-	std::string string = luaL_checkstring(L, 1);
-	std::string lang_code = luaL_checkstring(L, 2);
+	std::string lang_code = luaL_checkstring(L, 1);
+	std::string string = luaL_checkstring(L, 2);
 	getServer(L)->loadTranslationLanguage(lang_code);
-	string = wide_to_utf8(translate_string(utf8_to_wide(string), lang_code));
+	string = wide_to_utf8(translate_string(utf8_to_wide(string),
+			&(*g_server_translations)[lang_code]));
 	lua_pushstring(L, string.c_str());
 	return 1;
 }
@@ -1503,7 +1505,7 @@ void ModApiEnvMod::Initialize(lua_State *L, int top)
 	API_FCT(map_restore_backup);
 	API_FCT(map_delete_backup);
 	API_FCT(enable_liquids_transform);
-	API_FCT(get_lang_translation);
+	API_FCT(get_translated_string);
 }
 
 void ModApiEnvMod::InitializeClient(lua_State *L, int top)
