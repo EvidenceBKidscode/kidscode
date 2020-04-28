@@ -90,6 +90,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("keymap_noclip", "KEY_KEY_H");
 	settings->setDefault("keymap_hotbar_next", "KEY_KEY_N");
 	settings->setDefault("keymap_hotbar_previous", "KEY_KEY_B");
+	settings->setDefault("keymap_hotbar_swap", "KEY_KEY_A"); // KIDSCODE
 	settings->setDefault("keymap_mute", "KEY_KEY_M");
 	settings->setDefault("keymap_increase_volume", "");
 	settings->setDefault("keymap_decrease_volume", "");

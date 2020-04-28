@@ -53,6 +53,7 @@ void KeyCache::populate()
 	key[KeyType::NOCLIP] = getKeySetting("keymap_noclip");
 	key[KeyType::HOTBAR_PREV] = getKeySetting("keymap_hotbar_previous");
 	key[KeyType::HOTBAR_NEXT] = getKeySetting("keymap_hotbar_next");
+	key[KeyType::HOTBAR_SWAP] = getKeySetting("keymap_hotbar_swap"); // KIDSCODE
 	key[KeyType::MUTE] = getKeySetting("keymap_mute");
 	key[KeyType::INC_VOLUME] = getKeySetting("keymap_increase_volume");
 	key[KeyType::DEC_VOLUME] = getKeySetting("keymap_decrease_volume");

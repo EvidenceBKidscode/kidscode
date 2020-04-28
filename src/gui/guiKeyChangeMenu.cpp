@@ -61,6 +61,7 @@ enum
 	GUI_ID_KEY_INVENTORY_BUTTON,
 	GUI_ID_KEY_HOTBAR_PREV_BUTTON,
 	GUI_ID_KEY_HOTBAR_NEXT_BUTTON,
+	GUI_ID_KEY_HOTBAR_SWAP_BUTTON, // KIDSCODE
 	GUI_ID_KEY_MUTE_BUTTON,
 	GUI_ID_KEY_DEC_VOLUME_BUTTON,
 	GUI_ID_KEY_INC_VOLUME_BUTTON,
@@ -460,6 +461,7 @@ void GUIKeyChangeMenu::init_keys()
 	this->add_key(GUI_ID_KEY_INVENTORY_BUTTON, wgettext("Inventory"),        "keymap_inventory",          false);
 	this->add_key(GUI_ID_KEY_HOTBAR_PREV_BUTTON,wgettext("Prev. item"),      "keymap_hotbar_previous",    true);
 	this->add_key(GUI_ID_KEY_HOTBAR_NEXT_BUTTON,wgettext("Next item"),       "keymap_hotbar_next",        true);
+	this->add_key(GUI_ID_KEY_HOTBAR_SWAP_BUTTON,wgettext("Swap item"),       "keymap_hotbar_swap",        true); // KIDSCODE
 	this->add_key(GUI_ID_KEY_ZOOM_BUTTON,      wgettext("Zoom"),             "keymap_zoom",               false);
 	this->add_key(GUI_ID_KEY_CAMERA_BUTTON,    wgettext("Change camera"),    "keymap_camera_mode",        true);
 	this->add_key(GUI_ID_KEY_CINEMATIC_BUTTON, wgettext("Toggle Cinematic"), "keymap_cinematic",          true); // KIDSCODE

@@ -644,6 +644,7 @@ struct FpsControl {
 struct GameRunData {
 	u16 dig_index;
 	u16 new_playeritem;
+	u16 last_playeritem; // KIDSCODE - Hotbar swap key
 	PointedThing pointed_old;
 	bool digging;
 	bool ldown_for_dig;
@@ -747,7 +748,8 @@ protected:
 	// Input related
 	void processUserInput(f32 dtime);
 	void processKeyInput();
-	void processItemSelection(u16 *new_playeritem);
+	void processItemSelection(u16 *new_playeritem,
+		u16 last_playeritem); // KIDSCODE - Hotbar swap key
 
 	void dropSelectedItem(bool single_item = false);
 	void openInventory();
@@ -1090,6 +1092,7 @@ bool Game::startup(bool *kill,
 	// Reinit runData
 	runData = GameRunData();
 	runData.time_from_last_punch = 10.0;
+	runData.last_playeritem = 0; // KIDSCODE - Hotbar swap key
 
 	m_game_ui->initFlags();
 
@@ -1935,7 +1938,8 @@ void Game::processUserInput(f32 dtime)
 		runData.jump_timer += dtime;
 
 	processKeyInput();
-	processItemSelection(&runData.new_playeritem);
+	processItemSelection(&runData.new_playeritem,
+		runData.last_playeritem); // KIDSCODE - Hotbar swap key
 }
 
 
@@ -2047,7 +2051,8 @@ void Game::processKeyInput()
 	}
 }
 
-void Game::processItemSelection(u16 *new_playeritem)
+void Game::processItemSelection(u16 *new_playeritem,
+	u16 last_playeritem)  // KIDSCODE - Hotbar swap key
 {
 	LocalPlayer *player = client->getEnv().getLocalPlayer();
 
@@ -2086,6 +2091,12 @@ void Game::processItemSelection(u16 *new_playeritem)
 			break;
 		}
 	}
+
+	// >> KIDSCODE - Hotbar swap key
+	if (wasKeyDown(KeyType::HOTBAR_SWAP)) {
+		*new_playeritem = last_playeritem;
+	}
+	// << KIDSCODE - Hotbar swap key
 }
 
 
@@ -3907,8 +3918,10 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 		Inventory
 	*/
 
-	if (player->getWieldIndex() != runData.new_playeritem)
+	if (player->getWieldIndex() != runData.new_playeritem) {
+		runData.last_playeritem = player->getWieldIndex(); 	// KIDSCODE - Hotbar swap key
 		client->setPlayerItem(runData.new_playeritem);
+	}
 
 	if (client->updateWieldedItem()) {
 		// Update wielded tool
