@@ -2178,7 +2178,7 @@ void Game::toggleFreeMove()
 
 	if (free_move) {
 		if (client->checkPrivilege("fly")) {
-			m_game_ui->showTranslatedStatusText("Fly mode enabled");
+			m_game_ui->showTranslatedStatusText("Fly mode enabled. SPACE key to go up. Left SHIFT to go down. E key to accelerate.");
 		} else {
 			m_game_ui->showTranslatedStatusText("Fly mode enabled (note: no 'fly' privilege)");
 		}
@@ -2238,7 +2238,7 @@ void Game::toggleNoClip()
 
 	if (noclip) {
 		if (client->checkPrivilege("noclip")) {
-			m_game_ui->showTranslatedStatusText("Noclip mode enabled");
+			m_game_ui->showTranslatedStatusText("Noclip mode enabled. To go through the obstacles, fly into the map.");
 		} else {
 			m_game_ui->showTranslatedStatusText("Noclip mode enabled (note: no 'noclip' privilege)");
 		}

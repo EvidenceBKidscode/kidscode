@@ -1085,8 +1085,8 @@ msgid "Fly mode disabled"
 msgstr "Mode vol désactivé"
 
 #: src/client/game.cpp
-msgid "Fly mode enabled"
-msgstr "Mode vol activé"
+msgid "Fly mode enabled. SPACE key to go up. Left SHIFT to go down. E key to accelerate."
+msgstr "Mode vol activé. Touche ESPACE pour monter. SHIFT gauche pour descendre. Touche E pour accélérer."
 
 #: src/client/game.cpp
 msgid "Fly mode enabled (note: no 'fly' privilege)"
@@ -1162,15 +1162,15 @@ msgstr "Mini-carte en mode surface, zoom x4"
 
 #: src/client/game.cpp
 msgid "Noclip mode disabled"
-msgstr "Collisions activées"
+msgstr "Mode fantôme désactivé"
 
 #: src/client/game.cpp
-msgid "Noclip mode enabled"
-msgstr "Collisions désactivées"
+msgid "Noclip mode enabled. To go through the obstacles, fly into the map."
+msgstr "Mode fantôme activé. Pour passer à travers les obstacles, commencez par voler sur la carte."
 
 #: src/client/game.cpp
 msgid "Noclip mode enabled (note: no 'noclip' privilege)"
-msgstr "Collisions activées (note: pas de privilège 'noclip')"
+msgstr "Mode fantôme activé (note: pas de privilège 'noclip')"
 
 #: src/client/game.cpp
 msgid "Node definitions..."
