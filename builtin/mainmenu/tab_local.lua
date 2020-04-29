@@ -69,6 +69,7 @@ local function get_formspec(tabview, name, tabdata)
 
 	if map and mapmgr.map_is_map(map) then
 		retval = retval .. "button[3.5,4;2.3,0.6;play;" .. fgettext("Jouer") .. ";#0000ff]"
+		retval = retval .. "button[3.5,4.7;2.3,0.6;mapserver;" .. fgettext("Mapserver") .. ";#0000ff]"
 	end
 
 
@@ -166,6 +167,10 @@ local function main_button_handler(this, fields, name, tabdata)
 	if fields.install or (world_doubleclick or fields.key_enter) and mapmgr.can_install_map(map) then
 		mapmgr.install_map_from_web(this, map)
 		return true
+	end
+
+	if fields.mapserver and mapmgr.map_is_map(map) then
+		core.mapserver_start(map.path)
 	end
 
 	if fields.play or (world_doubleclick or fields.key_enter) and mapmgr.map_is_map(map) then

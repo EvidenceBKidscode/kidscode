@@ -22,6 +22,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "cpp_api/s_internal.h"
 #include "lua_api/l_base.h"
 #include "lua_api/l_mainmenu.h"
+#include "lua_api/l_mapserver.h" // KIDSCODE - Mapserver integration
 #include "lua_api/l_sound.h"
 #include "lua_api/l_util.h"
 #include "lua_api/l_settings.h"
@@ -67,10 +68,12 @@ void MainMenuScripting::initializeModApi(lua_State *L, int top)
 	ModApiMainMenu::Initialize(L, top);
 	ModApiUtil::Initialize(L, top);
 	ModApiSound::Initialize(L, top);
+	ModApiMapserver::Initialize(L, top); // KIDSCODE - Mapserver integration
 
 	asyncEngine.registerStateInitializer(registerLuaClasses);
 	asyncEngine.registerStateInitializer(ModApiMainMenu::InitializeAsync);
 	asyncEngine.registerStateInitializer(ModApiUtil::InitializeAsync);
+	asyncEngine.registerStateInitializer(ModApiMapserver::InitializeAsync); // KIDSCODE - Mapserver integration
 
 	// Initialize async environment
 	//TODO possibly make number of async threads configurable
@@ -87,6 +90,7 @@ void MainMenuScripting::registerLuaClasses(lua_State *L, int top)
 void MainMenuScripting::step()
 {
 	asyncEngine.step(getStack());
+	ModApiMapserver::Step(getStack()); // KIDSCODE - Mapserver integration
 }
 
 /******************************************************************************/

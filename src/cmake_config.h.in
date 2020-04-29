@@ -38,3 +38,5 @@
 #cmakedefine01 ENCRYPT_MODS
 // KIDSCODE - Local network server announcement
 #cmakedefine01 USE_UPNP
+// KIDSCODE - Mapserver integration
+#cmakedefine01 USE_MAPSERVER

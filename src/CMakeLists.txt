@@ -253,6 +253,25 @@ endif(ENABLE_UPNP)
 
 # << KIDSCODE - Local network server announcement
 
+# >> KIDSCODE - Mapserver integration
+OPTION(ENABLE_MAPSERVER "Enable Mapserver integration" FALSE)
+set(USE_MAPSERVER FALSE)
+
+if(ENABLE_MAPSERVER)
+	if(EXISTS "${PROJECT_SOURCE_DIR}/../lib/mapserver/mapserver.h"
+		AND EXISTS "${PROJECT_SOURCE_DIR}/../lib/mapserver/mapserver.a")
+		set(USE_MAPSERVER TRUE)
+		message(STATUS "Mapserver intregration enabled.")
+		include_directories("${PROJECT_SOURCE_DIR}/../lib/mapserver")
+		set(MAPSERVER_LIBRARY "${PROJECT_SOURCE_DIR}/../lib/mapserver/mapserver.a")
+	else()
+		message(STATUS "Mapserver not found!")
+	endif()
+endif(ENABLE_MAPSERVER)
+# << KIDSCODE - Mapserver integration
+
+# mapserver lib if present
+
 if(NOT MSVC)
 	set(USE_GPROF FALSE CACHE BOOL "Use -pg flag for g++")
 endif()
@@ -648,6 +667,10 @@ if(BUILD_CLIENT)
 			target_link_libraries(${PROJECT_NAME} iphlpapi ws2_32)
 		endif()
 	endif()
+	if (USE_MAPSERVER)
+		target_link_libraries(${PROJECT_NAME} ${MAPSERVER_LIBRARY})
+	endif()
+
 endif(BUILD_CLIENT)
 
 
