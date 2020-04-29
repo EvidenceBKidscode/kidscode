@@ -157,7 +157,7 @@ void GameUI::update(const RunStats &stats, Client *client, MapDrawControl *draw_
 	setStaticText(m_guitext_info, m_infotext.c_str());
 	m_guitext_info->setVisible(m_flags.show_hud && g_menumgr.menuCount() == 0);
 
-	static const float statustext_time_max = 1.5f;
+	static const float statustext_time_max = 10.0f;
 
 	if (!m_statustext.empty()) {
 		m_statustext_time += dtime;
