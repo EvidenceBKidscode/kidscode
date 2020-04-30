@@ -18,6 +18,10 @@
 
 dofile(core.get_mainmenu_path() .. DIR_DELIM .. "mapmgr.lua")
 
+core.mapserver_event_handler = function(ev)
+	core.event_handler("Refresh")
+end
+
 local function get_formspec(tabview, name, tabdata)
 	local retval = ""
 	local selected = tonumber(core.settings:get("mainmenu_last_selected_world")) or 0
@@ -69,9 +73,33 @@ local function get_formspec(tabview, name, tabdata)
 
 	if map and mapmgr.map_is_map(map) then
 		retval = retval .. "button[3.5,4;2.3,0.6;play;" .. fgettext("Jouer") .. ";#0000ff]"
-		retval = retval .. "button[3.5,4.7;2.3,0.6;mapserver;" .. fgettext("Mapserver") .. ";#0000ff]"
+		if core.mapserver_status() == "stopped" then
+			retval = retval .. "button[3.5,4.7;2.3,0.6;mapserver_start;" .. fgettext("Démarrer le\ncartographe") .. ";#0000ff]"
+		end
 	end
 
+	local mapserver_status = core.mapserver_status()
+
+	if mapserver_status == "stopping" then
+		retval = retval .. "label[0.25,4.8;" .. fgettext("Cartographe en cours d'arrêt") .. "]"
+	end
+
+	if mapserver_status == "running" then
+		retval = retval .. "button[3.5,4.7;2.3,0.6;mapserver_stop;" .. fgettext("Stopper le\n cartographe") .. "]"
+
+		retval = retval .. "label[0.25,4.8;" .. fgettext("Cartographe démarré") .. "]"
+
+		local status, progress = core.mapserver_map_status()
+
+		if status == "ready" then
+			retval = retval .. "label[0.25,5.2;" .. fgettext("Carte prête") .. "]"
+		elseif status == "initial" then
+			retval = retval .. "label[0.25,5.2;" .. fgettext("Rendu initial") .. " (".. math.floor(progress*100) .."%)]"
+		elseif status == "incremental" then
+			retval = retval .. "label[0.25,5.2;" .. fgettext("Mise à jour") .. " (".. math.floor(progress*100) .."%)]"
+		end
+
+	end
 
 	if mapmgr.map_is_map(map) then
 		retval = retval ..
@@ -169,8 +197,12 @@ local function main_button_handler(this, fields, name, tabdata)
 		return true
 	end
 
-	if fields.mapserver and mapmgr.map_is_map(map) then
+	if fields.mapserver_start and mapmgr.map_is_map(map) and core.mapserver_status() == "stopped" then
 		core.mapserver_start(map.path)
+	end
+
+	if fields.mapserver_stop  and core.mapserver_status() == "running" then
+		core.mapserver_stop()
 	end
 
 	if fields.play or (world_doubleclick or fields.key_enter) and mapmgr.map_is_map(map) then
