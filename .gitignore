@@ -38,6 +38,7 @@ gtags.files
 /games/*
 !/games/minimal/
 /cache
+/textures/*
 !/textures/base/
 /screenshots
 /sounds
