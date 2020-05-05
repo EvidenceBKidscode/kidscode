@@ -215,7 +215,9 @@ if(ENABLE_REDIS)
 endif(ENABLE_REDIS)
 
 
-find_package(SQLite3 REQUIRED)
+if(NOT WIN32) # KIDSCODE - Mapserver integratioon
+	find_package(SQLite3 REQUIRED)
+endif() # KIDSCODE - Mapserver integratioon
 
 OPTION(ENABLE_SPATIAL "Enable SpatialIndex AreaStore backend" TRUE)
 set(USE_SPATIAL FALSE)
@@ -266,6 +268,11 @@ if(ENABLE_MAPSERVER)
 		set(MAPSERVER_LIBRARY "${PROJECT_SOURCE_DIR}/../lib/mapserver/mapserver.a")
 	else()
 		message(STATUS "Mapserver not found!")
+	endif()
+else()
+	# On windows, Sqlite3 is supplied by mapserver if integrated
+	if (WIN32)
+		find_package(SQLite3 REQUIRED)
 	endif()
 endif(ENABLE_MAPSERVER)
 # << KIDSCODE - Mapserver integration
