@@ -21,7 +21,7 @@ mapmgr = {}
 
 local json_alac_file = "alac.json"
 
-local baseurl = "https://minetest-qualif.ign.fr/rest/public/api/orders/"
+local baseurl = minetest.settings:get("ign_map_api_url") or ""
 
 --------------------------------------------------------------------------------
 -- Maps and map demands management

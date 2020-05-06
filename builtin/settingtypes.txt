@@ -2140,9 +2140,13 @@ emergequeue_limit_generate (Limit of emerge queues to generate) int 64
 num_emerge_threads (Number of emerge threads) int 1
 
 [Online Content Repository]
+# >> KIDSCODE - Connection to GAR and Edutheque via IGN REST API
+ign_map_api_url (IGN map services URL) string https://minetest-qualif.ign.fr/rest/public/api/orders/
+# << KIDSCODE - Connection to GAR and Edutheque via IGN REST API
 
+# >> KIDSCODE - ContentDB disabled
 #    The URL for the content repository
-contentdb_url (ContentDB URL) string https://content.minetest.net
+##contentdb_url (ContentDB URL) string https://content.minetest.net
 
 #    Comma-separated list of flags to hide in the content repository.
 #    "nonfree" can be used to hide packages which do not qualify as 'free software',
@@ -2150,4 +2154,5 @@ contentdb_url (ContentDB URL) string https://content.minetest.net
 #    You can also specify content ratings.
 #    These flags are independent from Minetest versions,
 #    so see a full list at https://content.minetest.net/help/content_flags/
-contentdb_flag_blacklist (ContentDB Flag Blacklist) string nonfree, desktop_default
+##contentdb_flag_blacklist (ContentDB Flag Blacklist) string nonfree, desktop_default
+# << KIDSCODE  - ContentDB disabled
