@@ -1452,7 +1452,7 @@ profiler_print_interval (Engine profiling data print interval) int 0
 
 [Online Content Repository]
 # >> KIDSCODE - Connection to GAR and Edutheque via IGN REST API
-ign_map_api_url (IGN map services URL) string https://minetest-qualif.ign.fr/rest/public/api/orders/
+ign_map_api_url (IGN map services URL) string https://minetestqualif2.siv.cloud/rest/public/api/orders/
 # << KIDSCODE - Connection to GAR and Edutheque via IGN REST API
 
 # >> KIDSCODE - ContentDB disabled
