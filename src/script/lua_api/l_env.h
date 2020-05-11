@@ -214,6 +214,8 @@ private:
 	// Get a string translated server side
 	static int l_get_translated_string(lua_State * L);
 
+	static int l_map_fill(lua_State * L);
+
 public:
 	static void Initialize(lua_State *L, int top);
 	static void InitializeClient(lua_State *L, int top);

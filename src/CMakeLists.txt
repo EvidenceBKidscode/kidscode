@@ -469,6 +469,7 @@ set(common_SRCS
 	map.cpp
 	map_settings_manager.cpp
 	mapblock.cpp
+	mapfiller.cpp
 	mapnode.cpp
 	mapsector.cpp
 	metadata.cpp

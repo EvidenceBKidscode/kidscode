@@ -44,6 +44,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #ifndef SERVER
 #include "client/client.h"
 #endif
+#include "mapfiller.h"
 
 struct EnumString ModApiEnvMod::es_ClearObjectsMode[] =
 {
@@ -1452,6 +1453,55 @@ int ModApiEnvMod::l_get_translated_string(lua_State * L)
 	return 1;
 }
 
+// KIDSCODE - Map fill
+// map_fill(minp, maxp, startpos, old_content, new_content, yfilldir)
+int ModApiEnvMod::l_map_fill(lua_State * L)
+{
+	MAP_LOCK_REQUIRED;
+	GET_ENV_PTR;
+
+	const NodeDefManager *ndef = env->getGameDef()->ndef();
+	content_t cid;
+	std::string name;
+
+	v3s16 minp = read_v3s16(L, 1);
+	v3s16 maxp = read_v3s16(L, 2);
+	v3s16 startpos = read_v3s16(L, 3);
+
+	std::vector<content_t> old_cids;
+
+	if (lua_istable(L, 4)) {
+		lua_pushnil(L);
+		while (lua_next(L, 4) != 0) {
+			// key at index -2 and value at index -1
+			name = luaL_checkstring(L, -1);
+			if (!ndef->getId(name, cid))
+				throw LuaError("\"" + name + "\" is not a registered node!");
+			old_cids.push_back(cid);
+			// removes value, keeps key for next iteration
+			lua_pop(L, 1);
+		}
+	} else {
+		name = luaL_checkstring(L, 4);
+		if (!ndef->getId(name, cid))
+			throw LuaError("\"" + name + "\" is not a registered node!");
+		old_cids.push_back(cid);
+	}
+
+	content_t new_cid;
+	name = luaL_checkstring(L, 5);
+	if (!ndef->getId(name, new_cid))
+		throw LuaError("\"" + name + "\" is not a registered node!");
+
+	int yfilldir = luaL_checkint(L, 6);
+
+	MapFiller filler(getServer(L), minp, maxp);
+	int count = filler.fill(startpos, new_cid, old_cids, yfilldir);
+
+	lua_pushinteger(L, count);
+	return 1;
+}
+
 void ModApiEnvMod::Initialize(lua_State *L, int top)
 {
 	API_FCT(set_node);
@@ -1506,6 +1556,7 @@ void ModApiEnvMod::Initialize(lua_State *L, int top)
 	API_FCT(map_delete_backup);
 	API_FCT(enable_liquids_transform);
 	API_FCT(get_translated_string);
+	API_FCT(map_fill);
 }
 
 void ModApiEnvMod::InitializeClient(lua_State *L, int top)
