@@ -287,12 +287,38 @@ local status_order = { installed = 1, ready = 2, prepare = 3 }
 
 function sort_worlds_by_status(self)
 	table.sort(self.m_processed_list, function(a, b)
-		local sa = status_order[a.status] or 100
-		local sb = status_order[b.status] or 100
-		if sa == sb then
+		local aa = status_order[a.status] or 100
+		local bb = status_order[b.status] or 100
+		if aa == bb then
 			return stripAccents(a.name):upper() < stripAccents(b.name):upper()
 		else
-			return sa < sb
+			return aa < bb
+		end
+	end)
+end
+
+--------------------------------------------------------------------------------
+
+function sort_worlds_by_demand(self)
+	table.sort(self.m_processed_list, function(a, b)
+		local aa = a.alac and a.alac.requested_on or "Z"
+		local bb = b.alac and b.alac.requested_on or "Z"
+		if aa == bb then
+			return stripAccents(a.name):upper() < stripAccents(b.name):upper()
+		else
+			return aa < bb
+		end
+	end)
+end
+
+--------------------------------------------------------------------------------
+
+function sort_worlds_by_origin(self)
+	table.sort(self.m_processed_list, function(a, b)
+		if a.origin == b.origin then
+			return stripAccents(a.name):upper() < stripAccents(b.name):upper()
+		else
+			return a.origin < b.origin
 		end
 	end)
 end

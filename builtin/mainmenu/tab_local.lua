@@ -147,6 +147,13 @@ local function get_formspec(tabview, name, tabdata)
 	return retval
 end
 
+local sort_columns = {
+	[2] = "name",
+	[4] = "demand",
+	[6] = "origin",
+	[8] = "status",
+}
+
 local function main_button_handler(this, fields, name, tabdata)
 	assert(name == "local")
 
@@ -164,6 +171,9 @@ local function main_button_handler(this, fields, name, tabdata)
 				core.settings:set("mainmenu_last_selected_world",
 					menudata.worldlist:get_raw_index(event.row - 1))
 			else
+				if sort_columns[event.column] then
+					menudata.worldlist:set_sortmode(sort_columns[event.column])
+				end
 				core.settings:set("mainmenu_last_selected_world", 0)
 			end
 			return true

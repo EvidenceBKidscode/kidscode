@@ -107,8 +107,8 @@ local function init_globals()
 	else
 		menudata.worldlist = filterlist.create(
 --			core.get_worlds,
---			compare_worlds,
 			mapmgr.preparemaplist,
+--			compare_worlds,
 			mapmgr.compare_map,
 			-- Unique id comparison function
 			function(element, uid)
@@ -121,8 +121,10 @@ local function init_globals()
 			nil
 		)
 
+		menudata.worldlist:add_sort_mechanism("name", sort_worlds_alphabetic)
+		menudata.worldlist:add_sort_mechanism("demand", sort_worlds_by_demand)
+		menudata.worldlist:add_sort_mechanism("origin", sort_worlds_by_origin)
 		menudata.worldlist:add_sort_mechanism("status", sort_worlds_by_status)
-		menudata.worldlist:add_sort_mechanism("alphabetic", sort_worlds_alphabetic)
 		menudata.worldlist:set_sortmode("status")
 
 		if not core.settings:get("menu_current_game") then
