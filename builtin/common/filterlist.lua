@@ -60,6 +60,7 @@ function filterlist.create(raw_fct,compare_fct,uid_match_fct,filter_fct,fetch_pa
 
 	self.m_sortmode = "none"
 	self.m_sort_list = {}
+	self.m_sort_forward = true;
 
 	self.m_processed_list = nil
 	self.m_raw_list = self.m_raw_list_fct(self.m_fetch_param)
@@ -68,6 +69,7 @@ function filterlist.create(raw_fct,compare_fct,uid_match_fct,filter_fct,fetch_pa
 	self.set_filtercriteria = filterlist.set_filtercriteria
 	self.get_filtercriteria = filterlist.get_filtercriteria
 	self.set_sortmode       = filterlist.set_sortmode
+	self.reverse_sort       = filterlist.reverse_sort
 	self.get_list           = filterlist.get_list
 	self.get_raw_list       = filterlist.get_raw_list
 	self.get_raw_element    = filterlist.get_raw_element
@@ -109,7 +111,15 @@ function filterlist.set_sortmode(self,mode)
 	if (mode == self.m_sortmode) then
 		return
 	end
+	self.m_sort_forward = true
 	self.m_sortmode = mode
+	filterlist.process(self)
+end
+
+--------------------------------------------------------------------------------
+
+function filterlist.reverse_sort(self)
+	self.m_sort_forward = not self.m_sort_forward;
 	filterlist.process(self)
 end
 
@@ -271,14 +281,13 @@ function sort_worlds_alphabetic(self)
 	table.sort(self.m_processed_list, function(a, b)
 		--fixes issue #857 (crash due to sorting nil in worldlist)
 		if a == nil or b == nil then
-			if a == nil and b ~= nil then return false end
-			if b == nil and a ~= nil then return true end
-			return false
+			return b == nil and a ~= nil
 		end
-		if a.name:lower() == b.name:lower() then
-			return a.name < b.name
+		if self.m_sort_forward then
+			return stripAccents(a.name):lower() < stripAccents(b.name):lower()
+		else
+			return stripAccents(a.name):lower() > stripAccents(b.name):lower()
 		end
-		return a.name:lower() < b.name:lower()
 	end)
 end
 
@@ -287,12 +296,24 @@ local status_order = { installed = 1, ready = 2, prepare = 3 }
 
 function sort_worlds_by_status(self)
 	table.sort(self.m_processed_list, function(a, b)
+		if a == nil or b == nil then
+			return b == nil and a ~= nil
+		end
+
 		local aa = status_order[a.status] or 100
 		local bb = status_order[b.status] or 100
 		if aa == bb then
-			return stripAccents(a.name):upper() < stripAccents(b.name):upper()
+			if self.m_sort_forward then
+				return stripAccents(a.name):upper() < stripAccents(b.name):upper()
+			else
+				return stripAccents(a.name):upper() > stripAccents(b.name):upper()
+			end
 		else
-			return aa < bb
+			if self.m_sort_forward then
+				return aa < bb
+			else
+				return aa > bb
+			end
 		end
 	end)
 end
@@ -301,12 +322,24 @@ end
 
 function sort_worlds_by_demand(self)
 	table.sort(self.m_processed_list, function(a, b)
+		if a == nil or b == nil then
+			return b == nil and a ~= nil
+		end
+
 		local aa = a.alac and a.alac.requested_on or "Z"
 		local bb = b.alac and b.alac.requested_on or "Z"
 		if aa == bb then
-			return stripAccents(a.name):upper() < stripAccents(b.name):upper()
+			if self.m_sort_forward then
+				return stripAccents(a.name):upper() < stripAccents(b.name):upper()
+			else
+				return stripAccents(a.name):upper() > stripAccents(b.name):upper()
+			end
 		else
-			return aa < bb
+			if self.m_sort_forward then
+				return aa < bb
+			else
+				return aa > bb
+			end
 		end
 	end)
 end
@@ -315,10 +348,22 @@ end
 
 function sort_worlds_by_origin(self)
 	table.sort(self.m_processed_list, function(a, b)
+		if a == nil or b == nil then
+			return b == nil and a ~= nil
+		end
+
 		if a.origin == b.origin then
-			return stripAccents(a.name):upper() < stripAccents(b.name):upper()
+			if self.m_sort_forward then
+				return stripAccents(a.name):upper() < stripAccents(b.name):upper()
+			else
+				return stripAccents(a.name):upper() > stripAccents(b.name):upper()
+			end
 		else
-			return a.origin < b.origin
+			if self.m_sort_forward then
+				return a.origin < b.origin
+			else
+				return a.origin > b.origin
+			end
 		end
 	end)
 end

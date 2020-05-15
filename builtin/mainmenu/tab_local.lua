@@ -171,8 +171,13 @@ local function main_button_handler(this, fields, name, tabdata)
 				core.settings:set("mainmenu_last_selected_world",
 					menudata.worldlist:get_raw_index(event.row - 1))
 			else
-				if sort_columns[event.column] then
-					menudata.worldlist:set_sortmode(sort_columns[event.column])
+				local sort = sort_columns[event.column]
+				if sort then
+					if menudata.worldlist.m_sortmode == sort then
+						menudata.worldlist:reverse_sort()
+					else
+						menudata.worldlist:set_sortmode(sort_columns[event.column])
+					end
 				end
 				core.settings:set("mainmenu_last_selected_world", 0)
 			end
