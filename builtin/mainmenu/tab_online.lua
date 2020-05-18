@@ -15,6 +15,8 @@
 --with this program; if not, write to the Free Software Foundation, Inc.,
 --51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+local ESC = core.formspec_escape
+
 --------------------------------------------------------------------------------
 local function get_formspec(tabview, name, tabdata)
 	-- Update the cached supported proto info,
@@ -32,56 +34,23 @@ local function get_formspec(tabview, name, tabdata)
 	end
 
 	local retval =
-		-- Search
-		--"field[0.15,0.1;5,0.6;te_search;;" .. core.formspec_escape(tabdata.search_for) .. "]" ..
-		--"button[5.3,0.1;1.6,0.6;btn_mp_search;" .. fgettext("Search") .. "]" ..
-		--"image_button[7,0.1;0.6,0.6;" .. core.formspec_escape(defaulttexturedir .. "refresh.png") .. ";btn_mp_refresh;]" ..
+		"hypertext[0.2,0.2;8,1;;<big>Rejoindre une partie multijoueur</big>]" ..
 
-		-- Address / Port
-		"label[7.8,0.3;" .. fgettext("Adresse / Port (obligatoire)") .. "]" ..
-		"field[7.8,0.5;2.9,0.5;te_address;;" ..
-			core.formspec_escape(core.settings:get("address")) .. "]" ..
-		"field[10.8,0.5;1.1,0.5;te_port;;" ..
-			core.formspec_escape(core.settings:get("remote_port")) .. "]" ..
+		"style[btn_mp_connect;border=false;bgimg_hovered=" .. ESC(defaulttexturedir .. "select.png") .. "]" ..
+		"image_button[0.6,6.2;2.5,2.5;" .. ESC(defaulttexturedir .. "img_multi.png") .. ";;]" ..
+		"image_button[0.4,6;2.9,3.3;" .. ESC(defaulttexturedir .. "blank.png") .. ";btn_mp_connect;]" ..
+		"label[0.8,9;Rejoindre la partie]" ..
 
-		-- Name / Password
-		"label[7.8,1.3;" .. fgettext("Pseudonyme (obligatoire)") .. "]" ..
-		"field[7.8,1.5;3,0.5;te_name;;" ..
-			core.formspec_escape(core.settings:get("name")) .. "]" ..
-		"label[7.8,2.3;" .. fgettext("Mot de passe") .. "]" ..
-		"pwdfield[7.8,2.5;3,0.5;te_pwd;]" ..
+		"style[btn_mp_carto;border=false;bgimg_hovered=" .. ESC(defaulttexturedir .. "select.png") .. "]" ..
+		"image_button[4,6.2;2.5,2.5;" .. ESC(defaulttexturedir .. "img_carto.png") .. ";;]" ..
+		"image_button[3.8,6;2.9,3.3;" .. ESC(defaulttexturedir .. "blank.png") .. ";btn_mp_carto;]" ..
+		"label[4.15,9;Cartographie en 2D]" ..
 
-		-- Description Background
-		"box[7.8,3.25;4.1,1.3;#999999]"..
-
-		-- Connect
-		"button[9.88,4.7;2,0.6;btn_mp_connect;" .. fgettext("Connect") .. "]"
-
-	if tabdata.fav_selected and fav_selected then
-		if gamedata.fav then
-			retval = retval .. "button[7.8,4.7;2,0.6;btn_delete_favorite;" ..
-				fgettext("Del. Favorite") .. "]"
-		end
-		if fav_selected.description then
-			retval = retval .. "textarea[7.9,3.3;4.1,1.2;;;" ..
-				core.formspec_escape((gamedata.serverdescription or ""), true) .. "]"
-		end
-	end
+		"label[8,8.9;" .. fgettext("Nom / Pseudonyme :") .. "]" ..
+		"field[10.6,8.65;3.2,0.5;te_name;;" .. ESC(core.settings:get("name")) .. "]"
 
 	--favourites
-	retval = retval .. "tablecolumns[" ..
-			image_column(fgettext("Favorite"), "favorite") .. ";" ..
-			image_column(fgettext("Ping")) .. ",padding=0.25;" ..
-			"color,span=3;" ..
-			"text,align=right;" ..                -- clients
-			"text,align=center,padding=0.25;" ..  -- "/"
-			"text,align=right,padding=0.25;" ..   -- clients_max
-			image_column(fgettext("Creative mode"), "creative") .. ",padding=1;" ..
-			image_column(fgettext("Damage enabled"), "damage") .. ",padding=0.25;" ..
-			image_column(fgettext("PvP enabled"), "pvp") .. ",padding=0.25;" ..
-			"color,span=1;" ..
-			"text,padding=1]" ..
-		"table[0.15,0.15;7.45,3.5;favourites;"
+	retval = retval .. "table[0.2,0.8;13.6,5;favourites;"
 
 	if menudata.search_result then
 		for i = 1, #menudata.search_result do
@@ -359,7 +328,7 @@ end
 --------------------------------------------------------------------------------
 return {
 	name = "online",
-	caption = fgettext("Join Game"),
+	caption = minetest.colorize("#ff0", "    " .. fgettext("Rejoindre partie multijoueur")),
 	cbf_formspec = get_formspec,
 	cbf_button_handler = main_button_handler,
 	on_change = on_change

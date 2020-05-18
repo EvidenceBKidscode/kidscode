@@ -25,8 +25,9 @@ mt_color_dark_green = "#25C191"
 local menupath = core.get_mainmenu_path()
 local basepath = core.get_builtin_path()
 local menustyle = core.settings:get("main_menu_style")
-defaulttexturedir = core.get_texturepath_share() .. DIR_DELIM .. "base" ..
-					DIR_DELIM .. "pack" .. DIR_DELIM
+
+defaulttexturedir = core.get_texturepath_share() .. DIR_DELIM ..
+			"base" .. DIR_DELIM .. "pack" .. DIR_DELIM
 
 dofile(basepath .. "common" .. DIR_DELIM .. "async_event.lua")
 dofile(basepath .. "common" .. DIR_DELIM .. "filterlist.lua")
@@ -35,12 +36,15 @@ dofile(basepath .. "fstk" .. DIR_DELIM .. "dialog.lua")
 dofile(basepath .. "fstk" .. DIR_DELIM .. "tabview.lua")
 dofile(basepath .. "fstk" .. DIR_DELIM .. "tabview_layouts.lua")
 dofile(basepath .. "fstk" .. DIR_DELIM .. "ui.lua")
+
+dofile(menupath .. DIR_DELIM .. "mapmgr.lua")
 dofile(menupath .. DIR_DELIM .. "common.lua")
 dofile(menupath .. DIR_DELIM .. "pkgmgr.lua")
 dofile(menupath .. DIR_DELIM .. "gamemenu.lua")
 
 dofile(menupath .. DIR_DELIM .. "dlg_config_world.lua")
 dofile(menupath .. DIR_DELIM .. "dlg_file_browser.lua")
+dofile(menupath .. DIR_DELIM .. "dlg_select.lua")
 dofile(menupath .. DIR_DELIM .. "dlg_settings_advanced.lua")
 --dofile(menupath .. DIR_DELIM .. "dlg_contentstore.lua")
 dofile(menupath .. DIR_DELIM .. "dlg_change_game.lua")
@@ -53,15 +57,19 @@ if menustyle ~= "simple" then
 end
 
 local tabs = {}
-tabs.settings = dofile(menupath .. DIR_DELIM .. "tab_settings.lua")
 --tabs.content  = dofile(menupath .. DIR_DELIM .. "tab_content.lua")
-tabs.quit     = dofile(menupath .. DIR_DELIM .. "tab_quit.lua")
+tabs.solo = dofile(menupath .. DIR_DELIM .. "tab_solo.lua")
+tabs.multi = dofile(menupath .. DIR_DELIM .. "tab_multi.lua")
+tabs.online = dofile(menupath .. DIR_DELIM .. "tab_online.lua")
+tabs.settings  = dofile(menupath .. DIR_DELIM .. "tab_settings.lua")
+tabs.slideshow = dofile(menupath .. DIR_DELIM .. "tab_slideshow.lua")
+tabs.help      = dofile(menupath .. DIR_DELIM .. "tab_help.lua")
+tabs.quit      = dofile(menupath .. DIR_DELIM .. "tab_quit.lua")
 
 if menustyle == "simple" then
 	tabs.simple_main = dofile(menupath .. DIR_DELIM .. "tab_simple_main.lua")
 else
 	tabs.local_game = dofile(menupath .. DIR_DELIM .. "tab_local.lua")
-	tabs.play_online = dofile(menupath .. DIR_DELIM .. "tab_online.lua")
 end
 
 --------------------------------------------------------------------------------
@@ -80,8 +88,8 @@ local function init_globals()
 	if menustyle == "simple" then
 		local world_list = core.get_worlds()
 		local world_index
-
 		local found_singleplayerworld = false
+
 		for i, world in ipairs(world_list) do
 			if world.name == "singleplayerworld" then
 				found_singleplayerworld = true
@@ -140,24 +148,34 @@ local function init_globals()
 	if menustyle == "simple" then
 		tv_main:add(tabs.simple_main)
 	else
-		tv_main:set_autosave_tab(true)
+		tv_main:set_autosave_tab(false)
 		tv_main:add(tabs.local_game)
-		tv_main:add(tabs.play_online)
 	end
 
+	tv_main:add(tabs.solo)
+	tv_main:add(tabs.multi)
+	tv_main:add(tabs.online)
+
 	--tv_main:add(tabs.content)
+	tv_main:add(tabs.help)
 	tv_main:add(tabs.settings)
 	tv_main:add(tabs.quit)
+	tv_main:add(tabs.slideshow)
 
 	tv_main:set_global_event_handler(main_event_handler)
 	tv_main:set_fixed_size(false)
 
 	if menustyle ~= "simple" then
+		--[[
 		local last_tab = core.settings:get("maintab_LAST")
 		if last_tab and tv_main.current_tab ~= last_tab then
 			tv_main:set_tab(last_tab)
 		end
+		]]
+
+		tv_main:set_tab("slideshow")
 	end
+
 	ui.set_default("maintab")
 	tv_main:show()
 

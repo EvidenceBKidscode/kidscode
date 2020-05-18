@@ -29,7 +29,6 @@ end
 
 --------------------------------------------------------------------------------
 function ui.delete(child)
-
 	if ui.childlist[child.name] == nil then
 		return false
 	end

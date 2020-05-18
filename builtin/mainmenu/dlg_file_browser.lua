@@ -16,7 +16,7 @@
 --51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 
-local PATH = os.getenv("HOME") or os.getenv("HOMEPATH") or core.get_worldpath();
+local PATH = os.getenv("HOME") or os.getenv("HOMEPATH") or core.get_worldpath()
 local tabdata = {show_zip = true}
 
 local function filesize(name)
@@ -31,7 +31,7 @@ end
 local function get_dirs()
 	local dirs
 
-	if PATH == "\\" then -- F*** windows root dir
+	if PATH == "\\" then -- Windows root dir
 		dirs = minetest.get_dir_list(os.getenv("HOMEDRIVE"))
 	else
 		dirs = minetest.get_dir_list(PATH)
@@ -55,9 +55,8 @@ end
 
 local function make_fs()
 	local dirs = get_dirs()
+	local _path, value = "", ""
 
-	local _path = ""
-	local value = ""
 	for dirname in string.gmatch(PATH, "([^" .. DIR_DELIM .. "]+)") do
 		value = value .. DIR_DELIM:gsub("\\", "\\\\") .. (dirname:gsub("_", "_u"):gsub(" ", "_s"))
 		_path = ("%s %s <action name=%s>%s</action>")
@@ -190,5 +189,5 @@ local function fields_handler(this, fields)
 end
 
 function create_file_browser_dlg()
-	return dialog_create("settings_advanced", make_fs, fields_handler)
+	return dialog_create("file_browser", make_fs, fields_handler)
 end

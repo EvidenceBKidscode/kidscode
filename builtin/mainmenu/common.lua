@@ -86,7 +86,7 @@ function order_favorite_list(list)
 end
 
 --------------------------------------------------------------------------------
-function render_serverlist_row(spec, is_favorite)
+function render_serverlist_row(spec)
 	local text = ""
 	if spec.name then
 		text = text .. ESC(spec.name:trim())
@@ -97,73 +97,7 @@ function render_serverlist_row(spec, is_favorite)
 		end
 	end
 
-	local grey_out = not is_server_protocol_compat(spec.proto_min, spec.proto_max)
-
-	local details
-	if is_favorite then
-		details = "1,"
-	else
-		details = "0,"
-	end
-
-	if spec.ping then
-		local ping = spec.ping * 1000
-		if ping <= 50 then
-			details = details .. "2,"
-		elseif ping <= 100 then
-			details = details .. "3,"
-		elseif ping <= 250 then
-			details = details .. "4,"
-		else
-			details = details .. "5,"
-		end
-	else
-		details = details .. "0,"
-	end
-
-	if spec.clients and spec.clients_max then
-		local clients_percent = 100 * spec.clients / spec.clients_max
-
-		-- Choose a color depending on how many clients are connected
-		-- (relatively to clients_max)
-		local clients_color
-		if     grey_out		      then clients_color = '#aaaaaa'
-		elseif spec.clients == 0      then clients_color = ''        -- 0 players: default/white
-		elseif clients_percent <= 60  then clients_color = '#a1e587' -- 0-60%: green
-		elseif clients_percent <= 90  then clients_color = '#ffdc97' -- 60-90%: yellow
-		elseif clients_percent == 100 then clients_color = '#dd5b5b' -- full server: red (darker)
-		else				   clients_color = '#ffba97' -- 90-100%: orange
-		end
-
-		details = details .. clients_color .. ',' ..
-			render_client_count(spec.clients) .. ',,' ..
-			render_client_count(spec.clients_max) .. ','
-
-	elseif grey_out then
-		details = details .. '#aaaaaa,,,,'
-	else
-		details = details .. ',,,,'
-	end
-
-	if spec.creative then
-		details = details .. "1,"
-	else
-		details = details .. "0,"
-	end
-
-	if spec.damage then
-		details = details .. "1,"
-	else
-		details = details .. "0,"
-	end
-
-	if spec.pvp then
-		details = details .. "1,"
-	else
-		details = details .. "0,"
-	end
-
-	return details .. (grey_out and '#aaaaaa,' or ',') .. text
+	return text
 end
 
 --------------------------------------------------------------------------------

@@ -16,6 +16,8 @@
 --51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 
+local ESC = core.formspec_escape
+
 tabview_layouts = {}
 
 tabview_layouts.tabs = {
@@ -39,7 +41,7 @@ tabview_layouts.tabs = {
 
 		formspec = formspec .. ([[
 			style[change_game;noclip=true]
-			button[%f,%f;3,0.8;change_game;%s]
+			button[%f,%f;4,0.8;change_game;%s]
 		]]):format(-0.3, tsize.height + 0.8, fgettext("Change Game"))
 
 		return formspec
@@ -90,16 +92,16 @@ tabview_layouts.vertical = {
 		if view.parent == nil then
 			local tsize = tab and tab.tabsize or {width=view.width, height=view.height}
 			formspec = formspec ..
-					string.format("formspec_version[3]size[%f,%f,%s]bgcolor[#00000000]",tsize.width+3,tsize.height,
-							dump(view.fixed_size))
+					string.format("formspec_version[3]size[%f,%f,%s]bgcolor[#00000000]",
+						tsize.width+6,tsize.height+4, dump(view.fixed_size))
 		end
 		formspec = formspec .. self:get_header(view)
 
 		if tab then
-			formspec = formspec .. "container[3,0]"
+			formspec = formspec .. "container[4,0]"
 
 			local mainbgcolor = view.mainbgcolor or self.mainbgcolor
-			formspec = formspec .. ("box[0,0;%f,%f;%s]"):format(view.width, view.height, mainbgcolor)
+			formspec = formspec .. ("box[0,0;%f,%f;%s]"):format(view.width+3, view.height+4, mainbgcolor)
 			formspec = formspec .. view.tablist[view.last_tab_index].get_formspec(
 				view,
 				view.tablist[view.last_tab_index].name,
@@ -121,37 +123,42 @@ tabview_layouts.vertical = {
 		local tsize = last_tab and last_tab.tabsize or {width=view.width, height=view.height}
 
 		local fs = {
-			("box[%f,%f;%f,%f;%s]"):format(0, 0, 3, tsize.height, mainbgcolor),
-			("box[%f,%f;%f,%f;%s]"):format(0, 0, 3, tsize.height, bgcolor)
+			("box[%f,%f;%f,%f;%s]"):format(0, 0, 4, tsize.height+4, mainbgcolor),
+			("box[%f,%f;%f,%f;%s]"):format(0, 0, 4, tsize.height+4, bgcolor)
 		}
 
 		for i = 1, #view.tablist do
 			local tab = view.tablist[i]
-			local name = "tab_" .. tab.name
-			local y = (i - 1) * 0.8
+			if tab.button_handler then			
+				local name = "tab_" .. tab.name
+				local y = (i - 1) * 0.8
 
-			if i == view.last_tab_index then
-				fs[#fs + 1] = ("box[%f,%f;%f,%f;%s]"):format(0, y, 3, 0.8, selcolor)
+				if i == view.last_tab_index then
+					fs[#fs + 1] = ("box[%f,%f;%f,%f;%s]"):format(0, y, 4, 0.8, selcolor)
+				end
+
+				local sel = ESC(defaulttexturedir .. "mainmenu_selected.png")
+
+				fs[#fs + 1] = "label[0.375,"
+				fs[#fs + 1] = y + 0.4
+				fs[#fs + 1] = ";"
+				fs[#fs + 1] = tab.caption
+				fs[#fs + 1] = "]"
+
+				fs[#fs + 1] = "style["
+				fs[#fs + 1] = name
+				fs[#fs + 1] = ";border=false;bgimg_hovered=" .. sel .. "]"
+
+				fs[#fs + 1] = "button[0,"
+				fs[#fs + 1] = y
+				fs[#fs + 1] = ";4,0.8;"
+				fs[#fs + 1] = name
+				fs[#fs + 1] = ";]"
 			end
-
-			local sel = core.formspec_escape(defaulttexturedir .. "mainmenu_selected.png")
-
-			fs[#fs + 1] = "label[0.375,"
-			fs[#fs + 1] = y + 0.4
-			fs[#fs + 1] = ";"
-			fs[#fs + 1] = tab.caption
-			fs[#fs + 1] = "]"
-
-			fs[#fs + 1] = "style["
-			fs[#fs + 1] = name
-			fs[#fs + 1] = ";border=false;bgimg_hovered=" .. sel .. "]"
-
-			fs[#fs + 1] = "button[0,"
-			fs[#fs + 1] = y
-			fs[#fs + 1] = ";3,0.8;"
-			fs[#fs + 1] = name
-			fs[#fs + 1] = ";]"
 		end
+
+		fs[#fs + 1] = "image[0.2,8.2;3.6,1.1;" ..
+			ESC(defaulttexturedir .. "header_kidscode_ign.png") .. "]"
 
 		return table.concat(fs, "")
 	end,
@@ -190,11 +197,12 @@ tabview_layouts.mainmenu = {
 			local tsize = tab.tabsize or
 					{width=view.width, height=view.height}
 			formspec = formspec ..
-					string.format("size[%f,%f,%s]real_coordinates[true]",tsize.width,tsize.height,
-							dump(view.fixed_size))
+					string.format("size[%f,%f,%s]real_coordinates[true]",
+						tsize.width,tsize.height, dump(view.fixed_size))
 		end
 		formspec = formspec ..
-				"style[main_back;noclip=true;border=false]image_button[-1.25,0;1,1;" .. backtxt .. ";main_back;]" ..
+				"style[main_back;noclip=true;border=false]" ..
+				"image_button[-1.25,0;1,1;" .. backtxt .. ";main_back;]" ..
 				tab.get_formspec(
 						view,
 						view.tablist[view.last_tab_index].name,
@@ -208,7 +216,7 @@ tabview_layouts.mainmenu = {
 	get_main_buttons = function(self, view)
 		local bgcolor  = view.bgcolor or "#ACACAC33"
 
-		local tsize = { width = 3, height = #view.tablist - 0.2}
+		local tsize = {width = 3, height = #view.tablist - 0.2}
 
 		local fs = {
 			("size[%f,%f]"):format(tsize.width, tsize.height),
@@ -224,10 +232,10 @@ tabview_layouts.mainmenu = {
 
 			fs[#fs + 1] = "button[0,"
 			fs[#fs + 1] = tonumber(y)
-			fs[#fs + 1] = ";3,0.8;"
+			fs[#fs + 1] = ";4,0.8;"
 			fs[#fs + 1] = name
 			fs[#fs + 1] = ";"
-			fs[#fs + 1] = minetest.formspec_escape(tab.caption)
+			fs[#fs + 1] = ESC(tab.caption)
 			fs[#fs + 1] ="]"
 		end
 
