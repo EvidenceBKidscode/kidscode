@@ -247,7 +247,7 @@ void set_default_settings(Settings *settings)
 #endif
 	settings->setDefault("enable_particles", "true");
 
-	settings->setDefault("arm_inertia", "false"); // KIDSCODE Changed
+	settings->setDefault("arm_inertia", "true");
 
 	settings->setDefault("enable_minimap", "true");
 	settings->setDefault("minimap_shape_round", "false"); // KIDSCODE Changed
