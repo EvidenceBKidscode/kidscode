@@ -23,7 +23,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "irrlichttypes_extrabloated.h"
 #include "client/tile.h"
 #include "localplayer.h"
-#include "tileanimation.h"
+#include "../particles.h"
 
 struct ClientEvent;
 class ClientEnvironment;
