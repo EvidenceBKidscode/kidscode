@@ -40,6 +40,7 @@ dofile(basepath .. "fstk" .. DIR_DELIM .. "ui.lua")
 dofile(menupath .. DIR_DELIM .. "mapmgr.lua")
 dofile(menupath .. DIR_DELIM .. "common.lua")
 dofile(menupath .. DIR_DELIM .. "pkgmgr.lua")
+dofile(menupath .. DIR_DELIM .. "mapselection.lua")
 dofile(menupath .. DIR_DELIM .. "gamemenu.lua")
 
 dofile(menupath .. DIR_DELIM .. "dlg_config_world.lua")
@@ -185,3 +186,7 @@ local function init_globals()
 end
 
 init_globals()
+
+core.mapserver_event_handler = function(ev)
+	core.event_handler("Refresh")
+end

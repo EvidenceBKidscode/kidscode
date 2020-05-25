@@ -15,170 +15,13 @@
 --with this program; if not, write to the Free Software Foundation, Inc.,
 --51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-core.mapserver_event_handler = function(ev)
-	core.event_handler("Refresh")
-end
-
-function gamedata.get_formspec_solo(tabview, name, tabdata)
-	local retval = ""
-	local selected = tonumber(core.settings:get("mainmenu_last_selected_world")) or 0
-	local map, index
-
-	if selected > 0 then
-		map = menudata.worldlist:get_raw_element(selected)
-		index = filterlist.get_current_index(menudata.worldlist, selected) + 1 -- Header
-	else
-		index = -math.random() -- Force refresh and avoid selection of title line
-	end
-
-	local worldlist = menu_render_worldlist()
-
-	retval = retval .. "hypertext[0.2,0.2;8,1;;<big>" ..
-		(name == "solo" and "Partie solo" or "Créer une partie multijoueur") .. "</big>]"
-
-	gamedata.play_mode = name == "solo" and "solo" or "multi"
-
-	retval = retval ..
-		"tooltip[10.8,8;3,0.6;" ..
-			core.wrap_text("Cliquez ici pour ajouter une carte téléchargée " ..
-				"depuis le site de l'IGN (formats ZIP et RAR acceptés)", 80) .. "]" ..
-		"button[10.8,8;3,0.6;world_import;" .. fgettext("Importer une carte") .. "]" ..
-		"button[0.2,8;3,0.6;refresh;Mettre à jour la liste]" ..
-		"tooltip[refresh;Rafraichir la liste des cartes]" ..
-		"tablecolumns[color;text;color;text,padding=1;color;text,align=center,padding=1;" ..
-			     "color;text,align=center,padding=1]"
-
-	if map and mapmgr.map_is_demand(map) then
-		if mapmgr.can_install_map(map) then
-			retval = retval .. "button[3.5,8;2.3,0.6;install;" .. fgettext("Installer") .. ";#0000ff]"
-		end
-
-		if mapmgr.can_ask_map_again(map) then
-			retval = retval .. "button[3.5,8;2,0.6;reask;" .. fgettext("Redemander") .. ";#0000ff]"
-		end
-
-		if mapmgr.can_cancel_map(map) then
-			-- TODO
-		end
-	end
-
-	if map and mapmgr.map_is_map(map) then
-		retval = retval .. "button[3.4,8;3,0.6;select_map;" .. fgettext("Choisir cette carte") .. ";#0000ff]"
-		if core.mapserver_status() == "stopped" then
-			retval = retval .. "button[3.5,8;2.3,0.6;mapserver_start;" .. fgettext("Démarrer le\ncartographe") .. ";#0000ff]"
-		end
-	end
-
-	local mapserver_status = core.mapserver_status()
-
-	if mapserver_status == "stopping" then
-		retval = retval .. "label[0.25,4.8;" .. fgettext("Cartographe en cours d'arrêt") .. "]"
-	end
-
-	if mapserver_status == "running" then
-		retval = retval .. "button[3.5,8;2.3,0.6;mapserver_stop;" .. fgettext("Stopper le\n cartographe") .. "]"
-
-		retval = retval .. "label[0.25,4.8;" .. fgettext("Cartographe démarré") .. "]"
-
-		local status, progress = core.mapserver_map_status()
-
-		if status == "ready" then
-			retval = retval .. "label[0.25,5.2;" .. fgettext("Carte prête") .. "]"
-		elseif status == "initial" then
-			retval = retval .. "label[0.25,5.2;" .. fgettext("Rendu initial") .. " (".. math.floor(progress*100) .."%)]"
-		elseif status == "incremental" then
-			retval = retval .. "label[0.25,5.2;" .. fgettext("Mise à jour") .. " (".. math.floor(progress*100) .."%)]"
-		end
-
-	end
-
-	if mapmgr.map_is_map(map) then
-		retval = retval ..
-			"button[6.6,8;3,0.6;world_delete;" .. fgettext("Supprimer la carte") .. "]"
-	end
-
-	if core.settings:get_bool("advanced_options") then
-		retval = retval ..
-			"button[9.5,4.7;2.2,0.6;world_create;" .. fgettext("Nouveau") .. "]"
-
-		if mapmgr.map_is_map(map) then
-			retval = retval ..
-				"button[7.1,4.7;2.3,0.6;world_configure;" .. fgettext("Configurer") .. "]"
-		end
-	end
-
-	local wl = "#ff00ff,Carte,#ff00ff,Demande,#ff00ff,Origine,#ff00ff,Etat"
-	wl = wl .. "," .. worldlist
-
-	retval = retval ..
-		"table[0.2,0.8;13.6,7;sp_worlds;" .. wl .. ";" .. index .. "]"
-
-	return retval
-end
-
-local sort_columns = {
-	[2] = "name",
-	[4] = "demand",
-	[6] = "origin",
-	[8] = "status",
-}
-
-function gamedata.main_button_handler_solo(this, fields, name, tabdata)
-	local world_doubleclick = false
-
-	if fields.sp_worlds then
-		local event = core.explode_table_event(fields.sp_worlds)
-		if event.type == "DCL" and event.row > 1 then
-			world_doubleclick = true
-		end
-
-		if event.type == "CHG" then
-			if event.row > 1 then
-				menu_worldmt_legacy(event.row - 1)
-				core.settings:set("mainmenu_last_selected_world",
-					menudata.worldlist:get_raw_index(event.row - 1))
-			else
-				local sort = sort_columns[event.column]
-				if sort then
-					if menudata.worldlist.m_sortmode == sort then
-						menudata.worldlist:reverse_sort()
-					else
-						menudata.worldlist:set_sortmode(sort_columns[event.column])
-					end
-				end
-				core.settings:set("mainmenu_last_selected_world", 0)
-			end
-			return true
-		end
-	end
-
-	local selected = tonumber(core.settings:get("mainmenu_last_selected_world")) or 0
-	local map, index
-
-	if selected > 0 then
-		map = menudata.worldlist:get_raw_element(selected)
-		gamedata.map = map
-		index = filterlist.get_current_index(menudata.worldlist, selected)
-	end
-
-	if menu_handle_key_up_down(fields, "sp_worlds", "mainmenu_last_selected_world") then
-		return true
-	end
-
-	if fields.refresh then
-		menudata.worldlist:refresh()
-		return true
-	end
+function gamemenu.main_button_handler_solo(this, fields, name, tabdata)
 
 	if fields.cb_server then
 		core.settings:set("enable_server", fields.cb_server)
 		return true
 	end
 
-	if fields.install or (world_doubleclick or fields.key_enter) and mapmgr.can_install_map(map) then
-		mapmgr.install_map_from_web(this, map)
-		return true
-	end
 
 	if fields.mapserver_start and mapmgr.map_is_map(map) and core.mapserver_status() == "stopped" then
 		core.mapserver_start(map.path)
@@ -217,64 +60,33 @@ function gamedata.main_button_handler_solo(this, fields, name, tabdata)
 		end
 		return true
 	end
-
-	if fields.world_create then
-		local create_world_dlg = create_create_world_dlg(true)
-		create_world_dlg:set_parent(this)
-		this:hide()
-		create_world_dlg:show()
-
-		return true
-	end
-
-	if fields.world_delete then
-		if mapmgr.map_is_map(map) then
-			local delete_world_dlg = create_delete_world_dlg(map.name, map.coreindex)
-			delete_world_dlg:set_parent(this)
-			this:hide()
-			delete_world_dlg:show()
-		end
-
-		return true
-	end
-
-	if fields.world_configure then
-		if index then
-			local configdialog = create_configure_world_dlg(
-				menudata.worldlist:get_raw_index(index))
-
-			if configdialog then
-				configdialog:set_parent(this)
-				this:hide()
-				configdialog:show()
-			end
-		end
-
-		return true
-	end
-
-	if fields.select_map then
-		local select_dlg = create_select_map_dlg(this.current_tab)
-		select_dlg:set_parent(this)
-		this:hide()
-		select_dlg:show()
-
-		return true
-	end
-
-	if fields.world_import then
-		local file_browser_dlg = create_file_browser_dlg()
-		file_browser_dlg:set_parent(this)
-		this:hide()
-		file_browser_dlg:show()
-
-		return true
-	end
 end
+
 --------------------------------------------------------------------------------
 return {
 	name = "solo",
 	caption = minetest.colorize("#ff0", "    " .. fgettext("Partie solo")),
-	cbf_formspec = gamedata.get_formspec_solo,
-	cbf_button_handler = gamedata.main_button_handler_solo,
+	cbf_formspec = function(tabview, name, tabdata)
+			local fs
+			if gamemenu.chosen_map then
+				fs = "hypertext[0.2,0.2;8,1;;<big><b>Partie solo - " ..
+						gamemenu.chosen_map.name .. "</b></big>]" ..
+						"container[0.5,0]" .. formspecs.startsolo.get() .. "container_end[]" ..
+						"container[4.5,0]" .. formspecs.mapserver.get() .. "container_end[]" ..
+						"container[9.0,0]" .. formspecs.mapinfo.get() .. "container_end[]"
+			else
+				fs = "hypertext[0.2,0.2;8,1;;<big><b>Partie solo</b></big>]" ..
+						formspecs.mapselect.get()
+			end
+			return fs
+		end,
+
+	cbf_button_handler = function(tabview, fields, tabname, tabdata)
+			if gamemenu.chosen_map then
+				return formspecs.mapinfo.handle(tabview, fields, tabname, tabdata)
+						or formspecs.startsolo.handle(tabview, fields, tabname, tabdata)
+			else
+				return formspecs.mapselect.handle(tabview, fields, tabname, tabdata)
+			end
+		end,
 }
