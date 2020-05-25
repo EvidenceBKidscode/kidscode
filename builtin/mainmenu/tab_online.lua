@@ -34,7 +34,7 @@ local function get_formspec(tabview, name, tabdata)
 	end
 
 	local retval =
-		"hypertext[0.2,0.2;8,1;;<big>Rejoindre une partie multijoueur</big>]" ..
+		"hypertext[0.2,0.2;8,1;;<big><b>Rejoindre une partie multijoueur</b></big>]" ..
 
 		"style[btn_mp_connect;border=false;bgimg_hovered=" .. ESC(defaulttexturedir .. "select.png") .. "]" ..
 		"image_button[0.6,6.2;2.5,2.5;" .. ESC(defaulttexturedir .. "img_multi.png") .. ";;]" ..
