@@ -99,6 +99,8 @@ local function get_formspec(tabview, name, tabdata)
 		retval = retval .. ";" .. tabdata.fav_selected .. "]"
 	else
 		retval = retval .. ";0]"
+		core.settings:set("address", "")
+		core.settings:set("remote_port", "30000")
 	end
 
 	return retval
@@ -283,8 +285,14 @@ local function main_button_handler(tabview, fields, name, tabdata)
 	--	return true
 	--end
 
+	-- Quick and dirty fix.
+	-- Maybe favorites and a big part of the whole mechanism has to be removed
+	fields.te_address = fields.te_address or core.settings:get("address")
+	fields.te_port = fields.te_port or core.settings:get("remote_port")
+
 	if (fields.btn_mp_connect or fields.key_enter)
 			and fields.te_address ~= "" and fields.te_port then
+
 		gamedata.playername = fields.te_name
 		gamedata.password   = fields.te_pwd
 		gamedata.address    = fields.te_address
