@@ -2,8 +2,9 @@ local ESC = core.formspec_escape
 
 local function get_formspec()
 	local play_mode = gamedata.play_mode
+
 	local title = play_mode == "solo" and "Partie solo" or "Créer une partie multijoueur"
-	title = title .. " - " .. gamedata.selected_world.name
+	title = title .. " - " .. gamedata.map.name
 
 	local fs = "size[10,8]" ..
 		"hypertext[0.2,0;8,1;;<big>" .. title .. "</big>]" ..
@@ -43,6 +44,7 @@ local function fields_handler(this, fields)
 	end
 
 	if fields.play then
+		gamedata.selected_world = gamedata.map.coreindex
 		gamedata.singleplayer = gamedata.play_mode == "solo"
 		core.start()
 		return true

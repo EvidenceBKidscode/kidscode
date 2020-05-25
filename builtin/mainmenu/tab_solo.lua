@@ -157,7 +157,7 @@ function gamedata.main_button_handler_solo(this, fields, name, tabdata)
 
 	if selected > 0 then
 		map = menudata.worldlist:get_raw_element(selected)
-		gamedata.selected_world = map
+		gamedata.map = map
 		index = filterlist.get_current_index(menudata.worldlist, selected)
 	end
 
