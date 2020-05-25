@@ -324,6 +324,13 @@ local function main_button_handler(tabview, fields, name, tabdata)
 		core.start()
 		return true
 	end
+
+	-- Launch browser on distant map server.
+	-- TODO: Manage, with UPNP, to get information about wether mapserver is started or not
+	if fields.btn_mp_carto and fields.te_address ~= "" then
+		core.launch_browser("http://".. fields.te_address ..":8080")
+	end
+
 	return false
 end
 
