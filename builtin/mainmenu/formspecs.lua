@@ -411,7 +411,7 @@ function formspecs.mapinfo.get()
 	end
 
 
-	fs = fs .. "hypertext[0,5.2;4,2.5;mapinfo;".. ESC(text) .."]"
+	fs = fs .. "hypertext[0,5.2;4,2.5;mapinfo;" .. ESC(text) .. "]"
 
 	return fs
 end
