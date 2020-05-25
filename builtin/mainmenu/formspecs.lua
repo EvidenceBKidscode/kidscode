@@ -290,6 +290,7 @@ function formspecs.startmulti.get()
 		"image_button[0.5,1.25;2.5,2.5;" .. ESC(defaulttexturedir .. "img_multi.png") .. ";;]" ..
 		"hypertext[0.25,4;3,1;play3d;<center><b>Jouer en 3D</b></center>]" ..
 		"image_button[0.25,1;3,3.5;" .. ESC(defaulttexturedir .. "blank.png") .. ";play;]" ..
+		"container[0,0.5]" ..
 		"field[0.25,5;3,0.5;te_playername;Nom / Pseudonyme;" ..
 		ESC(core.settings:get("name")) .. "]" ..
 		"checkbox[0.25,6;cb_advanced;Options avancées;" ..
@@ -301,6 +302,8 @@ function formspecs.startmulti.get()
 			"field[0.25,7.5;3,0.5;te_serverport;Port du serveur;" ..
 				ESC(core.settings:get("port")) .. "]"
 	end
+
+	fs = fs .. "container_end[]"
 
 	return fs
 end
@@ -394,8 +397,8 @@ function formspecs.mapinfo.get()
 			cpt = cpt + 1
 		end
 		text = text ..
-			"Longitude <b>".. degrees_to_dms(math.abs(lon/cpt)) .. (lon > 0 and "E" or "O") .. "</b>\n" ..
-			"Latitude <b>" .. degrees_to_dms(math.abs(lat/cpt)) .. (lat > 0 and "N" or "S") .. "</b>\n"
+			"Longitude <b>".. degrees_to_dms(math.abs(lon / cpt)) .. (lon > 0 and "E" or "O") .. "</b>\n" ..
+			"Latitude <b>" .. degrees_to_dms(math.abs(lat / cpt)) .. (lat > 0 and "N" or "S") .. "</b>\n"
 
 		local xmin, xmax, ymin, ymax;
 		xmin, xmax, ymin, ymax = get_minmax_xy(gamemenu.chosen_map.geo.coordinatesCarto)
@@ -407,7 +410,8 @@ function formspecs.mapinfo.get()
 		text = "Pas d'informations géométriques pour cette carte"
 	end
 
-	fs = fs .. "hypertext[0,5.2;4,2;mapinfo;" .. ESC(text) .. "]"
+
+	fs = fs .. "hypertext[0,5.2;4,2.5;mapinfo;".. ESC(text) .."]"
 
 	return fs
 end

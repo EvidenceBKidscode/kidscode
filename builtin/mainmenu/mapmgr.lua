@@ -181,7 +181,7 @@ local function get_local_maps()
 	return maps
 end
 
-function mapmgr.preparemaplist(map)
+function mapmgr.preparemaplist(data)
 	local maps = get_local_maps()
 	local token = core.settings:get("gartoken")
 	if token then
@@ -211,12 +211,10 @@ end
 
 function mapmgr.get_geometry(map)
 	if not mapmgr.map_is_map(map) then
-		print("not a map")
 		return false --Not an installed map
 	end
 
 	if map.geo then
-		print("already")
 		return true -- Already read
 	end
 
@@ -224,7 +222,6 @@ function mapmgr.get_geometry(map)
 
 	local file = io.open(filename, "rb")
 	if not file then
-		print("cant open", filename)
 		return false -- No geometry data found
 	end
 
