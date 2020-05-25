@@ -16,6 +16,7 @@
 --51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 local ESC = core.formspec_escape
+local min, max = math.min, math.max
 
 formspecs = {}
 
@@ -351,11 +352,54 @@ function stop_mapserver_confirm(parent, cb)
 
 end
 
+local function get_minmax_xy(coords)
+	local xmin, xmax, ymin, ymax
+	for _, point in ipairs(coords) do
+		xmin = xmin and min(xmin, point[1]) or point[1]
+		xmax = xmax and max(xmax, point[1]) or point[1]
+		ymin = ymin and min(ymin, point[2]) or point[2]
+		ymax = ymax and max(ymax, point[2]) or point[2]
+	end
+	return  xmin, xmax, ymin, ymax
+end
+
+local function degrees_to_dms(degrees)
+	local d = math.floor(degrees)
+	local m = math.floor((degrees - d) * 60)
+	local s = ((degrees - d) * 60 - m) * 60
+
+	return string.format("%d° %d' %.1f\"", d, m, s)
+end
+
 -- FS width = 4
 function formspecs.mapinfo.get()
 	local fs = "image[0,1;4,4;".. gamemenu.chosen_map.path ..
 			"/worldmods/minimap/textures/scan25.jpg]" ..
 			"button[0.5,8;3,0.6;back;Choisir une autre carte]"
+
+	local text = ""
+	if mapmgr.get_geometry(gamemenu.chosen_map) then
+		local lat, lon, cpt = 0, 0, 0
+		for _, point in ipairs(gamemenu.chosen_map.geo.coordinatesGeo) do
+			lat = lat + point[1]
+			lon = lon + point[2]
+			cpt = cpt + 1
+		end
+		text = text ..
+			"Longitude <b>".. degrees_to_dms(math.abs(lon/cpt)) .. (lon > 0 and "E" or "O") .. "</b>\n" ..
+			"Latitude <b>" .. degrees_to_dms(math.abs(lat/cpt)) .. (lat > 0 and "N" or "S") .. "</b>\n"
+
+		local xmin, xmax, ymin, ymax;
+		xmin, xmax, ymin, ymax = get_minmax_xy(gamemenu.chosen_map.geo.coordinatesCarto)
+		text = text .. ("Taille de la carte en kilomètres : <b>%0.1f</b> x <b>%0.1f</b>\n"):format((xmax-xmin)/1000, (ymax-ymin)/1000)
+		xmin, xmax, ymin, ymax = get_minmax_xy(gamemenu.chosen_map.geo.coordinatesGame)
+		text = text .. ("Taille de la carte en blocs : <b>%d</b> x <b>%d</b>\n"):format(xmax-xmin, ymax-ymin)
+	else
+		text = "Pas d'informations géométriques pour cette carte"
+	end
+
+	fs = fs .. "hypertext[0,5.2;4,2;mapinfo;".. ESC(text) .."]"
+
 	return fs
 end
 
