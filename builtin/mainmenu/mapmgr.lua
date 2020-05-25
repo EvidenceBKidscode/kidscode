@@ -20,6 +20,7 @@
 mapmgr = {}
 
 local json_alac_file = "alac.json"
+local json_geo_file  = "geometry.dat"
 
 local baseurl = minetest.settings:get("ign_map_api_url") or ""
 
@@ -108,7 +109,7 @@ local function save_map_alac_data(map, destpath)
 		return
 	end
 
-	path = path .. DIR_DELIM .. "alac.json"
+	path = path .. DIR_DELIM .. json_alac_file
 
 	local file = io.open(path, "wb")
 	if  not file then
@@ -180,7 +181,7 @@ local function get_local_maps()
 	return maps
 end
 
-function mapmgr.preparemaplist(data)
+function mapmgr.preparemaplist(map)
 	local maps = get_local_maps()
 	local token = core.settings:get("gartoken")
 	if token then
@@ -206,6 +207,39 @@ end
 
 function mapmgr.compare_map(a, b)
 	return a and b and a.path == b.path and a.order_id == b.order_id
+end
+
+function mapmgr.get_geometry(map)
+	if not mapmgr.map_is_map(map) then
+		print("not a map")
+		return false --Not an installed map
+	end
+
+	if map.geo then
+		print("already")
+		return true -- Already read
+	end
+
+	local filename = map.path .. DIR_DELIM .. json_geo_file
+
+	local file = io.open(filename, "rb")
+	if not file then
+		print("cant open", filename)
+		return false -- No geometry data found
+	end
+
+	local geostring = file:read("*all")
+	file:close()
+	local data = minetest.parse_json(geostring)
+
+	if data == nil or type(data) ~= "table" then
+		minetest.log("error",
+			string.format("Unable to parse content of file %s.", filename))
+		return false
+	end
+
+	map.geo = data
+	return true
 end
 
 --------------------------------------------------------------------------------
