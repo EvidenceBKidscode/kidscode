@@ -20,6 +20,7 @@ return {
 			if gamemenu.chosen_map then
 				return formspecs.mapinfo.handle(tabview, fields, tabname, tabdata)
 						or formspecs.startmulti.handle(tabview, fields, tabname, tabdata)
+						or formspecs.mapserver.handle(tabview, fields, tabname, tabdata)
 			else
 				return formspecs.mapselect.handle(tabview, fields, tabname, tabdata)
 			end

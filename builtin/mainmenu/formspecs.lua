@@ -38,53 +38,49 @@ function formspecs.mapselect.get()
 	local worldlist = menu_render_worldlist()
 
 	fs = fs ..
-		"tooltip[10.8,8;3,0.6;" ..
+			"button[10.8,7.3;3,0.6;world_import;" .. fgettext("Importer un format .zip") .. "]" ..
+			"tooltip[world_import;" ..
 			core.wrap_text("Cliquez ici pour ajouter une carte téléchargée " ..
 				"depuis le site de l'IGN (formats ZIP et RAR acceptés)", 80) .. "]" ..
-		"button[10.8,8;3,0.6;world_import;" .. fgettext("Importer une carte") .. "]" ..
-		"button[0.2,8;3,0.6;refresh;Mettre à jour la liste]" ..
-		"tooltip[refresh;Rafraichir la liste des cartes]" ..
-		"tablecolumns[color;text;color;text,padding=1;color;text,align=center,padding=1;" ..
-			     "color;text,align=center,padding=1]"
+			"button[0.2,7.3;3,0.6;refresh;Mettre à jour la liste]" ..
+			"tooltip[refresh;Rafraichir la liste des cartes]"
 
-	if map and mapmgr.map_is_demand(map) then
+	if mapmgr.map_is_map(map) then
+		fs = fs .. "button[0.2,8;3,0.6;world_select;" .. fgettext("Choisir cette carte") .. ";#0000ff]"
+				.. "button[0.2,8.7;3,0.6;world_delete;" .. fgettext("Désinstaller la carte") .. "]"
+	end
+
+	if mapmgr.map_is_demand(map) then
 		if mapmgr.can_install_map(map) then
-			fs = fs .. "button[3.5,8;2.3,0.6;world_install;" .. fgettext("Installer") .. ";#0000ff]"
+			fs = fs .. "button[0.2,8;3,0.6;world_install;" .. fgettext("Installer") .. ";#0000ff]"
 		end
 
 		if mapmgr.can_ask_map_again(map) then
-			fs = fs .. "button[3.5,8;2,0.6;world_reask;" .. fgettext("Redemander") .. ";#0000ff]"
-		end
-
-		if mapmgr.can_cancel_map(map) then
-			-- TODO
+			fs = fs .. "button[0.2,8;3,0.6;world_reask;" .. fgettext("Redemander") .. ";#0000ff]"
 		end
 	end
 
-	if map and mapmgr.map_is_map(map) then
-		fs = fs .. "button[3.4,8;3,0.6;world_select;" .. fgettext("Choisir cette carte") .. ";#0000ff]"
-	end
-
-	if mapmgr.map_is_map(map) then
-		fs = fs ..
-			"button[6.6,8;3,0.6;world_delete;" .. fgettext("Supprimer la carte") .. "]"
+	if mapmgr.can_cancel_map(map) then
+		-- TODO
 	end
 
 	if core.settings:get_bool("advanced_options") then
 		fs = fs ..
-			"button[9.5,4.7;2.2,0.6;world_create;" .. fgettext("Nouveau") .. "]"
+			"button[10.8,8;3,0.6;world_create;" .. fgettext("Nouveau") .. "]"
 
-		if mapmgr.map_is_map(map) then
+		if map and mapmgr.map_is_map(map) then
 			fs = fs ..
-				"button[7.1,4.7;2.3,0.6;world_configure;" .. fgettext("Configurer") .. "]"
+				"button[10.8,8.7;3,0.6;world_configure;" .. fgettext("Configurer") .. "]"
 		end
 	end
 
 	local wl = "#ff00ff,Carte,#ff00ff,Demande,#ff00ff,Origine,#ff00ff,Etat"
 	wl = wl .. "," .. worldlist
 
-	fs = fs ..
-		"table[0.2,0.8;13.6,7;sp_worlds;" .. wl .. ";" .. index .. "]"
+	fs = fs .. "tablecolumns[color;text;color;text,padding=1;color;" ..
+			"text,align=center,padding=1;color;text,align=center,padding=1]" ..
+			"table[0.2,0.8;13.6,6;sp_worlds;" .. wl .. ";" .. index .. "]" ..
+			"label[0.2,7;Sélectionnez une carte dans la liste ou importez une carte au format .zip ou .rar via le bouton \"importer\".]"
 
 	return fs
 end
@@ -198,11 +194,56 @@ formspecs.mapserver = {}
 -- FS width = 3.5
 function formspecs.mapserver.get()
 	local fs =
-	"style[carto;border=false;bgimg_hovered=" .. ESC(defaulttexturedir .. "select.png") .. "]" ..
+	"style[mapserver_start;border=false;bgimg_hovered=" .. ESC(defaulttexturedir .. "select.png") .. "]" ..
 	"image_button[0.5,1.25;2.5,2.5;" .. ESC(defaulttexturedir .. "img_carto.png") .. ";;]" ..
-	"image_button[0.25,1;3,3.5;" .. ESC(defaulttexturedir .. "blank.png") .. ";carto;]" ..
-	"hypertext[0.25,4;3,1;map2d;<center><b>Cartographie en 2D</b></center>]"
+	"image_button[0.25,1;3,3.5;" .. ESC(defaulttexturedir .. "blank.png") .. ";mapserver_start;]" ..
+	"hypertext[0.25,4;3,1;map2d;<center><b>Cartographier en 2D</b></center>]"
+
+	local serverstatus = core.mapserver_status()
+	local mapstatus, mapprogress = core.mapserver_map_status()
+	mapprogress = mapprogress or 0
+
+	if serverstatus == "running" then
+		fs = fs .. "button[0.25,8;3,0.6;mapserver_stop;Stopper le cartographe]"
+
+		local status = ""
+
+		if mapstatus == "notready" then
+			status = "Carte en préparation"
+		elseif mapstatus == "initial" then
+			status = ("Rendu initial de la carte (%d%%)"):format(mapprogress*100)
+			fs = fs .. "box[0.25,6;3,0.2;#CCCCFFFF]"
+			fs = fs .. "box[0.25,6;".. 3*mapprogress ..",0.2;#8888FFFF]"
+		elseif mapstatus == "incremental" then
+			status = ("Mise à jour de la carte (%d%%)"):format(mapprogress*100)
+			fs = fs .. "box[0.25,6;3,0.2;#CCCCFFFF]"
+			fs = fs .. "box[0.25,6;".. 3*mapprogress ..",0.2;#8888FFFF]"
+		elseif mapstatus == "ready" then
+			status = "Carte prête"
+		end
+
+		fs = fs .. "hypertext[0.25,5;3,1.5;mapserver_status;<center>Cartographe en fonction\n"..status.."</center>]"
+	end
+
+	if serverstatus == "stopping" then
+		fs = fs .. "hypertext[0.25,5;3,1.5;mapserver_status;<center>Cartographe en cours d'arrêt</center>]"
+	end
+
+
 	return fs
+end
+
+function formspecs.mapserver.handle(tabview, fields, name, tabdata)
+	if fields.mapserver_start and gamemenu.chosen_map then
+		if core.mapserver_status() == "stopped" then
+			core.mapserver_start(gamemenu.chosen_map.path)
+		end
+		core.launch_browser("http://localhost:8080")
+	end
+
+	if fields.mapserver_stop  and core.mapserver_status() == "running" then
+		core.mapserver_stop()
+	end
 end
 
 -- Launch Singleplayer Game Formspec
@@ -285,6 +326,31 @@ end
 ---------------------------
 formspecs.mapinfo = {}
 
+function stop_mapserver_confirm(parent, cb)
+	local dlg = dialog_create("dlg_confirm", function()
+			local fs = "size[8,3]" ..
+					"label[0,0.5;Cette action requière l'arrêt du cartographe. Confirmez-vous ?]" ..
+					"button[1,2;2.6,0.5;dlg_mapimport_formspec_ok;Oui]" ..
+					"button[4,2;2.8,0.5;dlg_mapimport_formspec_cancel;Annuler]"
+			return fs
+		end,
+		function(this, fields, data)
+			this:delete()
+			ui.update()
+			if fields.dlg_mapimport_formspec_ok then
+				core.mapserver_stop()
+				cb()
+			end
+		end,
+		nil)
+	dlg:set_parent(parent)
+	parent:hide()
+	dlg:show()
+	ui.update()
+	return true
+
+end
+
 -- FS width = 4
 function formspecs.mapinfo.get()
 	local fs = "image[0,1;4,4;".. gamemenu.chosen_map.path ..
@@ -296,7 +362,14 @@ end
 function formspecs.mapinfo.handle(tabview, fields, name, tabdata)
 	if fields.back then
 		-- TODO: TEST MAPPER
-		gamemenu.chosen_map = nil;
-		return true
+		if core.mapserver_status() == "running" then
+			-- Confirm mapserver stop
+			stop_mapserver_confirm(tabview,
+				function() gamemenu.chosen_map = nil; end)
+			return true
+		else
+			gamemenu.chosen_map = nil;
+			return true
+		end
 	end
 end

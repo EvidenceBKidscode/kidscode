@@ -40,7 +40,7 @@ dofile(basepath .. "fstk" .. DIR_DELIM .. "ui.lua")
 dofile(menupath .. DIR_DELIM .. "mapmgr.lua")
 dofile(menupath .. DIR_DELIM .. "common.lua")
 dofile(menupath .. DIR_DELIM .. "pkgmgr.lua")
-dofile(menupath .. DIR_DELIM .. "mapselection.lua")
+dofile(menupath .. DIR_DELIM .. "formspecs.lua")
 dofile(menupath .. DIR_DELIM .. "gamemenu.lua")
 
 dofile(menupath .. DIR_DELIM .. "dlg_config_world.lua")
