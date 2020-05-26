@@ -3,7 +3,7 @@
 if(MINGW)
 	if (CMAKE_COMPILER_PREFIX)
 		add_custom_target(LuaJit
-			COMMAND make HOST_CC="gcc" CROSS=${CMAKE_COMPILER_PREFIX} TARGET_SYS=Windows luajit.o libluajit.a
+			COMMAND make HOST_CC="gcc" XCFLAGS='-DLUAJIT_ENABLE_GC64' CROSS=${CMAKE_COMPILER_PREFIX} TARGET_SYS=Windows luajit.o libluajit.a
 			WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/lib/luajit/src
 		)
 		set(LUA_LIBRARY luajit)
@@ -16,7 +16,7 @@ if(MINGW)
 	endif()
 else()
 	add_custom_target(LuaJit
-		COMMAND make luajit.o libluajit.a
+		COMMAND make XCFLAGS='-DLUAJIT_ENABLE_GC64' luajit.o libluajit.a
 		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/lib/luajit/src
 	)
 	set(LUA_LIBRARY luajit)
