@@ -554,8 +554,20 @@ void RenderingEngine::_draw_load_screen(const std::wstring &text,
 		g_menuclouds->render();
 		driver->beginScene(true, true, video::SColor(255, 140, 186, 250));
 		g_menucloudsmgr->drawAll();
-	} else
+	} else {
 		driver->beginScene(true, true, video::SColor(255, 0, 0, 0));
+		// >> Kidscode - Display texture on loading screen background
+		const std::string &background = g_settings->get("loadscreen_background");
+		if (background != "") {
+			video::ITexture *texture = tsrc->getTexture(background);
+			v2u32 sourcesize = texture->getOriginalSize();
+			draw2DImageFilterScaled(driver, texture,
+				core::rect<s32>(0, 0, screensize.X, screensize.Y),
+				core::rect<s32>(0, 0, sourcesize.X, sourcesize.Y),
+				NULL, NULL, true);
+		}
+		// << Kidscode - Display texture on loading screen background
+	}
 
 	// draw progress bar
 	if ((percent >= 0) && (percent <= 100)) {
