@@ -384,9 +384,16 @@ end
 
 -- FS width = 4
 function formspecs.mapinfo.get()
-	local fs = "image[0,1;4,4;".. gamemenu.chosen_map.path ..
-		"/worldmods/minimap/textures/scan25.jpg]" ..
-		"button[0.5,8;3,0.6;back;Choisir une autre carte]"
+
+	local fs = "button[0.5,8;3,0.6;back;Choisir une autre carte]"
+
+	local mapimage = gamemenu.chosen_map.path .. "/worldmods/minimap/textures/scan25.jpg"
+
+	if file_exists(mapimage) then
+		fs = fs .. "image[0,1;4,4;".. mapimage .. "]"
+	else
+		fs = fs .. "box[0,1;4,4;#222]hypertext[0,2.9;4,2;;<b><center>Pas d'apperçu disponible</center></b>]"
+	end
 
 	local text = ""
 	if mapmgr.get_geometry(gamemenu.chosen_map) then
