@@ -35,27 +35,37 @@ local function get_formspec(tabview, name, tabdata)
 
 	local retval =
 		"hypertext[0.2,0.2;8,1;;<big><b>Rejoindre une partie multijoueur</b></big>]" ..
-
-		"style[btn_mp_connect;border=false;bgimg_hovered=" .. ESC(defaulttexturedir .. "select.png") .. "]" ..
-		"image_button[0.6,6.2;2.5,2.5;" .. ESC(defaulttexturedir .. "img_multi.png") .. ";;]" ..
-		"image_button[0.4,6;2.9,3.3;" .. ESC(defaulttexturedir .. "blank.png") .. ";btn_mp_connect;]" ..
-		"label[0.8,9;Rejoindre la partie]" ..
-
-		"style[btn_mp_carto;border=false;bgimg_hovered=" .. ESC(defaulttexturedir .. "select.png") .. "]" ..
-		"image_button[4,6.2;2.5,2.5;" .. ESC(defaulttexturedir .. "img_carto.png") .. ";;]" ..
-		"image_button[3.8,6;2.9,3.3;" .. ESC(defaulttexturedir .. "blank.png") .. ";btn_mp_carto;]" ..
-		"label[4.15,9;Cartographie en 2D]" ..
-
-		"label[8,8.9;" .. fgettext("Nom / Pseudonyme :") .. "]" ..
-		"field[10.6,8.65;3.2,0.5;te_name;;" .. ESC(core.settings:get("name")) .. "]" ..
 		"tableoptions[background=#00000000;border=false]"
+
+	local favs = core.get_favorites("local")
+
+	if favs[1] then
+		retval = retval ..
+			"style[btn_mp_connect;border=false;bgimg_hovered=" ..
+				ESC(defaulttexturedir .. "select.png") .. "]" ..
+			"image_button[0.6,6.2;2.5,2.5;" ..
+				ESC(defaulttexturedir .. "img_multi.png") .. ";;]" ..
+			"image_button[0.4,6;2.9,3.3;" ..
+				ESC(defaulttexturedir .. "blank.png") .. ";btn_mp_connect;]" ..
+			"label[0.8,9;Rejoindre la partie]" ..
+
+			"style[btn_mp_carto;border=false;bgimg_hovered=" ..
+				ESC(defaulttexturedir .. "select.png") .. "]" ..
+			"image_button[4,6.2;2.5,2.5;" ..
+				ESC(defaulttexturedir .. "img_carto.png") .. ";;]" ..
+			"image_button[3.8,6;2.9,3.3;" ..
+				ESC(defaulttexturedir .. "blank.png") .. ";btn_mp_carto;]" ..
+			"label[4.15,9;Cartographie en 2D]" ..
+
+			"label[8,8.9;" .. fgettext("Nom / Pseudonyme :") .. "]" ..
+			"field[10.6,8.65;3.2,0.5;te_name;;" .. ESC(core.settings:get("name")) .. "]"
+	end
 
 	--favourites
 	retval = retval .. "table[0.2,0.8;13.6,5;favourites;"
 
 	if menudata.search_result then
 		for i = 1, #menudata.search_result do
-			local favs = core.get_favorites("local")
 			local server = menudata.search_result[i]
 
 			for fav_id = 1, #favs do
@@ -72,7 +82,6 @@ local function get_formspec(tabview, name, tabdata)
 			retval = retval .. render_serverlist_row(server, server.is_favorite)
 		end
 	elseif #menudata.favorites > 0 then
-		local favs = core.get_favorites("local")
 		if #favs > 0 then
 			for i = 1, #favs do
 				local added = false
