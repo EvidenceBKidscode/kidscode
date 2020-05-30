@@ -407,20 +407,20 @@ function formspecs.mapinfo.get()
 			lon = lon + point[2]
 			cpt = cpt + 1
 		end
+
 		text = text ..
 			"Longitude <b>".. degrees_to_dms(math.abs(lon / cpt)) .. (lon > 0 and "E" or "O") .. "</b>\n" ..
 			"Latitude <b>" .. degrees_to_dms(math.abs(lat / cpt)) .. (lat > 0 and "N" or "S") .. "</b>\n"
 
-		local xmin, xmax, ymin, ymax;
-		xmin, xmax, ymin, ymax = get_minmax_xy(gamemenu.chosen_map.geo.coordinatesCarto)
-		text = text .. ("Taille de la carte en kilomètres : <b>%0.1f</b> x <b>%0.1f</b>\n"):format(
-			(xmax - xmin) / 1000, (ymax - ymin) / 1000)
-		xmin, xmax, ymin, ymax = get_minmax_xy(gamemenu.chosen_map.geo.coordinatesGame)
-		text = text .. ("Taille de la carte en blocs : <b>%d</b> x <b>%d</b>\n"):format(xmax - xmin, ymax - ymin)
+		local xmin, xmax, ymin, ymax = get_minmax_xy(gamemenu.chosen_map.geo.coordinatesCarto)
+		local _xmin, _xmax, _ymin, _ymax = get_minmax_xy(gamemenu.chosen_map.geo.coordinatesGame)
+
+		text = text ..
+			("Taille de la carte : <b>%0.1f</b> x <b>%0.1f</b> km (<b>%d</b> x <b>%d</b> blocs)"):format(
+			(xmax - xmin) / 1000, (ymax - ymin) / 1000, xmax - xmin, ymax - ymin)	
 	else
 		text = "Pas d'informations géométriques pour cette carte"
 	end
-
 
 	fs = fs .. "hypertext[0,5.2;4,4;mapinfo;" .. ESC(text) .. "]"
 
