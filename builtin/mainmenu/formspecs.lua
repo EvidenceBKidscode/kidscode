@@ -417,10 +417,11 @@ function formspecs.mapinfo.get()
 
 		local xmin, xmax, ymin, ymax = get_minmax_xy(gamemenu.chosen_map.geo.coordinatesCarto)
 		local _xmin, _xmax, _ymin, _ymax = get_minmax_xy(gamemenu.chosen_map.geo.coordinatesGame)
+		local kmx, kmy = (xmax - xmin) / 1000, (ymax - ymin) / 1000
 
 		text = text ..
 			("Taille de la carte : <b>%0.1f</b> x <b>%0.1f</b> km (<b>%d</b> x <b>%d</b> blocs)"):format(
-			(xmax - xmin) / 1000, (ymax - ymin) / 1000, xmax - xmin, ymax - ymin)	
+			kmx, kmy, _xmax - _xmin, _ymax - _ymin):gsub("%.0", "")	
 	else
 		text = "Pas d'informations géométriques pour cette carte"
 	end
