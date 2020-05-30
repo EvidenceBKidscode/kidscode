@@ -47,8 +47,9 @@ function formspecs.mapselect.get()
 		"tooltip[refresh;Rafraichir la liste des cartes]"
 
 	if mapmgr.map_is_map(map) then
-		fs = fs .. "button[0.2,8;3,0.6;world_select;" .. fgettext("Choisir cette carte") .. ";#0000ff]"
-				.. "button[0.2,8.7;3,0.6;world_delete;" .. fgettext("Désinstaller la carte") .. "]"
+		fs = fs ..
+			"button[0.2,8;3,0.6;world_select;" .. fgettext("Choisir cette carte") .. ";#0000ff]" ..
+			"button[0.2,8.7;3,0.6;world_delete;" .. fgettext("Désinstaller la carte") .. "]"
 	end
 
 	if mapmgr.map_is_demand(map) then
@@ -386,15 +387,16 @@ end
 
 -- FS width = 4
 function formspecs.mapinfo.get()
-
-	local fs = "button[0.5,8;3,0.6;back;Choisir une autre carte]"
+	local fs = "button[-4,8.5;3,0.6;back;Choisir une autre carte]"
 
 	local mapimage = gamemenu.chosen_map.path .. "/worldmods/minimap/textures/scan25.jpg"
 
 	if file_exists(mapimage) then
 		fs = fs .. "image[0,1;4,4;".. mapimage .. "]"
 	else
-		fs = fs .. "box[0,1;4,4;#222]hypertext[0,2.9;4,2;;<b><center>Pas d'apperçu disponible</center></b>]"
+		fs = fs ..
+			"box[0,1;4,4;#222]" ..
+			"hypertext[0,2.9;4,2;;<b><center>Pas d'apperçu disponible</center></b>]"
 	end
 
 	local text = ""
@@ -420,7 +422,7 @@ function formspecs.mapinfo.get()
 	end
 
 
-	fs = fs .. "hypertext[0,5.2;4,2.5;mapinfo;" .. ESC(text) .. "]"
+	fs = fs .. "hypertext[0,5.2;4,4;mapinfo;" .. ESC(text) .. "]"
 
 	return fs
 end
