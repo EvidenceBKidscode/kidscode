@@ -122,6 +122,7 @@ function formspecs.mapselect.handle(tabview, fields, name, tabdata)
 				end
 				core.settings:set("mainmenu_last_selected_world", 0)
 			end
+
 			return true
 		end
 	end
@@ -163,6 +164,7 @@ function formspecs.mapselect.handle(tabview, fields, name, tabdata)
 		mapmgr.install_map_from_web(tabview, map)
 		return true
 	end
+
 	if fields.world_delete then
 		if mapmgr.map_is_map(map) then
 			local delete_world_dlg = create_delete_world_dlg(map.name, map.coreindex)
@@ -175,8 +177,7 @@ function formspecs.mapselect.handle(tabview, fields, name, tabdata)
 
 	if fields.world_configure then
 		if index then
-			local configdialog = create_configure_world_dlg(
-				menudata.worldlist:get_raw_index(index))
+			local configdialog = create_configure_world_dlg(menudata.worldlist:get_raw_index(index))
 			if configdialog then
 				configdialog:set_parent(tabview)
 				tabview:hide()
@@ -218,11 +219,11 @@ function formspecs.mapserver.get()
 		elseif mapstatus == "initial" then
 			status = ("Rendu initial de la carte (%d%%)"):format(mapprogress * 100)
 			fs = fs .. "box[0.25,6;3,0.2;#CCCCFFFF]"
-			fs = fs .. "box[0.25,6;".. 3*mapprogress ..",0.2;#8888FFFF]"
+			fs = fs .. "box[0.25,6;" .. (3 * mapprogress) .. ",0.2;#8888FFFF]"
 		elseif mapstatus == "incremental" then
 			status = ("Mise à jour de la carte (%d%%)"):format(mapprogress * 100)
 			fs = fs .. "box[0.25,6;3,0.2;#CCCCFFFF]"
-			fs = fs .. "box[0.25,6;".. 3*mapprogress ..",0.2;#8888FFFF]"
+			fs = fs .. "box[0.25,6;" .. (3 * mapprogress) .. ",0.2;#8888FFFF]"
 		elseif mapstatus == "ready" then
 			status = "Carte prête"
 		end
@@ -326,6 +327,7 @@ function formspecs.startmulti.handle(tabview, fields, name, tabdata)
 			port = fields.te_serverport or core.settings:get("port"),
 			address = "",
 		}
+
 		core.settings:set("port", gamedata.port)
 		if fields.te_serveraddr then -- Not used but kept in case of change
 			core.settings:set("bind_address", fields.te_serveraddr)
@@ -341,13 +343,12 @@ end
 formspecs.mapinfo = {}
 
 function stop_mapserver_confirm(parent, cb)
-	local dlg = dialog_create("dlg_confirm", function()
-			local fs = "size[8,3]" ..
-				"label[0,0.5;Cette action requière l'arrêt du cartographe. Confirmez-vous ?]" ..
-				"button[1,2;2.6,0.5;dlg_mapimport_formspec_ok;Oui]" ..
+	local dlg =
+		dialog_create("dlg_confirm", function()
+			return  "size[8,3]" ..
+				"label[0,0.5;Cette action requiert l'arrêt du cartographe. Confirmer ?]" ..
+				"button[1,2;2.6,0.5;dlg_mapimport_formspec_ok;OK]" ..
 				"button[4,2;2.8,0.5;dlg_mapimport_formspec_cancel;Annuler]"
-
-			return fs
 		end,
 		function(this, fields, data)
 			this:delete()
@@ -356,14 +357,14 @@ function stop_mapserver_confirm(parent, cb)
 				core.mapserver_stop()
 				cb()
 			end
-		end,
-		nil)
+		end)
+
 	dlg:set_parent(parent)
 	parent:hide()
 	dlg:show()
 	ui.update()
-	return true
 
+	return true
 end
 
 local function get_minmax_xy(coords)
@@ -392,11 +393,11 @@ function formspecs.mapinfo.get()
 	local mapimage = gamemenu.chosen_map.path .. "/worldmods/minimap/textures/scan25.jpg"
 
 	if file_exists(mapimage) then
-		fs = fs .. "image[0,1;4,4;".. mapimage .. "]"
+		fs = fs .. "image[0,1;4,4;" .. mapimage .. "]"
 	else
 		fs = fs ..
 			"box[0,1;4,4;#222]" ..
-			"hypertext[0,2.9;4,2;;<b><center>Pas d'apperçu disponible</center></b>]"
+			"hypertext[0,2.9;4,2;;<b><center>Pas d'aperçu disponible</center></b>]"
 	end
 
 	local text = ""
@@ -409,8 +410,10 @@ function formspecs.mapinfo.get()
 		end
 
 		text = text ..
-			"Longitude <b>".. degrees_to_dms(math.abs(lon / cpt)) .. (lon > 0 and "E" or "O") .. "</b>\n" ..
-			"Latitude <b>" .. degrees_to_dms(math.abs(lat / cpt)) .. (lat > 0 and "N" or "S") .. "</b>\n"
+			"Longitude <b>" .. degrees_to_dms(math.abs(lon / cpt)) ..
+				(lon > 0 and "E" or "O") .. "</b>\n" ..
+			"Latitude <b>" .. degrees_to_dms(math.abs(lat / cpt)) ..
+				(lat > 0 and "N" or "S") .. "</b>\n"
 
 		local xmin, xmax, ymin, ymax = get_minmax_xy(gamemenu.chosen_map.geo.coordinatesCarto)
 		local _xmin, _xmax, _ymin, _ymax = get_minmax_xy(gamemenu.chosen_map.geo.coordinatesGame)
