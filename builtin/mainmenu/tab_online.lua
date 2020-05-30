@@ -47,7 +47,8 @@ local function get_formspec(tabview, name, tabdata)
 		"label[4.15,9;Cartographie en 2D]" ..
 
 		"label[8,8.9;" .. fgettext("Nom / Pseudonyme :") .. "]" ..
-		"field[10.6,8.65;3.2,0.5;te_name;;" .. ESC(core.settings:get("name")) .. "]"
+		"field[10.6,8.65;3.2,0.5;te_name;;" .. ESC(core.settings:get("name")) .. "]" ..
+		"tableoptions[background=#00000000;border=false]"
 
 	--favourites
 	retval = retval .. "table[0.2,0.8;13.6,5;favourites;"

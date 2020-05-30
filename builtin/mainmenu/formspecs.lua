@@ -78,8 +78,10 @@ function formspecs.mapselect.get()
 	local wl = "#ff00ff,Carte,#ff00ff,Demande,#ff00ff,Origine,#ff00ff,Etat"
 	wl = wl .. "," .. worldlist
 
-	fs = fs .. "tablecolumns[color;text;color;text,padding=1;color;" ..
-		"text,align=center,padding=1;color;text,align=center,padding=1]" ..
+	fs = fs ..
+		"tableoptions[background=#00000000;border=false]" ..
+		"tablecolumns[color;text;color;text,padding=1;color;" ..
+			"text,align=center,padding=1;color;text,align=center,padding=1]" ..
 		"table[0.2,0.8;13.6,6;sp_worlds;" .. wl .. ";" .. index .. "]" ..
 		"label[0.2,7;Sélectionnez une carte dans la liste ou importez une carte " ..
 			"au format .zip ou .rar via le bouton \"importer\".]"
