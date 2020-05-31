@@ -557,14 +557,13 @@ void RenderingEngine::_draw_load_screen(const std::wstring &text,
 	} else {
 		driver->beginScene(true, true, video::SColor(255, 0, 0, 0));
 		// >> Kidscode - Display texture on loading screen background
-		const std::string &background = g_settings->get("loadscreen_background");
-		if (background != "") {
-			video::ITexture *texture = tsrc->getTexture(background);
+		video::ITexture *texture = tsrc->getTexture("loadscreen_bg.png");
+		if (texture) {
 			v2u32 sourcesize = texture->getOriginalSize();
 			draw2DImageFilterScaled(driver, texture,
 				core::rect<s32>(0, 0, screensize.X, screensize.Y),
 				core::rect<s32>(0, 0, sourcesize.X, sourcesize.Y),
-				NULL, NULL, true);
+				0, 0, true);			
 		}
 		// << Kidscode - Display texture on loading screen background
 	}
