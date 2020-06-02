@@ -1020,7 +1020,7 @@ int ModApiMainMenu::l_launch_browser(lua_State *L)
 #if defined(__linux__)
 	cmd = "xdg-open " + url;
 #endif
-	system(cmd.c_str());
+	if (system(cmd.c_str())) {}; // Avoid warning
 	return 0;
 }
 // << KIDSCODE - Launch browser
