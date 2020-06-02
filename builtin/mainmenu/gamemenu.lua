@@ -168,6 +168,6 @@ function gamemenu.update()
 
 		-- Use universal fallback texture in textures/base/pack
 		local minimalpath = defaulttexturedir .. "menu_bg.png"
-		core.set_background("background", minimalpath, true, 128)
+		core.set_background("background", minimalpath, false, 640)
 	end
 end
