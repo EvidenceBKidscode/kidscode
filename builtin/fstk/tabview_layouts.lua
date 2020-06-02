@@ -84,7 +84,7 @@ tabview_layouts.tabs = {
 tabview_layouts.vertical = {
 	bgcolor = "#ACACAC33",
 	selcolor = "#ACACAC66",
-	mainbgcolor = "#0000008c",
+	mainbgcolor = "#3c3836ee",
 
 	get = function(self, view)
 		local formspec = ""
