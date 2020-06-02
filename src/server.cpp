@@ -255,9 +255,7 @@ Server::Server(
 Server::~Server()
 {
 	// >> KIDSCODE - Local network server announcement
-	#if USE_UPNP
-		upnp_server_shutdown();
-	#endif
+	upnp_gameserver_shutdown();
 	// << KIDSCODE - Local network server announcement
 
 	// Send shutdown message
@@ -448,9 +446,7 @@ void Server::start()
 	m_thread->start();
 
 	// >> KIDSCODE - Local network server announcement
-	#if USE_UPNP
-		upnp_server_start(this, m_clients.getPlayerNames());
-	#endif
+	upnp_gameserver_started(this);
 	// << KIDSCODE - Local network server announcement
 
 
@@ -477,9 +473,7 @@ void Server::stop()
 	infostream<<"Server: Stopping and waiting threads"<<std::endl;
 
 	// >> KIDSCODE - Local network server announcement
-	#if USE_UPNP
-		upnp_server_shutdown();
-	#endif
+	upnp_gameserver_shutdown();
 	// << KIDSCODE - Local network server announcement
 
 	// Stop threads (set run=false first so both start stopping)

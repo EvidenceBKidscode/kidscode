@@ -34,7 +34,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "version.h"
 #include "renderingengine.h"
 #include "network/networkexceptions.h"
-#include "network/upnpserver.h"
+#include "network/upnpclient.h"
 
 #if USE_SOUND
 	#include "sound_openal.h"

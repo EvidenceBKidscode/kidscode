@@ -40,7 +40,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <IFileSystem.h>
 #include "client/renderingengine.h"
 #include "network/networkprotocol.h"
-#include "network/upnpserver.h"
+#include "network/upnpclient.h"
 
 // >> KIDSCODE
 #include "map.h"
