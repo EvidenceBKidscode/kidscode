@@ -214,7 +214,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("fall_bobbing_amount", "0.0"); // KIDSCODE Changed
 	settings->setDefault("enable_3d_clouds", "true");
 	settings->setDefault("cloud_radius", "12");
-	settings->setDefault("menu_clouds", "true");
+	settings->setDefault("menu_clouds", "false");
 	settings->setDefault("opaque_water", "false");
 	settings->setDefault("console_height", "1.0"); // KIDSCODE Changed
 	settings->setDefault("console_color", "(0,0,0)");
