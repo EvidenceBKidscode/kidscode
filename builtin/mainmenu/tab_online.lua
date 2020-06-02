@@ -33,11 +33,11 @@ local function get_formspec(tabview, name, tabdata)
 		tabdata.search_for = ""
 	end
 
+	local favs = core.get_favorites("local")
+
 	local retval =
 		"hypertext[0.2,0.2;8,1;;<big><b>Rejoindre une partie multijoueur</b></big>]" ..
-		"tableoptions[background=#00000000;border=false]"
-
-	local favs = core.get_favorites("local")
+		"tableoptions[background=#000000" .. (favs[1] and "25" or "00") .. ";border=false]"
 
 	if favs[1] then
 		retval = retval ..

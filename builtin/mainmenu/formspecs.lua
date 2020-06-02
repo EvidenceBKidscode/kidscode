@@ -49,7 +49,7 @@ function formspecs.mapselect.get()
 	if mapmgr.map_is_map(map) then
 		fs = fs ..
 			"button[0.2,8;3,0.6;world_select;" .. fgettext("Choisir cette carte") .. ";#0000ff]" ..
-			"button[0.2,8.7;3,0.6;world_delete;" .. fgettext("Désinstaller la carte") .. "]"
+			"button[0.2,8.7;3,0.6;world_delete;" .. fgettext("Désinstaller la carte") .. ";#ff0000]"
 	end
 
 	if mapmgr.map_is_demand(map) then
@@ -80,10 +80,10 @@ function formspecs.mapselect.get()
 	wl = wl .. "," .. worldlist
 
 	fs = fs ..
-		"tableoptions[background=#00000000;border=false]" ..
+		"tableoptions[background=#00000025;border=false]" ..
 		"tablecolumns[color;text;color;text,padding=1;color;" ..
 			"text,align=center,padding=1;color;text,align=center,padding=1]" ..
-		"table[0.2,0.8;13.6,6;sp_worlds;" .. wl .. ";" .. index .. "]" ..
+		"table[0.2,0.8;13.6,5.9;sp_worlds;" .. wl .. ";" .. index .. "]" ..
 		"label[0.2,7;Sélectionnez une carte dans la liste ou importez une carte " ..
 			"au format .zip ou .rar via le bouton \"importer\".]"
 

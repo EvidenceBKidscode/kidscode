@@ -305,10 +305,6 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("main_menu_path", "");
 	settings->setDefault("serverlist_file", "favoriteservers.txt");
 
-	// >> Kidscode - Display texture on loading screen background
-	settings->setDefault("loadscreen_background", "");
-	// << Kidscode - Display texture on loading screen background
-
 #if USE_FREETYPE
 	settings->setDefault("freetype", "true");
 	settings->setDefault("font_path", porting::getDataPath("fonts" DIR_DELIM "LiberationSans-Regular.ttf"));  // KIDSCODE Changed
