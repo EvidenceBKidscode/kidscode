@@ -324,7 +324,10 @@ static void set_allowed_options(OptionList *allowed_options)
 	allowed_options->insert(std::make_pair("gartoken", ValueSpec(VALUETYPE_STRING,
 			_("GAR token to be used (IGN/Kidscode)"))));
 	// << KIDSCODE - GAR interface
-
+	// >> KIDSCODE - Installation type
+	allowed_options->insert(std::make_pair("install", ValueSpec(VALUETYPE_STRING,
+			_("Installation type"))));
+	// << KIDSCODE - Installation type
 }
 
 static void print_help(const OptionList &allowed_options)
@@ -515,6 +518,15 @@ static bool init_common(const Settings &cmd_args, int argc, char *argv[])
 	}
 	else
 		g_settings->remove("gartoken");
+	// << KIDSCODE - GAR interface
+
+	// >> KIDSCODE - Installation mode
+	if (cmd_args.exists("install")) {
+		std::string install = cmd_args.get("install");
+		g_settings->set("install", install);
+	}
+	else
+		g_settings->remove("install");
 	// << KIDSCODE - GAR interface
 
 	return true;
