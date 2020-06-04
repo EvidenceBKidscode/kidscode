@@ -50,16 +50,6 @@ void upnp_debug( const char * format, ... ) {
 	#endif
 }
 
-// Display server list for debugging purpose
-void upnp_debug_server_list() {
-	#ifdef DEBUG
-	for (auto srv : servers_list)
-		upnp_debug("UPNP:    %s (%s:%d)\n", srv.first.c_str(),
-			srv.second["address"].asCString(),
-			srv.second["port"].asInt());
-	#endif
-}
-
 const char *getElementValue(IXML_Element *parent, const char *tagname) {
 	IXML_NodeList *nodes = ixmlElement_getElementsByTagName(parent, tagname);
 	if (ixmlNodeList_length(nodes) != 1)
@@ -92,9 +82,6 @@ int byebye_event_handler(const UpnpDiscovery *e)
 	servers_list_mutex.lock();
 	servers_list.erase(UpnpDiscovery_get_DeviceID_cstr(e));
 	servers_list_mutex.unlock();
-
-	upnp_debug("UPNP: Server list is now:\n");
-	upnp_debug_server_list();
 
 	return UPNP_E_SUCCESS;
 }
@@ -145,41 +132,43 @@ int discovery_event_handler(const UpnpDiscovery *e)
 		return UPNP_E_SUCCESS;
 	}
 
-	IXML_NodeList *xservers = ixmlDocument_getElementsByTagName(xml, "kc:server");
+	IXML_NodeList *xmaps = ixmlDocument_getElementsByTagName(xml, "kc:map");
 
-	for (unsigned int i = 0; i < ixmlNodeList_length(xservers); i++) {
+	for (unsigned int i = 0; i < ixmlNodeList_length(xmaps); i++) {
+		ServerListSpec server;
+		IXML_Element *xmap = (IXML_Element *)ixmlNodeList_item(xmaps, i);
 
-		IXML_Element *xserver = (IXML_Element *)ixmlNodeList_item(
-			xservers, i);
+		server["name"]        = getElementValue(xmap, "kc:name");
+		server["description"] = getElementValue(xmap, "kc:description");
 
-		if (xserver) {
-			ServerListSpec server;
-
+		IXML_NodeList *xgameservers = ixmlElement_getElementsByTagName(xmap, "kc:gameserver");
+		if (ixmlNodeList_length(xgameservers) > 0) {
+			IXML_Element *xserver = (IXML_Element *)ixmlNodeList_item(xgameservers, 0);
+			server["gameserver"]  = true;
 			server["address"]     = address;
 			server["port"]        = getIntValue(xserver, "kc:port");
-			server["name"]        = getElementValue(xserver, "kc:name");
-			server["description"] = getElementValue(xserver, "kc:description");
 			server["version"]     = getElementValue(xserver, "kc:version");
 			server["proto_min"]   = getIntValue(xserver, "kc:proto_min");
 			server["proto_max"]   = getIntValue(xserver, "kc:proto_max");
-
-			servers_list_mutex.lock();
-			servers_list[uuid] = server;
-			servers_list_mutex.unlock();
 		}
 
-		// TODO : MANAGE MAPSERVERS
+		IXML_NodeList *xmapservers = ixmlElement_getElementsByTagName(xmap, "kc:mapserver");
+		if (ixmlNodeList_length(xmapservers) > 0) {
+			IXML_Element *xserver = (IXML_Element *)ixmlNodeList_item(xmapservers, 0);
 
-		upnp_debug("UPNP: Server list is now:\n");
-		upnp_debug_server_list();
+			server["mapserver"]         = true;
+			server["mapserveraddress"] = address;
+			server["mapserverport"]    = getIntValue(xserver, "kc:port");
+		}
+
+		servers_list_mutex.lock();
+		servers_list[uuid] = server;
+		servers_list_mutex.unlock();
 	}
 
 	return ret;
 }
 
-
-// TODO : GERER LE TYPE 5 (BYE BYE) !
-// Comment ? je ne sais pas.. Peut être refaire un discover ? Puit remplacer les résultats seulement sur timeout
 int client_event_handler(Upnp_EventType event_type, HandlerConst void* event, void* cookie)
 {
 	switch (event_type) {
