@@ -32,6 +32,7 @@ gtags.files
 *.diff
 # GNU Patch reject file
 *.rej
+*.porig
 
 ## Non-static Minetest directories or symlinks to these
 /bin/

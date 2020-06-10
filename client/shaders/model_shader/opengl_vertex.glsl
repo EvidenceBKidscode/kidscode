@@ -1,6 +1,8 @@
 uniform mat4 mWorldViewProj;
 uniform mat4 mWorld;
 
+uniform vec4 ambientColor;
+
 // Directional lighting information
 uniform vec4 lightColor;
 uniform vec3 lightDirection;
@@ -66,13 +68,16 @@ void main(void)
 	// The pre-baked colors are halved to prevent overflow.
 	vec4 color;
 	// The alpha gives the ratio of sunlight in the incoming light.
-	float outdoorsRatio = 1.0 - gl_Color.a;
+	float outdoorsRatio = 1.0 - ambientColor.a;
 	color.a = 1.0;
-	color.rgb = gl_Color.rgb * (outdoorsRatio * dayLight.rgb +
-		gl_Color.a * artificialLight.rgb);
+	color.rgb = ambientColor.rgb * (outdoorsRatio * dayLight.rgb +
+		ambientColor.a * artificialLight.rgb);
 
 #if defined(ENABLE_DIRECTIONAL_SHADING) && !LIGHT_EMISSIVE
-	vec3 norm = normalize((mWorld * vec4(gl_Normal, 1.0)).xyz);
+	vec3 alwaysNormal = gl_Normal;
+	if (alwaysNormal.x * alwaysNormal.x + alwaysNormal.y * alwaysNormal.y + alwaysNormal.z * alwaysNormal.z < 0.01) {
+		alwaysNormal = vec3(0.0, 1.0, 0.0);
+	}
 
 	vec3 fakeLightDirection = lightDirection;
 	fakeLightDirection.y *= mix(0.5, 3, clamp(dot(lightDirection, vec3(0.0, 1.0, 0.0)) * 3, 0, 1));
@@ -84,18 +89,18 @@ void main(void)
 	dir = mix(dir, vec3(0, 1, 0), factor);
 
 	// Lighting color
-	vec3 resultLightColor = ((lightColor.rgb * gl_Color.a) + clamp(outdoorsRatio, 0.4f * factor,1.0f));
+	vec3 resultLightColor = (lightColor.rgb * ambientColor.a) + clamp(outdoorsRatio, 0.4f * factor, 1.0f);
 	resultLightColor = from_sRGB_vec(resultLightColor);
 
 	float ambient_light = 0.3;
-	float directional_boost = 0.5 - abs(dot(norm, vec3(1,0,0))) * 0.5;
-	float directional_light = dot(norm, dir);
+	float directional_boost = 0.5 - abs(dot(alwaysNormal, vec3(1,0,0))) * 0.5;
+	float directional_light = dot(alwaysNormal, dir);
 
 	directional_light = max(directional_light + directional_boost, 0.0);
 	directional_light *= (1.0 - ambient_light) / (1 + directional_boost);
 	resultLightColor = resultLightColor * directional_light + ambient_light;
 
-	directional_light = dot(norm, artificialLightDirection);
+	directional_light = dot(alwaysNormal, artificialLightDirection);
 	directional_light = max(directional_light + 0.5, 0.0);
 	directional_light *= (1.0 - ambient_light) / 1.5;
 	float artificialLightShading = directional_light + ambient_light;

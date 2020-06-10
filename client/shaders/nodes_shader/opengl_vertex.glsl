@@ -1,6 +1,10 @@
 uniform mat4 mWorldViewProj;
 uniform mat4 mWorld;
 
+// Directional lighting information
+uniform vec4 lightColor;
+uniform vec3 lightDirection;
+
 // Color of the light emitted by the sun.
 uniform vec3 dayLight;
 uniform vec3 eyePosition;
@@ -17,6 +21,13 @@ varying vec3 vPosition;
 // precision must be considered).
 varying vec3 worldPosition;
 
+// Specular lighting information
+varying float sunLight;
+varying float specularIntensity;
+varying float specularExponent;
+
+varying vec3 worldNormal;
+
 varying vec3 eyeVec;
 varying vec3 lightVec;
 varying vec3 tsEyeVec;
@@ -25,9 +36,9 @@ varying float area_enable_parallax;
 
 // Color of the light emitted by the light sources.
 const vec3 artificialLight = vec3(1.04, 1.04, 1.04);
+const vec3 artificialLightDirection = normalize(vec3(0.2, 1.0, -0.5));
 const float e = 2.718281828459;
 const float BS = 10.0;
-
 
 float smoothCurve(float x)
 {
@@ -46,8 +57,32 @@ float smoothTriangleWave(float x)
 	return smoothCurve(triangleWave(x)) * 2.0 - 1.0;
 }
 
-// OpenGL < 4.3 does not support continued preprocessor lines
-#if (MATERIAL_TYPE == TILE_MATERIAL_WAVING_LIQUID_TRANSPARENT || MATERIAL_TYPE == TILE_MATERIAL_WAVING_LIQUID_OPAQUE || MATERIAL_TYPE == TILE_MATERIAL_WAVING_LIQUID_BASIC) && ENABLE_WAVING_WATER
+// These methods apply a gamma value to approximately convert a value from/to
+// sRGB colourspace
+float from_sRGB(float x)
+{
+	if (x < 0.0 || x > 1.0)
+		return x;
+	return pow(x, 2.2);
+}
+float to_sRGB(float x)
+{
+	if (x < 0.0 || x > 1.0)
+		return x;
+	return pow(x, 1.0 / 2.2);
+}
+vec3 from_sRGB_vec(vec3 v)
+{
+	return vec3(from_sRGB(v.r), from_sRGB(v.g), from_sRGB(v.b));
+}
+vec3 to_sRGB_vec(vec3 v)
+{
+	return vec3(to_sRGB(v.r), to_sRGB(v.g), to_sRGB(v.b));
+}
+
+#if (MATERIAL_TYPE == TILE_MATERIAL_WAVING_LIQUID_TRANSPARENT || \
+	MATERIAL_TYPE == TILE_MATERIAL_WAVING_LIQUID_OPAQUE || \
+	MATERIAL_TYPE == TILE_MATERIAL_WAVING_LIQUID_BASIC) && ENABLE_WAVING_WATER
 
 //
 // Simple, fast noise function.
@@ -114,8 +149,9 @@ float disp_z;
 
 	worldPosition = (mWorld * gl_Vertex).xyz;
 
-// OpenGL < 4.3 does not support continued preprocessor lines
-#if (MATERIAL_TYPE == TILE_MATERIAL_WAVING_LIQUID_TRANSPARENT || MATERIAL_TYPE == TILE_MATERIAL_WAVING_LIQUID_OPAQUE || MATERIAL_TYPE == TILE_MATERIAL_WAVING_LIQUID_BASIC) && ENABLE_WAVING_WATER
+#if (MATERIAL_TYPE == TILE_MATERIAL_WAVING_LIQUID_TRANSPARENT || \
+	MATERIAL_TYPE == TILE_MATERIAL_WAVING_LIQUID_OPAQUE || \
+	MATERIAL_TYPE == TILE_MATERIAL_WAVING_LIQUID_BASIC) && ENABLE_WAVING_WATER
 	// Generate waves with Perlin-type noise.
 	// The constants are calibrated such that they roughly
 	// correspond to the old sine waves.
@@ -156,8 +192,13 @@ float disp_z;
 
 	vec3 sunPosition = vec3 (0.0, eyePosition.y * BS + 900.0, 0.0);
 
+	vec3 alwaysNormal = gl_Normal;
+	if (alwaysNormal.x * alwaysNormal.x + alwaysNormal.y * alwaysNormal.y + alwaysNormal.z * alwaysNormal.z < 0.01) {
+		alwaysNormal = vec3(0.0, 1.0, 0.0);
+	}
+
 	vec3 normal, tangent, binormal;
-	normal = normalize(gl_NormalMatrix * gl_Normal);
+	normal = normalize(gl_NormalMatrix * alwaysNormal);
 	tangent = normalize(gl_NormalMatrix * gl_MultiTexCoord1.xyz);
 	binormal = normalize(gl_NormalMatrix * gl_MultiTexCoord2.xyz);
 
@@ -175,6 +216,13 @@ float disp_z;
 	v.z = dot(eyeVec, normal);
 	tsEyeVec = normalize (v);
 
+	sunLight = gl_Color.a; // Copy alpha into sunlight for specular
+
+	worldNormal = normalize(alwaysNormal); // The actual world-space normal
+
+	specularIntensity = 0.06;
+	specularExponent = 35.0;
+
 	// Calculate color.
 	// Red, green and blue components are pre-multiplied with
 	// the brightness, so now we have to multiply these
@@ -186,6 +234,39 @@ float disp_z;
 	color.rgb = gl_Color.rgb * (gl_Color.a * dayLight.rgb +
 		nightRatio * artificialLight.rgb) * 2;
 	color.a = 1;
+
+#if defined(ENABLE_DIRECTIONAL_SHADING) && !LIGHT_EMISSIVE
+	vec3 fakeLightDirection = lightDirection;
+	fakeLightDirection.y *= mix(0.5, 3, clamp(dot(lightDirection, vec3(0.0, 1.0, 0.0)) * 3, 0, 1));
+	fakeLightDirection = normalize(fakeLightDirection);
+
+	vec3 dir = fakeLightDirection;
+
+	float factor = clamp((dot(lightDirection, vec3(0.0, -1.0, 0.0)) - 0.3) * 5, 0, 1);
+	dir = mix(dir, vec3(0, 1, 0), factor);
+
+	// Lighting color
+	vec3 resultLightColor = ((lightColor.rgb * gl_Color.a) + clamp(nightRatio, 0.4f * factor, 1.0f));
+	resultLightColor = from_sRGB_vec(resultLightColor);
+
+	float ambient_light = 0.3;
+	float directional_boost = 0.5 - abs(dot(alwaysNormal, vec3(1,0,0))) * 0.5;
+
+	float directional_light = dot(alwaysNormal, dir);
+	directional_light = max(directional_light + directional_boost, 0.0);
+	directional_light *= (1.0 - ambient_light) / (1 + directional_boost);
+	resultLightColor = resultLightColor * directional_light + ambient_light;
+
+	ambient_light = 0.3;
+	directional_boost = 0.5;
+	directional_light = dot(alwaysNormal, artificialLightDirection);
+	directional_light = max(directional_light + directional_boost, 0.0);
+	directional_light *= (1.0 - ambient_light) / (1 + directional_boost);
+	float artificialLightShading = directional_light + ambient_light;
+
+	color.rgb *= to_sRGB_vec(max(resultLightColor,
+			from_sRGB_vec(artificialLight.rgb) * artificialLightShading * nightRatio));
+#endif
 
 	// Emphase blue a bit in darker places
 	// See C++ implementation in mapblock_mesh.cpp final_color_blend()

@@ -181,7 +181,7 @@ public:
 
 	void addToScene(ITextureSource *tsrc);
 	void removeFromScene(bool permanent);
-	void updateLight(u8 light_at_pos);
+	void updateLight(u8 light_at_pos, u8  artificial_light_ratio);
 	v3s16 getLightPosition();
 	void updateNodePos();
 
@@ -254,7 +254,7 @@ void TestCAO::removeFromScene(bool permanent)
 	m_node = NULL;
 }
 
-void TestCAO::updateLight(u8 light_at_pos)
+void TestCAO::updateLight(u8 light_at_pos, u8 artificial_light_ratio)
 {
 }
 
@@ -424,6 +424,7 @@ const bool GenericCAO::isImmortal()
 	return itemgroup_get(getGroups(), "immortal");
 }
 
+//! Get a pointer to the ISceneNode used for rendering this object, or nullptr
 scene::ISceneNode *GenericCAO::getSceneNode() const
 {
 	if (m_meshnode) {
@@ -441,12 +442,11 @@ scene::ISceneNode *GenericCAO::getSceneNode() const
 	if (m_spritenode) {
 		return m_spritenode;
 	}
-
 	if (m_textspritenode) {
 		return m_textspritenode;
 	}
 
-	return NULL;
+	return nullptr;
 }
 
 scene::IAnimatedMeshSceneNode *GenericCAO::getAnimatedMeshSceneNode() const
@@ -572,6 +572,23 @@ void GenericCAO::removeFromScene(bool permanent)
 	if (m_nametag) {
 		m_client->getCamera()->removeNametag(m_nametag);
 		m_nametag = nullptr;
+	}
+}
+
+void GenericCAO::setSceneNodeMaterial(video::E_MATERIAL_TYPE material_type)
+{
+	scene::ISceneNode *node = getSceneNode();
+
+	node->setMaterialFlag(video::EMF_LIGHTING, false);
+	node->setMaterialFlag(video::EMF_BILINEAR_FILTER, false);
+	node->setMaterialFlag(video::EMF_FOG_ENABLE, true);
+
+	if (m_enable_shaders) {
+		node->setMaterialType(m_material_type);
+		node->setMaterialFlag(video::EMF_GOURAUD_SHADING, false);
+		node->setMaterialFlag(video::EMF_NORMALIZE_NORMALS, true);
+	} else {
+		node->setMaterialType(material_type);
 	}
 }
 
@@ -880,25 +897,25 @@ void GenericCAO::addToScene(ITextureSource *tsrc)
 	setNodeLight(m_last_light);
 }
 
-void GenericCAO::updateLight(u8 light_at_pos)
+void GenericCAO::updateLight(u8 light_at_pos, u8 artificial_light_ratio)
 {
 	// Don't update light of attached one
 	if (getParent() != NULL) {
 		return;
 	}
 
-	updateLightNoCheck(light_at_pos);
+	updateLightNoCheck(light_at_pos, artificial_light_ratio);
 
 	// Update light of all children
 	for (u16 i : m_attachment_child_ids) {
 		ClientActiveObject *obj = m_env->getActiveObject(i);
 		if (obj) {
-			obj->updateLightNoCheck(light_at_pos);
+			obj->updateLightNoCheck(light_at_pos, artificial_light_ratio);
 		}
 	}
 }
 
-void GenericCAO::updateLightNoCheck(u8 light_at_pos)
+void GenericCAO::updateLightNoCheck(u8 light_at_pos, u8 artificial_light_ratio)
 {
 	if (m_glow < 0)
 		return;
