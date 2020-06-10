@@ -539,12 +539,14 @@ void RenderingEngine::_draw_load_screen(const std::wstring &text,
 
 		std::wstring tip = m_tips[rdm];
 
-		v2s32 tipsize(screensize.X, g_fontengine->getLineHeight());
+		v2s32 tipsize(screensize.X / 1.5, g_fontengine->getLineHeight());
 		v2s32 centertip(screensize.X / 2, screensize.Y / 4);
-		core::rect<s32> tiprect(centertip - tipsize / 2, centertip + tipsize / 2);
+		core::rect<s32> tiprect(centertip - tipsize / 2 - 22, centertip + tipsize / 2 + 15);
 		//driver->draw2DRectangle(video::SColor(255, 0, 0, 0), tiprect, NULL);
 
-		guitip = guienv->addStaticText(tip.c_str(), tiprect, false, false);
+		tip = L"\n" + tip;
+
+		guitip = guienv->addStaticText(tip.c_str(), tiprect, true, false, NULL, -1, true);
 		guitip->setTextAlignment(gui::EGUIA_CENTER, gui::EGUIA_UPPERLEFT);
 	}
 
