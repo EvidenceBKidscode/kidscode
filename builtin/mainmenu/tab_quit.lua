@@ -1,6 +1,6 @@
 return {
 	name = "quit",
-	icon = "criss-cross.png",
+	icon = "quit.png",
 	caption = fgettext("Quitter"),
 	cbf_formspec = function()
 		os.exit(0)

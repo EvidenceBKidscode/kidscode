@@ -39,6 +39,7 @@ local function add_tab(self,tab)
 		name = tab.name,
 		caption = tab.caption,
 		icon = tab.icon,
+		selectable = tab.selectable,
 		show = tab.show,
 		button_handler = tab.cbf_button_handler,
 		event_handler = tab.cbf_events,

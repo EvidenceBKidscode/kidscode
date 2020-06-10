@@ -141,10 +141,10 @@ tabview_layouts.vertical = {
 				local sel = ESC(defaulttexturedir .. "mainmenu_selected.png")
 
 				if icon then
-					fs[#fs + 1] = "image[0.2," .. (y + 0.2) .. ";0.4,0.4;" .. icon .. "]"
+					fs[#fs + 1] = "image[0.2," .. (y + 0.15) .. ";0.5,0.5;" .. icon .. "]"
 				end
 
-				fs[#fs + 1] = "label[0.8,"
+				fs[#fs + 1] = "label[0.9,"
 				fs[#fs + 1] = y + 0.4
 				fs[#fs + 1] = ";"
 				fs[#fs + 1] = tab.caption
@@ -154,15 +154,17 @@ tabview_layouts.vertical = {
 				fs[#fs + 1] = name
 				fs[#fs + 1] = ";border=false;bgimg_hovered=" .. sel .. "]"
 
-				fs[#fs + 1] = "button[0,"
-				fs[#fs + 1] = y
-				fs[#fs + 1] = ";4.5,0.8;"
-				fs[#fs + 1] = name
-				fs[#fs + 1] = ";]"
+				if tab.selectable ~= false then
+					fs[#fs + 1] = "button[0,"
+					fs[#fs + 1] = y
+					fs[#fs + 1] = ";4.5,0.8;"
+					fs[#fs + 1] = name
+					fs[#fs + 1] = ";]"
+				end
 			end
 		end
 
-		fs[#fs + 1] = "image[0.45,8.2;3.6,1.1;" ..
+		fs[#fs + 1] = "image[0.2,8;4.1,1.3;" ..
 			ESC(defaulttexturedir .. "header_kidscode_ign.png") .. "]"
 
 		return table.concat(fs, "")
