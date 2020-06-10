@@ -17,7 +17,7 @@
 
 return {
 	name = "solo",
-	caption = minetest.colorize("#ff0", "    " .. fgettext("Partie solo")),
+	caption = minetest.colorize("#ff0", fgettext("Partie solo")),
 	cbf_formspec = function(tabview, name, tabdata)
 		local fs
 		if gamemenu.chosen_map then

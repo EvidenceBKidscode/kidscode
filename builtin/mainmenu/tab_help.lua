@@ -54,6 +54,7 @@ local chapters = {
 
 return {
 	name = "help",
+	icon = "question.png",
 	caption = fgettext("Tutoriel"),
 	cbf_formspec = function(tabview, name, tabdata)
 		tabdata.help = tabdata.help or 0

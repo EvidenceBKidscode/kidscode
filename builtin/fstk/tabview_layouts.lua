@@ -93,15 +93,15 @@ tabview_layouts.vertical = {
 			local tsize = tab and tab.tabsize or {width=view.width, height=view.height}
 			formspec = formspec ..
 					string.format("formspec_version[3]size[%f,%f,%s]bgcolor[#00000000]",
-						tsize.width+6,tsize.height+4, dump(view.fixed_size))
+						tsize.width + 6.5, tsize.height + 4, dump(view.fixed_size))
 		end
 		formspec = formspec .. self:get_header(view)
 
 		if tab then
-			formspec = formspec .. "container[4,0]"
+			formspec = formspec .. "container[4.5,0]"
 
 			local mainbgcolor = view.mainbgcolor or self.mainbgcolor
-			formspec = formspec .. ("box[0,0;%f,%f;%s]"):format(view.width+3, view.height+4, mainbgcolor)
+			formspec = formspec .. ("box[0,0;%f,%f;%s]"):format(view.width + 4, view.height + 4, mainbgcolor)
 			formspec = formspec .. view.tablist[view.last_tab_index].get_formspec(
 				view,
 				view.tablist[view.last_tab_index].name,
@@ -123,23 +123,28 @@ tabview_layouts.vertical = {
 		local tsize = last_tab and last_tab.tabsize or {width=view.width, height=view.height}
 
 		local fs = {
-			("box[%f,%f;%f,%f;%s]"):format(0, 0, 4, tsize.height+4, mainbgcolor),
-			("box[%f,%f;%f,%f;%s]"):format(0, 0, 4, tsize.height+4, bgcolor)
+			("box[%f,%f;%f,%f;%s]"):format(0, 0, 4.5, tsize.height + 4, mainbgcolor),
+			("box[%f,%f;%f,%f;%s]"):format(0, 0, 4.5, tsize.height + 4, bgcolor)
 		}
 
 		for i = 1, #view.tablist do
 			local tab = view.tablist[i]
 			if tab.button_handler then			
 				local name = "tab_" .. tab.name
+				local icon = tab.icon and ESC(defaulttexturedir .. tab.icon)
 				local y = (i - 1) * 0.8
 
 				if i == view.last_tab_index then
-					fs[#fs + 1] = ("box[%f,%f;%f,%f;%s]"):format(0, y, 4, 0.8, selcolor)
+					fs[#fs + 1] = ("box[%f,%f;%f,%f;%s]"):format(0, y, 5.5, 0.8, selcolor)
 				end
 
 				local sel = ESC(defaulttexturedir .. "mainmenu_selected.png")
 
-				fs[#fs + 1] = "label[0.375,"
+				if icon then
+					fs[#fs + 1] = "image[0.2," .. (y + 0.2) .. ";0.4,0.4;" .. icon .. "]"
+				end
+
+				fs[#fs + 1] = "label[0.8,"
 				fs[#fs + 1] = y + 0.4
 				fs[#fs + 1] = ";"
 				fs[#fs + 1] = tab.caption
@@ -151,13 +156,13 @@ tabview_layouts.vertical = {
 
 				fs[#fs + 1] = "button[0,"
 				fs[#fs + 1] = y
-				fs[#fs + 1] = ";4,0.8;"
+				fs[#fs + 1] = ";4.5,0.8;"
 				fs[#fs + 1] = name
 				fs[#fs + 1] = ";]"
 			end
 		end
 
-		fs[#fs + 1] = "image[0.2,8.2;3.6,1.1;" ..
+		fs[#fs + 1] = "image[0.45,8.2;3.6,1.1;" ..
 			ESC(defaulttexturedir .. "header_kidscode_ign.png") .. "]"
 
 		return table.concat(fs, "")
@@ -198,7 +203,7 @@ tabview_layouts.mainmenu = {
 					{width=view.width, height=view.height}
 			formspec = formspec ..
 					string.format("size[%f,%f,%s]real_coordinates[true]",
-						tsize.width,tsize.height, dump(view.fixed_size))
+						tsize.width, tsize.height, dump(view.fixed_size))
 		end
 		formspec = formspec ..
 				"style[main_back;noclip=true;border=false]" ..
@@ -222,7 +227,7 @@ tabview_layouts.mainmenu = {
 			("size[%f,%f]"):format(tsize.width, tsize.height),
 			"real_coordinates[true]",
 			"bgcolor[#00000000]",
-			("box[%f,%f;%f,%f;%s]"):format(0, 0, 3, tsize.height, bgcolor)
+			("box[%f,%f;%f,%f;%s]"):format(0, 0, 4.5, tsize.height, bgcolor)
 		}
 
 		for i = 1, #view.tablist do
@@ -232,7 +237,7 @@ tabview_layouts.mainmenu = {
 
 			fs[#fs + 1] = "button[0,"
 			fs[#fs + 1] = tonumber(y)
-			fs[#fs + 1] = ";4,0.8;"
+			fs[#fs + 1] = ";4.5,0.8;"
 			fs[#fs + 1] = name
 			fs[#fs + 1] = ";"
 			fs[#fs + 1] = ESC(tab.caption)

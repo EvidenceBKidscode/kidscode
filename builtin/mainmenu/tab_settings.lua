@@ -385,6 +385,7 @@ end
 
 return {
 	name = "settings",
+	icon = "wrench.png",
 	caption = fgettext("Settings"),
 	cbf_formspec = formspec,
 	cbf_button_handler = handle_settings_buttons

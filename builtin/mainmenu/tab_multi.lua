@@ -1,6 +1,6 @@
 return {
 	name = "multi",
-	caption = minetest.colorize("#ff0", "    " .. fgettext("Créer partie multijoueur")),
+	caption = minetest.colorize("#ff0", fgettext("Créer partie multijoueur")),
 	cbf_formspec = function(tabview, name, tabdata)
 		local fs = "hypertext[0.2,0.2;8,1;;<big><b>Créer une partie multijoueur</b></big>]" ..
 				formspecs.mapselect.get()

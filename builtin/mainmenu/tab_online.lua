@@ -353,7 +353,7 @@ end
 --------------------------------------------------------------------------------
 return {
 	name = "online",
-	caption = minetest.colorize("#ff0", "    " .. fgettext("Rejoindre partie multijoueur")),
+	caption = minetest.colorize("#ff0", fgettext("Rejoindre partie multijoueur")),
 	cbf_formspec = get_formspec,
 	cbf_button_handler = main_button_handler,
 	on_change = on_change

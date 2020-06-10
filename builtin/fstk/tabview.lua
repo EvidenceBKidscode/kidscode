@@ -38,6 +38,7 @@ local function add_tab(self,tab)
 	local newtab = {
 		name = tab.name,
 		caption = tab.caption,
+		icon = tab.icon,
 		show = tab.show,
 		button_handler = tab.cbf_button_handler,
 		event_handler = tab.cbf_events,
