@@ -82,6 +82,31 @@ local function main_event_handler(tabview, event)
 end
 
 --------------------------------------------------------------------------------
+function create_worldlist()
+	menudata.worldlist = filterlist.create(
+--			core.get_worlds,
+		mapmgr.preparemaplist,
+--			compare_worlds,
+		mapmgr.compare_map,
+		-- Unique id comparison function
+		function(element, uid)
+			return element.name == uid
+		end,
+		-- Filter function
+		function(element, gameid)
+			return element.gameid == gameid
+		end,
+		nil
+	)
+
+	menudata.worldlist:add_sort_mechanism("name", sort_worlds_alphabetic)
+	menudata.worldlist:add_sort_mechanism("demand", sort_worlds_by_demand)
+	menudata.worldlist:add_sort_mechanism("origin", sort_worlds_by_origin)
+	menudata.worldlist:add_sort_mechanism("status", sort_worlds_by_status)
+	menudata.worldlist:set_sortmode("status")
+end
+
+--------------------------------------------------------------------------------
 local function init_globals()
 	-- Init gamedata
 	gamedata.worldindex = 0
@@ -114,27 +139,7 @@ local function init_globals()
 
 		gamedata.worldindex = world_index
 	else
-		menudata.worldlist = filterlist.create(
---			core.get_worlds,
-			mapmgr.preparemaplist,
---			compare_worlds,
-			mapmgr.compare_map,
-			-- Unique id comparison function
-			function(element, uid)
-				return element.name == uid
-			end,
-			-- Filter function
-			function(element, gameid)
-				return element.gameid == gameid
-			end,
-			nil
-		)
-
-		menudata.worldlist:add_sort_mechanism("name", sort_worlds_alphabetic)
-		menudata.worldlist:add_sort_mechanism("demand", sort_worlds_by_demand)
-		menudata.worldlist:add_sort_mechanism("origin", sort_worlds_by_origin)
-		menudata.worldlist:add_sort_mechanism("status", sort_worlds_by_status)
-		menudata.worldlist:set_sortmode("status")
+		create_worldlist()
 
 		if not core.settings:get("menu_current_game") then
 			local default_game = core.settings:get("default_game") or "minetest"

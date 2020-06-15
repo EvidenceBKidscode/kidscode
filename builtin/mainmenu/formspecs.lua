@@ -20,6 +20,38 @@ local min, max = math.min, math.max
 
 formspecs = {}
 
+local function rename_map(parent, map)
+	local dlg =
+		dialog_create("dlg_rename", function()
+			return  "formspec_version[3] size[7,2]" ..
+				"field[0.2,0.5;6.6,0.5;mapname;Renommer la carte :;" .. ESC(map.name) .. "]" ..
+				"button[2.4,1.2;2,0.6;dlg_rename_ok;OK]"
+		end,
+		function(this, fields, data)
+			this:delete()
+			ui.update()
+			if fields.dlg_rename_ok then
+				if fields.mapname == map.mapname then
+					return false
+				end
+
+				local path = map.path
+				local path_cut = path:match(".*" .. DIR_DELIM)
+				os.rename(path, path_cut .. fields.mapname)
+				create_worldlist()
+
+				return true
+			end
+		end)
+
+	dlg:set_parent(parent)
+	parent:hide()
+	dlg:show()
+	ui.update()
+
+	return true
+end
+
 -- Select map Formspec
 ----------------------
 formspecs.mapselect = {}
@@ -39,17 +71,18 @@ function formspecs.mapselect.get()
 	local worldlist = menu_render_worldlist()
 
 	fs = fs ..
-		"button[10.8,7.3;3,0.6;world_import;" .. fgettext("Importer un format .zip") .. "]" ..
+		"button[10.8,7.3;3,0.6;world_import;" .. fgettext("Importer une carte") .. "]" ..
 		"tooltip[world_import;" ..
 			core.wrap_text("Cliquez ici pour ajouter une carte téléchargée " ..
 				"depuis le site de l'IGN (formats ZIP et RAR acceptés)", 80) .. "]" ..
-		"button[0.2,7.3;3,0.6;refresh;Mettre à jour la liste]" ..
+		"button[10.8,8;3,0.6;refresh;Actualiser la liste]" ..
 		"tooltip[refresh;Rafraichir la liste des cartes]"
 
 	if mapmgr.map_is_map(map) then
 		fs = fs ..
 			"button[0.2,8;3,0.6;world_select;" .. fgettext("Choisir cette carte") .. ";#0000ff]" ..
-			"button[0.2,8.7;3,0.6;world_delete;" .. fgettext("Désinstaller la carte") .. ";#ff0000]"
+			"button[0.2,8.7;3,0.6;world_delete;" .. fgettext("Désinstaller la carte") .. ";#ff0000]" ..
+			"button[0.2,7.3;3,0.6;world_rename;" .. fgettext("Renommer la carte") .. "]"
 	end
 
 	if mapmgr.map_is_demand(map) then
@@ -187,6 +220,11 @@ function formspecs.mapselect.handle(tabview, fields, name, tabdata)
 		return true
 	end
 
+	if fields.world_rename then
+		rename_map(tabview, map)
+		return true
+	end
+
 	if fields.world_select or (world_doubleclick or fields.key_enter) and mapmgr.map_is_map(map) then
 		gamemenu.chosen_map = map
 		return true
@@ -296,14 +334,13 @@ function formspecs.startmulti.get()
 		"image_button[0.25,1;3,3.5;" .. ESC(defaulttexturedir .. "blank.png") .. ";play;]" ..
 		"container[0,0.5]" ..
 		"field[0.25,5;3,0.5;te_playername;Nom / Pseudonyme;" ..
-		ESC(core.settings:get("name")) .. "]" ..
+			ESC(core.settings:get("name")) .. "]" ..
 		"checkbox[0.25,6;cb_advanced;Options avancées;" ..
-		(core.settings:get_bool("cb_advanced") and "true" or "false") .. "]"
+			(core.settings:get_bool("cb_advanced") and "true" or "false") .. "]"
 
 	if core.settings:get_bool("cb_advanced") then
-		fs = fs ..
-			"pwdfield[0.25,6.6;3,0.5;te_passwd;Mot de passe (optionnel)]" ..
-			"field[0.25,7.5;3,0.5;te_serverport;Port du serveur;" ..
+		fs = fs .. "pwdfield[0.25,6.6;3,0.5;te_passwd;Mot de passe (optionnel)]" ..
+			   "field[0.25,7.5;3,0.5;te_serverport;Port du serveur;" ..
 				ESC(core.settings:get("port")) .. "]"
 	end
 
@@ -390,13 +427,14 @@ end
 function formspecs.mapinfo.get()
 	local fs = "button[-4,8.5;3,0.6;back;Choisir une autre carte]"
 
-	local mapimage = gamemenu.chosen_map.path .. "/worldmods/minimap/textures/scan25.jpg"
+	local mapimage = ESC(gamemenu.chosen_map.path) .. DIR_DELIM ..
+		"worldmods" .. DIR_DELIM .. "minimap" .. DIR_DELIM ..
+		"textures" .. DIR_DELIM .. "scan25.jpg"
 
 	if file_exists(mapimage) then
 		fs = fs .. "image[0,1;4,4;" .. mapimage .. "]"
 	else
-		fs = fs ..
-			"box[0,1;4,4;#222]" ..
+		fs = fs .. "box[0,1;4,4;#222]" ..
 			"hypertext[0,2.9;4,2;;<b><center>Pas d'aperçu disponible</center></b>]"
 	end
 

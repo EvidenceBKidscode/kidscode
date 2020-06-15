@@ -163,7 +163,7 @@ function menu_render_worldlist()
 
 		retval = retval ..
 			"#ffffff" .. "," ..
-			ESC(v.name):sub(1,30) .. "," ..
+			ESC(v.name):sub(1,50) .. "," ..
 			"#ffffff" .. "," ..
 			ESC(v.alac and v.alac.delivered_on and v.alac.delivered_on:match("%S*") or "") .. "," ..
 			"#ffffff" .. "," ..

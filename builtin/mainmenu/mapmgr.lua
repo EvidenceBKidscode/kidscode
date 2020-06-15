@@ -437,7 +437,7 @@ local function get_question(params, askname, mapname)
 	local ok, err, code = os.rename(mappath, mappath)
 	if ok or code == 13 then
 		return ("Une carte \"%s\" existe déja. Choisissez un autre nom :"):
-		format(core.colorize("#EE0", mapname))
+			format(core.colorize("#EE0", mapname))
 	end
 end
 

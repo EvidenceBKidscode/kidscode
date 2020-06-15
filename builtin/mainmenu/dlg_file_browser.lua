@@ -15,7 +15,7 @@
 --with this program; if not, write to the Free Software Foundation, Inc.,
 --51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-
+local ESC = core.formspec_escape
 local PATH = os.getenv("HOME") or os.getenv("HOMEPATH") or core.get_worldpath()
 local tabdata = {show_zip = true}
 
@@ -66,14 +66,14 @@ local function make_fs()
 	local fs = "size[10,7]" ..
 		"real_coordinates[true]" ..
 		"image_button[0.2,0.15;0.5,0.5;" ..
-			core.formspec_escape(defaulttexturedir .. "arrow_up.png") .. ";updir;]" ..
-		"hypertext[1,0.25;9,0.5;path;<style size=20>" .. _path .. "</style>]" ..
+			ESC(defaulttexturedir .. "arrow_up.png") .. ";updir;]" ..
+		"hypertext[1,0.25;9,0.5;path;" ..
+			"<tag name=action color=#ffffcc hovercolor=#ffff00>" ..
+			"<style size=20>" .. _path .. "</style>]" ..
 		"tablecolumns[image," ..
-			"0=" .. core.formspec_escape(defaulttexturedir .. "folder.png") ..
-			"," ..
-			"1=" .. core.formspec_escape(defaulttexturedir .. "file.png") ..
-			"," ..
-			"2=" .. core.formspec_escape(defaulttexturedir .. "blank.png") ..
+			"0=" .. ESC(defaulttexturedir .. "folder.png") .. "," ..
+			"1=" .. ESC(defaulttexturedir .. "file.png")   .. "," ..
+			"2=" .. ESC(defaulttexturedir .. "blank.png") ..
 			";text;text,align=right,padding=1]" ..
 		"field[0.2,5.7;6.8,0.5;select;Nom du fichier sélectionné :;" ..
 			(tabdata.filename or "") .. "]" ..

@@ -19,16 +19,15 @@ return {
 	name = "solo",
 	caption = minetest.colorize("#ff0", fgettext("Partie solo")),
 	cbf_formspec = function(tabview, name, tabdata)
-		local fs
+		local fs = "hypertext[0.2,0.2;8,1;;<big><b>Partie solo</b></big>]" ..
+				formspecs.mapselect.get()
+
 		if gamemenu.chosen_map then
 			fs = "hypertext[0.2,0.2;14,1;;<big><b>Partie solo - " ..
-				gamemenu.chosen_map.name .. "</b></big>]" ..
+				core.formspec_escape(gamemenu.chosen_map.name:sub(1,50)) .. "</b></big>]" ..
 				"container[0.5,0]" .. formspecs.startsolo.get() .. "container_end[]" ..
 				"container[4.5,0]" .. formspecs.mapserver.get() .. "container_end[]" ..
 				"container[9.0,0]" .. formspecs.mapinfo.get() .. "container_end[]"
-		else
-			fs = "hypertext[0.2,0.2;8,1;;<big><b>Partie solo</b></big>]" ..
-				formspecs.mapselect.get()
 		end
 
 		return fs
