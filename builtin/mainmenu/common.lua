@@ -88,6 +88,9 @@ end
 --------------------------------------------------------------------------------
 function render_serverlist_row(spec)
 	local text = ""
+	--[[
+		It is possible to add icons according to which kind of connection is
+		possible :
 
 	if spec.gameserver then
 		text = text .. "J,"
@@ -99,6 +102,7 @@ function render_serverlist_row(spec)
 	else
 		text = text .. ","
 	end
+	]]
 
 	if spec.name then
 		text = text .. ESC(spec.name:trim())
