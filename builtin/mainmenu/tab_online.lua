@@ -97,6 +97,8 @@ local function start_gameserver(server)
 		return
 	end
 
+	core.volatile_settings:set("mainmenu_last_tab", "online")
+
 	gamedata = {
 		playername     = core.settings:get("name"),
 		address        = server.address,

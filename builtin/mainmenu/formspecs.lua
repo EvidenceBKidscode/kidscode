@@ -272,11 +272,15 @@ end
 
 function formspecs.startsolo.handle(tabview, fields, name, tabdata)
 	if fields.play and gamemenu.chosen_map then
+
+		core.volatile_settings:set("mainmenu_last_tab", "solo")
+		core.volatile_settings:set("mainmenu_last_chosen_world",
+			core.settings:get("mainmenu_last_selected_world"))
+
 		gamedata = {
 			singleplayer = true,
 			selected_world = gamemenu.chosen_map.coreindex,
 		}
-
 		core.start()
 		return true
 	end
@@ -319,6 +323,10 @@ function formspecs.startmulti.handle(tabview, fields, name, tabdata)
 	end
 
 	if fields.play and gamemenu.chosen_map then
+		core.volatile_settings:set("mainmenu_last_tab", "multi")
+		core.volatile_settings:set("mainmenu_last_chosen_world",
+			core.settings:get("mainmenu_last_selected_world"))
+
 		gamedata = {
 			singleplayer = false,
 			selected_world = gamemenu.chosen_map.coreindex,
@@ -421,7 +429,7 @@ function formspecs.mapinfo.get()
 
 		text = text ..
 			("Taille de la carte : <b>%0.1f</b> x <b>%0.1f</b> km (<b>%d</b> x <b>%d</b> blocs)"):format(
-			kmx, kmy, _xmax - _xmin, _ymax - _ymin):gsub("%.0", "")	
+			kmx, kmy, _xmax - _xmin, _ymax - _ymin):gsub("%.0", "")
 	else
 		text = "Pas d'informations géométriques pour cette carte"
 	end
