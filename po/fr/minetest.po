@@ -207,7 +207,7 @@ msgstr "Rechercher"
 msgid "Texture packs"
 msgstr "Packs de textures"
 
-#: builtin/mainmenu/dlg_contentstore.lua
+#: builtin/mainmenu/dlg_contentstore.lua builtin/mainmenu/dlg_delete_world.lua
 msgid "Uninstall"
 msgstr "Désinstaller"
 
@@ -265,7 +265,7 @@ msgid "Are you sure you want to delete \"$1\"?"
 msgstr "Êtes-vous sûr de vouloir supprimer \"$1\" ?"
 
 #: builtin/mainmenu/dlg_delete_content.lua
-#: builtin/mainmenu/dlg_delete_world.lua builtin/mainmenu/tab_local.lua
+#: bbuiltin/mainmenu/tab_local.lua
 #: src/client/keycode.cpp
 msgid "Delete"
 msgstr "Supprimer"
@@ -279,8 +279,8 @@ msgid "pkgmgr: invalid path \"$1\""
 msgstr "Gestionnaire de mods : chemin de mod invalide \"$1\""
 
 #: builtin/mainmenu/dlg_delete_world.lua
-msgid "Delete World \"$1\"?"
-msgstr "Supprimer le monde \"$1\" ?"
+msgid "Uninstall World \"$1\"?"
+msgstr "Désinstaller la carte \"$1\" ?"
 
 #: builtin/mainmenu/dlg_rename_modpack.lua
 msgid "Accept"
