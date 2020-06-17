@@ -33,6 +33,9 @@ struct NoiseParams;
 extern Settings *g_settings;
 extern std::string g_settings_path;
 
+// Volatile settings are deleted when game exits
+extern Settings *g_volatile_settings; // KIDSCODE - Volatile settings
+
 // Type for a settings changed callback function
 typedef void (*SettingsChangedCallback)(const std::string &name, void *data);
 

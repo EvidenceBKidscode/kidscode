@@ -510,6 +510,11 @@ void ModApiUtil::Initialize(lua_State *L, int top)
 
 	LuaSettings::create(L, g_settings, g_settings_path);
 	lua_setfield(L, top, "settings");
+
+	// >> KIDSCODE - Volatile settings
+	LuaSettings::create(L, g_volatile_settings);
+	lua_setfield(L, top, "volatile_settings");
+	// << KIDSCODE - Volatile settings
 }
 
 void ModApiUtil::InitializeClient(lua_State *L, int top)
@@ -561,5 +566,9 @@ void ModApiUtil::InitializeAsync(lua_State *L, int top)
 
 	LuaSettings::create(L, g_settings, g_settings_path);
 	lua_setfield(L, top, "settings");
-}
 
+	// >> KIDSCODE - Volatile settings
+	LuaSettings::create(L, g_volatile_settings);
+	lua_setfield(L, top, "volatile_settings");
+	// << KIDSCODE - Volatile settings
+}
