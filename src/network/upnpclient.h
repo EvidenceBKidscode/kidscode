@@ -21,11 +21,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <string>
 #include "serverlist.h"
 
-#define UPNP_KIDSCODE_DEVICE_TYPE "urn:evidenceb:device:Kidscode:1"
+void upnp_discovery_start();
+void upnp_discovery_stop();
 
-class Server;
-
-void upnp_gameserver_started(Server *server);
-void upnp_gameserver_shutdown();
-
-void upnp_mapserver_check();
+std::vector<ServerListSpec> upnp_get_server_list();

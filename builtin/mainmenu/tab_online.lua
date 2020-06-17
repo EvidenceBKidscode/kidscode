@@ -22,137 +22,112 @@ local function get_formspec(tabview, name, tabdata)
 	-- Update the cached supported proto info,
 	-- it may have changed after a change by the settings menu.
 	common_update_cached_supp_proto()
-	local fav_selected
-	if menudata.search_result then
-		fav_selected = menudata.search_result[tabdata.fav_selected]
-	else
-		fav_selected = menudata.favorites[tabdata.fav_selected]
-	end
 
-	if not tabdata.search_for then
-		tabdata.search_for = ""
-	end
+	tabdata.servers = core.get_favorites("lan")
 
-	local favs = core.get_favorites("local")
+	local selected_server
+	selected_server = tabdata.servers[tabdata.selected_server]
 
-	local retval =
+	local fs =
 		"hypertext[0.2,0.2;8,1;;<big><b>Rejoindre une partie multijoueur</b></big>]" ..
-		"tableoptions[background=#000000" .. (favs[1] and "25" or "00") .. ";border=false]"
+		"tableoptions[background=#00000000;border=false]"
 
-	if favs[1] then
-		retval = retval ..
-			"style[btn_mp_connect;border=false;bgimg_hovered=" ..
-				ESC(defaulttexturedir .. "select.png") .. "]" ..
-			"image_button[0.6,6.2;2.5,2.5;" ..
-				ESC(defaulttexturedir .. "img_multi.png") .. ";;]" ..
-			"image_button[0.4,6;2.9,3.3;" ..
-				ESC(defaulttexturedir .. "blank.png") .. ";btn_mp_connect;]" ..
-			"label[0.8,9;Rejoindre la partie]" ..
-
-			"style[btn_mp_carto;border=false;bgimg_hovered=" ..
-				ESC(defaulttexturedir .. "select.png") .. "]" ..
-			"image_button[4,6.2;2.5,2.5;" ..
-				ESC(defaulttexturedir .. "img_carto.png") .. ";;]" ..
-			"image_button[3.8,6;2.9,3.3;" ..
-				ESC(defaulttexturedir .. "blank.png") .. ";btn_mp_carto;]" ..
-			"label[4.15,9;Cartographie en 2D]" ..
-
-			"label[8,8.9;" .. fgettext("Nom / Pseudonyme :") .. "]" ..
-			"field[10.6,8.65;3.2,0.5;te_name;;" .. ESC(core.settings:get("name")) .. "]"
-	end
-
-	--favourites
-	retval = retval .. "table[0.2,0.8;13.6,5;favourites;"
-
-	if menudata.search_result then
-		for i = 1, #menudata.search_result do
-			local server = menudata.search_result[i]
-
-			for fav_id = 1, #favs do
-				if server.address == favs[fav_id].address and
-						server.port == favs[fav_id].port then
-					server.is_favorite = true
-				end
-			end
-
-			if i ~= 1 then
-				retval = retval .. ","
-			end
-
-			retval = retval .. render_serverlist_row(server, server.is_favorite)
-		end
-	elseif #menudata.favorites > 0 then
-		if #favs > 0 then
-			for i = 1, #favs do
-				local added = false
-				for j = 1, #menudata.favorites do
-					if menudata.favorites[j].address == favs[i].address and
-							menudata.favorites[j].port == favs[i].port then
-						added = true
-						table.insert(menudata.favorites, i, table.remove(menudata.favorites, j))
-					end
-				end
-
-				if not added then
-					table.insert(menudata.favorites, i, favs[i])
-				end
-			end
+	if selected_server then
+		if selected_server.gameserver then
+			fs = fs ..
+				"style[btn_mp_play;border=false;bgimg_hovered=" ..
+					ESC(defaulttexturedir .. "select.png") .. "]" ..
+				"image_button[0.6,6.2;2.5,2.5;" ..
+					ESC(defaulttexturedir .. "img_multi.png") .. ";;]" ..
+				"image_button[0.4,6;2.9,3.3;" ..
+					ESC(defaulttexturedir .. "blank.png") .. ";btn_mp_play;]" ..
+				"label[0.8,9;Rejoindre la partie]" ..
+				"label[8,8.9;" .. fgettext("Nom / Pseudonyme :") .. "]" ..
+				"field[10.6,8.65;3.2,0.5;te_name;;" .. ESC(core.settings:get("name")) .. "]"
 		end
 
-		retval = retval .. render_serverlist_row(menudata.favorites[1], (#favs > 0))
-		for i = 2, #menudata.favorites do
-			retval = retval .. "," .. render_serverlist_row(menudata.favorites[i], (i <= #favs))
+		if selected_server.mapserver then
+			fs = fs ..
+				"style[btn_mp_carto;border=false;bgimg_hovered=" ..
+					ESC(defaulttexturedir .. "select.png") .. "]" ..
+				"image_button[4,6.2;2.5,2.5;" ..
+					ESC(defaulttexturedir .. "img_carto.png") .. ";;]" ..
+				"image_button[3.8,6;2.9,3.3;" ..
+					ESC(defaulttexturedir .. "blank.png") .. ";btn_mp_carto;]" ..
+				"label[4.15,9;Cartographie en 2D]"
+
 		end
 	end
 
-	if tabdata.fav_selected then
-		retval = retval .. ";" .. tabdata.fav_selected .. "]"
+	--servers
+	if #tabdata.servers == 0 then
+		fs = fs ..
+			[[hypertext[0.2,2.8;13.6,3;noserver;<center>
+				<big><b>Aucune partie disponible</b></big>
+				<b>Attendez qu'une partie commence pour la rejoindre</b>]
+			]]
 	else
-		retval = retval .. ";0]"
-		core.settings:set("address", "")
-		core.settings:set("remote_port", "30000")
+		fs = fs .. "label[0.2,1.2;Parties disponibles :]"
+		fs = fs .. "tablecolumns[text]"
+		fs = fs .. "table[0.2,1.5;13.6,4.3;servers;"
+
+		for i = 1, #tabdata.servers do
+			if i > 1 then
+				fs = fs .. ","
+			end
+			fs = fs .. render_serverlist_row(tabdata.servers[i])
+		end
+
+		if tabdata.selected_server then
+			fs = fs .. ";" .. tabdata.selected_server .. "]"
+		else
+			fs = fs .. ";0]"
+			core.settings:set("address", "")
+			core.settings:set("remote_port", "30000")
+		end
 	end
 
-	return retval
+	return fs
+end
+
+--------------------------------------------------------------------------------
+local function start_gameserver(server)
+	if not is_server_protocol_compat_or_error(
+			server.proto_min, server.proto_max) then
+		return
+	end
+
+	core.volatile_settings:set("mainmenu_last_tab", "online")
+
+	gamedata = {
+		playername     = core.settings:get("name"),
+		address        = server.address,
+		port           = server.port,
+		selected_world = 0,
+	}
+	core.start()
 end
 
 --------------------------------------------------------------------------------
 local function main_button_handler(tabview, fields, name, tabdata)
-	local serverlist = menudata.search_result or menudata.favorites
+	local serverlist = tabdata.servers
 
 	if fields.te_name then
-		gamedata.playername = fields.te_name
 		core.settings:set("name", fields.te_name)
 	end
 
-	if fields.favourites then
-		local event = core.explode_table_event(fields.favourites)
-		local fav = serverlist[event.row]
+	if fields.servers then
+		local event = core.explode_table_event(fields.servers)
+		local server = serverlist[event.row]
 
 		if event.type == "DCL" then
 			if event.row <= #serverlist then
-				if menudata.favorites_is_public and
-						not is_server_protocol_compat_or_error(
-							fav.proto_min, fav.proto_max) then
+				if not is_server_protocol_compat_or_error(
+						server.proto_min, server.proto_max) then
 					return true
 				end
-
-				gamedata.address    = fav.address
-				gamedata.port       = fav.port
-				gamedata.playername = fields.te_name
-				gamedata.selected_world = 0
-
-				if fields.te_pwd then
-					gamedata.password = fields.te_pwd
-				end
-
-				gamedata.servername        = fav.name
-				gamedata.serverdescription = fav.description
-
-				if gamedata.address and gamedata.port then
-					core.settings:set("address", gamedata.address)
-					core.settings:set("remote_port", gamedata.port)
-					core.start()
+				if server.gameserver then
+					start_gameserver(server)
 				end
 			end
 			return true
@@ -160,194 +135,105 @@ local function main_button_handler(tabview, fields, name, tabdata)
 
 		if event.type == "CHG" then
 			if event.row <= #serverlist then
-				gamedata.fav = false
-				local favs = core.get_favorites("local")
-				local address = fav.address
-				local port    = fav.port
-				gamedata.serverdescription = fav.description
-
-				for i = 1, #favs do
-					if fav.address == favs[i].address and
-							fav.port == favs[i].port then
-						gamedata.fav = true
-					end
-				end
-
-				if address and port then
-					core.settings:set("address", address)
-					core.settings:set("remote_port", port)
-				end
-				tabdata.fav_selected = event.row
+				tabdata.selected_server = event.row
 			end
 			return true
 		end
 	end
 
 	if fields.key_up or fields.key_down then
-		local fav_idx = core.get_table_index("favourites")
-		local fav = serverlist[fav_idx]
+		local idx = core.get_table_index("servers")
 
-		if fav_idx then
-			if fields.key_up and fav_idx > 1 then
-				fav_idx = fav_idx - 1
-			elseif fields.key_down and fav_idx < #menudata.favorites then
-				fav_idx = fav_idx + 1
+		if idx then
+			if fields.key_up and idx > 1 then
+				idx = idx - 1
+			elseif fields.key_down and idx < #serverlist then
+				idx = idx + 1
 			end
 		else
-			fav_idx = 1
+			idx = 1
 		end
 
-		if not menudata.favorites or not fav then
-			tabdata.fav_selected = 0
+		if not serverlist or not serverlist[idx] then
+			tabdata.server_selected = 0
 			return true
 		end
 
-		local address = fav.address
-		local port    = fav.port
-		gamedata.serverdescription = fav.description
-		if address and port then
-			core.settings:set("address", address)
-			core.settings:set("remote_port", port)
-		end
-
-		tabdata.fav_selected = fav_idx
+		tabdata.server_selected = idx
 		return true
 	end
 
-	if fields.btn_delete_favorite then
-		local current_favourite = core.get_table_index("favourites")
-		if not current_favourite then return end
+	-- Actions on selected server
+	-----------------------------
 
-		core.delete_favorite(current_favourite)
---		asyncOnlineFavourites()
-		asyncLanFavourites()
-
-		tabdata.fav_selected = nil
-
-		core.settings:set("address", "")
-		core.settings:set("remote_port", "30000")
-		return true
+	local server = tabdata.servers[tabdata.selected_server]
+	if not server then
+		return
 	end
 
-	if fields.btn_mp_search or fields.key_enter_field == "te_search" then
-		tabdata.fav_selected = 1
-		local input = fields.te_search:lower()
-		tabdata.search_for = fields.te_search
-
-		if #menudata.favorites < 2 then
-			return true
-		end
-
-		menudata.search_result = {}
-
-		-- setup the keyword list
-		local keywords = {}
-		for word in input:gmatch("%S+") do
-			word = word:gsub("(%W)", "%%%1")
-			table.insert(keywords, word)
-		end
-
-		if #keywords == 0 then
-			menudata.search_result = nil
-			return true
-		end
-
-		-- Search the serverlist
-		local search_result = {}
-		for i = 1, #menudata.favorites do
-			local server = menudata.favorites[i]
-			local found = 0
-			for k = 1, #keywords do
-				local keyword = keywords[k]
-				if server.name then
-					local sername = server.name:lower()
-					local _, count = sername:gsub(keyword, keyword)
-					found = found + count * 4
-				end
-
-				if server.description then
-					local desc = server.description:lower()
-					local _, count = desc:gsub(keyword, keyword)
-					found = found + count * 2
-				end
-			end
-			if found > 0 then
-				local points = (#menudata.favorites - i) / 5 + found
-				server.points = points
-				table.insert(search_result, server)
-			end
-		end
-		if #search_result > 0 then
-			table.sort(search_result, function(a, b)
-				return a.points > b.points
-			end)
-			menudata.search_result = search_result
-			local first_server = search_result[1]
-			core.settings:set("address",     first_server.address)
-			core.settings:set("remote_port", first_server.port)
-			gamedata.serverdescription = first_server.description
-		end
-		return true
-	end
-
-	--if fields.btn_mp_refresh then
-	--	asyncOnlineFavourites()
-	--	return true
-	--end
-
-	-- Quick and dirty fix.
-	-- Maybe favorites and a big part of the whole mechanism has to be removed
-	fields.te_address = fields.te_address or core.settings:get("address")
-	fields.te_port = fields.te_port or core.settings:get("remote_port")
-
-	if (fields.btn_mp_connect or fields.key_enter)
-			and fields.te_address ~= "" and fields.te_port then
-
-		gamedata.playername = fields.te_name
-		gamedata.password   = fields.te_pwd
-		gamedata.address    = fields.te_address
-		gamedata.port       = fields.te_port
-		gamedata.selected_world = 0
-		local fav_idx = core.get_table_index("favourites")
-		local fav = serverlist[fav_idx]
-
-		if fav_idx and fav_idx <= #serverlist and
-				fav.address == fields.te_address and
-				fav.port    == fields.te_port then
-
-			gamedata.servername        = fav.name
-			gamedata.serverdescription = fav.description
-
-			if menudata.favorites_is_public and
-					not is_server_protocol_compat_or_error(
-						fav.proto_min, fav.proto_max) then
-				return true
-			end
-		else
-			gamedata.servername        = ""
-			gamedata.serverdescription = ""
-		end
-
-		core.settings:set("address",     fields.te_address)
-		core.settings:set("remote_port", fields.te_port)
-
-		core.start()
+	-- Join game
+	if (fields.btn_mp_play or fields.key_enter) and server.gameserver then
+		start_gameserver(server)
 		return true
 	end
 
 	-- Launch browser on distant map server.
-	-- TODO: Manage, with UPNP, to get information about wether mapserver is started or not
-	if fields.btn_mp_carto and fields.te_address ~= "" then
-		core.launch_browser("http://".. fields.te_address ..":8080")
+	if fields.btn_mp_carto and server.mapserver then
+		core.launch_browser( "http://" .. server.mapserveraddress .. ":" ..
+				server.mapserverport)
+		return true
 	end
 
 	return false
 end
 
+--------------------------------------------------------------------------------
+-- Async stuff
+
+function core.handle_async(func, parameter, callback)
+	-- Serialize function
+	local serialized_func = string.dump(func)
+
+	assert(serialized_func ~= nil)
+
+	-- Serialize parameters
+	local serialized_param = core.serialize(parameter)
+
+	if serialized_param == nil then
+		return false
+	end
+
+	local jobid = core.do_async_callback(serialized_func, serialized_param)
+
+	core.async_jobs[jobid] = callback
+
+	return true
+end
+
+local autosync
+
+local function wait()
+	local time = os.time()
+	while (os.time() == time) do
+	end
+end
+
+local function do_autosync()
+	if autosync then
+		core.event_handler("Refresh")
+		core.handle_async(wait, nil, do_autosync)
+	end
+end
+
 local function on_change(type, old_tab, new_tab)
-	if type == "LEAVE" then return end
---	asyncOnlineFavourites()
-	asyncLanFavourites()
+	if type == "LEAVE" then
+		autosync = false
+	end
+
+	if type == "ENTER" then
+		autosync = true
+		do_autosync()
+	end
 end
 
 --------------------------------------------------------------------------------
@@ -356,5 +242,5 @@ return {
 	caption = minetest.colorize("#ff0", fgettext("Rejoindre partie multijoueur")),
 	cbf_formspec = get_formspec,
 	cbf_button_handler = main_button_handler,
-	on_change = on_change
+	on_change = on_change,
 }

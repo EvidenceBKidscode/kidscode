@@ -37,6 +37,11 @@ static Settings main_settings;
 Settings *g_settings = &main_settings;
 std::string g_settings_path;
 
+// >> KIDSCODE - Volatile settings
+static Settings volatile_settings;
+Settings *g_volatile_settings = &volatile_settings;
+// << KIDSCODE - Volatile settings
+
 Settings::~Settings()
 {
 	clear();

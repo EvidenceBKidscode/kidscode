@@ -70,13 +70,16 @@ private:
 	std::string m_filename;
 	bool m_is_own_settings = false;
 	bool m_write_allowed = true;
+	bool m_volatile = false; // KIDSCODE - Volatile settings
 
 public:
+	LuaSettings(Settings *settings);
 	LuaSettings(Settings *settings, const std::string &filename);
 	LuaSettings(const std::string &filename, bool write_allowed);
 	~LuaSettings();
 
 	static void create(lua_State *L, Settings *settings, const std::string &filename);
+	static void create(lua_State *L, Settings *settings); // KIDSCODE - Volatile settings
 
 	// LuaSettings(filename)
 	// Creates a LuaSettings and leaves it on top of the stack

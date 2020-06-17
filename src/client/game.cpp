@@ -1684,6 +1684,8 @@ bool Game::connectToServer(const std::string &playername,
 					registration_confirmation_shown = true;
 					(new GUIConfirmRegistration(guienv, guienv->getRootGUIElement(), -1,
 						   &g_menumgr, client, playername, password, connection_aborted))->drop();
+				} else {
+					client->confirmRegistration();
 				}
 			} else {
 				wait_time += dtime;

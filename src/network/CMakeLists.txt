@@ -7,6 +7,7 @@ set(common_network_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/serveropcodes.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/socket.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/upnpserver.cpp # KIDSCODE - Local network server announcement
+	${CMAKE_CURRENT_SOURCE_DIR}/upnpclient.cpp # KIDSCODE - Local network server discovery
 	PARENT_SCOPE
 )
 

@@ -32,6 +32,15 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 		throw LuaError("Attempt to set secure setting."); \
 	}
 
+// >> KIDSCODE - Volatile settings
+LuaSettings::LuaSettings(Settings *settings) :
+	m_settings(settings),
+	m_filename(),
+	m_volatile(true)
+{
+}
+// << KIDSCODE - Volatile settings
+
 LuaSettings::LuaSettings(Settings *settings, const std::string &filename) :
 	m_settings(settings),
 	m_filename(filename)
@@ -62,6 +71,16 @@ void LuaSettings::create(lua_State *L, Settings *settings,
 	luaL_getmetatable(L, className);
 	lua_setmetatable(L, -2);
 }
+
+// >> KIDSCODE - Volatile settings
+void LuaSettings::create(lua_State *L, Settings *settings)
+{
+	LuaSettings *o = new LuaSettings(settings);
+	*(void **)(lua_newuserdata(L, sizeof(void *))) = o;
+	luaL_getmetatable(L, className);
+	lua_setmetatable(L, -2);
+}
+// << KIDSCODE - Volatile settings
 
 
 // garbage collector
@@ -246,6 +265,13 @@ int LuaSettings::l_write(lua_State* L)
 		throw LuaError("Settings: writing " + o->m_filename +
 				" not allowed with mod security on.");
 	}
+
+	// >> KIDSCODE - Volatile settings
+	if (o->m_volatile) {
+		lua_pushboolean(L, false);
+		return 1;
+	}
+	// << KIDSCODE - Volatile settings
 
 	bool success = o->m_settings->updateConfigFile(o->m_filename.c_str());
 	lua_pushboolean(L, success);

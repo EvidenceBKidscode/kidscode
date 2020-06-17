@@ -183,7 +183,7 @@ end
 
 function mapmgr.preparemaplist(data)
 	local maps = get_local_maps()
-	local token = core.settings:get("gartoken")
+	local token = core.volatile_settings:get("gartoken")
 	if token then
 		local demands = download_map_demands_list(token)
 		for _, demand in ipairs(demands or {}) do

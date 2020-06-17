@@ -22,6 +22,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #if USE_MAPSERVER
 #include "mapserver.h"
 #endif
+#include "network/upnpserver.h"
 #include "debug.h"
 #include "script/lua_api/l_internal.h"
 #include <cstring>
@@ -184,6 +185,7 @@ void ModApiMapserver::OnEvent(int eventtype) {
 	switch(eventtype) {
 		case 1:
 			event.type = "app-status-changed";
+			upnp_mapserver_check();
 			break;
 		case 2:
 			event.type = "map-status-changed";

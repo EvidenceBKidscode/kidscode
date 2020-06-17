@@ -220,10 +220,6 @@ int main(int argc, char *argv[])
 	retval = 0;
 #endif
 
-	// >> KIDSCODE - GAR interface
-	g_settings->remove("gartoken");
-	// << KIDSCODE - GAR interface
-
 	// Update configuration file
 	if (!g_settings_path.empty())
 		g_settings->updateConfigFile(g_settings_path.c_str());
@@ -514,10 +510,8 @@ static bool init_common(const Settings &cmd_args, int argc, char *argv[])
 		if (pos != std::string::npos)
 			token = token.substr(pos+3);
 
-		g_settings->set("gartoken", token);
+		g_volatile_settings->set("gartoken", token);
 	}
-	else
-		g_settings->remove("gartoken");
 	// << KIDSCODE - GAR interface
 
 	// >> KIDSCODE - Installation mode

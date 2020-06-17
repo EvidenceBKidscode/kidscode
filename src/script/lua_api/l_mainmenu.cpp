@@ -40,7 +40,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <IFileSystem.h>
 #include "client/renderingengine.h"
 #include "network/networkprotocol.h"
-#include "network/upnpserver.h"
+#include "network/upnpclient.h"
 
 // >> KIDSCODE
 #include "map.h"
@@ -416,6 +416,34 @@ int ModApiMainMenu::l_get_favorites(lua_State *L)
 			lua_pushnumber(L, ping);
 			lua_settable(L, top_lvl2);
 		}
+
+		// >> KIDSCODE - Mapserver annoucement
+		if (!server["gameserver"].asString().empty()) {
+			lua_pushstring(L,"gameserver");
+			lua_pushboolean(L, server["gameserver"].asBool());
+			lua_settable(L, top_lvl2);
+		}
+
+		if (!server["mapserver"].asString().empty()) {
+			lua_pushstring(L,"mapserver");
+			lua_pushboolean(L, server["mapserver"].asBool());
+			lua_settable(L, top_lvl2);
+		}
+
+		if (!server["mapserveraddress"].asString().empty()) {
+			lua_pushstring(L,"mapserveraddress");
+			std::string topush = server["mapserveraddress"].asString();
+			lua_pushstring(L,topush.c_str());
+			lua_settable(L, top_lvl2);
+		}
+
+		if (!server["mapserverport"].asString().empty()) {
+			lua_pushstring(L,"mapserverport");
+			std::string topush = server["mapserverport"].asString();
+			lua_pushstring(L,topush.c_str());
+			lua_settable(L, top_lvl2);
+		}
+		// << KIDSCODE - Mapserver annoucement
 
 		lua_settable(L, top);
 		index++;
