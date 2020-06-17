@@ -115,7 +115,7 @@ void set_worldpath(std::string path) {
 		TCHAR  infoBuf[32768];
 		DWORD  bufCharCount = 32767;
 		if(GetComputerName( infoBuf, &bufCharCount ) )
-			name += " sur " + infoBuf;
+			name += " sur " + std::string(infoBuf);
 		#else
 		char hostname[HOST_NAME_MAX] = {0};
 		if (!gethostname(hostname, HOST_NAME_MAX))
