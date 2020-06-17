@@ -1459,10 +1459,13 @@ profiler_print_interval (Engine profiling data print interval) int 0
 
 [Online Content Repository]
 # >> KIDSCODE - Connection to GAR and Edutheque via IGN REST API
+
+#	URL of the map service API
 ign_map_api_url (IGN map services URL) string https://minetestqualif2.siv.cloud/rest/public/api/orders/
+
 # << KIDSCODE - Connection to GAR and Edutheque via IGN REST API
 
-# >> KIDSCODE - ContentDB disabled
+## >> KIDSCODE - ContentDB disabled
 #    The URL for the content repository
 ##contentdb_url (ContentDB URL) string https://content.minetest.net
 
@@ -1473,4 +1476,4 @@ ign_map_api_url (IGN map services URL) string https://minetestqualif2.siv.cloud/
 #    These flags are independent from Minetest versions,
 #    so see a full list at https://content.minetest.net/help/content_flags/
 ##contentdb_flag_blacklist (ContentDB Flag Blacklist) string nonfree, desktop_default
-# << KIDSCODE  - ContentDB disabled
+## << KIDSCODE  - ContentDB disabled
