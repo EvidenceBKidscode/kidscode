@@ -24,6 +24,22 @@ local json_geo_file  = "geometry.dat"
 
 local baseurl = minetest.settings:get("ign_map_api_url") or ""
 
+local function file_exists(path)
+	local ok, err, code = os.rename(path, path)
+	return ok or code == 13
+end
+
+local function check_map_name(name)
+	if name then
+		if not name:match("^[ 0-9a-zA-Z%-!#$&\"'()+,.;=@^_{}%[%]]+$") then
+			return "Le nom ne doit comporter ni accents, ni caractères spéciaux."
+		end
+		if file_exists(core.get_worldpath() .. DIR_DELIM .. name) then
+			return ("Une carte \"%s\" existe déja."):format(name)
+		end
+	end
+end
+
 --------------------------------------------------------------------------------
 -- Maps and map demands management
 --------------------------------------------------------------------------------
@@ -245,23 +261,27 @@ end
 
 -- Multi purpose dialog (status, message, question)
 local function dlg_mapimport_formspec(data)
-	local fs = "formspec_version[3]size[7,3]"
+	local fs = "formspec_version[3]"
+	local y = 2
+
 	if data.field then
-		fs = fs .. "label[0.5,0.5;" .. core.formspec_escape(data.message or "") .. "]" ..
+		fs = fs .. "size[7,3]" ..
+			"hypertext[0.5,0.3;6,1;;" .. core.formspec_escape(data.message or "") .. "]" ..
 			"field[0.5,1;6,0.7;dlg_mapimport_formspec_value;;" .. data.field .."]"
 	else
-		fs = fs .. "label[0.5,1;" .. core.formspec_escape(data.message or "") .. "]"
+		fs = fs .. "size[7,3]" ..
+			"hypertext[0.5,0.5;6,1;;" .. core.formspec_escape(data.message or "") .. "]"
 	end
 
 	if data.buttons then
 		local x = (data.buttons.ok and data.buttons.cancel) and 0.5 or 2.25
 
 		if data.buttons.ok then
-			fs = fs .. "button[" .. x .. ",2;2.5,0.7;dlg_mapimport_formspec_ok;" .. data.buttons.ok .. "]"
+			fs = fs .. "button[" .. x .. "," .. y .. ";2.5,0.7;dlg_mapimport_formspec_ok;" .. data.buttons.ok .. "]"
 			x = x + 3.5
 		end
 		if data.buttons.cancel then
-			fs = fs .. "button[" .. x .. ",2;2.5,0.7;dlg_mapimport_formspec_cancel;" .. data.buttons.cancel .. "]"
+			fs = fs .. "button[" .. x .. "," .. y .. ";2.5,0.7;dlg_mapimport_formspec_cancel;" .. data.buttons.cancel .. "]"
 		end
 	end
 
@@ -343,7 +363,7 @@ local function async_step(parent, status, async_func, params, ok_func, end_func)
 			end
 			if params.error then
 				core.delete_dir(params.tempfolder)
-				show_message(parent, params.error)
+				show_message(parent, "<b><center><style color=yellow>" .. params.error)
 			else
 				if ok_func and type(ok_func) == "function" then
 					ok_func(params)
@@ -426,20 +446,13 @@ end
 
 local function get_question(params, askname, mapname)
 	if askname or not mapname then
-		return "Choisissez le nom de la carte qui va être importée :"
+		return "<b>Choisissez le nom de la carte qui va être importée :</b>"
 	end
 
-	if not mapname:match("^[ 0-9a-zA-Z%-!#$&\"'()+,.;=@^_{}%[%]]+$") then
-		return "Le nom de la carte ne doit comporter ni accents, ni caractères spéciaux"
-	end
+	local error = check_map_name(mapname)
 
-	local mappath = core.get_worldpath() .. DIR_DELIM .. mapname
-
-	-- Test directory existence
-	local ok, err, code = os.rename(mappath, mappath)
-	if ok or code == 13 then
-		return ("Une carte \"%s\" existe déja. Choisissez un autre nom :"):
-			format(core.colorize("#EE0", mapname))
+	if error then
+		return "<style color=yellow>" .. error .. "</style>\n<b>Choisissez un autre nom :</b>"
 	end
 end
 
@@ -463,15 +476,15 @@ local function install_map(parent, params, askname, mapname)
 
 	params.mappath = core.get_worldpath() .. DIR_DELIM .. mapname
 
-	async_step(parent, "Vérification et conversion de la carte", async_verify, params,
+	async_step(parent, "<b><center>Vérification et conversion de la carte", async_verify, params,
 		function(params)
-			async_step(parent, "Installation de la carte", async_install, params,
+			async_step(parent, "<b><center>Installation de la carte", async_install, params,
 				function(params)
 					core.log("info", "New map installed: " .. mapname)
 					menudata.worldlist:refresh()
 					show_message(parent,
-						("La carte \"%s\" a bien été importée."):
-						format(core.colorize("#EE0", mapname)))
+						("<b><center>La carte \"<style color=yellow>%s</style>\" a bien été importée."):
+						format(mapname))
 					core.delete_dir(params.tempfolder)
 				end
 			)
@@ -484,7 +497,7 @@ function mapmgr.import_map_from_file(parent, zippath)
 	local params = { tempfolder = os.tempfolder(), zippath = zippath }
 	core.create_dir(params.tempfolder)
 
-	async_step(parent, "Décompression de la carte", async_unzip, params,
+	async_step(parent, "<b><center>Décompression de la carte", async_unzip, params,
 		function(params)
 			-- Continue common install process now
 			install_map(parent, params, true)
@@ -502,9 +515,9 @@ function mapmgr.install_map_from_web(parent, map)
 	local params = { tempfolder = os.tempfolder(), map = map }
 	core.create_dir(params.tempfolder)
 
-	async_step(parent, "Téléchargement de la carte", async_download, params,
+	async_step(parent, "<b><center>Téléchargement de la carte", async_download, params,
 		function(params)
-			async_step(parent, "Décompression de la carte", async_unzip, params,
+			async_step(parent, "<b><center>Décompression de la carte", async_unzip, params,
 				function(params)
 					-- Add json file for tracking
 					save_map_alac_data(params.map, params.unzipedmap)
@@ -524,18 +537,14 @@ function mapmgr.rename_map(parent, map, newname)
 
 	-- Checks
 	if not newname then
-		question = "Renommer la carte :"
+		question = "<b>Renommer la carte</b>"
 	elseif newname == map.name then
-		return
-	elseif not newname:match("^[ 0-9a-zA-Z%-!#$&\"'()+,.;=@^_{}%[%]]+$") then
-		question = "Le nom de la carte ne doit comporter ni accents, ni caractères spéciaux"
+		return -- Nothing to do
 	else
-		local ok, err, code = os.rename(
-			core.get_worldpath() .. DIR_DELIM .. newname,
-			core.get_worldpath() .. DIR_DELIM .. newname)
-		if ok or code == 13 then
-			question = ("Une carte \"%s\" existe déja. Choisissez un autre nom :"):
-				format(core.colorize("#EE0", newname))
+		local error = check_map_name(newname)
+
+		if error then
+			question = "<b>Renommer la carte</b>\n<style color=yellow>" .. error .. "</style>"
 		end
 	end
 
