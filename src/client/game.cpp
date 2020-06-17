@@ -873,8 +873,7 @@ protected:
 	// Misc
 	void limitFps(FpsControl *fps_timings, f32 *dtime);
 
-	void showOverlayMessage(const char *msg, float dtime, int percent,
-			bool draw_clouds = true);
+	void showOverlayMessage(const char *msg, float dtime, int percent);
 
 	static void settingChangedCallback(const std::string &setting_name, void *data);
 	void readSettings();
@@ -1288,7 +1287,7 @@ void Game::shutdown()
 	if (formspec)
 		formspec->quitMenu();
 
-	showOverlayMessage(N_("Shutting down..."), 0, 0, false);
+	showOverlayMessage(N_("Shutting down..."), 0, 0);
 
 	if (clouds)
 		clouds->drop();
@@ -4172,11 +4171,10 @@ inline void Game::limitFps(FpsControl *fps_timings, f32 *dtime)
 	fps_timings->last_time = time;
 }
 
-void Game::showOverlayMessage(const char *msg, float dtime, int percent, bool draw_clouds)
+void Game::showOverlayMessage(const char *msg, float dtime, int percent)
 {
 	const wchar_t *wmsg = wgettext(msg);
-	RenderingEngine::draw_load_screen(wmsg, guienv, texture_src, dtime, percent,
-		draw_clouds);
+	RenderingEngine::draw_load_screen(wmsg, guienv, texture_src, dtime, percent);
 	delete[] wmsg;
 }
 
