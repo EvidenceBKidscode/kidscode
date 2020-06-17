@@ -262,26 +262,29 @@ end
 -- Multi purpose dialog (status, message, question)
 local function dlg_mapimport_formspec(data)
 	local fs = "formspec_version[3]"
-	local y = 2
+	local y = data.message:find "\n" and 2.1 or 1.7
 
 	if data.field then
-		fs = fs .. "size[7,3]" ..
-			"hypertext[0.5,0.3;6,1;;" .. core.formspec_escape(data.message or "") .. "]" ..
-			"field[0.5,1;6,0.7;dlg_mapimport_formspec_value;;" .. data.field .."]"
+		fs = fs .. "size[7," .. (y + 0.9) .. "]" ..
+			"hypertext[0.2,0.3;7,1;;" .. core.formspec_escape(data.message or "") .. "]" ..
+			"field[0.25," .. (y - 0.9) ..
+				";6.5,0.7;dlg_mapimport_formspec_value;;" .. data.field .."]"
 	else
 		fs = fs .. "size[7,3]" ..
-			"hypertext[0.5,0.5;6,1;;" .. core.formspec_escape(data.message or "") .. "]"
+			"hypertext[0.5,0.5;6.5,1;;" .. core.formspec_escape(data.message or "") .. "]"
 	end
 
 	if data.buttons then
 		local x = (data.buttons.ok and data.buttons.cancel) and 0.5 or 2.25
 
 		if data.buttons.ok then
-			fs = fs .. "button[" .. x .. "," .. y .. ";2.5,0.7;dlg_mapimport_formspec_ok;" .. data.buttons.ok .. "]"
+			fs = fs .. "button[" .. x .. "," .. y ..
+				";2.5,0.7;dlg_mapimport_formspec_ok;" .. data.buttons.ok .. "]"
 			x = x + 3.5
 		end
 		if data.buttons.cancel then
-			fs = fs .. "button[" .. x .. "," .. y .. ";2.5,0.7;dlg_mapimport_formspec_cancel;" .. data.buttons.cancel .. "]"
+			fs = fs .. "button[" .. x .. "," .. y ..
+				";2.5,0.7;dlg_mapimport_formspec_cancel;" .. data.buttons.cancel .. "]"
 		end
 	end
 
