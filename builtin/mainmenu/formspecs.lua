@@ -20,38 +20,6 @@ local min, max = math.min, math.max
 
 formspecs = {}
 
-local function rename_map(parent, map)
-	local dlg =
-		dialog_create("dlg_rename", function()
-			return  "formspec_version[3] size[7,2]" ..
-				"field[0.2,0.5;6.6,0.5;mapname;Renommer la carte :;" .. ESC(map.name) .. "]" ..
-				"button[2.4,1.2;2,0.6;dlg_rename_ok;OK]"
-		end,
-		function(this, fields, data)
-			this:delete()
-			ui.update()
-			if fields.dlg_rename_ok then
-				if fields.mapname == map.mapname then
-					return false
-				end
-
-				local path = map.path
-				local path_cut = path:match(".*" .. DIR_DELIM)
-				os.rename(path, path_cut .. fields.mapname)
-				create_worldlist()
-
-				return true
-			end
-		end)
-
-	dlg:set_parent(parent)
-	parent:hide()
-	dlg:show()
-	ui.update()
-
-	return true
-end
-
 -- Select map Formspec
 ----------------------
 formspecs.mapselect = {}
@@ -221,7 +189,8 @@ function formspecs.mapselect.handle(tabview, fields, name, tabdata)
 	end
 
 	if fields.world_rename then
-		rename_map(tabview, map)
+		mapmgr.rename_map(tabview, map)
+--		rename_map(tabview, map)
 		return true
 	end
 

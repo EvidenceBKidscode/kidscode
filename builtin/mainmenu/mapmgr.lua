@@ -245,20 +245,23 @@ end
 
 -- Multi purpose dialog (status, message, question)
 local function dlg_mapimport_formspec(data)
-	local fs = "size[8,3]"
+	local fs = "formspec_version[3]size[7,3]"
 	if data.field then
-		fs = fs .. "label[0,0;" .. core.formspec_escape(data.message or "") .. "]" ..
-			"field[1,1;6,1;dlg_mapimport_formspec_value;;" .. data.field .."]"
+		fs = fs .. "label[0.5,0.5;" .. core.formspec_escape(data.message or "") .. "]" ..
+			"field[0.5,1;6,0.7;dlg_mapimport_formspec_value;;" .. data.field .."]"
 	else
-		fs = fs .. "label[0,0.5;" .. core.formspec_escape(data.message or "") .. "]"
+		fs = fs .. "label[0.5,1;" .. core.formspec_escape(data.message or "") .. "]"
 	end
 
 	if data.buttons then
+		local x = (data.buttons.ok and data.buttons.cancel) and 0.5 or 2.25
+
 		if data.buttons.ok then
-			fs = fs .. "button[1,2;2.6,0.5;dlg_mapimport_formspec_ok;" .. data.buttons.ok .. "]"
+			fs = fs .. "button[" .. x .. ",2;2.5,0.7;dlg_mapimport_formspec_ok;" .. data.buttons.ok .. "]"
+			x = x + 3.5
 		end
 		if data.buttons.cancel then
-			fs = fs .. "button[4,2;2.8,0.5;dlg_mapimport_formspec_cancel;" .. data.buttons.cancel .. "]"
+			fs = fs .. "button[" .. x .. ",2;2.5,0.7;dlg_mapimport_formspec_cancel;" .. data.buttons.cancel .. "]"
 		end
 	end
 
@@ -319,7 +322,6 @@ local function show_question(parent, errmsg, default, cb_ok, cb_cancel)
 		dlg_mapimport_btnhandler,
 		nil)
 
-	dlg.data.message = errmsg
 	dlg.data.message = errmsg
 	dlg.data.field = default or ""
 	dlg.data.buttons = {ok = "Valider", cancel = "Annuler" }
@@ -513,4 +515,42 @@ function mapmgr.install_map_from_web(parent, map)
 			)
 		end
 	)
+end
+
+-- Rename a map (in newname omitted or incorrect, user is prompted for a name)
+function mapmgr.rename_map(parent, map, newname)
+
+	local question
+
+	-- Checks
+	if not newname then
+		question = "Renommer la carte :"
+	elseif newname == map.name then
+		return
+	elseif not newname:match("^[ 0-9a-zA-Z%-!#$&\"'()+,.;=@^_{}%[%]]+$") then
+		question = "Le nom de la carte ne doit comporter ni accents, ni caractères spéciaux"
+	else
+		local ok, err, code = os.rename(
+			core.get_worldpath() .. DIR_DELIM .. newname,
+			core.get_worldpath() .. DIR_DELIM .. newname)
+		if ok or code == 13 then
+			question = ("Une carte \"%s\" existe déja. Choisissez un autre nom :"):
+				format(core.colorize("#EE0", newname))
+		end
+	end
+
+	-- Ask or act
+	if question then
+		show_question(parent, question, newname or map.name,
+			function(this, fields)
+				mapmgr.rename_map(this.parent, map, fields.dlg_mapimport_formspec_value)
+				return true
+			end
+		)
+	else
+		local ok, err, code = os.rename(
+			core.get_worldpath() .. DIR_DELIM .. map.name,
+			core.get_worldpath() .. DIR_DELIM .. newname)
+		menudata.worldlist:refresh()
+	end
 end
