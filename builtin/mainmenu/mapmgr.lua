@@ -91,8 +91,10 @@ function mapmgr.new_map_from_core_world(core_map_desc)
 		local json = minetest.parse_json(data)
 		if json and type(json) == "table" then
 			map.alac = json
-			map.origin = "ign" -- TODO: Adapt to new IGN information
-			map.order_id = map.alac.order_id
+			if map.alac.order_id then
+				map.origin = "ign" -- TODO: Adapt to new IGN information
+				map.order_id = map.alac.order_id
+			end
 		end
 	end
 
@@ -513,6 +515,13 @@ local function install_map(parent, params, askname, mapname)
 						("<b><center>La carte \"<style color=yellow>%s</style>\" a bien été importée."):
 						format(mapname))
 					core.delete_dir(params.tempfolder)
+
+					-- Choose map if imported from file
+					local map = params.map or mapmgr.new_map_from_core_world(
+							{ name = mapname, path = params.mappath })
+					if map.origin == "local" then
+						gamemenu.chosen_map = map
+					end
 				end
 			)
 		end
