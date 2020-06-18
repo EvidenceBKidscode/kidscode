@@ -44,6 +44,7 @@ local function render_client_count(n)
 	else return '' end
 end
 
+--[[ KIDSCODE - Not used anymore
 local function configure_selected_world_params(idx)
 	local worldconfig = pkgmgr.get_worldconfig(menudata.worldlist:get_list()[idx].path)
 	if worldconfig.creative_mode then
@@ -53,6 +54,7 @@ local function configure_selected_world_params(idx)
 		core.settings:set("enable_damage", worldconfig.enable_damage)
 	end
 end
+]]
 
 --------------------------------------------------------------------------------
 function image_column(tooltip, flagname)
@@ -192,6 +194,7 @@ function menu_render_worldlist()
 end
 
 --------------------------------------------------------------------------------
+--[[ KIDSCODE - Not used anymore
 function menu_handle_key_up_down(fields, textlist, settingname)
 	local oldidx, newidx = core.get_textlist_index(textlist), 1
 	if fields.key_up or fields.key_down then
@@ -207,7 +210,7 @@ function menu_handle_key_up_down(fields, textlist, settingname)
 	end
 	return false
 end
-
+--]]
 --------------------------------------------------------------------------------
 function asyncOnlineFavourites()
 	if not menudata.public_known then

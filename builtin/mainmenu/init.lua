@@ -90,7 +90,7 @@ function create_worldlist()
 		mapmgr.compare_map,
 		-- Unique id comparison function
 		function(element, uid)
-			return element.name == uid
+			return element.uid == uid
 		end,
 		-- Filter function
 		function(element, gameid)

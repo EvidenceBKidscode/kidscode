@@ -79,6 +79,7 @@ function filterlist.create(raw_fct,compare_fct,uid_match_fct,filter_fct,fetch_pa
 	self.uid_exists_raw     = filterlist.uid_exists_raw
 	self.raw_index_by_uid   = filterlist.raw_index_by_uid
 	self.refresh            = filterlist.refresh
+	self.get_current_index_by_uid = filterlist.get_current_index_by_uid -- KIDSCODE
 
 	filterlist.process(self)
 
@@ -253,6 +254,21 @@ function filterlist.raw_index_by_uid(self, uid)
 
 	return elementidx
 end
+
+-- >> KIDSCODE
+--------------------------------------------------------------------------------
+function filterlist.get_current_index_by_uid(self,uid)
+	assert(self.m_processed_list ~= nil)
+
+	for i,v in ipairs(self.m_processed_list) do
+		if self.m_uid_match_fct(v,uid) then
+			return i
+		end
+	end
+
+	return 0
+end
+-- << KIDSCODE
 
 --------------------------------------------------------------------------------
 -- COMMON helper functions                                                    --

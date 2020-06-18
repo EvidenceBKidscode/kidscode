@@ -55,7 +55,7 @@ function mapmgr.new_map_from_json(json_data)
 		demand = true,
 		name = "",
 		status = transcode_status[json_data.status] or "unknown",
-		order_id =  json_data.order_id,
+		order_id = json_data.order_id,
 		origin = "ign", -- TODO: Adapt to IGN improvements
 		alac = table.copy(json_data),
 	}
@@ -180,6 +180,7 @@ local function download_map_demands_list(token)
 			maps[#maps + 1] = map
 		end
 	end
+
 	return maps
 end
 
@@ -194,7 +195,25 @@ local function get_local_maps()
 			maps[#maps + 1] = map
 		end
 	end
+
 	return maps
+end
+
+local function create_uid(map)
+	if map.uid then
+		return
+	end
+	if map.demand then
+		map.uid =  map.origin .. map.order_id
+	else
+		map.alac = map.alac or {}
+		if not map.alac.uid then
+			map.alac.uid = map.origin ..
+				(map.order_id or math.random(0, 9999999999))
+			save_map_alac_data(map)
+		end
+		map.uid = map.alac.uid
+	end
 end
 
 function mapmgr.preparemaplist(data)
@@ -216,6 +235,11 @@ function mapmgr.preparemaplist(data)
 				end
 			end
 		end
+	end
+
+	-- Ensure all maps have UIDs
+	for _, map in ipairs(maps) do
+		create_uid(map)
 	end
 
 	return maps;

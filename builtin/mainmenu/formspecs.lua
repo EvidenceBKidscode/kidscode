@@ -26,12 +26,12 @@ formspecs.mapselect = {}
 
 function formspecs.mapselect.get()
 	local fs = ""
-	local selected = tonumber(core.settings:get("mainmenu_last_selected_world")) or 0
+	local uid = core.settings:get("mainmenu_last_selected_world_uid")
 	local map, index
 
-	if selected > 0 then
-		map = menudata.worldlist:get_raw_element(selected)
-		index = filterlist.get_current_index(menudata.worldlist, selected) + 1 -- Header
+	if uid then
+		map = menudata.worldlist:get_raw_element(menudata.worldlist:raw_index_by_uid(uid))
+		index = filterlist.get_current_index_by_uid(menudata.worldlist, uid) + 1 -- Header
 	else
 		index = -math.random() -- Force refresh and avoid selection of title line
 	end
@@ -46,25 +46,27 @@ function formspecs.mapselect.get()
 		"button[10.8,8;3,0.6;refresh;Actualiser la liste]" ..
 		"tooltip[refresh;Rafraichir la liste des cartes]"
 
-	if mapmgr.map_is_map(map) then
-		fs = fs ..
-			"button[0.2,8;3,0.6;world_select;" .. fgettext("Choisir cette carte") .. ";#0000ff]" ..
-			"button[0.2,8.7;3,0.6;world_delete;" .. fgettext("Désinstaller la carte") .. ";#ff0000]" ..
-			"button[0.2,7.3;3,0.6;world_rename;" .. fgettext("Renommer la carte") .. "]"
-	end
-
-	if mapmgr.map_is_demand(map) then
-		if mapmgr.can_install_map(map) then
-			fs = fs .. "button[0.2,8;3,0.6;world_install;" .. fgettext("Installer") .. ";#0000ff]"
+	if map then
+		if mapmgr.map_is_map(map) then
+			fs = fs ..
+				"button[0.2,8;3,0.6;world_select;" .. fgettext("Choisir cette carte") .. ";#0000ff]" ..
+				"button[0.2,8.7;3,0.6;world_delete;" .. fgettext("Désinstaller la carte") .. ";#ff0000]" ..
+				"button[0.2,7.3;3,0.6;world_rename;" .. fgettext("Renommer la carte") .. "]"
 		end
 
-		if mapmgr.can_ask_map_again(map) then
-			fs = fs .. "button[0.2,8;3,0.6;world_reask;" .. fgettext("Redemander") .. ";#0000ff]"
-		end
-	end
+		if mapmgr.map_is_demand(map) then
+			if mapmgr.can_install_map(map) then
+				fs = fs .. "button[0.2,8;3,0.6;world_install;" .. fgettext("Installer") .. ";#0000ff]"
+			end
 
-	if mapmgr.can_cancel_map(map) then
-		-- TODO
+			if mapmgr.can_ask_map_again(map) then
+				fs = fs .. "button[0.2,8;3,0.6;world_reask;" .. fgettext("Redemander") .. ";#0000ff]"
+			end
+		end
+
+		if mapmgr.can_cancel_map(map) then
+			-- TODO
+		end
 	end
 
 	if core.settings:get_bool("advanced_options") then
@@ -100,7 +102,6 @@ local sort_columns = {
 
 function formspecs.mapselect.handle(tabview, fields, name, tabdata)
 	local world_doubleclick = false
-
 	if fields.sp_worlds then
 		local event = core.explode_table_event(fields.sp_worlds)
 		if event.type == "DCL" and event.row > 1 then
@@ -110,8 +111,11 @@ function formspecs.mapselect.handle(tabview, fields, name, tabdata)
 		if event.type == "CHG" then
 			if event.row > 1 then
 				menu_worldmt_legacy(event.row - 1)
-				core.settings:set("mainmenu_last_selected_world",
+				local map = menudata.worldlist:get_raw_element(
 					menudata.worldlist:get_raw_index(event.row - 1))
+				if map then
+					core.settings:set("mainmenu_last_selected_world_uid", map.uid)
+				end
 			else
 				local sort = sort_columns[event.column]
 				if sort then
@@ -121,23 +125,38 @@ function formspecs.mapselect.handle(tabview, fields, name, tabdata)
 						menudata.worldlist:set_sortmode(sort_columns[event.column])
 					end
 				end
-				core.settings:set("mainmenu_last_selected_world", 0)
 			end
 
 			return true
 		end
 	end
 
-	if menu_handle_key_up_down(fields, "sp_worlds", "mainmenu_last_selected_world") then
+	-- Manages key up/down if focus not in list
+	if fields.key_up or fields.key_down then
+		local oldidx, newidx = core.get_textlist_index("sp_worlds") - 1, 1
+		if fields.key_up and oldidx and oldidx > 1 then
+			newidx = oldidx - 1
+		elseif fields.key_down and oldidx and
+				oldidx < menudata.worldlist:size() then
+			newidx = oldidx + 1
+		end
+		local map = menudata.worldlist:get_raw_element(
+			menudata.worldlist:get_raw_index(newidx))
+		if map then
+			core.settings:set("mainmenu_last_selected_world_uid", map.uid)
+		end
 		return true
 	end
 
-	local selected = tonumber(core.settings:get("mainmenu_last_selected_world")) or 0
+	local uid = core.settings:get("mainmenu_last_selected_world_uid")
 	local map, index
 
-	if selected > 0 then
-		map = menudata.worldlist:get_raw_element(selected)
-		index = filterlist.get_current_index(menudata.worldlist, selected)
+	if uid then
+		map = menudata.worldlist:get_raw_element(
+			menudata.worldlist:raw_index_by_uid(uid))
+		index = filterlist.get_current_index_by_uid(menudata.worldlist, uid) + 1 -- Header
+	else
+		index = -math.random() -- Force refresh and avoid selection of title line
 	end
 
 	if fields.refresh then
@@ -190,7 +209,6 @@ function formspecs.mapselect.handle(tabview, fields, name, tabdata)
 
 	if fields.world_rename then
 		mapmgr.rename_map(tabview, map)
---		rename_map(tabview, map)
 		return true
 	end
 
@@ -281,8 +299,8 @@ function formspecs.startsolo.handle(tabview, fields, name, tabdata)
 	if fields.play and gamemenu.chosen_map then
 
 		core.volatile_settings:set("mainmenu_last_tab", "solo")
-		core.volatile_settings:set("mainmenu_last_chosen_world",
-			core.settings:get("mainmenu_last_selected_world"))
+		core.volatile_settings:set("mainmenu_last_chosen_world_uid",
+			core.settings:get("mainmenu_last_selected_world_uid"))
 
 		gamedata = {
 			singleplayer = true,
@@ -330,8 +348,8 @@ function formspecs.startmulti.handle(tabview, fields, name, tabdata)
 
 	if fields.play and gamemenu.chosen_map then
 		core.volatile_settings:set("mainmenu_last_tab", "multi")
-		core.volatile_settings:set("mainmenu_last_chosen_world",
-			core.settings:get("mainmenu_last_selected_world"))
+		core.volatile_settings:set("mainmenu_last_chosen_world_uid",
+			core.settings:get("mainmenu_last_selected_world_uid"))
 
 		gamedata = {
 			singleplayer = false,
