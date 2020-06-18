@@ -27,7 +27,8 @@ formspecs.mapselect = {}
 function formspecs.mapselect.get()
 	local fs = ""
 	local uid = core.settings:get("mainmenu_last_selected_world_uid")
-	local map, index = 1
+	local map
+	local index = 1
 
 	if uid then
 		map = menudata.worldlist:get_raw_element(menudata.worldlist:raw_index_by_uid(uid))
