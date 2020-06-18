@@ -292,12 +292,12 @@ local function dlg_mapimport_formspec(data)
 
 	if data.field then
 		fs = fs .. "size[7," .. (y + 0.9) .. "]" ..
-			"hypertext[0.2,0.3;7,1;;" .. core.formspec_escape(data.message or "") .. "]" ..
+			"hypertext[0.2,0.3;6.6,1;;" .. core.formspec_escape(data.message or "") .. "]" ..
 			"field[0.25," .. (y - 0.9) ..
 				";6.5,0.7;dlg_mapimport_formspec_value;;" .. data.field .."]"
 	else
 		fs = fs .. "size[7,3]" ..
-			"hypertext[0.5,0.5;6.5,1;;" .. core.formspec_escape(data.message or "") .. "]"
+			"hypertext[0.2,0.5;6.6,1;;" .. core.formspec_escape(data.message or "") .. "]"
 	end
 
 	if data.buttons then
