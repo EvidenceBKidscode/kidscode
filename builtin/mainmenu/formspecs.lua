@@ -27,12 +27,13 @@ formspecs.mapselect = {}
 function formspecs.mapselect.get()
 	local fs = ""
 	local uid = core.settings:get("mainmenu_last_selected_world_uid")
-	local map, index
+	local map, index = 1
 
 	if uid then
 		map = menudata.worldlist:get_raw_element(menudata.worldlist:raw_index_by_uid(uid))
 		index = filterlist.get_current_index_by_uid(menudata.worldlist, uid) + 1 -- Header
-	else
+	end
+	if index == 1 then
 		index = -math.random() -- Force refresh and avoid selection of title line
 	end
 
