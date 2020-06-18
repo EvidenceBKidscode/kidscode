@@ -185,10 +185,10 @@ local function init_globals()
 	ui.set_default("maintab")
 
 	-- >> KIDSCODE - get back to same menu page after playing
-	local chosen = tonumber(core.volatile_settings:get("mainmenu_last_chosen_world"))
-	if chosen then
-		core.volatile_settings:remove("mainmenu_last_chosen_world")
-		gamemenu.chosen_map = menudata.worldlist:get_raw_element(chosen)
+	local uid = core.volatile_settings:get("mainmenu_last_chosen_world_uid")
+	if uid then
+		core.volatile_settings:remove("mainmenu_last_chosen_world_uid")
+		gamemenu.chosen_map = menudata.worldlist:get_raw_element(menudata.worldlist:raw_index_by_uid(uid))
 	end
 
 	local tab = core.volatile_settings:get("mainmenu_last_tab")
