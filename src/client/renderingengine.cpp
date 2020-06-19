@@ -544,31 +544,31 @@ void RenderingEngine::_draw_load_screen(const std::wstring &text,
 		core::rect<s32> tiprect(centertip - tipsize / 2 - 22, centertip + tipsize / 2 + 15);
 		//driver->draw2DRectangle(video::SColor(255, 0, 0, 0), tiprect, NULL);
 
-		tip = L"\n" + tip;
+		tip = L"\n\t\t\t" + tip + L"\t\t\t";
 
 		guitip = guienv->addStaticText(tip.c_str(), tiprect, true, false, NULL, -1, true);
 		guitip->setTextAlignment(gui::EGUIA_CENTER, gui::EGUIA_UPPERLEFT);
 	}
 
+	driver->beginScene(true, true, video::SColor(255, 140, 186, 250));
+
 	bool cloud_menu_background = clouds && g_settings->getBool("menu_clouds");
 	if (cloud_menu_background) {
 		g_menuclouds->step(dtime * 3);
 		g_menuclouds->render();
-		driver->beginScene(true, true, video::SColor(255, 140, 186, 250));
 		g_menucloudsmgr->drawAll();
-	} else {
-		driver->beginScene(true, true, video::SColor(255, 0, 0, 0));
-		// >> Kidscode - Display texture on loading screen background
-		video::ITexture *texture = tsrc->getTexture("loadscreen_bg.png");
-		if (texture) {
-			v2u32 sourcesize = texture->getOriginalSize();
-			draw2DImageFilterScaled(driver, texture,
-				core::rect<s32>(0, 0, screensize.X, screensize.Y),
-				core::rect<s32>(0, 0, sourcesize.X, sourcesize.Y),
-				0, 0, true);			
-		}
-		// << Kidscode - Display texture on loading screen background
 	}
+
+	// >> Kidscode - Display texture on loading screen background
+	video::ITexture *texture = tsrc->getTexture("loadscreen_bg.png");
+	if (texture) {
+		v2u32 sourcesize = texture->getOriginalSize();
+		draw2DImageFilterScaled(driver, texture,
+			core::rect<s32>(0, 0, screensize.X, screensize.Y),
+			core::rect<s32>(0, 0, sourcesize.X, sourcesize.Y),
+			0, 0, true);			
+	}
+	// << Kidscode - Display texture on loading screen background
 
 	// draw progress bar
 	if ((percent >= 0) && (percent <= 100)) {
