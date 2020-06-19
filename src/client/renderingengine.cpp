@@ -538,7 +538,7 @@ void RenderingEngine::_draw_load_screen(const std::wstring &text,
 		m_rdm_tip = rdm;
 
 		std::wstring tip = m_tips[rdm];
-		v2s32 tipsize(tip.size() * 8, g_fontengine->getLineHeight());
+		v2s32 tipsize(g_fontengine->getTextWidth(tip), g_fontengine->getLineHeight());
 		v2s32 centertip(screensize.X / 2, screensize.Y / 4);
 		core::rect<s32> tiprect(centertip - tipsize / 2 - 22, centertip + tipsize / 2 + 15);
 		//driver->draw2DRectangle(video::SColor(255, 0, 0, 0), tiprect, NULL);
