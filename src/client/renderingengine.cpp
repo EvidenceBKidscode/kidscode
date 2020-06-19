@@ -509,7 +509,7 @@ bool RenderingEngine::setXorgWindowIconFromPath(const std::string &icon_file)
 
 void RenderingEngine::_draw_load_screen(const std::wstring &text,
 		gui::IGUIEnvironment *guienv, ITextureSource *tsrc, float dtime,
-		int percent)
+		int percent, bool clouds)
 {
 	m_time += dtime;
 	//std::cout << m_time << std::endl;
@@ -550,7 +550,7 @@ void RenderingEngine::_draw_load_screen(const std::wstring &text,
 		guitip->setTextAlignment(gui::EGUIA_CENTER, gui::EGUIA_UPPERLEFT);
 	}
 
-	bool cloud_menu_background = g_settings->getBool("menu_clouds");
+	bool cloud_menu_background = clouds && g_settings->getBool("menu_clouds");
 	if (cloud_menu_background) {
 		g_menuclouds->step(dtime * 3);
 		g_menuclouds->render();
