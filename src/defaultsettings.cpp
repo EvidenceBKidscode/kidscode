@@ -154,7 +154,7 @@ void set_default_settings(Settings *settings)
 #else
 	settings->setDefault("show_debug", "true");
 #endif
-	settings->setDefault("fsaa", "0");
+	settings->setDefault("fsaa", "2"); // KIDSCODE (formerly 0)
 	settings->setDefault("undersampling", "0");
 	settings->setDefault("world_aligned_mode", "enable");
 	settings->setDefault("autoscale_mode", "disable");
@@ -257,10 +257,10 @@ void set_default_settings(Settings *settings)
 	// Effects
 	settings->setDefault("directional_colored_fog", "true");
 	settings->setDefault("inventory_items_animations", "true"); // KIDSCODE Changed
-	settings->setDefault("mip_map", "false");
+	settings->setDefault("mip_map", "true"); // KIDSCODE Changed
 	settings->setDefault("anisotropic_filter", "false");
 	settings->setDefault("bilinear_filter", "false");
-	settings->setDefault("trilinear_filter", "false");
+	settings->setDefault("trilinear_filter", "true"); // KIDSCODE Changed
 	settings->setDefault("directional_shading", "true");
 	settings->setDefault("tone_mapping", "false");
 	settings->setDefault("enable_bumpmapping", "false");
