@@ -70,7 +70,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "irrlicht_changes/static_text.h"
 #include "version.h"
 #include "script/scripting_client.h"
-#include "hud.h"
 
 #if USE_SOUND
 	#include "client/sound_openal.h"
@@ -1344,6 +1343,8 @@ bool Game::init(
 	itemdef_manager = createItemDefManager();
 	nodedef_manager = createNodeDefManager();
 
+	texture_src->m_itemdef_manager = itemdef_manager;
+
 	eventmgr = new EventManager();
 	quicktune = new QuicktuneShortcutter();
 
@@ -1628,6 +1629,8 @@ bool Game::connectToServer(const std::string &playername,
 
 	client->connect(connect_address,
 		simple_singleplayer_mode || local_server_mode);
+
+	texture_src->m_client = client;
 
 	/*
 		Wait for server to accept connection

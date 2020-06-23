@@ -30,7 +30,7 @@ class IGameDef;
 class Client;
 struct ToolCapabilities;
 #ifndef SERVER
-#include "client/tile.h"
+typedef std::vector<video::SColor> Palette;
 struct ItemMesh;
 struct ItemStack;
 #endif

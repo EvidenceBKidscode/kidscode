@@ -170,6 +170,7 @@ void Client::loadMods()
 				"\": Mod name does not follow naming conventions: "
 					"Only characters [a-z0-9_] are allowed.");
 		}
+		m_mods_by_name[mod.name] = &mod;
 		scanModIntoMemory(mod.name, mod.path);
 	}
 
@@ -186,6 +187,11 @@ void Client::loadMods()
 		m_script->on_client_ready(m_env.getLocalPlayer());
 	if (m_camera)
 		m_script->on_camera_ready(m_camera);
+}
+
+const ModSpec* Client::getModSpec(const std::string &name)
+{
+	return m_mods_by_name[name];
 }
 
 bool Client::checkBuiltinIntegrity()

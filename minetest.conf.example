@@ -964,6 +964,11 @@
 #    type: bool
 # show_entity_selectionbox = true
 
+#    Speed up item rendering through RTT (render-to-texture)
+#    Set to 0 to disable, numbers > 0 are resolutions in pixels
+#    type: int min: 0 max: 1024
+# item_rtt_speedup_resolution = 0
+
 ## Menus
 
 #    Use a cloud animation for the main menu background.
@@ -1576,6 +1581,7 @@
 #    LOOKUP_NODES_LIMIT: 16 (limits get_node call client-side to
 #    csm_restriction_noderange)
 #    READ_PLAYERINFO: 32 (disable get_player_names call client-side)
+#    STORE_TEXTURES: 64 (disable store_texture call client-side)
 #    type: int
 # csm_restriction_flags = 62
 
