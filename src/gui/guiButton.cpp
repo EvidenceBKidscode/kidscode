@@ -802,26 +802,27 @@ void GUIButton::setFromStyle(const StyleSpec& style, ISimpleTextureSource *tsrc)
 	setUseAlphaChannel(style.getBool(StyleSpec::ALPHA, true));
 
 	const core::position2di buttonCenter(AbsoluteRect.getCenter());
-	core::position2d<s32> geom(buttonCenter);
 	if (style.isNotDefault(StyleSpec::BGIMG)) {
 		video::ITexture *texture = style.getTexture(StyleSpec::BGIMG, tsrc);
 
 		setImage(guiScalingImageButton(
-					Environment->getVideoDriver(), texture, geom.X, geom.Y));
+					Environment->getVideoDriver(), texture,
+							AbsoluteRect.getWidth(), AbsoluteRect.getHeight()));
 		setScaleImage(true);
 	}
 	if (style.isNotDefault(StyleSpec::BGIMG_HOVERED)) {
 		video::ITexture *hovered_texture = style.getTexture(StyleSpec::BGIMG_HOVERED, tsrc);
-
 		setHoveredImage(guiScalingImageButton(
-					Environment->getVideoDriver(), hovered_texture, geom.X, geom.Y));
+					Environment->getVideoDriver(), hovered_texture,
+							AbsoluteRect.getWidth(), AbsoluteRect.getHeight()));
 		setScaleImage(true);
 	}
 	if (style.isNotDefault(StyleSpec::BGIMG_PRESSED)) {
 		video::ITexture *pressed_texture = style.getTexture(StyleSpec::BGIMG_PRESSED, tsrc);
 
 		setPressedImage(guiScalingImageButton(
-					Environment->getVideoDriver(), pressed_texture, geom.X, geom.Y));
+					Environment->getVideoDriver(), pressed_texture,
+						AbsoluteRect.getWidth(), AbsoluteRect.getHeight()));
 		setScaleImage(true);
 	}
 	BgMiddle = style.getRect(StyleSpec::BGIMG_MIDDLE, BgMiddle);

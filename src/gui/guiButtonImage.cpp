@@ -130,23 +130,25 @@ void GUIButtonImage::setFromStyle(const StyleSpec &style, ISimpleTextureSource *
 	video::IVideoDriver *driver = Environment->getVideoDriver();
 
 	const core::position2di buttonCenter(AbsoluteRect.getCenter());
-	core::position2d<s32> geom(buttonCenter);
 	if (style.isNotDefault(StyleSpec::FGIMG)) {
 		video::ITexture *texture = style.getTexture(StyleSpec::FGIMG, tsrc);
 
-		setForegroundImage(guiScalingImageButton(driver, texture, geom.X, geom.Y));
+		setForegroundImage(guiScalingImageButton(driver, texture,
+				AbsoluteRect.getWidth(), AbsoluteRect.getHeight()));
 		setScaleImage(true);
 	}
 	if (style.isNotDefault(StyleSpec::FGIMG_HOVERED)) {
 		video::ITexture *hovered_texture = style.getTexture(StyleSpec::FGIMG_HOVERED, tsrc);
 
-		setHoveredForegroundImage(guiScalingImageButton(driver, hovered_texture, geom.X, geom.Y));
+		setHoveredForegroundImage(guiScalingImageButton(driver, hovered_texture,
+				AbsoluteRect.getWidth(), AbsoluteRect.getHeight()));
 		setScaleImage(true);
 	}
 	if (style.isNotDefault(StyleSpec::FGIMG_PRESSED)) {
 		video::ITexture *pressed_texture = style.getTexture(StyleSpec::FGIMG_PRESSED, tsrc);
 
-		setPressedForegroundImage(guiScalingImageButton(driver, pressed_texture, geom.X, geom.Y));
+		setPressedForegroundImage(guiScalingImageButton(driver, pressed_texture,
+				AbsoluteRect.getWidth(), AbsoluteRect.getHeight()));
 		setScaleImage(true);
 	}
 }
