@@ -261,6 +261,11 @@ void GUIButton::draw()
 	if (!IsVisible)
 		return;
 
+	// >> KIDSCODE - Avoid unecessary drawings
+	if (!AbsoluteClippingRect.isRectCollided(AbsoluteRect))
+		return;
+	// << KIDSCODE - Avoid unecessary drawings
+
 	// PATCH
 	GUISkin* skin = dynamic_cast<GUISkin*>(Environment->getSkin());
 	video::IVideoDriver* driver = Environment->getVideoDriver();

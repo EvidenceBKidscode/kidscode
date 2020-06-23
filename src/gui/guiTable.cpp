@@ -629,6 +629,11 @@ void GUITable::draw()
 	if (!IsVisible)
 		return;
 
+	// >> KIDSCODE - Avoid unecessary drawings
+	if (!AbsoluteClippingRect.isRectCollided(AbsoluteRect))
+		return;
+	// << KIDSCODE - Avoid unecessary drawings
+
 	gui::IGUISkin *skin = Environment->getSkin();
 
 	// draw background

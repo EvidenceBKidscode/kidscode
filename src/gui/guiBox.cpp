@@ -32,6 +32,11 @@ void GUIBox::draw()
 	if (!IsVisible)
 		return;
 
+	// >> KIDSCODE - Avoid unecessary drawings
+	if (!AbsoluteClippingRect.isRectCollided(AbsoluteRect))
+		return;
+	// << KIDSCODE - Avoid unecessary drawings
+
 	// errorstream << "color: " << std::hex << m_color.color << std::endl;
 
 	Environment->getVideoDriver()->draw2DRectangle(m_color, AbsoluteRect,

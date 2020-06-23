@@ -56,6 +56,11 @@ void GUIInventoryList::draw()
 	if (!IsVisible)
 		return;
 
+	// >> KIDSCODE - Avoid unecessary drawings
+	if (!AbsoluteClippingRect.isRectCollided(AbsoluteRect))
+		return;
+	// << KIDSCODE - Avoid unecessary drawings
+
 	Inventory *inv = m_invmgr->getInventory(m_inventoryloc);
 	if (!inv) {
 		warningstream << "GUIInventoryList::draw(): "

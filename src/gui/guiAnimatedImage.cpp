@@ -30,6 +30,11 @@ GUIAnimatedImage::GUIAnimatedImage(gui::IGUIEnvironment *env, gui::IGUIElement *
 
 void GUIAnimatedImage::draw()
 {
+	// >> KIDSCODE - Avoid unecessary drawings
+	if (!AbsoluteClippingRect.isRectCollided(AbsoluteRect))
+		return;
+	// << KIDSCODE - Avoid unecessary drawings
+
 	// Render the current frame
 	if (m_texture != nullptr) {
 		video::IVideoDriver *driver = Environment->getVideoDriver();

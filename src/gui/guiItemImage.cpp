@@ -33,6 +33,11 @@ void GUIItemImage::draw()
 	if (!IsVisible)
 		return;
 
+	// >> KIDSCODE - Avoid unecessary drawings
+	if (!AbsoluteClippingRect.isRectCollided(AbsoluteRect))
+		return;
+	// << KIDSCODE - Avoid unecessary drawings
+
 	if (!m_client) {
 		IGUIElement::draw();
 		return;
@@ -43,6 +48,7 @@ void GUIItemImage::draw()
 	item.deSerialize(m_item_name, idef);
 	// Viewport rectangle on screen
 	core::rect<s32> rect = core::rect<s32>(AbsoluteRect);
+
 	drawItemStack(Environment->getVideoDriver(), m_font, item, rect,
 			&AbsoluteClippingRect, m_client, IT_ROT_NONE);
 	video::SColor color(255, 255, 255, 255);
