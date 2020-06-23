@@ -775,11 +775,6 @@ void intlGUIEditBox::draw()
 	if (!IsVisible)
 		return;
 
-	// >> KIDSCODE - Avoid unecessary drawings
-	if (!AbsoluteClippingRect.isRectCollided(AbsoluteRect))
-		return;
-	// << KIDSCODE - Avoid unecessary drawings
-
 	const bool focus = Environment->hasFocus(this);
 
 	IGUISkin* skin = Environment->getSkin();

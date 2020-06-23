@@ -3741,11 +3741,12 @@ void GUIFormSpecMenu::drawMenu()
 		e->setVisible(true);
 
 	/*
-		Call base class
-		(This is where all the drawing happens.)
+		This is where all the drawing happens.
 	*/
-	gui::IGUIElement::draw();
-
+	core::list<IGUIElement*>::Iterator it = Children.begin();
+	for (; it != Children.end(); ++it)
+		if (AbsoluteClippingRect.isRectCollided((*it)->getAbsolutePosition()))
+			(*it)->draw();
 
 	// >> KIDSCODE - Make backgrounds able to react (needed for image tabs)
 	for (gui::IGUIElement *e : m_backgrounds) {

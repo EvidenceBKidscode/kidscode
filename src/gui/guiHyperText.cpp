@@ -1130,11 +1130,6 @@ void GUIHyperText::draw()
 	if (!IsVisible)
 		return;
 
-	// >> KIDSCODE - Avoid unecessary drawings
-	if (!AbsoluteClippingRect.isRectCollided(AbsoluteRect))
-		return;
-	// << KIDSCODE - Avoid unecessary drawings
-
 	// Text
 	m_display_text_rect = AbsoluteRect;
 	m_drawer.place(m_display_text_rect);

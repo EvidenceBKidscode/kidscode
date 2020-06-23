@@ -33,11 +33,6 @@ void GUIItemImage::draw()
 	if (!IsVisible)
 		return;
 
-	// >> KIDSCODE - Avoid unecessary drawings
-	if (!AbsoluteClippingRect.isRectCollided(AbsoluteRect))
-		return;
-	// << KIDSCODE - Avoid unecessary drawings
-
 	if (!m_client) {
 		IGUIElement::draw();
 		return;

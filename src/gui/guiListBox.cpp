@@ -484,11 +484,6 @@ void GUIListBox::draw()
 
 	recalculateItemHeight(); // if the font changed
 
-	// >> KIDSCODE - Avoid unecessary drawings
-	if (!AbsoluteClippingRect.isRectCollided(AbsoluteRect))
-		return;
-	// << KIDSCODE - Avoid unecessary drawings
-
 	IGUISkin* skin = Environment->getSkin();
 
 	core::rect<s32>* clipRect = 0;

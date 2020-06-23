@@ -387,11 +387,6 @@ void GUIComboBox::draw()
 	if (!IsVisible)
 		return;
 
-	// >> KIDSCODE - Avoid unecessary drawings
-	if (!AbsoluteClippingRect.isRectCollided(AbsoluteRect))
-		return;
-	// << KIDSCODE - Avoid unecessary drawings
-
 	GUISkin* skin = (GUISkin *)Environment->getSkin();
 	IGUIElement *currentFocus = Environment->getFocus();
 	if (currentFocus != m_last_focus) {

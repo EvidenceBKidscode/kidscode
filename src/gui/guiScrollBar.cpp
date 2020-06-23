@@ -197,11 +197,6 @@ void GUIScrollBar::draw()
 	if (!IsVisible)
 		return;
 
-	// >> KIDSCODE - Avoid unecessary drawings
-	if (!AbsoluteClippingRect.isRectCollided(AbsoluteRect))
-		return;
-	// << KIDSCODE - Avoid unecessary drawings
-
 	IGUISkin *skin = Environment->getSkin();
 	if (!skin)
 		return;
