@@ -110,6 +110,7 @@ CMakeDoxy*
 compile_commands.json
 lib/lua/buildvm
 lib/lua/minilua
+lib/mapserver
 
 ## Android build files
 build/android/src/main/assets
