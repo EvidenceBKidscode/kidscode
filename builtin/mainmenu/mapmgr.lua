@@ -534,9 +534,15 @@ local function install_map(parent, params, askname, mapname)
 					core.delete_dir(params.tempfolder)
 
 					-- Choose map if imported from file
-					local map = params.map or mapmgr.new_map_from_core_world(
-							{ name = mapname, path = params.mappath })
-					if map.origin == "local" then
+					local map
+					for index, world in ipairs(core.get_worlds()) do
+						if world.name == mapname then
+							world.coreindex = index
+							map = mapmgr.new_map_from_core_world(world)
+						end
+					end
+
+					if map and map.origin == "local" then
 						gamemenu.chosen_map = map
 					end
 				end
