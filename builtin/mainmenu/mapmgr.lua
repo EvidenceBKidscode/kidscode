@@ -448,6 +448,23 @@ local function async_unzip(params)
 		return params
 	end
 
+	if params.map then
+		-- Tell map server that map have been downloaded
+		local url = ("%s%s/%s/recv"):format(
+				minetest.settings:get("ign_map_api_url") or "",
+				core.volatile_settings:get("gartoken"),
+				params.map.alac.order_id)
+
+		if core.download_file(url, params.tempfolder .. DIR_DELIM .. "recv.tmp") then
+			minetest.log("action",
+				("Told server that map %s has been downloaded."):format(mapid))
+		else
+			minetest.log("error",
+				("Could tell server map has been downloaded (error reaching %s)."):
+				format(url))
+		end
+	end
+
 	params.unzipedmap = unzippath .. DIR_DELIM .. files[1]
 	return params
 end
