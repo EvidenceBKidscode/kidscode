@@ -127,9 +127,16 @@ tabview_layouts.vertical = {
 			("box[%f,%f;%f,%f;%s]"):format(0, 0, 4.5, tsize.height + 4, bgcolor)
 		}
 
-		for i = 1, #view.tablist do
-			local tab = view.tablist[i]
-			if tab.button_handler then			
+		local i = 1
+
+		for _, tab in ipairs(view.tablist) do
+			local teacher = true
+
+			if tab.teacher_only and core.settings:get("install") ~= "teacher" then
+				teacher = nil
+			end
+
+			if tab.button_handler and teacher then		
 				local name = "tab_" .. tab.name
 				local icon = tab.icon and ESC(defaulttexturedir .. tab.icon)
 				local y = (i - 1) * 0.8
@@ -161,6 +168,8 @@ tabview_layouts.vertical = {
 					fs[#fs + 1] = name
 					fs[#fs + 1] = ";]"
 				end
+
+				i = i + 1
 			end
 		end
 

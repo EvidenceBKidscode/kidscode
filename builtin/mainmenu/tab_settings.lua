@@ -206,8 +206,11 @@ local function formspec(tabview, name, tabdata)
 			"button[4,4.75;3.75,0.6;btn_change_keys;" .. fgettext("Change Keys") .. "]"
 	end
 
-	tab_string = tab_string ..
-		"button[0,4.75;3.75,0.6;btn_advanced_settings;" .. fgettext("All Settings") .. "]"
+	if core.settings:get("install") == "teacher" then
+		tab_string = tab_string ..
+			"button[0,4.75;3.75,0.6;btn_advanced_settings;" ..
+			fgettext("All Settings") .. "]"
+	end
 
 	if core.settings:get("touchscreen_threshold") ~= nil then
 		tab_string = tab_string ..

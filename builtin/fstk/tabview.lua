@@ -37,6 +37,7 @@ local function add_tab(self,tab)
 
 	local newtab = {
 		name = tab.name,
+		teacher_only = tab.teacher_only,
 		caption = tab.caption,
 		icon = tab.icon,
 		selectable = tab.selectable,
