@@ -88,12 +88,20 @@ tabview_layouts.vertical = {
 
 	get = function(self, view)
 		local formspec = ""
+
+		for i, tab in ipairs(view.tablist) do
+			if tab.teacher_only and core.settings:get("install") ~= "teacher" then
+				table.remove(view.tablist, i)
+			end
+		end
+
 		local tab = view.tablist[view.last_tab_index]
+
 		if view.parent == nil then
-			local tsize = tab and tab.tabsize or {width=view.width, height=view.height}
+			local tsize = tab and tab.tabsize or {width = view.width, height = view.height}
 			formspec = formspec ..
-					string.format("formspec_version[3]size[%f,%f,%s]bgcolor[#00000000]",
-						tsize.width + 6.5, tsize.height + 4, dump(view.fixed_size))
+				string.format("formspec_version[3]size[%f,%f,%s]bgcolor[#00000000]",
+					tsize.width + 6.5, tsize.height + 4, dump(view.fixed_size))
 		end
 		formspec = formspec .. self:get_header(view)
 
@@ -101,7 +109,10 @@ tabview_layouts.vertical = {
 			formspec = formspec .. "container[4.5,0]"
 
 			local mainbgcolor = view.mainbgcolor or self.mainbgcolor
-			formspec = formspec .. ("box[0,0;%f,%f;%s]"):format(view.width + 4, view.height + 4, mainbgcolor)
+
+			formspec = formspec .. ("box[0,0;%f,%f;%s]"):format(
+				view.width + 4, view.height + 4, mainbgcolor)
+
 			formspec = formspec .. view.tablist[view.last_tab_index].get_formspec(
 				view,
 				view.tablist[view.last_tab_index].name,
@@ -120,23 +131,15 @@ tabview_layouts.vertical = {
 		local mainbgcolor = view.mainbgcolor or self.mainbgcolor
 
 		local last_tab = view.tablist[view.last_tab_index]
-		local tsize = last_tab and last_tab.tabsize or {width=view.width, height=view.height}
+		local tsize = last_tab and last_tab.tabsize or {width = view.width, height = view.height}
 
 		local fs = {
 			("box[%f,%f;%f,%f;%s]"):format(0, 0, 4.5, tsize.height + 4, mainbgcolor),
 			("box[%f,%f;%f,%f;%s]"):format(0, 0, 4.5, tsize.height + 4, bgcolor)
 		}
 
-		local i = 1
-
-		for _, tab in ipairs(view.tablist) do
-			local teacher = true
-
-			if tab.teacher_only and core.settings:get("install") ~= "teacher" then
-				teacher = nil
-			end
-
-			if tab.button_handler and teacher then		
+		for i, tab in ipairs(view.tablist) do
+			if tab.button_handler then		
 				local name = "tab_" .. tab.name
 				local icon = tab.icon and ESC(defaulttexturedir .. tab.icon)
 				local y = (i - 1) * 0.8
@@ -168,8 +171,6 @@ tabview_layouts.vertical = {
 					fs[#fs + 1] = name
 					fs[#fs + 1] = ";]"
 				end
-
-				i = i + 1
 			end
 		end
 
