@@ -424,9 +424,9 @@ end
 function formspecs.mapinfo.get()
 	local fs = "button[-4,8.5;3,0.6;back;Choisir une autre carte]"
 
-	local mapimage = ESC(gamemenu.chosen_map.path) .. DIR_DELIM ..
+	local mapimage = ESC(gamemenu.chosen_map.path .. DIR_DELIM ..
 		"worldmods" .. DIR_DELIM .. "minimap" .. DIR_DELIM ..
-		"textures" .. DIR_DELIM .. "scan25.jpg"
+		"textures" .. DIR_DELIM .. "scan25.jpg")
 
 	if file_exists(mapimage) then
 		fs = fs .. "image[0,1;4,4;" .. mapimage .. "]"
