@@ -35,6 +35,12 @@ local function add_tab(self,tab)
 			type(tab.cbf_button_handler) == "function")
 	assert(tab.cbf_events == nil or type(tab.cbf_events) == "function")
 
+	-- >> KIDSCODE - Hide "teacher_only" tabs from non teacher install profiles
+	if (tab.teacher_only and core.settings:get("install") ~= "teacher") then
+		return
+	end
+	-- << KIDSCODE - Hide "teacher_only" tabs from non teacher install profiles
+
 	local newtab = {
 		name = tab.name,
 		teacher_only = tab.teacher_only,

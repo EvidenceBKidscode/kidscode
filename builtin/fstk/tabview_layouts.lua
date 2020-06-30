@@ -89,12 +89,6 @@ tabview_layouts.vertical = {
 	get = function(self, view)
 		local formspec = ""
 
-		for i, tab in ipairs(view.tablist) do
-			if tab.teacher_only and core.settings:get("install") ~= "teacher" then
-				table.remove(view.tablist, i)
-			end
-		end
-
 		local tab = view.tablist[view.last_tab_index]
 
 		if view.parent == nil then
@@ -139,7 +133,7 @@ tabview_layouts.vertical = {
 		}
 
 		for i, tab in ipairs(view.tablist) do
-			if tab.button_handler then		
+			if tab.button_handler then
 				local name = "tab_" .. tab.name
 				local icon = tab.icon and ESC(defaulttexturedir .. tab.icon)
 				local y = (i - 1) * 0.8
