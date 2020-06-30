@@ -539,6 +539,8 @@ local function install_map(parent, params, askname, mapname)
 						if world.name == mapname then
 							world.coreindex = index
 							map = mapmgr.new_map_from_core_world(world)
+							create_uid(map)
+							core.settings:set("mainmenu_last_selected_world_uid", map.uid)
 						end
 					end
 
