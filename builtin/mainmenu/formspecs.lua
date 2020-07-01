@@ -24,6 +24,13 @@ formspecs = {}
 ----------------------
 formspecs.mapselect = {}
 
+local table_columns = {
+	{ "name",   "Carte" },
+	{ "demand", "Demande" },
+	{ "origin", "Origine" },
+	{ "status", "Etat" },
+}
+
 function formspecs.mapselect.get()
 	local fs = ""
 	local uid = core.settings:get("mainmenu_last_selected_world_uid")
@@ -81,14 +88,26 @@ function formspecs.mapselect.get()
 		end
 	end
 
-	local wl = "#ff00ff,Carte,#ff00ff,Demande,#ff00ff,Origine,#ff00ff,Etat"
-	wl = wl .. "," .. worldlist
+	local header = ""
+	for _, column in ipairs(table_columns) do
+		local label = column[2]
+		if menudata.worldlist.m_sortmode == column[1] then
+			if menudata.worldlist.m_sort_forward then
+				label = label .. " ▼"
+			else
+				label = label .. " ▲"
+			end
+		else
+			label = label .. "   "
+		end
+		header = header .. "#aaa," .. label .. ","
+	end
 
 	fs = fs ..
-		"tableoptions[background=#00000025;border=false]" ..
+		"tableoptions[background=#00000025;highlight=#45B;border=false]" ..
 		"tablecolumns[color;text;color;text,padding=1;color;" ..
 			"text,align=center,padding=1;color;text,align=center,padding=1]" ..
-		"table[0.2,0.8;13.6,5.9;sp_worlds;" .. wl .. ";" .. index .. "]" ..
+		"table[0.2,0.8;13.6,5.9;sp_worlds;" .. header .. worldlist .. ";" .. index .. "]" ..
 		"label[0.2,7;Sélectionnez une carte dans la liste ou importez une carte " ..
 			"au format .zip ou .rar via le bouton \"importer\".]"
 
