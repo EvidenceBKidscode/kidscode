@@ -336,8 +336,7 @@ void ParsedText::parseGenericStyleAttr(
 
 		// Boolean styles
 	} else if (name == "bold" || name == "italic" || name == "underline") {
-		style[name] = is_yes(value);
-
+		style[name] = (is_yes(value))?"true":"false";
 	} else if (name == "size") {
 		if (check_integer(value))
 			style["fontsize"] = value;
