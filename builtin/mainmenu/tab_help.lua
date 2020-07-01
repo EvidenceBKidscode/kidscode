@@ -1,12 +1,12 @@
 local ESC = core.formspec_escape
 
-local link_color = "<tag name=action color=#ffffcc hovercolor=#ffff00>"
 local header_fs = "hypertext[0.2,0.2;8,1;;<big><b>Tutoriel</b></big>]"
-local back_fs = "hypertext[12.8,0.2;3,1;back;" .. link_color .. "<action name=>< Retour</big>]"
+local back_fs = "hypertext[12.8,0.2;3,1;back;<tag name=action color=#ffffcc hovercolor=#ffff00><action name=>< Retour</big>]"
 
 local chapters = {
 	{"Les différents modes de jeu", [[
-		<b>Partie solo – Choix de la carte I</b>
+
+		<h2>Partie solo – Choix de la carte I</h2>
 
 		Ce mode de jeu vous permet de jouer, d’explorer, de construire ou réaliser des simulations d’aléas climatiques seul(e) sur une carte en 3D.
 		Dès lors que vous avez commandé une carte via le GAR ou Eduthèque elle s’affiche dans la liste des cartes de l’onglet « Partie solo ». La carte passe par plusieurs états avant de pouvoir être lancée.
@@ -17,7 +17,7 @@ local chapters = {
 		Si la carte est « <style color=#00ff00>installée</style> » cela veut dire que celle-ci est installée sur votre poste et prête à être utilisée.
 		Cliquez sur la carte dans la liste puis sur le bouton « Choisir cette carte » ou double-cliquez sur la carte dans la liste pour passer à l’étape suivante.
 
-		<b>Partie solo – Choix de la carte II</b>
+		<h2>Partie solo – Choix de la carte II</h2>
 
 		Une fois que vous avez choisi votre carte un deuxième écran apparaît. Plusieurs options s’offrent à vous :
 		« Jouer en 3D » : Ce bouton lancera le jeu IGN-kidscode. Vous apparaîtrez au sein de la carte 3D avec votre avatar et un tutoriel vous accueillera dans le jeu pour vous expliquer les bases du logiciel.
@@ -50,14 +50,22 @@ return {
 		if tabdata.help == 0 then
 			for i = 1, #chapters do
 				fs = fs .. "hypertext[0.2," .. (0.2 + (i * 0.8)) ..
-					";10,1;chapter_" .. i .. ";" .. link_color ..
+					";10,1;chapter_" .. i .. ";" ..
+					"<global margin=10 size=20 halign=justify>" ..
+					"<tag name=action color=#ffffcc hovercolor=#ffff00>" ..
 					"<big><action name=>" .. i .. ". " .. ESC(chapters[i][1]) .. "</action></big>]"
 			end
 		else
 			local chapter =  chapters[tabdata.help]
 			fs = fs .. back_fs ..
 				"hypertext[0.2,1" ..
-				";13.5,8.2;;<big>" .. chapter[1] .. "</big>\n\n" .. ESC(chapter[2]) .. "]"
+				";13.5,8.2;;" ..
+				"<global margin=10 size=20 halign=justify>" ..
+				"<tag name=action color=#ffffcc hovercolor=#ffff00>" ..
+				"<tag name=h1 paragraph=yes size=40 bold=yes>" ..
+				"<tag name=h2 paragraph=yes size=30 bold=yes>" ..
+				"<h1>" .. chapter[1] .. "</h1>" ..
+				"\n\n" .. ESC(chapter[2]) .. "]"
 		end
 
 		return header_fs .. fs
