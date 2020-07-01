@@ -42,7 +42,7 @@ function formspecs.mapselect.get()
 		index = filterlist.get_current_index_by_uid(menudata.worldlist, uid) + 1 -- Header
 	end
 	if index == 1 then
-		index = -math.random() -- Force refresh and avoid selection of title line
+		index = -1
 	end
 
 	local worldlist = menu_render_worldlist()
@@ -109,8 +109,11 @@ function formspecs.mapselect.get()
 			"text,align=center,padding=1;color;text,align=center,padding=1]" ..
 		"table[0.2,0.8;13.6,5.9;sp_worlds;" .. header .. worldlist .. ";" .. index .. "]" ..
 		"label[0.2,7;Sélectionnez une carte dans la liste ou importez une carte " ..
-			"au format .zip ou .rar via le bouton \"importer\".]"
-
+			"au format .zip ou .rar via le bouton \"importer\".]" ..
+		"label[-10,-10;" .. math.random() .. "]" -- Force refresh
+		-- Refresh is forced by adding a hidden random element making form
+		-- always different. Without forced refresh it could happen to have
+		-- the wrong list line selected (header in particular)
 	return fs
 end
 
