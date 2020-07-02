@@ -162,12 +162,12 @@ function humanReadableSize(size)
 
 	for i = 1, #sizeunits do
 		if size < 1024 then
-			return ("%.1f%s"):format(size,sizeunits[i])
+			return ("%.1f %s"):format(size,sizeunits[i])
 		end
 		size = size / 1024
 	end
 
-	return ("%.1f%s"):format(size,sizeunits[i])
+	return ("%.1f %s"):format(size,sizeunits[i])
 end
 
 --------------------------------------------------------------------------------
@@ -205,7 +205,7 @@ function menu_render_worldlist()
 			"#ffffff" .. "," ..
 			ESC(humanReadableSize(v.filesize) or "") .. "," ..
 			"#ffffff" .. "," ..
-			(v.mapsize and ESC(v.mapsize .. "km²") or "") .. "," ..
+			(v.mapsize and ESC(v.mapsize .. " Km²") or "") .. "," ..
 			(status_color[v.status] or "#ffffff") .. "," ..
 			ESC(status_label[v.status] or "?")
 	end
