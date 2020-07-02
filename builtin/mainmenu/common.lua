@@ -153,16 +153,30 @@ end
 
 --------------------------------------------------------------------------------
 
-local status_translate = {
+local sizeunits = {"o", "Ko", "Mo", "Go"}
+
+function humanReadableSize(size)
+	if not size then
+		return
+	end
+
+	for i = 1, #sizeunits do
+		if size < 1024 then
+			return ("%.1f%s"):format(size,sizeunits[i])
+		end
+		size = size / 1024
+	end
+
+	return ("%.1f%s"):format(size,sizeunits[i])
+end
+
+--------------------------------------------------------------------------------
+
+local status_label = {
 	installed = "Installée",
 	cancelled = "Annulée",
 	prepare   = "En préparation",
 	ready     = "Prête",
-}
-
-local origin_translate = {
-	ign       = "GAR / IGN",
-	["local"] = "Local",
 }
 
 local status_color = {
@@ -177,7 +191,9 @@ function menu_render_worldlist()
 	local current_worldlist = menudata.worldlist:get_list()
 
 	for i, v in ipairs(current_worldlist) do
-		if retval ~= "" then retval = retval .. "," end
+		if retval ~= "" then
+			retval = retval .. ","
+		end
 
 		retval = retval ..
 			"#ffffff" .. "," ..
@@ -185,9 +201,13 @@ function menu_render_worldlist()
 			"#ffffff" .. "," ..
 			ESC(v.alac and v.alac.delivered_on and v.alac.delivered_on:match("%S*") or "") .. "," ..
 			"#ffffff" .. "," ..
-			ESC(origin_translate[v.origin] or "?") .. "," ..
+			ESC(v.origin or "") .. "," ..
+			"#ffffff" .. "," ..
+			ESC(humanReadableSize(v.filesize) or "") .. "," ..
+			"#ffffff" .. "," ..
+			(v.mapsize and ESC(v.mapsize .. "km²") or "") .. "," ..
 			(status_color[v.status] or "#ffffff") .. "," ..
-			ESC(status_translate[v.status] or "?")
+			ESC(status_label[v.status] or "?")
 	end
 
 	return retval

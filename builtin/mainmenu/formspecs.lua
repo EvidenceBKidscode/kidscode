@@ -20,15 +20,88 @@ local min, max = math.min, math.max
 
 formspecs = {}
 
+-- Sort mechanisms
+------------------
+
+local function map_sort(self, a, b, aa, bb)
+	if a == nil or b == nil then
+		return b == nil and a ~= nil
+	end
+	if aa == bb then
+		if self.m_sort_forward then
+			return stripAccents(a.name):upper() < stripAccents(b.name):upper()
+		else
+			return stripAccents(a.name):upper() > stripAccents(b.name):upper()
+		end
+	else
+		if self.m_sort_forward then
+			return aa < bb
+		else
+			return aa > bb
+		end
+	end
+end
+
+--------------------------------------------------------------------------------
+local status_order = { installed = 1, ready = 2, prepare = 3 }
+
+function formspecs.sort_worlds_by_status(self)
+	table.sort(self.m_processed_list, function(a, b)
+		return map_sort(self, a, b,
+			a and status_order[a.status] or 100,
+			b and status_order[b.status] or 100)
+	end)
+end
+
+--------------------------------------------------------------------------------
+
+function formspecs.sort_worlds_by_demand(self)
+	table.sort(self.m_processed_list, function(a, b)
+		return map_sort(self, a, b,
+			a and a.alac and a.alac.requested_on or "Z",
+			b and b.alac and b.alac.requested_on or "Z")
+	end)
+end
+
+--------------------------------------------------------------------------------
+
+function formspecs.sort_worlds_by_origin(self)
+	table.sort(self.m_processed_list, function(a, b)
+		return map_sort(self, a, b, a and a.origin, b and b.origin)
+	end)
+end
+
+--------------------------------------------------------------------------------
+
+function formspecs.sort_worlds_by_filesize(self)
+	table.sort(self.m_processed_list, function(a, b)
+		return map_sort(self, a, b,
+			a and (a.filesize or 0),
+			b and (b.filesize or 0))
+	end)
+end
+
+--------------------------------------------------------------------------------
+
+function formspecs.sort_worlds_by_mapsize(self)
+	table.sort(self.m_processed_list, function(a, b)
+		return map_sort(self, a, b,
+			a and (a.mapsize or 0),
+			b and (b.mapsize or 0))
+	end)
+end
+
 -- Select map Formspec
 ----------------------
 formspecs.mapselect = {}
 
 local table_columns = {
-	{ "name",   "Carte" },
-	{ "demand", "Demande" },
-	{ "origin", "Origine" },
-	{ "status", "Etat" },
+	{ "name",     "Carte",   "text,width=15"},
+	{ "demand",   "Date",    "text,width=6"},
+	{ "origin",   "Origine", "text,align=center,width=6"},
+	{ "filesize", "Taille",  "text,align=center,width=6"},
+	{ "mapsize",  "Emprise", "text,align=center,width=7"},
+	{ "status",   "Etat",    "text,align=center,width=6"},
 }
 
 function formspecs.mapselect.get()
@@ -44,8 +117,6 @@ function formspecs.mapselect.get()
 	if index == 1 then
 		index = -1
 	end
-
-	local worldlist = menu_render_worldlist()
 
 	fs = fs ..
 		"button[10.8,7.3;3,0.6;world_import;" .. fgettext("Importer une carte") .. "]" ..
@@ -88,7 +159,8 @@ function formspecs.mapselect.get()
 		end
 	end
 
-	local header = ""
+	local row1 = ""
+	local options
 	for _, column in ipairs(table_columns) do
 		local label = column[2]
 		if menudata.worldlist.m_sortmode == column[1] then
@@ -97,17 +169,19 @@ function formspecs.mapselect.get()
 			else
 				label = label .. " ▲"
 			end
-		else
-			label = label .. "   "
 		end
-		header = header .. "#aaa," .. label .. ","
+		row1 = row1 .. "#aaa," .. label .. ","
+		if options then
+			options = options .. ";color;" .. column[3]
+		else
+			options = "color;" .. column[3]
+		end
 	end
 
 	fs = fs ..
 		"tableoptions[background=#00000025;highlight=#45B;border=false]" ..
-		"tablecolumns[color;text;color;text,padding=1;color;" ..
-			"text,align=center,padding=1;color;text,align=center,padding=1]" ..
-		"table[0.2,0.8;13.6,5.9;sp_worlds;" .. header .. worldlist .. ";" .. index .. "]" ..
+		"tablecolumns[" .. options .. "]" ..
+		"table[0.2,0.8;13.6,5.9;sp_worlds;" .. row1 .. menu_render_worldlist() .. ";" .. index .. "]" ..
 		"label[0.2,7;Sélectionnez une carte dans la liste ou importez une carte " ..
 			"au format .zip ou .rar via le bouton \"importer\".]" ..
 		"label[-10,-10;" .. math.random() .. "]" -- Force refresh
@@ -116,13 +190,6 @@ function formspecs.mapselect.get()
 		-- the wrong list line selected (header in particular)
 	return fs
 end
-
-local sort_columns = {
-	[2] = "name",
-	[4] = "demand",
-	[6] = "origin",
-	[8] = "status",
-}
 
 function formspecs.mapselect.handle(tabview, fields, name, tabdata)
 	local world_doubleclick = false
@@ -141,12 +208,13 @@ function formspecs.mapselect.handle(tabview, fields, name, tabdata)
 					core.settings:set("mainmenu_last_selected_world_uid", map.uid)
 				end
 			else
-				local sort = sort_columns[event.column]
+				local sort = table_columns[event.column / 2]
 				if sort then
+					sort = sort[1]
 					if menudata.worldlist.m_sortmode == sort then
 						menudata.worldlist:reverse_sort()
 					else
-						menudata.worldlist:set_sortmode(sort_columns[event.column])
+						menudata.worldlist:set_sortmode(sort)
 					end
 				end
 			end

@@ -59,9 +59,9 @@ end
 
 local tabs = {}
 --tabs.content  = dofile(menupath .. DIR_DELIM .. "tab_content.lua")
-tabs.solo = dofile(menupath .. DIR_DELIM .. "tab_solo.lua")
-tabs.multi = dofile(menupath .. DIR_DELIM .. "tab_multi.lua")
-tabs.online = dofile(menupath .. DIR_DELIM .. "tab_online.lua")
+tabs.solo      = dofile(menupath .. DIR_DELIM .. "tab_solo.lua")
+tabs.multi     = dofile(menupath .. DIR_DELIM .. "tab_multi.lua")
+tabs.online    = dofile(menupath .. DIR_DELIM .. "tab_online.lua")
 tabs.settings  = dofile(menupath .. DIR_DELIM .. "tab_settings.lua")
 tabs.slideshow = dofile(menupath .. DIR_DELIM .. "tab_slideshow.lua")
 tabs.help      = dofile(menupath .. DIR_DELIM .. "tab_help.lua")
@@ -99,10 +99,12 @@ function create_worldlist()
 		nil
 	)
 
-	menudata.worldlist:add_sort_mechanism("name", sort_worlds_alphabetic)
-	menudata.worldlist:add_sort_mechanism("demand", sort_worlds_by_demand)
-	menudata.worldlist:add_sort_mechanism("origin", sort_worlds_by_origin)
-	menudata.worldlist:add_sort_mechanism("status", sort_worlds_by_status)
+	menudata.worldlist:add_sort_mechanism("name",     sort_worlds_alphabetic)
+	menudata.worldlist:add_sort_mechanism("demand",   formspecs.sort_worlds_by_demand)
+	menudata.worldlist:add_sort_mechanism("origin",   formspecs.sort_worlds_by_origin)
+	menudata.worldlist:add_sort_mechanism("filesize", formspecs.sort_worlds_by_filesize)
+	menudata.worldlist:add_sort_mechanism("mapsize",  formspecs.sort_worlds_by_mapsize)
+	menudata.worldlist:add_sort_mechanism("status",   formspecs.sort_worlds_by_status)
 	menudata.worldlist:set_sortmode("status")
 end
 

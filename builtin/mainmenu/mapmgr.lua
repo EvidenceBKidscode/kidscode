@@ -44,6 +44,22 @@ end
 -- Maps and map demands management
 --------------------------------------------------------------------------------
 
+local function add_data_from_json(map, json_data)
+	map.alac = table.copy(json_data)
+	map.alac.requested_by = nil
+
+	map.order_id = json_data.order_id
+	map.filesize = json_data.fileSize
+	map.mapsize  = json_data.emprise
+
+	-- Origin building
+	if map.order_id then
+		map.origin = "GAR / " .. (json_data.data_source_topo == 1 and "OSM" or "IGN")
+	else
+		map.origin = "Locale"
+	end
+end
+
 local transcode_status = {
 	finished = "ready",
 	ongoing = "prepare",
@@ -55,19 +71,17 @@ function mapmgr.new_map_from_json(json_data)
 		demand = true,
 		name = "",
 		status = transcode_status[json_data.status] or "unknown",
-		order_id = json_data.order_id,
-		origin = "ign", -- TODO: Adapt to IGN improvements
-		alac = table.copy(json_data),
 	}
 
-	if json_data.place and json_data.place ~= "" then
-		map.name = json_data.place
-	else
-		-- TODO : Beter coordinate display (degrees+minutes)
-		map.name = json_data.coordinates
-	end
+	add_data_from_json(map, json_data)
 
-	map.alac.requested_by = nil -- Dont store token
+	-- Name building
+	-- TODO : Beter coordinate display (degrees+minutes)
+	map.name = json_data.place or json_data.coordinates or ""
+
+	if json_data.snow_height_max > 0 then
+		map.name = map.name .. " (neige)"
+	end
 
 	return map
 end
@@ -78,7 +92,6 @@ function mapmgr.new_map_from_core_world(core_map_desc)
 		demand = false,
 		name = core_map_desc.name,
 		status = "installed",
-		origin = "local",
 		path = core_map_desc.path,
 		gameid = core_map_desc.gameid, -- Not sure gameid is still usefull
 		coreindex = core_map_desc.coreindex, -- Not sure gameid is still usefull
@@ -90,11 +103,11 @@ function mapmgr.new_map_from_core_world(core_map_desc)
 		file:close()
 		local json = minetest.parse_json(data)
 		if json and type(json) == "table" then
-			map.alac = json
-			if map.alac.order_id then
-				map.origin = "ign" -- TODO: Adapt to new IGN information
-				map.order_id = map.alac.order_id
-			end
+			add_data_from_json(map, json)
+--			if map.alac.order_id then
+--				map.origin = "ign" -- TODO: Adapt to new IGN information
+--				map.order_id = map.alac.order_id
+--			end
 		end
 	end
 
@@ -205,12 +218,12 @@ local function create_uid(map)
 	if map.uid then
 		return
 	end
-	if map.demand then
-		map.uid =  map.origin .. map.order_id
+	if map.order_id then
+		map.uid =  "order" .. map.order_id
 	else
 		map.alac = map.alac or {}
 		if not map.alac.uid then
-			map.alac.uid = map.origin ..
+			map.alac.uid = "local" ..
 				(map.order_id or math.random(0, 9999999999))
 			save_map_alac_data(map)
 		end
@@ -544,7 +557,7 @@ local function install_map(parent, params, askname, mapname)
 						end
 					end
 
-					if map and map.origin == "local" then
+					if map and not map.order_id then
 						gamemenu.chosen_map = map
 					end
 				end
