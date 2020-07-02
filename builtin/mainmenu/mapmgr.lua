@@ -470,7 +470,7 @@ local function async_unzip(params)
 
 		if core.download_file(url, params.tempfolder .. DIR_DELIM .. "recv.tmp") then
 			minetest.log("action",
-				("Told server that map %s has been downloaded."):format(mapid))
+				("Told server that map %s has been downloaded."):format(params.map.alac.order_id))
 		else
 			minetest.log("error",
 				("Could tell server map has been downloaded (error reaching %s)."):
