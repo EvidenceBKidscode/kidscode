@@ -160,6 +160,10 @@ function humanReadableSize(size)
 		return
 	end
 
+	if size < 1000 then
+		return ("%d %s"):format(size, sizeunits[1])
+	end
+
 	for i = 1, #sizeunits do
 		if size < 1000 then
 			return ("%.1f %s"):format(size,sizeunits[i])
