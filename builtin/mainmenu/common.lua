@@ -153,7 +153,7 @@ end
 
 --------------------------------------------------------------------------------
 
-local sizeunits = {"o", "Ko", "Mo", "Go"}
+local sizeunits = {"o", "ko", "Mo", "Go"}
 
 function humanReadableSize(size)
 	if not size then
@@ -161,10 +161,10 @@ function humanReadableSize(size)
 	end
 
 	for i = 1, #sizeunits do
-		if size < 1024 then
+		if size < 1000 then
 			return ("%.1f %s"):format(size,sizeunits[i])
 		end
-		size = size / 1024
+		size = size / 1000
 	end
 
 	return ("%.1f %s"):format(size,sizeunits[i])
@@ -205,7 +205,7 @@ function menu_render_worldlist()
 			"#ffffff" .. "," ..
 			ESC(humanReadableSize(v.filesize) or "") .. "," ..
 			"#ffffff" .. "," ..
-			(v.mapsize and ESC(v.mapsize .. " Km²") or "") .. "," ..
+			(v.mapsize and ESC(v.mapsize .. " km²") or "") .. "," ..
 			(status_color[v.status] or "#ffffff") .. "," ..
 			ESC(status_label[v.status] or "?")
 	end
