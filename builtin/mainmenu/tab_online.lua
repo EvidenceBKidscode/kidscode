@@ -190,32 +190,13 @@ end
 --------------------------------------------------------------------------------
 -- Async stuff
 
-function core.handle_async(func, parameter, callback)
-	-- Serialize function
-	local serialized_func = string.dump(func)
-
-	assert(serialized_func ~= nil)
-
-	-- Serialize parameters
-	local serialized_param = core.serialize(parameter)
-
-	if serialized_param == nil then
-		return false
-	end
-
-	local jobid = core.do_async_callback(serialized_func, serialized_param)
-
-	core.async_jobs[jobid] = callback
-
-	return true
-end
-
 local autosync
 
-local function wait()
+local function wait(params)
 	local time = os.time()
 	while (os.time() == time) do
 	end
+	return params
 end
 
 local function do_autosync()
