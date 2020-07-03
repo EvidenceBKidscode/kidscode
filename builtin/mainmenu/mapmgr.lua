@@ -79,7 +79,7 @@ function mapmgr.new_map_from_json(json_data)
 	-- TODO : Beter coordinate display (degrees+minutes)
 	map.name = json_data.place or json_data.coordinates or ""
 
-	if json_data.snow_height_max > 0 then
+	if json_data.snow_height_max and json_data.snow_height_max > 0 then
 		map.name = map.name .. " (neige)"
 	end
 
@@ -394,8 +394,57 @@ local function show_question(parent, errmsg, default, cb_ok, cb_cancel)
 	ui.update()
 end
 
+local function wait(params)
+	local time = os.time()
+--	while (os.time() == time) do
+--	end
+	return params
+end
+
+local inprogress = nil
+
+local function refresh_progress(params)
+	if inprogress then
+		ui.delete(inprogress.dlg)
+		inprogress.dlg = show_status(inprogress.parent,
+				inprogress.status .. "\n" .. inprogress.func(params)),
+		core.handle_async(wait, params, refresh_progress)
+	end
+end
+
+local function async_step_progress(parent, status, async_func, params, progress_func, ok_func)
+	inprogress = {
+		parent = parent,
+		status = status,
+		dlg = show_status(parent, status),
+		func = progress_func,
+	}
+	refresh_progress(params)
+
+	core.handle_async(async_func, params,
+		function(params)
+			-- Cand use :delete dialog method, metadata lost by handle_async
+			inprogress.parent.hidden = false
+			ui.delete(inprogress.dlg)
+			inprogress = nil
+
+			if params.log then
+				core.log("warning", params.log)
+			end
+			if params.error then
+				core.delete_dir(params.tempfolder)
+				show_message(parent, "<b><center><style color=yellow>" .. params.error)
+			else
+				if ok_func and type(ok_func) == "function" then
+					ok_func(params)
+				end
+			end
+		end
+	)
+end
+
 -- Launch a function while displaying a status, check for errors
-local function async_step(parent, status, async_func, params, ok_func, end_func)
+local function async_step(parent, status, async_func, params, ok_func)
 	local dlg = show_status(parent, status)
 	core.handle_async(async_func, params,
 		function(params)
@@ -419,13 +468,10 @@ end
 --   IN  tempfolder
 --   OUT zippath
 local function async_download(params)
-	local zippath = params.tempfolder .. DIR_DELIM .. os.date("webimport%Y%m%d%H%M%S");
-	if not core.download_file(params.map.alac.package, zippath) then
+	if not core.download_file(params.map.alac.package, params.zippath) then
 		params.log = "Unable to download url " .. params.map.alac.package ..
 			" to " .. tmpfile
 		params.error = "Cette carte n'est pas téléchargeable."
-	else
-		params.zippath = zippath
 	end
 	return params
 end
@@ -579,6 +625,16 @@ function mapmgr.import_map_from_file(parent, zippath)
 	)
 end
 
+function fsize(path)
+	local size = 0
+	local file = io.open(path, "rb")
+	if file then
+		size = file:seek("end")
+		file:close()
+	end
+	return size
+ end
+
 -- Import a map from web. Call it and return, the rest of the process is async
 function mapmgr.install_map_from_web(parent, map)
 	if not mapmgr.can_install_map(map) then
@@ -587,9 +643,20 @@ function mapmgr.install_map_from_web(parent, map)
 	end
 
 	local params = { tempfolder = os.tempfolder(), map = map }
+	params.zippath = params.tempfolder .. DIR_DELIM .. os.date("webimport%Y%m%d%H%M%S");
+
 	core.create_dir(params.tempfolder)
 
-	async_step(parent, "<b><center>Téléchargement de la carte", async_download, params,
+	async_step_progress(parent, "<b><center>Téléchargement de la carte", async_download, params,
+		function(params)
+			local dlsize = fsize(params.zippath)
+			if map.filesize then
+				return ("%s (%.1f%%)"):format(humanReadableSize(dlsize),
+					dlsize / map.fileszie * 100)
+			else
+				return humanReadableSize(dlsize)
+			end
+		end,
 		function(params)
 			async_step(parent, "<b><center>Décompression de la carte", async_unzip, params,
 				function(params)
