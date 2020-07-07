@@ -652,7 +652,7 @@ function mapmgr.install_map_from_web(parent, map)
 			local dlsize = fsize(params.zippath)
 			if map.filesize then
 				return ("%s (%.1f%%)"):format(humanReadableSize(dlsize),
-					dlsize / map.fileszie * 100)
+					dlsize / map.filesize * 100)
 			else
 				return humanReadableSize(dlsize)
 			end
