@@ -602,12 +602,6 @@
 #    type: bool
 # tone_mapping = false
 
-#### Advanced Lighting
-
-#    Enables directional environment lighting (Experimental)
-#    type: bool
-# directional_shading = false
-
 #### Bumpmapping
 
 #    Enables bumpmapping for textures. Normalmaps need to be supplied by the texture pack

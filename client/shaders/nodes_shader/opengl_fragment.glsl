@@ -2,15 +2,9 @@ uniform sampler2D baseTexture;
 uniform sampler2D normalTexture;
 uniform sampler2D textureFlags;
 
-// Directional lighting information
-uniform vec4 lightColor;
-uniform vec3 lightDirection;
-
 uniform vec4 skyBgColor;
 uniform float fogDistance;
-
 uniform vec3 eyePosition;
-uniform vec3 wrappedEyePosition;
 
 // The cameraOffset is the current center of the visible world.
 uniform vec3 cameraOffset;
@@ -23,14 +17,6 @@ varying vec3 vPosition;
 // cameraOffset + worldPosition (for large coordinates the limits of float
 // precision must be considered).
 varying vec3 worldPosition;
-
-// Specular lighting information
-varying float sunLight;
-varying float specularIntensity;
-varying float specularExponent;
-
-varying vec3 worldNormal;
-
 varying float area_enable_parallax;
 
 varying vec3 eyeVec;
@@ -76,20 +62,6 @@ vec4 applyToneMapping(vec4 color)
 	return vec4(pow(color.rgb, vec3(1.0 / gamma)), color.a);
 }
 #endif
-
-vec4 applySpecularLighting(vec4 col, float intensity, float exponent)
-{
-	// Specular highlights
-	vec3 e = normalize(worldPosition - wrappedEyePosition);
-	vec3 l = normalize(lightDirection);
-	float d = dot(e, reflect(l, worldNormal));
-
-	float specular = intensity * pow(max(d, 0.0), exponent);
-
-	col.rgb += lightColor.rgb * lightColor.a * specular * sunLight;
-
-	return col;
-}
 
 void get_texture_flags()
 {
@@ -233,8 +205,6 @@ void main(void)
 #endif
 
 	vec4 col = vec4(color.rgb * gl_Color.rgb, 1.0);
-
-	col = applySpecularLighting(col, specularIntensity, specularExponent);
 
 #ifdef ENABLE_TONE_MAPPING
 	col = applyToneMapping(col);

@@ -41,43 +41,42 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 	CAOShaderConstantSetter
 */
 
-//! Shader constant setter for passing material ambient color to the CAO model_shader
+//! Shader constant setter for passing material emissive color to the CAO object_shader
 class CAOShaderConstantSetter : public IShaderConstantSetter
 {
 public:
-
-	CAOShaderConstantSetter() :
-		m_ambient_color_setting("ambientColor")
+	CAOShaderConstantSetter():
+			m_emissive_color_setting("emissiveColor")
 	{}
 
-	~CAOShaderConstantSetter()
-	{}
+	~CAOShaderConstantSetter() override = default;
 
-	virtual void onSetConstants(video::IMaterialRendererServices *services,
+	void onSetConstants(video::IMaterialRendererServices *services,
 			bool is_highlevel) override
 	{
 		if (!is_highlevel)
 			return;
 
 		// Ambient color
-		video::SColorf ambient_colorf(m_ambient_color);
-		float ambientcolorfa[4] = {
-			ambient_colorf.r,
-			ambient_colorf.g,
-			ambient_colorf.b,
-			ambient_colorf.a,
+		video::SColorf emissive_color(m_emissive_color);
+
+		float as_array[4] = {
+			emissive_color.r,
+			emissive_color.g,
+			emissive_color.b,
+			emissive_color.a,
 		};
-		m_ambient_color_setting.set(ambientcolorfa, services);
+		m_emissive_color_setting.set(as_array, services);
 	}
 
-	virtual void onSetMaterial(const video::SMaterial& material) override
+	void onSetMaterial(const video::SMaterial& material) override
 	{
-		m_ambient_color = material.AmbientColor;
+		m_emissive_color = material.EmissiveColor;
 	}
 
 private:
-	video::SColor m_ambient_color;
-	CachedPixelShaderSetting<float, 4> m_ambient_color_setting;
+	video::SColor m_emissive_color;
+	CachedPixelShaderSetting<float, 4> m_emissive_color_setting;
 };
 
 class CAOShaderConstantSetterFactory : public IShaderConstantSetterFactory
@@ -103,7 +102,7 @@ ClientEnvironment::ClientEnvironment(ClientMap *map,
 	m_texturesource(texturesource),
 	m_client(client)
 {
-	IWritableShaderSource *shdrsrc = (IWritableShaderSource *)m_client->getShaderSource();
+	auto *shdrsrc = m_client->getShaderSource();
 	shdrsrc->addShaderConstantSetterFactory(new CAOShaderConstantSetterFactory());
 }
 
@@ -140,28 +139,6 @@ void ClientEnvironment::setLocalPlayer(LocalPlayer *player)
 		"Local player already allocated");
 
 	m_local_player = player;
-}
-
-static u8 get_artificial_light_ratio(MapNode n, const ContentFeatures f)
-{
-	u16 day = decode_light(n.getLightNoChecks(LIGHTBANK_DAY, &f));
-	u16 night = decode_light(n.getLightNoChecks(LIGHTBANK_NIGHT, &f));
-
-	// Since we don't know if the day light is sunlight or
-	// artificial light, assume it is artificial when the night
-	// light bank is also lit.
-	if (day < night)
-		day = 0;
-	else
-		day -= night;
-
-	u32 sum = day + night;
-
-	// Ratio of sunlight
-	if (sum > 0)
-		return 255 - (day * 255 / sum);
-
-	return 255;
 }
 
 void ClientEnvironment::step(float dtime)
@@ -346,22 +323,17 @@ void ClientEnvironment::step(float dtime)
 		if (update_lighting) {
 			// Update lighting
 			u8 light = 0;
-			u8 ratio = 0; // No artificial light
 			bool pos_ok;
 
 			// Get node at head
 			v3s16 p = cao->getLightPosition();
 			MapNode n = this->m_map->getNode(p, &pos_ok);
-			if (pos_ok) {
+			if (pos_ok)
 				light = n.getLightBlend(day_night_ratio, m_client->ndef());
-
-				const ContentFeatures &f = m_client->ndef()->get(n);
-				ratio = get_artificial_light_ratio(n, f);
-			} else {
+			else
 				light = blend_light(day_night_ratio, LIGHT_SUN, 0);
-			}
 
-			cao->updateLight(light, ratio);
+			cao->updateLight(light);
 		}
 	};
 
@@ -431,24 +403,17 @@ u16 ClientEnvironment::addActiveObject(ClientActiveObject *object)
 
 	// Update lighting immediately
 	u8 light = 0;
-	u8 ratio = 0; // No artificial light
 	bool pos_ok;
 
-	u32 day_night_ratio = getDayNightRatio();
 	// Get node at head
 	v3s16 p = object->getLightPosition();
 	MapNode n = m_map->getNode(p, &pos_ok);
-	if (pos_ok) {
-		light = n.getLightBlend(day_night_ratio, m_client->ndef());
+	if (pos_ok)
+		light = n.getLightBlend(getDayNightRatio(), m_client->ndef());
+	else
+		light = blend_light(getDayNightRatio(), LIGHT_SUN, 0);
 
-		const ContentFeatures &f = m_client->ndef()->get(n);
-		ratio = get_artificial_light_ratio(n, f);
-	} else {
-		light = blend_light(day_night_ratio, LIGHT_SUN, 0);
-	}
-
-	object->updateLight(light, ratio);
-
+	object->updateLight(light);
 	return object->getId();
 }
 
