@@ -342,9 +342,13 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 busytime, f32 tool_r
 	if (player->getParent())
 		player_position = player->getParent()->getPosition();
 
-	if(player->touching_ground &&
-			player_position.Y > old_player_position.Y)
-	{
+	// Smooth the camera movement when the player instantly moves upward due to stepheight.
+	// To smooth the 'not touching_ground' stepheight, smoothing is necessary when jumping
+	// or swimming (for when moving from liquid to land).
+	// Disable smoothing if climbing or flying, to avoid upwards offset of player model
+	// when seen in 3rd person view.
+	bool flying = g_settings->getBool("free_move") && m_client->checkLocalPrivilege("fly");
+	if (player_position.Y > old_player_position.Y && !player->is_climbing && !flying) {
 		f32 oldy = old_player_position.Y;
 		f32 newy = player_position.Y;
 		f32 t = std::exp(-23 * frametime);
@@ -378,17 +382,21 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 busytime, f32 tool_r
 		fall_bobbing *= m_cache_fall_bobbing_amount;
 	}
 
-	// Calculate players eye offset for different camera modes
-	v3f PlayerEyeOffset = player->getEyeOffset();
-	if (m_camera_mode == CAMERA_MODE_FIRST)
-		PlayerEyeOffset += player->eye_offset_first;
-	else
-		PlayerEyeOffset += player->eye_offset_third;
+	// Calculate and translate the head SceneNode offsets
+	{
+		v3f eye_offset = player->getEyeOffset();
+		if (m_camera_mode == CAMERA_MODE_FIRST)
+			eye_offset += player->eye_offset_first;
+		else
+			eye_offset += player->eye_offset_third;
 
-	// Set head node transformation
-	m_headnode->setPosition(PlayerEyeOffset+v3f(0,cameratilt*-player->hurt_tilt_strength+fall_bobbing,0));
-	m_headnode->setRotation(v3f(player->getPitch(), 0, cameratilt*player->hurt_tilt_strength));
-	m_headnode->updateAbsolutePosition();
+		// Set head node transformation
+		eye_offset.Y += cameratilt * -player->hurt_tilt_strength + fall_bobbing;
+		m_headnode->setPosition(eye_offset);
+		m_headnode->setRotation(v3f(player->getPitch(), 0,
+			cameratilt * player->hurt_tilt_strength));
+		m_headnode->updateAbsolutePosition();
+	}
 
 	// Compute relative camera position and target
 	v3f rel_cam_pos = v3f(0,0,0);
@@ -536,7 +544,7 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 busytime, f32 tool_r
 	m_aspect = (f32) window_size.X / (f32) window_size.Y;
 	m_fov_y = m_curr_fov_degrees * M_PI / 180.0;
 	// Increase vertical FOV on lower aspect ratios (<16:10)
-	m_fov_y *= MYMAX(1.0, MYMIN(1.4, sqrt(16./10. / m_aspect)));
+	m_fov_y *= core::clamp(sqrt(16./10. / m_aspect), 1.0, 1.4);
 	m_fov_x = 2 * atan(m_aspect * tan(0.5 * m_fov_y));
 	m_cameranode->setAspectRatio(m_aspect);
 	m_cameranode->setFOV(m_fov_y);
@@ -588,7 +596,7 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 busytime, f32 tool_r
 	m_wieldnode->setPosition(wield_position);
 	m_wieldnode->setRotation(wield_rotation);
 
-	m_wieldnode->setColor(player->light_color);
+	m_wieldnode->setNodeLightColor(player->light_color);
 
 	// Set render distance
 	updateViewingRange();
@@ -603,14 +611,11 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 busytime, f32 tool_r
 	const bool walking = movement_XZ && player->touching_ground;
 	const bool swimming = (movement_XZ || player->swimming_vertical) && player->in_liquid;
 	const bool climbing = movement_Y && player->is_climbing;
-	if ((walking || swimming || climbing) &&
-			(!g_settings->getBool("free_move") || !m_client->checkLocalPrivilege("fly"))) {
+	if ((walking || swimming || climbing) && !flying) {
 		// Start animation
 		m_view_bobbing_state = 1;
 		m_view_bobbing_speed = MYMIN(speed.getLength(), 70);
-	}
-	else if (m_view_bobbing_state == 1)
-	{
+	} else if (m_view_bobbing_state == 1) {
 		// Stop animation
 		m_view_bobbing_state = 2;
 		m_view_bobbing_speed = 60;

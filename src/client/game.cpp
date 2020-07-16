@@ -298,6 +298,7 @@ class SoundMaker
 public:
 	bool makes_footstep_sound;
 	float m_player_step_timer;
+	float m_player_jump_timer;
 
 	SimpleSoundSpec m_player_step_sound;
 	SimpleSoundSpec m_player_leftpunch_sound;
@@ -307,7 +308,8 @@ public:
 		m_sound(sound),
 		m_ndef(ndef),
 		makes_footstep_sound(true),
-		m_player_step_timer(0)
+		m_player_step_timer(0.0f),
+		m_player_jump_timer(0.0f)
 	{
 	}
 
@@ -317,6 +319,14 @@ public:
 			m_player_step_timer = 0.03;
 			if (makes_footstep_sound)
 				m_sound->playSound(m_player_step_sound, false);
+		}
+	}
+
+	void playPlayerJump()
+	{
+		if (m_player_jump_timer <= 0.0f) {
+			m_player_jump_timer = 0.2f;
+			m_sound->playSound(SimpleSoundSpec("player_jump", 0.5f), false);
 		}
 	}
 
@@ -334,7 +344,8 @@ public:
 
 	static void playerJump(MtEvent *e, void *data)
 	{
-		//SoundMaker *sm = (SoundMaker*)data;
+		SoundMaker *sm = (SoundMaker *)data;
+		sm->playPlayerJump();
 	}
 
 	static void cameraPunchLeft(MtEvent *e, void *data)
@@ -383,6 +394,7 @@ public:
 	void step(float dtime)
 	{
 		m_player_step_timer -= dtime;
+		m_player_jump_timer -= dtime;
 	}
 };
 
@@ -882,6 +894,7 @@ private:
 	SoundMaker *soundmaker = nullptr;
 
 	ChatBackend *chat_backend = nullptr;
+	LogOutputBuffer m_chat_log_buf;
 
 	EventManager *eventmgr = nullptr;
 	QuicktuneShortcutter *quicktune = nullptr;
@@ -956,6 +969,7 @@ private:
 };
 
 Game::Game() :
+	m_chat_log_buf(g_logger),
 	m_game_ui(new GameUI())
 {
 	g_settings->registerChangedCallback("doubletap_jump",
@@ -1219,6 +1233,10 @@ void Game::shutdown()
 	if (formspec)
 		formspec->quitMenu();
 
+#ifdef HAVE_TOUCHSCREENGUI
+	g_touchscreengui->hide();
+#endif
+
 	showOverlayMessage(N_("Shutting down..."), 0, 0, false);
 
 	if (clouds)
@@ -1240,6 +1258,7 @@ void Game::shutdown()
 
 	chat_backend->addMessage(L"", L"# Disconnected.");
 	chat_backend->addMessage(L"", L"");
+	m_chat_log_buf.clear();
 
 	if (client) {
 		client->Stop();
@@ -1299,7 +1318,7 @@ bool Game::init(
 bool Game::initSound()
 {
 #if USE_SOUND
-	if (g_settings->getBool("enable_sound")) {
+	if (g_settings->getBool("enable_sound") && g_sound_manager_singleton.get()) {
 		infostream << "Attempting to use OpenAL audio" << std::endl;
 		sound = createOpenALSoundManager(g_sound_manager_singleton.get(), &soundfetcher);
 		if (!sound)
@@ -1352,7 +1371,6 @@ bool Game::createSingleplayerServer(const std::string &map_dir,
 	}
 
 	server = new Server(map_dir, gamespec, simple_singleplayer_mode, bind_addr, false);
-	server->init();
 	server->start();
 
 	return true;
@@ -1616,9 +1634,12 @@ bool Game::connectToServer(const std::string &playername,
 				} else if (!password.empty()) {
 					registration_confirmation_shown = true;
 					(new GUIConfirmRegistration(guienv, guienv->getRootGUIElement(), -1,
-						   &g_menumgr, client, playername, password, connection_aborted))->drop();
+						   &g_menumgr, client, playername, password,
+						   connection_aborted, texture_src))->drop();
+				// >> KIDSCODE - Don't ask password confirmation if password is empty
 				} else {
 					client->confirmRegistration();
+				// << KIDSCODE - Don't ask password confirmation if password is empty
 				}
 			} else {
 				wait_time += dtime;
@@ -1770,35 +1791,50 @@ inline bool Game::handleCallbacks()
 		return false;
 	}
 
+	if (g_gamecallback->changepassword_requested) {
+		m_event_timer = 0.f; // KIDSCODE - Hide window after a while
+		(new GUIPasswordChange(guienv, guiroot, -1,
+					   &g_menumgr, client, texture_src))->drop();
+		g_gamecallback->changepassword_requested = false;
+	}
+
+	if (g_gamecallback->changevolume_requested) {
+		m_event_timer = 0.f; // KIDSCODE - Hide window after a while
+		(new GUIVolumeChange(guienv, guiroot, -1,
+				     &g_menumgr, texture_src))->drop();
+		g_gamecallback->changevolume_requested = false;
+	}
+
+	if (g_gamecallback->keyconfig_requested) {
+		m_event_timer = 0.f; // KIDSCODE - Hide window after a while
+		(new GUIKeyChangeMenu(guienv, guiroot, -1,
+				      &g_menumgr, texture_src))->drop();
+		g_gamecallback->keyconfig_requested = false;
+	}
+
+	/* KIDSCODE - Moved to Game::run()
+	if (g_gamecallback->keyconfig_changed) {
+		input->keycache.populate(); // update the cache with new settings
+		g_gamecallback->keyconfig_changed = false;
+	}
+	*/
+
+	// >> KIDSCODE - Options window
 	if (g_gamecallback->options_requested) {
 		m_event_timer = 0.f;
 		(new GUIOptions(guienv, guiroot, -1, &g_menumgr))->drop();
 		g_gamecallback->options_requested = false;
 	}
+	// << KIDSCODE - Options window
 
-	if (g_gamecallback->changevolume_requested) {
-		m_event_timer = 0.f;
-		(new GUIVolumeChange(guienv, guiroot, -1, &g_menumgr))->drop();
-		g_gamecallback->changevolume_requested = false;
-	}
-
-	if (g_gamecallback->keyconfig_requested) {
-		m_event_timer = 0.f;
-		(new GUIKeyChangeMenu(guienv, guiroot, -1, &g_menumgr))->drop();
-		g_gamecallback->keyconfig_requested = false;
-	}
-
-	if (g_gamecallback->changepassword_requested) {
-		m_event_timer = 0.f;
-		(new GUIPasswordChange(guienv, guiroot, -1, &g_menumgr, client))->drop();
-		g_gamecallback->changepassword_requested = false;
-	}
-
+	// >> KIDSCODE - Main pause menu window
 	if (g_gamecallback->show_pause_menu) {
 		m_event_timer = 0.f;
 		showPauseMenu();
 		g_gamecallback->show_pause_menu = false;
 	}
+	// << KIDSCODE - Main pause menu window
+
 	return true;
 }
 
@@ -1987,29 +2023,47 @@ void Game::processKeyInput()
 		toggleFast();
 	} else if (wasKeyDown(KeyType::NOCLIP)) {
 		toggleNoClip();
+#if USE_SOUND
 	} else if (wasKeyDown(KeyType::MUTE)) {
-		bool new_mute_sound = !g_settings->getBool("mute_sound");
-		g_settings->setBool("mute_sound", new_mute_sound);
-		if (new_mute_sound)
-			m_game_ui->showTranslatedStatusText("Sound muted");
-		else
-			m_game_ui->showTranslatedStatusText("Sound unmuted");
+		if (g_settings->getBool("enable_sound")) {
+			bool new_mute_sound = !g_settings->getBool("mute_sound");
+			g_settings->setBool("mute_sound", new_mute_sound);
+			if (new_mute_sound)
+				m_game_ui->showTranslatedStatusText("Sound muted");
+			else
+				m_game_ui->showTranslatedStatusText("Sound unmuted");
+		} else {
+			m_game_ui->showTranslatedStatusText("Sound system is disabled");
+		}
 	} else if (wasKeyDown(KeyType::INC_VOLUME)) {
-		float new_volume = rangelim(g_settings->getFloat("sound_volume") + 0.1f, 0.0f, 1.0f);
-		wchar_t buf[100];
-		g_settings->setFloat("sound_volume", new_volume);
-		const wchar_t *str = wgettext("Volume changed to %d%%");
-		swprintf(buf, sizeof(buf) / sizeof(wchar_t), str, myround(new_volume * 100));
-		delete[] str;
-		m_game_ui->showStatusText(buf);
+		if (g_settings->getBool("enable_sound")) {
+			float new_volume = rangelim(g_settings->getFloat("sound_volume") + 0.1f, 0.0f, 1.0f);
+			wchar_t buf[100];
+			g_settings->setFloat("sound_volume", new_volume);
+			const wchar_t *str = wgettext("Volume changed to %d%%");
+			swprintf(buf, sizeof(buf) / sizeof(wchar_t), str, myround(new_volume * 100));
+			delete[] str;
+			m_game_ui->showStatusText(buf);
+		} else {
+			m_game_ui->showTranslatedStatusText("Sound system is disabled");
+		}
 	} else if (wasKeyDown(KeyType::DEC_VOLUME)) {
-		float new_volume = rangelim(g_settings->getFloat("sound_volume") - 0.1f, 0.0f, 1.0f);
-		wchar_t buf[100];
-		g_settings->setFloat("sound_volume", new_volume);
-		const wchar_t *str = wgettext("Volume changed to %d%%");
-		swprintf(buf, sizeof(buf) / sizeof(wchar_t), str, myround(new_volume * 100));
-		delete[] str;
-		m_game_ui->showStatusText(buf);
+		if (g_settings->getBool("enable_sound")) {
+			float new_volume = rangelim(g_settings->getFloat("sound_volume") - 0.1f, 0.0f, 1.0f);
+			wchar_t buf[100];
+			g_settings->setFloat("sound_volume", new_volume);
+			const wchar_t *str = wgettext("Volume changed to %d%%");
+			swprintf(buf, sizeof(buf) / sizeof(wchar_t), str, myround(new_volume * 100));
+			delete[] str;
+			m_game_ui->showStatusText(buf);
+		} else {
+			m_game_ui->showTranslatedStatusText("Sound system is disabled");
+		}
+#else
+	} else if (wasKeyDown(KeyType::MUTE) || wasKeyDown(KeyType::INC_VOLUME)
+			|| wasKeyDown(KeyType::DEC_VOLUME)) {
+		m_game_ui->showTranslatedStatusText("Sound system is not supported on this build");
+#endif
 	} else if (wasKeyDown(KeyType::CINEMATIC)) {
 		toggleCinematic();
 	} else if (wasKeyDown(KeyType::SCREENSHOT)) {
@@ -2092,7 +2146,6 @@ void Game::processItemSelection(u16 *new_playeritem,
 	for (u16 i = 0; i <= max_item; i++) {
 		if (wasKeyDown((GameKeyType) (KeyType::SLOT_1 + i))) {
 			*new_playeritem = i;
-			infostream << "Selected item: " << new_playeritem << std::endl;
 			break;
 		}
 	}
@@ -2127,7 +2180,7 @@ void Game::openInventory()
 	if (!player || !player->getCAO())
 		return;
 
-	infostream << "the_game: " << "Launching inventory" << std::endl;
+	infostream << "Game: Launching inventory" << std::endl;
 
 	PlayerInventoryFormSource *fs_src = new PlayerInventoryFormSource(client);
 
@@ -2548,7 +2601,7 @@ void Game::updatePlayerControl(const CameraOrientation &cam)
 		input->joystick.getAxisWithoutDead(JA_FORWARD_MOVE)
 	);
 
-	u32 keypress_bits =
+	u32 keypress_bits = (
 			( (u32)(isKeyDown(KeyType::FORWARD)                       & 0x1) << 0) |
 			( (u32)(isKeyDown(KeyType::BACKWARD)                      & 0x1) << 1) |
 			( (u32)(isKeyDown(KeyType::LEFT)                          & 0x1) << 2) |
@@ -2558,8 +2611,9 @@ void Game::updatePlayerControl(const CameraOrientation &cam)
 			( (u32)(isKeyDown(KeyType::SNEAK)                         & 0x1) << 6) |
 			( (u32)(input->getLeftState()                             & 0x1) << 7) |
 			( (u32)(input->getRightState()                            & 0x1) << 8) |
-			( (u32)(input->getMiddleState()                           & 0x1) << 9) //KC
-		;
+			( (u32)(isKeyDown(KeyType::ZOOM)                          & 0x1) << 9) |
+			( (u32)(input->getMiddleState()                           & 0x1) << 10) // Kids code middle mouse button
+		);
 
 #ifdef ANDROID
 	/* For Android, simulate holding down AUX1 (fast move) if the user has
@@ -2746,6 +2800,7 @@ void Game::handleClientEvent_HudAdd(ClientEvent *event, CameraOrientation *cam)
 		delete event->hudadd.offset;
 		delete event->hudadd.world_pos;
 		delete event->hudadd.size;
+		delete event->hudadd.text2;
 		return;
 	}
 
@@ -2763,6 +2818,7 @@ void Game::handleClientEvent_HudAdd(ClientEvent *event, CameraOrientation *cam)
 	e->world_pos = *event->hudadd.world_pos;
 	e->size = *event->hudadd.size;
 	e->z_index = event->hudadd.z_index;
+	e->text2  = *event->hudadd.text2;
 	// >> KIDSCODE
 	e->font_size = event->hudadd.font_size;
 	e->texture_index = 0;
@@ -2777,6 +2833,7 @@ void Game::handleClientEvent_HudAdd(ClientEvent *event, CameraOrientation *cam)
 	delete event->hudadd.offset;
 	delete event->hudadd.world_pos;
 	delete event->hudadd.size;
+	delete event->hudadd.text2;
 }
 
 void Game::handleClientEvent_HudRemove(ClientEvent *event, CameraOrientation *cam)
@@ -2850,6 +2907,10 @@ void Game::handleClientEvent_HudChange(ClientEvent *event, CameraOrientation *ca
 			e->z_index = event->hudchange.data;
 			break;
 
+		case HUD_STAT_TEXT2:
+			e->text2 = *event->hudchange.sdata;
+			break;
+
 		// >> KIDSCODE
 		case HUD_STAT_FONT_SIZE:
 			e->font_size = event->hudchange.data;
@@ -2880,11 +2941,11 @@ void Game::handleClientEvent_SetSky(ClientEvent *event, CameraOrientation *cam)
 		// Shows the mesh skybox
 		sky->setVisible(true);
 		// Update mesh based skybox colours if applicable.
-		sky->setSkyColors(*event->set_sky);
+		sky->setSkyColors(event->set_sky->sky_color);
 		sky->setHorizonTint(
-			event->set_sky->sun_tint,
-			event->set_sky->moon_tint,
-			event->set_sky->tint_type
+			event->set_sky->fog_sun_tint,
+			event->set_sky->fog_moon_tint,
+			event->set_sky->fog_tint_type
 		);
 	} else if (event->set_sky->type == "skybox" &&
 			event->set_sky->textures.size() == 6) {
@@ -2894,9 +2955,9 @@ void Game::handleClientEvent_SetSky(ClientEvent *event, CameraOrientation *cam)
 		sky->setFallbackBgColor(event->set_sky->bgcolor);
 		// Set sunrise and sunset fog tinting:
 		sky->setHorizonTint(
-			event->set_sky->sun_tint,
-			event->set_sky->moon_tint,
-			event->set_sky->tint_type
+			event->set_sky->fog_sun_tint,
+			event->set_sky->fog_moon_tint,
+			event->set_sky->fog_tint_type
 		);
 		// Add textures to skybox.
 		for (int i = 0; i < 6; i++)
@@ -2980,18 +3041,9 @@ void Game::processClientEvents(CameraOrientation *cam)
 
 void Game::updateChat(f32 dtime, const v2u32 &screensize)
 {
-	// Add chat log output for errors to be shown in chat
-	static LogOutputBuffer chat_log_error_buf(g_logger, LL_ERROR);
-
 	// Get new messages from error log buffer
-	while (!chat_log_error_buf.empty()) {
-		std::wstring error_message = utf8_to_wide(chat_log_error_buf.get());
-		if (!g_settings->getBool("disable_escape_sequences")) {
-			error_message.insert(0, L"\x1b(c@red)");
-			error_message.append(L"\x1b(c@white)");
-		}
-		chat_backend->addMessage(L"", error_message);
-	}
+	while (!m_chat_log_buf.empty())
+		chat_backend->addMessage(L"", utf8_to_wide(m_chat_log_buf.get()));
 
 	// Get new messages from client
 	std::wstring message;
@@ -3112,16 +3164,8 @@ void Game::processPlayerInteraction(f32 dtime, bool show_hud, bool show_debug)
 {
 	LocalPlayer *player = client->getEnv().getLocalPlayer();
 
-	v3f player_position  = player->getPosition();
-	v3f player_eye_position = player->getEyePosition();
-	v3f camera_position  = camera->getPosition();
-	v3f camera_direction = camera->getDirection();
-	v3s16 camera_offset  = camera->getOffset();
-
-	if (camera->getCameraMode() == CAMERA_MODE_FIRST)
-		player_eye_position += player->eye_offset_first;
-	else
-		player_eye_position += player->eye_offset_third;
+	const v3f camera_direction = camera->getDirection();
+	const v3s16 camera_offset  = camera->getOffset();
 
 	/*
 		Calculate what block is the crosshair pointing to
@@ -3135,13 +3179,22 @@ void Game::processPlayerInteraction(f32 dtime, bool show_hud, bool show_debug)
 
 	core::line3d<f32> shootline;
 
-	if (camera->getCameraMode() != CAMERA_MODE_THIRD_FRONT) {
-		shootline = core::line3d<f32>(player_eye_position,
-			player_eye_position + camera_direction * BS * d);
-	} else {
+	switch (camera->getCameraMode()) {
+	case CAMERA_MODE_FIRST:
+		// Shoot from camera position, with bobbing
+		shootline.start = camera->getPosition();
+		break;
+	case CAMERA_MODE_THIRD:
+		// Shoot from player head, no bobbing
+		shootline.start = camera->getHeadPosition();
+		break;
+	case CAMERA_MODE_THIRD_FRONT:
+		shootline.start = camera->getHeadPosition();
 		// prevent player pointing anything in front-view
-		shootline = core::line3d<f32>(camera_position, camera_position);
+		d = 0;
+		break;
 	}
+	shootline.end = shootline.start + camera_direction * BS * d;
 
 #ifdef HAVE_TOUCHSCREENGUI
 
@@ -3228,6 +3281,7 @@ void Game::processPlayerInteraction(f32 dtime, bool show_hud, bool show_debug)
 	} else if (pointed.type == POINTEDTHING_NODE) {
 		handlePointingAtNode(pointed, selected_item, hand_item, dtime);
 	} else if (pointed.type == POINTEDTHING_OBJECT) {
+		v3f player_position  = player->getPosition();
 		handlePointingAtObject(pointed, tool_item, player_position, show_debug);
 	} else if (input->getLeftState()) {
 		// When button is held down in air, show continuous animation
@@ -4204,6 +4258,8 @@ void Game::showDeathFormspec()
 
 void Game::showPauseMenu()
 {
+	// >> KIDSCODE SPECIFIC PAUSE MENU WINDOW
+
 	// Prepare Pause Menu stuff
 	std::ostringstream os;
 	os << "" << "size[5.6,1.1,true]";
@@ -4221,6 +4277,8 @@ void Game::showPauseMenu()
 
 	os << "button_exit[" << (xpos) << ",0.8;3,0.5;btn_exit_os;"
 		 << strgettext("Exit to OS") << "]";
+
+	// << KIDSCODE SPECIFIC PAUSE MENU WINDOW
 
 	/* Create menu */
 	/* Note: FormspecFormSource and LocalFormspecHandler  *
@@ -4272,7 +4330,6 @@ void the_game(bool *kill,
 				reconnect_requested, &chat_backend, gamespec,
 				simple_singleplayer_mode)) {
 			game.run();
-			game.shutdown();
 		}
 
 	} catch (SerializationError &e) {
@@ -4288,4 +4345,5 @@ void the_game(bool *kill,
 				strgettext("\nCheck debug.txt for details.");
 		errorstream << error_message << std::endl;
 	}
+	game.shutdown();
 }

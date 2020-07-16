@@ -29,14 +29,17 @@ void ParticleParameters::serialize(std::ostream &os, u16 protocol_ver) const
 	writeF32(os, size);
 	writeU8(os, collisiondetection);
 	os << serializeLongString(texture);
-	// >> KIDSCODE - Irrlicht particles
-	// writeU8(os, vertical);
+	// writeU8(os, vertical); // KIDSCODE - Irrlicht particles
 	writeU8(os, 0);
-	// << KIDSCODE - Irrlicht particles
 	writeU8(os, collision_removal);
 	animation.serialize(os, 6); /* NOT the protocol ver */
 	writeU8(os, glow);
 	writeU8(os, object_collision);
+	writeF32(os, bounce_fraction);
+	writeF32(os, bounce_threshold);
+	writeU16(os, node.param0);
+	writeU8(os, node.param2);
+	writeU8(os, node_tile);
 }
 
 void ParticleParameters::deSerialize(std::istream &is, u16 protocol_ver)
@@ -48,18 +51,20 @@ void ParticleParameters::deSerialize(std::istream &is, u16 protocol_ver)
 	size               = readF32(is);
 	collisiondetection = readU8(is);
 	texture            = deSerializeLongString(is);
-	// >> KIDSCODE - Irrlicht particles
-	// vertical           = readU8(is);
-	readU8(is);
-	// >> KIDSCODE - Irrlicht particles
+	// vertical           = readU8(is); //  KIDSCODE - Irrlicht particles
 	collision_removal  = readU8(is);
 	animation.deSerialize(is, 6); /* NOT the protocol ver */
 	glow               = readU8(is);
 	object_collision   = readU8(is);
 	// >> KIDSCODE - Irrlicht particles
-	if (is.rdbuf()->in_avail() >= 4)
-		bounce_fraction = readF32(is);
-	if (is.rdbuf()->in_avail() >= 4)
-		bounce_threshold = readF32(is);
+	bounce_fraction    = readF32(is);
+	bounce_threshold   = readF32(is);
 	// << KIDSCODE - Irrlicht particles
+	// This is kinda awful
+	u16 tmp_param0 = readU16(is);
+	if (is.eof())
+		return;
+	node.param0 = tmp_param0;
+	node.param2 = readU8(is);
+	node_tile   = readU8(is);
 }

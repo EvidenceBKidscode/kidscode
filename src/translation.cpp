@@ -22,6 +22,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "util/string.h"
 #include <unordered_map>
 
+
 #ifndef SERVER
 // Client translations
 Translations client_translations;

@@ -477,7 +477,7 @@ public:
 					GenericCAO *attached = dynamic_cast<GenericCAO *>(
 							m_env->getActiveObject(attached_id));
 					if (attached) {
-						const core::matrix4 *matrix = &attached->getAbsolutePosRotMatrix();
+						const core::matrix4 *matrix = attached->getAbsolutePosRotMatrix();
 						v3f rotation = matrix->getRotationDegrees();
 						vel.rotateXZBy(rotation.Y);
 						p->pos.rotateXZBy(rotation.Y);

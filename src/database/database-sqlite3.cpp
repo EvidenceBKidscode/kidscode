@@ -26,8 +26,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "porting.h"
 #include "util/string.h"
 #include "util/thread.h"
-#include "content_sao.h"
+//#include "content_sao.h"
 #include "remoteplayer.h"
+#include "server/player_sao.h"
 
 #include <cassert>
 

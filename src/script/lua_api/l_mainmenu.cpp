@@ -287,8 +287,8 @@ int ModApiMainMenu::l_get_favorites(lua_State *L)
 {
 	std::string listtype = "local";
 
-	if (!lua_isnone(L,1)) {
-		listtype = luaL_checkstring(L,1);
+	if (!lua_isnone(L, 1)) {
+		listtype = luaL_checkstring(L, 1);
 	}
 
 	std::vector<ServerListSpec> servers;
@@ -309,7 +309,7 @@ int ModApiMainMenu::l_get_favorites(lua_State *L)
 
 	for (const Json::Value &server : servers) {
 
-		lua_pushnumber(L,index);
+		lua_pushnumber(L, index);
 
 		lua_newtable(L);
 		int top_lvl2 = lua_gettop(L);
@@ -317,11 +317,11 @@ int ModApiMainMenu::l_get_favorites(lua_State *L)
 		if (!server["clients"].asString().empty()) {
 			std::string clients_raw = server["clients"].asString();
 			char* endptr = 0;
-			int numbervalue = strtol(clients_raw.c_str(),&endptr,10);
+			int numbervalue = strtol(clients_raw.c_str(), &endptr,10);
 
 			if ((!clients_raw.empty()) && (*endptr == 0)) {
-				lua_pushstring(L,"clients");
-				lua_pushnumber(L,numbervalue);
+				lua_pushstring(L, "clients");
+				lua_pushnumber(L, numbervalue);
 				lua_settable(L, top_lvl2);
 			}
 		}
@@ -330,83 +330,83 @@ int ModApiMainMenu::l_get_favorites(lua_State *L)
 
 			std::string clients_max_raw = server["clients_max"].asString();
 			char* endptr = 0;
-			int numbervalue = strtol(clients_max_raw.c_str(),&endptr,10);
+			int numbervalue = strtol(clients_max_raw.c_str(), &endptr,10);
 
 			if ((!clients_max_raw.empty()) && (*endptr == 0)) {
-				lua_pushstring(L,"clients_max");
-				lua_pushnumber(L,numbervalue);
+				lua_pushstring(L, "clients_max");
+				lua_pushnumber(L, numbervalue);
 				lua_settable(L, top_lvl2);
 			}
 		}
 
 		if (!server["version"].asString().empty()) {
-			lua_pushstring(L,"version");
+			lua_pushstring(L, "version");
 			std::string topush = server["version"].asString();
-			lua_pushstring(L,topush.c_str());
+			lua_pushstring(L, topush.c_str());
 			lua_settable(L, top_lvl2);
 		}
 
 		if (!server["proto_min"].asString().empty()) {
-			lua_pushstring(L,"proto_min");
+			lua_pushstring(L, "proto_min");
 			lua_pushinteger(L, server["proto_min"].asInt());
 			lua_settable(L, top_lvl2);
 		}
 
 		if (!server["proto_max"].asString().empty()) {
-			lua_pushstring(L,"proto_max");
+			lua_pushstring(L, "proto_max");
 			lua_pushinteger(L, server["proto_max"].asInt());
 			lua_settable(L, top_lvl2);
 		}
 
 		if (!server["password"].asString().empty()) {
-			lua_pushstring(L,"password");
+			lua_pushstring(L, "password");
 			lua_pushboolean(L, server["password"].asBool());
 			lua_settable(L, top_lvl2);
 		}
 
 		if (!server["creative"].asString().empty()) {
-			lua_pushstring(L,"creative");
+			lua_pushstring(L, "creative");
 			lua_pushboolean(L, server["creative"].asBool());
 			lua_settable(L, top_lvl2);
 		}
 
 		if (!server["damage"].asString().empty()) {
-			lua_pushstring(L,"damage");
+			lua_pushstring(L, "damage");
 			lua_pushboolean(L, server["damage"].asBool());
 			lua_settable(L, top_lvl2);
 		}
 
 		if (!server["pvp"].asString().empty()) {
-			lua_pushstring(L,"pvp");
+			lua_pushstring(L, "pvp");
 			lua_pushboolean(L, server["pvp"].asBool());
 			lua_settable(L, top_lvl2);
 		}
 
 		if (!server["description"].asString().empty()) {
-			lua_pushstring(L,"description");
+			lua_pushstring(L, "description");
 			std::string topush = server["description"].asString();
-			lua_pushstring(L,topush.c_str());
+			lua_pushstring(L, topush.c_str());
 			lua_settable(L, top_lvl2);
 		}
 
 		if (!server["name"].asString().empty()) {
-			lua_pushstring(L,"name");
+			lua_pushstring(L, "name");
 			std::string topush = server["name"].asString();
-			lua_pushstring(L,topush.c_str());
+			lua_pushstring(L, topush.c_str());
 			lua_settable(L, top_lvl2);
 		}
 
 		if (!server["address"].asString().empty()) {
-			lua_pushstring(L,"address");
+			lua_pushstring(L, "address");
 			std::string topush = server["address"].asString();
-			lua_pushstring(L,topush.c_str());
+			lua_pushstring(L, topush.c_str());
 			lua_settable(L, top_lvl2);
 		}
 
 		if (!server["port"].asString().empty()) {
-			lua_pushstring(L,"port");
+			lua_pushstring(L, "port");
 			std::string topush = server["port"].asString();
-			lua_pushstring(L,topush.c_str());
+			lua_pushstring(L, topush.c_str());
 			lua_settable(L, top_lvl2);
 		}
 
@@ -414,6 +414,37 @@ int ModApiMainMenu::l_get_favorites(lua_State *L)
 			float ping = server["ping"].asFloat();
 			lua_pushstring(L, "ping");
 			lua_pushnumber(L, ping);
+			lua_settable(L, top_lvl2);
+		}
+
+		if (server["clients_list"].isArray()) {
+			unsigned int index_lvl2 = 1;
+			lua_pushstring(L, "clients_list");
+			lua_newtable(L);
+			int top_lvl3 = lua_gettop(L);
+			for (const Json::Value &client : server["clients_list"]) {
+				lua_pushnumber(L, index_lvl2);
+				std::string topush = client.asString();
+				lua_pushstring(L, topush.c_str());
+				lua_settable(L, top_lvl3);
+				index_lvl2++;
+			}
+			lua_settable(L, top_lvl2);
+		}
+
+		if (server["mods"].isArray()) {
+			unsigned int index_lvl2 = 1;
+			lua_pushstring(L, "mods");
+			lua_newtable(L);
+			int top_lvl3 = lua_gettop(L);
+			for (const Json::Value &mod : server["mods"]) {
+
+				lua_pushnumber(L, index_lvl2);
+				std::string topush = mod.asString();
+				lua_pushstring(L, topush.c_str());
+				lua_settable(L, top_lvl3);
+				index_lvl2++;
+			}
 			lua_settable(L, top_lvl2);
 		}
 
@@ -610,9 +641,10 @@ int ModApiMainMenu::l_show_keys_menu(lua_State *L)
 	sanity_check(engine != NULL);
 
 	GUIKeyChangeMenu *kmenu = new GUIKeyChangeMenu(RenderingEngine::get_gui_env(),
-								engine->m_parent,
-								-1,
-								engine->m_menumanager);
+			engine->m_parent,
+			-1,
+			engine->m_menumanager,
+			engine->m_texture_source);
 	kmenu->drop();
 	return 0;
 }
@@ -952,12 +984,12 @@ int ModApiMainMenu::l_show_path_select_dialog(lua_State *L)
 
 	GUIFileSelectMenu* fileOpenMenu =
 		new GUIFileSelectMenu(RenderingEngine::get_gui_env(),
-								engine->m_parent,
-								-1,
-								engine->m_menumanager,
-								title,
-								formname,
-								is_file_select);
+				engine->m_parent,
+				-1,
+				engine->m_menumanager,
+				title,
+				formname,
+				is_file_select);
 	fileOpenMenu->setTextDest(engine->m_buttonhandler);
 	fileOpenMenu->drop();
 	return 0;
@@ -1137,6 +1169,14 @@ int ModApiMainMenu::l_get_max_supp_proto(lua_State *L)
 }
 
 /******************************************************************************/
+int ModApiMainMenu::l_open_url(lua_State *L)
+{
+	std::string url = luaL_checkstring(L, 1);
+	lua_pushboolean(L, porting::openURL(url));
+	return 1;
+}
+
+/******************************************************************************/
 int ModApiMainMenu::l_do_async_callback(lua_State *L)
 {
 	GUIEngine* engine = getGuiEngine(L);
@@ -1201,6 +1241,7 @@ void ModApiMainMenu::Initialize(lua_State *L, int top)
 	API_FCT(verify_world); // KIDSCODE
 	API_FCT(get_min_supp_proto);
 	API_FCT(get_max_supp_proto);
+	API_FCT(open_url);
 	API_FCT(do_async_callback);
 }
 

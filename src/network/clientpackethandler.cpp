@@ -39,6 +39,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "script/scripting_client.h"
 #include "util/serialize.h"
 #include "util/srp.h"
+#include "util/sha1.h"
 #include "tileanimation.h"
 #include "gettext.h"
 #include "skyparams.h"
@@ -387,10 +388,10 @@ void Client::handleCommand_TimeOfDay(NetworkPacket* pkt)
 	m_env.setTimeOfDaySpeed(time_speed);
 	m_time_of_day_set = true;
 
-	u32 dr = m_env.getDayNightRatio();
-	infostream << "Client: time_of_day=" << time_of_day
-			<< " time_speed=" << time_speed
-			<< " dr=" << dr << std::endl;
+	//u32 dr = m_env.getDayNightRatio();
+	//infostream << "Client: time_of_day=" << time_of_day
+	//		<< " time_speed=" << time_speed
+	//		<< " dr=" << dr << std::endl;
 }
 
 void Client::handleCommand_ChatMessage(NetworkPacket *pkt)
@@ -996,7 +997,6 @@ void Client::handleCommand_AddParticleSpawner(NetworkPacket* pkt)
 
 	// >> KIDSCODE - Irrlicht particles
 	// p.vertical = readU8(is);
-	readU8(is); // Dummy value for vertical
 	// << KIDSCODE - Irrlicht particles
 	p.collision_removal = readU8(is);
 
@@ -1007,11 +1007,19 @@ void Client::handleCommand_AddParticleSpawner(NetworkPacket* pkt)
 	p.object_collision = readU8(is);
 
 	// >> KIDSCODE - Irrlicht particles
-	if (is.rdbuf()->in_avail() >= 4)
-		p.bounce_fraction = readF32(is);
-	if (is.rdbuf()->in_avail() >= 4)
-		p.bounce_threshold = readF32(is);
+	p.bounce_fraction = readF32(is);
+	p.bounce_threshold = readF32(is);
 	// << KIDSCODE - Irrlicht particles
+
+	// This is kinda awful
+	do {
+		u16 tmp_param0 = readU16(is);
+		if (is.eof())
+			break;
+		p.node.param0 = tmp_param0;
+		p.node.param2 = readU8(is);
+		p.node_tile   = readU8(is);
+	} while (0);
 
 	auto event = new ClientEvent();
 	event->type                            = CE_ADD_PARTICLESPAWNER;
@@ -1054,23 +1062,17 @@ void Client::handleCommand_HudAdd(NetworkPacket* pkt)
 	v3f world_pos;
 	v2s32 size;
 	s16 z_index = 0;
+	std::string text2;
 	u32 font_size; // KIDSCODE
 
 	*pkt >> server_id >> type >> pos >> name >> scale >> text >> number >> item
 		>> dir >> align >> offset;
 	try {
 		*pkt >> world_pos;
-	}
-	catch(SerializationError &e) {};
-
-	try {
 		*pkt >> size;
-	} catch(SerializationError &e) {};
-
-	try {
 		*pkt >> z_index;
-	}
-	catch(PacketError &e) {}
+		*pkt >> text2;
+	} catch(PacketError &e) {};
 
 	// >> KIDSCODE
 	try {
@@ -1095,6 +1097,7 @@ void Client::handleCommand_HudAdd(NetworkPacket* pkt)
 	event->hudadd.world_pos = new v3f(world_pos);
 	event->hudadd.size      = new v2s32(size);
 	event->hudadd.z_index   = z_index;
+	event->hudadd.text2     = new std::string(text2);
 	event->hudadd.font_size = font_size; // KIDSCODE
 	m_client_event_queue.push(event);
 }
@@ -1132,7 +1135,7 @@ void Client::handleCommand_HudChange(NetworkPacket* pkt)
 	if (stat == HUD_STAT_POS || stat == HUD_STAT_SCALE ||
 		stat == HUD_STAT_ALIGN || stat == HUD_STAT_OFFSET)
 		*pkt >> v2fdata;
-	else if (stat == HUD_STAT_NAME || stat == HUD_STAT_TEXT)
+	else if (stat == HUD_STAT_NAME || stat == HUD_STAT_TEXT || stat == HUD_STAT_TEXT2)
 		*pkt >> sdata;
 	else if (stat == HUD_STAT_WORLD_POS)
 		*pkt >> v3fdata;
@@ -1246,9 +1249,9 @@ void Client::handleCommand_HudSetSky(NetworkPacket* pkt)
 		// Fix for "regular" skies, as color isn't kept:
 		if (skybox.type == "regular") {
 			skybox.sky_color = sky_defaults.getSkyColorDefaults();
-			skybox.tint_type = "default";
-			skybox.moon_tint = video::SColor(255, 255, 255, 255);
-			skybox.sun_tint = video::SColor(255, 255, 255, 255);
+			skybox.fog_tint_type = "default";
+			skybox.fog_moon_tint = video::SColor(255, 255, 255, 255);
+			skybox.fog_sun_tint = video::SColor(255, 255, 255, 255);
 		}
 		else {
 			sun.visible = false;
@@ -1283,7 +1286,7 @@ void Client::handleCommand_HudSetSky(NetworkPacket* pkt)
 		std::string texture;
 
 		*pkt >> skybox.bgcolor >> skybox.type >> skybox.clouds >>
-			skybox.sun_tint >> skybox.moon_tint >> skybox.tint_type;
+			skybox.fog_sun_tint >> skybox.fog_moon_tint >> skybox.fog_tint_type;
 
 		if (skybox.type == "skybox") {
 			*pkt >> texture_count;
@@ -1492,6 +1495,51 @@ void Client::handleCommand_PlayerSpeed(NetworkPacket *pkt)
 	LocalPlayer *player = m_env.getLocalPlayer();
 	assert(player != NULL);
 	player->addVelocity(added_vel);
+}
+
+void Client::handleCommand_MediaPush(NetworkPacket *pkt)
+{
+	std::string raw_hash, filename, filedata;
+	bool cached;
+
+	*pkt >> raw_hash >> filename >> cached;
+	filedata = pkt->readLongString();
+
+	if (raw_hash.size() != 20 || filedata.empty() || filename.empty() ||
+			!string_allowed(filename, TEXTURENAME_ALLOWED_CHARS)) {
+		throw PacketError("Illegal filename, data or hash");
+	}
+
+	verbosestream << "Server pushes media file \"" << filename << "\" with "
+		<< filedata.size() << " bytes of data (cached=" << cached
+		<< ")" << std::endl;
+
+	if (m_media_pushed_files.count(filename) != 0) {
+		// Silently ignore for synchronization purposes
+		return;
+	}
+
+	// Compute and check checksum of data
+	std::string computed_hash;
+	{
+		SHA1 ctx;
+		ctx.addBytes(filedata.c_str(), filedata.size());
+		unsigned char *buf = ctx.getDigest();
+		computed_hash.assign((char*) buf, 20);
+		free(buf);
+	}
+	if (raw_hash != computed_hash) {
+		verbosestream << "Hash of file data mismatches, ignoring." << std::endl;
+		return;
+	}
+
+	// Actually load media
+	loadMedia(filedata, filename, true);
+	m_media_pushed_files.insert(filename);
+
+	// Cache file for the next time when this client joins the same server
+	if (cached)
+		clientMediaUpdateCache(raw_hash, filedata);
 }
 
 /*

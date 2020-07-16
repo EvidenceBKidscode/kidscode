@@ -801,7 +801,7 @@ bool Map::isBlockOccluded(MapBlock *block, v3s16 cam_pos_nodes)
 	ServerMap
 */
 ServerMap::ServerMap(const std::string &savedir, IGameDef *gamedef,
-		EmergeManager *emerge):
+		EmergeManager *emerge, MetricsBackend *mb):
 	Map(dout_server, gamedef),
 	settings_mgr(g_settings, savedir + DIR_DELIM + "map_meta.txt"),
 	m_emerge(emerge)
@@ -834,6 +834,8 @@ ServerMap::ServerMap(const std::string &savedir, IGameDef *gamedef,
 
 	m_savedir = savedir;
 	m_map_saving_enabled = false;
+
+	m_save_time_counter = mb->addCounter("minetest_core_map_save_time", "Map save time (in nanoseconds)");
 
 	try {
 		// If directory exists, check contents and load if possible
@@ -1388,6 +1390,8 @@ void ServerMap::save(ModifiedState save_level)
 		return;
 	}
 
+	u64 start_time = porting::getTimeNs();
+
 	if(save_level == MOD_STATE_CLEAN)
 		infostream<<"ServerMap: Saving whole map, this can take time."
 				<<std::endl;
@@ -1445,14 +1449,17 @@ void ServerMap::save(ModifiedState save_level)
 	*/
 	if(save_level == MOD_STATE_CLEAN
 			|| block_count != 0) {
-		infostream<<"ServerMap: Written: "
-				<<block_count<<" block files"
-				<<", "<<block_count_all<<" blocks in memory."
-				<<std::endl;
+		infostream << "ServerMap: Written: "
+				<< block_count << " blocks"
+				<< ", " << block_count_all << " blocks in memory."
+				<< std::endl;
 		PrintInfo(infostream); // ServerMap/ClientMap:
 		infostream<<"Blocks modified by: "<<std::endl;
 		modprofiler.print(infostream);
 	}
+
+	auto end_time = porting::getTimeNs();
+	m_save_time_counter->increment(end_time - start_time);
 }
 
 void ServerMap::listAllLoadableBlocks(std::vector<v3s16> &dst)

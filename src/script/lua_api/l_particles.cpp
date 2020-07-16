@@ -103,6 +103,7 @@ int ModApiParticles::l_add_particle(lua_State *L)
 			"collision_removal", p.collision_removal);
 		p.object_collision = getboolfield_default(L, 1,
 			"object_collision", p.object_collision);
+
 		// >> KIDSCODE - Irrlicht particles
 		// p.vertical = getboolfield_default(L, 1, "vertical", p.vertical);
 		p.bounce_fraction = getfloatfield_default(L, 1, "bounce_fraction", 1.f);
@@ -115,6 +116,13 @@ int ModApiParticles::l_add_particle(lua_State *L)
 
 		p.texture = getstringfield_default(L, 1, "texture", p.texture);
 		p.glow = getintfield_default(L, 1, "glow", p.glow);
+
+		lua_getfield(L, 1, "node");
+		if (lua_istable(L, -1))
+			p.node = readnode(L, -1, getGameDef(L)->ndef());
+		lua_pop(L, 1);
+
+		p.node_tile = getintfield_default(L, 1, "node_tile", p.node_tile);
 
 		playername = getstringfield_default(L, 1, "playername", "");
 	}
@@ -228,7 +236,6 @@ int ModApiParticles::l_add_particlespawner(lua_State *L)
 		p.bounce_threshold = getfloatfield_default(L, 1, "bounce_threshold", 0.f);
 		// << KIDSCODE - Irrlicht particles
 
-
 		lua_getfield(L, 1, "animation");
 		p.animation = read_animation_definition(L, -1);
 		lua_pop(L, 1);
@@ -244,6 +251,13 @@ int ModApiParticles::l_add_particlespawner(lua_State *L)
 		p.texture = getstringfield_default(L, 1, "texture", p.texture);
 		playername = getstringfield_default(L, 1, "playername", "");
 		p.glow = getintfield_default(L, 1, "glow", p.glow);
+
+		lua_getfield(L, 1, "node");
+		if (lua_istable(L, -1))
+			p.node = readnode(L, -1, getGameDef(L)->ndef());
+		lua_pop(L, 1);
+
+		p.node_tile = getintfield_default(L, 1, "node_tile", p.node_tile);
 	}
 
 	u32 id = getServer(L)->addParticleSpawner(p, attached, playername);
