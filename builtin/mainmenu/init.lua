@@ -37,14 +37,14 @@ dofile(basepath .. "fstk" .. DIR_DELIM .. "tabview.lua")
 dofile(basepath .. "fstk" .. DIR_DELIM .. "tabview_layouts.lua")
 dofile(basepath .. "fstk" .. DIR_DELIM .. "ui.lua")
 
-dofile(menupath .. DIR_DELIM .. "mapmgr.lua")
+dofile(menupath .. DIR_DELIM .. "mapmgr.lua") -- KIDSCODE
 dofile(menupath .. DIR_DELIM .. "common.lua")
 dofile(menupath .. DIR_DELIM .. "pkgmgr.lua")
-dofile(menupath .. DIR_DELIM .. "formspecs.lua")
+dofile(menupath .. DIR_DELIM .. "formspecs.lua") -- KIDSCODE
 dofile(menupath .. DIR_DELIM .. "gamemenu.lua")
 
 dofile(menupath .. DIR_DELIM .. "dlg_config_world.lua")
-dofile(menupath .. DIR_DELIM .. "dlg_file_browser.lua")
+dofile(menupath .. DIR_DELIM .. "dlg_file_browser.lua") -- KIDSCODE
 dofile(menupath .. DIR_DELIM .. "dlg_select.lua")
 dofile(menupath .. DIR_DELIM .. "dlg_settings_advanced.lua")
 --dofile(menupath .. DIR_DELIM .. "dlg_contentstore.lua")
@@ -58,20 +58,28 @@ if menustyle ~= "simple" then
 end
 
 local tabs = {}
---tabs.content  = dofile(menupath .. DIR_DELIM .. "tab_content.lua")
-tabs.solo      = dofile(menupath .. DIR_DELIM .. "tab_solo.lua")
-tabs.multi     = dofile(menupath .. DIR_DELIM .. "tab_multi.lua")
-tabs.online    = dofile(menupath .. DIR_DELIM .. "tab_online.lua")
-tabs.settings  = dofile(menupath .. DIR_DELIM .. "tab_settings.lua")
-tabs.slideshow = dofile(menupath .. DIR_DELIM .. "tab_slideshow.lua")
-tabs.help      = dofile(menupath .. DIR_DELIM .. "tab_help.lua")
-tabs.quit      = dofile(menupath .. DIR_DELIM .. "tab_quit.lua")
-
+-- >> KIDSCODE - Specific menu
+--[[
+tabs.settings = dofile(menupath .. DIR_DELIM .. "tab_settings.lua")
+tabs.content  = dofile(menupath .. DIR_DELIM .. "tab_content.lua")
+tabs.credits  = dofile(menupath .. DIR_DELIM .. "tab_credits.lua")
 if menustyle == "simple" then
 	tabs.simple_main = dofile(menupath .. DIR_DELIM .. "tab_simple_main.lua")
 else
 	tabs.local_game = dofile(menupath .. DIR_DELIM .. "tab_local.lua")
+	tabs.play_online = dofile(menupath .. DIR_DELIM .. "tab_online.lua")
 end
+]]
+
+tabs.solo       = dofile(menupath .. DIR_DELIM .. "tab_kc_solo.lua")
+tabs.multi      = dofile(menupath .. DIR_DELIM .. "tab_kc_multi.lua")
+tabs.online     = dofile(menupath .. DIR_DELIM .. "tab_kc_online.lua")
+tabs.settings   = dofile(menupath .. DIR_DELIM .. "tab_settings.lua")
+tabs.slideshow  = dofile(menupath .. DIR_DELIM .. "tab_kc_slideshow.lua")
+tabs.help       = dofile(menupath .. DIR_DELIM .. "tab_kc_help.lua")
+tabs.quit       = dofile(menupath .. DIR_DELIM .. "tab_quit.lua")
+tabs.local_game = dofile(menupath .. DIR_DELIM .. "tab_kc_local.lua")
+-- << KIDSCODE - Specific menu
 
 --------------------------------------------------------------------------------
 local function main_event_handler(tabview, event)
@@ -79,33 +87,6 @@ local function main_event_handler(tabview, event)
 		core.close()
 	end
 	return true
-end
-
---------------------------------------------------------------------------------
-function create_worldlist()
-	menudata.worldlist = filterlist.create(
---			core.get_worlds,
-		mapmgr.preparemaplist,
---			compare_worlds,
-		mapmgr.compare_map,
-		-- Unique id comparison function
-		function(element, uid)
-			return element.uid == uid
-		end,
-		-- Filter function
-		function(element, gameid)
-			return element.gameid == gameid
-		end,
-		nil
-	)
-
-	menudata.worldlist:add_sort_mechanism("name",     sort_worlds_alphabetic)
-	menudata.worldlist:add_sort_mechanism("demand",   formspecs.sort_worlds_by_demand)
-	menudata.worldlist:add_sort_mechanism("origin",   formspecs.sort_worlds_by_origin)
-	menudata.worldlist:add_sort_mechanism("filesize", formspecs.sort_worlds_by_filesize)
-	menudata.worldlist:add_sort_mechanism("mapsize",  formspecs.sort_worlds_by_mapsize)
-	menudata.worldlist:add_sort_mechanism("status",   formspecs.sort_worlds_by_status)
-	menudata.worldlist:set_sortmode("status")
 end
 
 --------------------------------------------------------------------------------
@@ -141,48 +122,104 @@ local function init_globals()
 
 		gamedata.worldindex = world_index
 	else
-		create_worldlist()
+		-- >> KIDSCODE World list
+		--[[
+		menudata.worldlist = filterlist.create(
+			core.get_worlds,
+			compare_worlds,
+			-- Unique id comparison function
+			function(element, uid)
+				return element.name == uid
+			end,
+			-- Filter function
+			function(element, gameid)
+				return element.gameid == gameid
+			end
+		)
+
+		menudata.worldlist:add_sort_mechanism("alphabetic", sort_worlds_alphabetic)
+		menudata.worldlist:set_sortmode("alphabetic")
+
+		if not core.settings:get("menu_last_game") then
+			local default_game = core.settings:get("default_game") or "minetest"
+			core.settings:set("menu_last_game", default_game)
+		end
+		]]
+
+		menudata.worldlist = filterlist.create(
+			mapmgr.preparemaplist,
+			mapmgr.compare_map,
+			function(element, uid)
+				return element.uid == uid
+			end,
+			function(element, gameid)
+				return element.gameid == gameid
+			end,
+			nil
+		)
+
+		menudata.worldlist:add_sort_mechanism("name",     sort_worlds_alphabetic)
+		menudata.worldlist:add_sort_mechanism("demand",   formspecs.sort_worlds_by_demand)
+		menudata.worldlist:add_sort_mechanism("origin",   formspecs.sort_worlds_by_origin)
+		menudata.worldlist:add_sort_mechanism("filesize", formspecs.sort_worlds_by_filesize)
+		menudata.worldlist:add_sort_mechanism("mapsize",  formspecs.sort_worlds_by_mapsize)
+		menudata.worldlist:add_sort_mechanism("status",   formspecs.sort_worlds_by_status)
+		menudata.worldlist:set_sortmode("status")
 
 		if not core.settings:get("menu_current_game") then
 			local default_game = core.settings:get("default_game") or "minetest"
 			core.settings:set("menu_current_game", default_game)
 		end
+		-- << KIDSCODE World list
 
 		gamemenu.init()
 	end
 
 	-- Create main tabview
-	local tv_main = tabview_create("maintab", {x = 12, y = 5.5}, {x = 0, y = 0}, tabview_layouts.vertical)
+	-- >> KIDSCODE - Specific menu
+	--[[
+	local tv_main = tabview_create("maintab", {x = 12, y = 5.4}, {x = 0, y = 0})
+
 	if menustyle == "simple" then
 		tv_main:add(tabs.simple_main)
 	else
-		tv_main:set_autosave_tab(false)
+		tv_main:set_autosave_tab(true)
 		tv_main:add(tabs.local_game)
+		tv_main:add(tabs.play_online)
 	end
 
+	tv_main:add(tabs.content)
+	tv_main:add(tabs.settings)
+	tv_main:add(tabs.credits)
+	]]
+
+	local tv_main = tabview_create("maintab", {x = 12, y = 5.5}, {x = 0, y = 0}, tabview_layouts.vertical)
+
+	tv_main:set_autosave_tab(false)
+	tv_main:add(tabs.local_game)
 	tv_main:add(tabs.solo)
 	tv_main:add(tabs.multi)
 	tv_main:add(tabs.online)
-
-	--tv_main:add(tabs.content)
 	tv_main:add(tabs.help)
 	tv_main:add(tabs.settings)
 	tv_main:add(tabs.quit)
 	tv_main:add(tabs.slideshow)
 
+	-- << KIDSCODE - Specific menu
 	tv_main:set_global_event_handler(main_event_handler)
 	tv_main:set_fixed_size(false)
 
+	-- >> KIDSCODE - Specific menu
+	--[[
 	if menustyle ~= "simple" then
-		--[[
 		local last_tab = core.settings:get("maintab_LAST")
 		if last_tab and tv_main.current_tab ~= last_tab then
 			tv_main:set_tab(last_tab)
 		end
-		]]
-
-		tv_main:set_tab("slideshow")
 	end
+	]]
+	tv_main:set_tab("slideshow")
+	-- << KIDSCODE - Specific menu
 
 	ui.set_default("maintab")
 
@@ -209,6 +246,8 @@ end
 
 init_globals()
 
+-- >> KIDSCODE - Mapserver event handler
 core.mapserver_event_handler = function(ev)
 	core.event_handler("Refresh")
 end
+-- << KIDSCODE - Mapserver event handler
