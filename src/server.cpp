@@ -67,6 +67,14 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "server/serverinventorymgr.h"
 #include "translation.h"
 #include "network/upnpserver.h" // KIDSCODE - UPNP annoncement
+#include <sys/stat.h> // KIDSCODE - Limit media file size to 15Mb
+
+// >> KIDSCODE - Limit media file size to 15Mb
+// String size (data size) is limited to 64Mb
+// But packet size has to be smaller than 16Mb and may include extra data
+// 15Mb should be a reasonable limit so
+#define MEDIA_FILE_MAX_SIZE 15728640
+// << KIDSCODE - Limit media file size to 15Mb
 
 class ClientNotFoundException : public BaseException
 {
@@ -2456,6 +2464,26 @@ bool Server::addMediaFile(const std::string &filename,
 				<< filename << "\"" << std::endl;
 		return false;
 	}
+
+	// >> KIDSCODE - Limit media file size to 15Mb
+	{
+		struct stat stat_buf;
+		if (stat(filepath.c_str(), &stat_buf)) {
+			errorstream << "Server: ignoring file \""
+					<< filepath << "\" because could not get file size (error "
+					<< errno << ")" << std::endl;
+			return false;
+		}
+		if (stat_buf.st_size > MEDIA_FILE_MAX_SIZE) {
+			errorstream << "Server: ignoring file \""
+					<< filepath << "\" because it is too large ("
+					<< stat_buf.st_size << " bytes, maximum limit is "
+					<< MEDIA_FILE_MAX_SIZE << " bytes)" << std::endl;
+			return false;
+		}
+	}
+	// << KIDSCODE - Limit media file size to 15Mb
+
 	// Ok, attempt to load the file and add to cache
 
 	// Read data
