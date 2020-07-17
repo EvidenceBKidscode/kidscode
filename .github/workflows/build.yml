@@ -46,7 +46,7 @@ jobs:
 
       - name: Test
         run: |
-          ./bin/minetest --run-unittests
+          ./bin/kidscode --run-unittests
 
   # This is the current gcc compiler (available in bionic)
   gcc_8:
@@ -68,7 +68,7 @@ jobs:
 
       - name: Test
         run: |
-          ./bin/minetest --run-unittests
+          ./bin/kidscode --run-unittests
 
   # This is our minor clang compiler
   clang_3_9:
@@ -90,7 +90,7 @@ jobs:
 
       - name: Test
         run: |
-          ./bin/minetest --run-unittests
+          ./bin/kidscode --run-unittests
 
   # This is the current clang version
   clang_9:
@@ -114,11 +114,11 @@ jobs:
 
       - name: Test
         run: |
-          ./bin/minetest --run-unittests
+          ./bin/kidscode --run-unittests
 
       - name: Valgrind
         run: |
-          valgrind --leak-check=full --leak-check-heuristics=all --undef-value-errors=no --error-exitcode=9 ./bin/minetest --run-unittests
+          valgrind --leak-check=full --leak-check-heuristics=all --undef-value-errors=no --error-exitcode=9 ./bin/kidscode --run-unittests
 
   # Build with prometheus-cpp (server-only)
   clang_9_prometheus:
@@ -170,7 +170,7 @@ jobs:
 
       - name: Test
         run: |
-          ./bin/minetest --run-unittests
+          ./bin/kidscode --run-unittests
 
   docker:
     name: "Docker image"
@@ -219,7 +219,7 @@ jobs:
 
   msvc:
     name: VS 2019 ${{ matrix.config.arch }}-${{ matrix.type }}
-    runs-on: windows-2019 
+    runs-on: windows-2019
     env:
       VCPKG_VERSION: c7ab9d3110813979a873b2dbac630a9ab79850dc
 #                    2020.04
