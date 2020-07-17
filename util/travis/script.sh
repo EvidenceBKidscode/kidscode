@@ -34,7 +34,7 @@ if [[ ${PLATFORM} == "Unix" ]]; then
 	make -j2
 
 	echo "Running unit tests."
-	CMD="../bin/minetest --run-unittests"
+	CMD="../bin/kidscode --run-unittests"
 	if [[ "${VALGRIND}" == "1" ]]; then
 		valgrind --leak-check=full --leak-check-heuristics=all --undef-value-errors=no --error-exitcode=9 ${CMD} && exit 0
 	else
