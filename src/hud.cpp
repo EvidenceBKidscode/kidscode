@@ -27,8 +27,9 @@ const struct EnumString es_HudElementType[] =
 	{HUD_ELEM_STATBAR,   "statbar"},
 	{HUD_ELEM_INVENTORY, "inventory"},
 	{HUD_ELEM_WAYPOINT,  "waypoint"},
-	{HUD_ELEM_MINIMAP,   "minimap"},
-	{HUD_ELEM_COMPASS,   "compass"},
+	{HUD_ELEM_IMAGE_WAYPOINT, "image_waypoint"},
+	{HUD_ELEM_MINIMAP,   "minimap"}, // KIDSCODE - Minimap as HUD
+	{HUD_ELEM_COMPASS,   "compass"}, // KIDSCODE - Compass HUD
 	{0, NULL},
 };
 
@@ -47,6 +48,7 @@ const struct EnumString es_HudElementStat[] =
 	{HUD_STAT_WORLD_POS, "world_pos"},
 	{HUD_STAT_SIZE,    "size"},
 	{HUD_STAT_Z_INDEX, "z_index"},
+	{HUD_STAT_TEXT2,   "text2"},
 	{HUD_STAT_FONT_SIZE, "font_size"}, // KIDSCODE
 	{0, NULL},
 };

@@ -18,6 +18,7 @@ using namespace irr::gui;
 
 class IGUIButton;
 class GUIListBox;
+class ISimpleTextureSource;
 
 //! Single line edit box for editing simple text.
 class GUIComboBox : public IGUIComboBox
@@ -26,7 +27,7 @@ public:
 
 	//! constructor
 	GUIComboBox(IGUIEnvironment *environment, IGUIElement *parent,
-		s32 id, core::rect<s32> rectangle);
+		s32 id, core::rect<s32> rectangle, ISimpleTextureSource *tsrc);
 
 	//! destructor
 	virtual ~GUIComboBox();
@@ -131,6 +132,8 @@ private:
 	video::SColor m_selected_item_color;
 
 	video::SColor* Colors; // :PATCH:
+
+	ISimpleTextureSource *TSrc;
 };
 
 

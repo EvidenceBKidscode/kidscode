@@ -101,7 +101,7 @@ int LuaVoxelManip::l_get_data(lua_State *L)
 	if (use_buffer)
 		lua_pushvalue(L, 2);
 	else
-		lua_newtable(L);
+		lua_createtable(L, volume, 0);
 
 	for (u32 i = 0; i != volume; i++) {
 		lua_Integer cid = vm->m_data[i].getContent();
@@ -285,7 +285,7 @@ int LuaVoxelManip::l_get_light_data(lua_State *L)
 
 	u32 volume = vm->m_area.getVolume();
 
-	lua_newtable(L);
+	lua_createtable(L, volume, 0);
 	for (u32 i = 0; i != volume; i++) {
 		lua_Integer light = vm->m_data[i].param1;
 		lua_pushinteger(L, light);
@@ -333,7 +333,7 @@ int LuaVoxelManip::l_get_param2_data(lua_State *L)
 	if (use_buffer)
 		lua_pushvalue(L, 2);
 	else
-		lua_newtable(L);
+		lua_createtable(L, volume, 0);
 
 	for (u32 i = 0; i != volume; i++) {
 		lua_Integer param2 = vm->m_data[i].param2;

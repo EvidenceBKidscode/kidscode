@@ -24,14 +24,14 @@ class IGUIListBox;
 
 //! constructor
 GUIComboBox::GUIComboBox(IGUIEnvironment *environment, IGUIElement *parent,
-	s32 id, core::rect<s32> rectangle)
+	s32 id, core::rect<s32> rectangle, ISimpleTextureSource *tsrc)
 	: IGUIComboBox(environment, parent, id, rectangle),
 	m_list_button(NULL), m_selected_text(NULL), m_listbox(NULL), m_last_focus(NULL),
 	m_selected(-1), m_halign(EGUIA_UPPERLEFT), m_valign(EGUIA_CENTER),
 	m_max_selection_rows(5), m_has_focus(false),
 	m_bg_color_used(false), m_bg_color(video::SColor(0)),
 	m_selected_item_color_used(false), m_selected_item_color(video::SColor(0)),
-	Colors(0) // :PATCH:
+	Colors(0), TSrc(tsrc)
 {
 #ifdef _DEBUG
 	setDebugName("CGUIComboBox");
@@ -50,7 +50,7 @@ GUIComboBox::GUIComboBox(IGUIEnvironment *environment, IGUIElement *parent,
 	r.UpperLeftCorner.Y = 2;
 	r.LowerRightCorner.Y = rectangle.getHeight() - 2;
 
-	m_list_button = GUIButton::addButton(Environment, r, this, -1, L"");
+	m_list_button = GUIButton::addButton(Environment, r, TSrc, this, -1, L"");
 	if (skin && skin->getSpriteBank()) {
 		m_list_button->setSpriteBank(skin->getSpriteBank());
 		m_list_button->setSprite(EGBS_BUTTON_UP,

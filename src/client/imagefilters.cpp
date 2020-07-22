@@ -91,7 +91,7 @@ void imageScaleNNAA(video::IImage *src, const core::rect<s32> &srcrect, video::I
 	u32 dy, dx;
 	video::SColor pxl;
 
-	// Cache rectsngle boundaries.
+	// Cache rectangle boundaries.
 	double sox = srcrect.UpperLeftCorner.X * 1.0;
 	double soy = srcrect.UpperLeftCorner.Y * 1.0;
 	double sw = srcrect.getWidth() * 1.0;

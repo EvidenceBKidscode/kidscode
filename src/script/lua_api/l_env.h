@@ -191,6 +191,11 @@ private:
 	// stops forceloading a position
 	static int l_forceload_free_block(lua_State *L);
 
+	// Get a string translated server side
+	static int l_get_translated_string(lua_State * L);
+
+// >> KIDSCODE specific API
+
 	// map_create_backup(backup_name)
 	// Create a new map backup
 	static int l_map_create_backup(lua_State *L);
@@ -211,10 +216,10 @@ private:
 	// Enable or disable liquid transformation
 	static int l_enable_liquids_transform(lua_State *L);
 
-	// Get a string translated server side
-	static int l_get_translated_string(lua_State * L);
-
+	// map_fill(minp, maxp, startpos, old_content, new_content, yfilldir)
+	// Fill map with a node type using a kind of scanline algorithm
 	static int l_map_fill(lua_State * L);
+// << KIDSCODE specific API
 
 public:
 	static void Initialize(lua_State *L, int top);

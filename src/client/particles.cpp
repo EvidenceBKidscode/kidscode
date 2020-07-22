@@ -17,6 +17,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
+#include "particles.h"
 #include "client.h"
 #include "collision.h"
 #include "client/content_cao.h"
@@ -476,7 +477,7 @@ public:
 					GenericCAO *attached = dynamic_cast<GenericCAO *>(
 							m_env->getActiveObject(attached_id));
 					if (attached) {
-						const core::matrix4 *matrix = &attached->getAbsolutePosRotMatrix();
+						const core::matrix4 *matrix = attached->getAbsolutePosRotMatrix();
 						v3f rotation = matrix->getRotationDegrees();
 						vel.rotateXZBy(rotation.Y);
 						p->pos.rotateXZBy(rotation.Y);
@@ -549,6 +550,8 @@ void ParticleManager::handleParticleEvent(ClientEvent *event, Client *client, Lo
 	case CE_ADD_PARTICLESPAWNER: {
 		removeParticleSpawner(event->add_particlespawner.id, true);
 
+		const ParticleSpawnerParameters &p = *event->add_particlespawner.p;
+
 		scene::IParticleSystemSceneNode *ps =
 			m_smgr->addParticleSystemSceneNode(false,
 				RenderingEngine::get_scene_manager()->getRootSceneNode());
@@ -560,8 +563,8 @@ void ParticleManager::handleParticleEvent(ClientEvent *event, Client *client, Lo
 
 		ps->getMaterial(0).getTextureMatrix(0) = bottomUpTextureMatrix(1.f,1.f,0.f,0.f);
 
-		v3f minpos = *event->add_particlespawner.minpos * BS;
-		v3f maxpos = *event->add_particlespawner.maxpos * BS;
+		v3f minpos = p.minpos * BS;
+		v3f maxpos = p.maxpos * BS;
 		v3f meanpos = (minpos + maxpos) / 2.f;
 		ps->setPosition(meanpos);
 
@@ -569,16 +572,16 @@ void ParticleManager::handleParticleEvent(ClientEvent *event, Client *client, Lo
 			new ContinuousEmitter(m_smgr, this,
 			event->add_particlespawner.id,
 			m_env, ps,
-			event->add_particlespawner.amount,
-			event->add_particlespawner.spawntime,
+			p.amount,
+			p.time,
 			minpos - meanpos,
 			maxpos - meanpos,
-			*event->add_particlespawner.minvel,
-			*event->add_particlespawner.maxvel,
-			event->add_particlespawner.minexptime,
-			event->add_particlespawner.maxexptime,
-			event->add_particlespawner.minsize,
-			event->add_particlespawner.maxsize,
+			p.minvel,
+			p.maxvel,
+			p.minexptime,
+			p.maxexptime,
+			p.minsize,
+			p.maxsize,
 			event->add_particlespawner.attached_id);
 		ps->setEmitter(continous_emitter);
 		continous_emitter->drop();
@@ -589,8 +592,7 @@ void ParticleManager::handleParticleEvent(ClientEvent *event, Client *client, Lo
 		ps->addAffector(camera_offset_affector);
 		camera_offset_affector->drop();
 
-		video::ITexture *texture = client->tsrc()->getTextureForMesh(
-			*(event->add_particlespawner.texture));
+		video::ITexture *texture = client->tsrc()->getTextureForMesh(p.texture);
 		ps->setMaterialTexture(0, texture);
 
 		ps->setMaterialFlag(video::EMF_LIGHTING, false);
@@ -599,7 +601,7 @@ void ParticleManager::handleParticleEvent(ClientEvent *event, Client *client, Lo
 		ps->setMaterialFlag(video::EMF_FOG_ENABLE, true);
 		ps->setMaterialType(video::EMT_TRANSPARENT_ALPHA_CHANNEL);
 
-		const struct TileAnimationParams &anim = event->add_particlespawner.animation;
+		const struct TileAnimationParams &anim = p.animation;
 		if (anim.type != TAT_NONE) {
 			scene::IParticleAffector *animation_affector =
 				new AnimationAffector(ps, anim);
@@ -607,20 +609,19 @@ void ParticleManager::handleParticleEvent(ClientEvent *event, Client *client, Lo
 			animation_affector->drop();
 		}
 
-		if (event->add_particlespawner.collisiondetection) {
+		if (p.collisiondetection) {
 			scene::IParticleAffector *collision_affector =
 				new CollisionAffector(m_env,
-					event->add_particlespawner.collision_removal,
-					event->add_particlespawner.object_collision,
-					event->add_particlespawner.bounce_fraction,
-					event->add_particlespawner.bounce_threshold);
+					p.collision_removal,
+					p.object_collision,
+					p.bounce_fraction,
+					p.bounce_threshold);
 			ps->addAffector(collision_affector);
 			collision_affector->drop();
 		}
 
 		scene::IParticleAffector *acceleration_affector =
-			new AccelerationAffector(*event->add_particlespawner.minacc,
-				*event->add_particlespawner.maxacc);
+			new AccelerationAffector(p.minacc, p.maxacc);
 		ps->addAffector(acceleration_affector);
 		acceleration_affector->drop();
 
@@ -628,18 +629,11 @@ void ParticleManager::handleParticleEvent(ClientEvent *event, Client *client, Lo
 			new LightingAffector(m_env, client, 0);
 		ps->addAffector(lighting_affector);
 		lighting_affector->drop();
-
-		// Delete allocated content of event
-		delete event->add_particlespawner.minpos;
-		delete event->add_particlespawner.maxpos;
-		delete event->add_particlespawner.minvel;
-		delete event->add_particlespawner.maxvel;
-		delete event->add_particlespawner.minacc;
-		delete event->add_particlespawner.maxacc;
-		delete event->add_particlespawner.texture;
 		break;
 	}
 	case CE_SPAWN_PARTICLE: {
+		const ParticleParameters &p = *event->spawn_particle;
+
 		scene::IParticleSystemSceneNode *ps =
 			m_smgr->addParticleSystemSceneNode(false,
 				RenderingEngine::get_scene_manager()->getRootSceneNode());
@@ -647,12 +641,11 @@ void ParticleManager::handleParticleEvent(ClientEvent *event, Client *client, Lo
 		ps->getMaterial(0).getTextureMatrix(0) = bottomUpTextureMatrix(1.f,1.f,0.f,0.f);
 
 		video::ITexture *texture =
-			client->tsrc()->getTextureForMesh(
-				*(event->spawn_particle.texture));
+			client->tsrc()->getTextureForMesh(p.texture);
 		ps->setMaterialTexture(0, texture);
 
 		v3s16 camera_offset = m_env->getCameraOffset();
-		v3f particle_pos = *event->spawn_particle.pos * BS - intToFloat(camera_offset, BS);
+		v3f particle_pos = p.pos * BS - intToFloat(camera_offset, BS);
 		ps->setPosition(particle_pos);
 
 		scene::IParticleAffector *camera_offset_affector =
@@ -662,14 +655,14 @@ void ParticleManager::handleParticleEvent(ClientEvent *event, Client *client, Lo
 
 		// Deletes ps after the particles have vanished
 		scene::IParticleEmitter *em = new SingleEmitter(m_smgr, ps,
-			event->spawn_particle.glow,
-			event->spawn_particle.expirationtime,
-			event->spawn_particle.size,
-			*event->spawn_particle.vel);
+			p.glow,
+			p.expirationtime,
+			p.size,
+			p.vel);
 		ps->setEmitter(em);
 		em->drop();
 
-		const struct TileAnimationParams &anim = event->spawn_particle.animation;
+		const struct TileAnimationParams &anim = p.animation;
 		if (anim.type != TAT_NONE) {
 			scene::IParticleAffector *animation_affector =
 				new AnimationAffector(ps, anim);
@@ -677,19 +670,19 @@ void ParticleManager::handleParticleEvent(ClientEvent *event, Client *client, Lo
 			animation_affector->drop();
 		}
 
-		if (event->spawn_particle.collisiondetection){
+		if (p.collisiondetection){
 			scene::IParticleAffector *collision_affector =
 				new CollisionAffector(m_env,
-				event->spawn_particle.collision_removal,
-				event->spawn_particle.object_collision,
-				event->spawn_particle.bounce_fraction,
-				event->spawn_particle.bounce_threshold);
+						p.collision_removal,
+						p.object_collision,
+						p.bounce_fraction,
+						p.bounce_threshold);
 			ps->addAffector(collision_affector);
 			collision_affector->drop();
 		}
 
 		scene::IParticleAffector *acceleration_affector =
-			new AccelerationAffector(*event->spawn_particle.acc);
+			new AccelerationAffector(p.acc);
 		ps->addAffector(acceleration_affector);
 		acceleration_affector->drop();
 
@@ -704,12 +697,6 @@ void ParticleManager::handleParticleEvent(ClientEvent *event, Client *client, Lo
 		ps->setMaterialFlag(video::EMF_FOG_ENABLE, true);
 		ps->setMaterialType(video::EMT_TRANSPARENT_ALPHA_CHANNEL);
 		ps->setAutomaticCulling(scene::EAC_OFF);
-
-		// Delete allocated content of event
-		delete event->spawn_particle.pos;
-		delete event->spawn_particle.vel;
-		delete event->spawn_particle.acc;
-		delete event->spawn_particle.texture;
 		break;
 	}
 	default:

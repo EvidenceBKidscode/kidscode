@@ -30,8 +30,9 @@ using namespace irr;
 using namespace gui;
 
 GUIButtonImage::GUIButtonImage(gui::IGUIEnvironment *environment,
-		gui::IGUIElement *parent, s32 id, core::rect<s32> rectangle, bool noclip)
-	: GUIButton (environment, parent, id, rectangle, noclip)
+		gui::IGUIElement *parent, s32 id, core::rect<s32> rectangle,
+		ISimpleTextureSource *tsrc, bool noclip)
+	: GUIButton (environment, parent, id, rectangle, tsrc, noclip)
 {
 	m_image = nullptr; // KIDSCODE - Ensure button will have no background if no image
 }
@@ -49,107 +50,39 @@ void GUIButtonImage::needImage()
 }
 // << KIDSCODE
 
-bool GUIButtonImage::OnEvent(const SEvent& event)
+void GUIButtonImage::setForegroundImage(video::ITexture *image)
 {
-	bool result = GUIButton::OnEvent(event);
-
-	EGUI_BUTTON_IMAGE_STATE imageState = getImageState(isPressed(), m_foreground_images);
-	video::ITexture *texture = m_foreground_images[(u32)imageState].Texture;
-	if (texture != nullptr)
-	{
-		needImage();
-		m_image->setImage(texture);
-	}
-
-	if (m_image) { // KIDSCODE - Ensure button will have no background if no image
-		m_image->setVisible(texture != nullptr);
-	} // KIDSCODE - Ensure button will have no background if no image
-
-	return result;
-}
-
-void GUIButtonImage::setForegroundImage(EGUI_BUTTON_IMAGE_STATE state,
-		video::ITexture *image, const core::rect<s32> &sourceRect)
-{
-	if (state >= EGBIS_COUNT)
+	if (image == m_foreground_image)
 		return;
 
 	needImage(); // KIDSCODE - Ensure button will have no background if no image
 
-	if (image)
+	if (image != nullptr)
 		image->grab();
 
-	u32 stateIdx = (u32)state;
-	if (m_foreground_images[stateIdx].Texture)
-		m_foreground_images[stateIdx].Texture->drop();
+	if (m_foreground_image != nullptr)
+		m_foreground_image->drop();
 
-	m_foreground_images[stateIdx].Texture = image;
-	m_foreground_images[stateIdx].SourceRect = sourceRect;
-
-	EGUI_BUTTON_IMAGE_STATE imageState = getImageState(isPressed(), m_foreground_images);
-	if (imageState == stateIdx)
-		m_image->setImage(image);
+	m_foreground_image = image;
+	m_image->setImage(image);
 }
 
-void GUIButtonImage::setForegroundImage(video::ITexture *image)
+//! Set element properties from a StyleSpec
+void GUIButtonImage::setFromStyle(const StyleSpec& style)
 {
-	setForegroundImage(gui::EGBIS_IMAGE_UP, image);
-}
-
-void GUIButtonImage::setForegroundImage(video::ITexture *image, const core::rect<s32> &pos)
-{
-	setForegroundImage(gui::EGBIS_IMAGE_UP, image, pos);
-}
-
-void GUIButtonImage::setPressedForegroundImage(video::ITexture *image)
-{
-	setForegroundImage(gui::EGBIS_IMAGE_DOWN, image);
-}
-
-void GUIButtonImage::setPressedForegroundImage(video::ITexture *image, const core::rect<s32> &pos)
-{
-	setForegroundImage(gui::EGBIS_IMAGE_DOWN, image, pos);
-}
-
-void GUIButtonImage::setHoveredForegroundImage(video::ITexture *image)
-{
-	setForegroundImage(gui::EGBIS_IMAGE_UP_MOUSEOVER, image);
-	setForegroundImage(gui::EGBIS_IMAGE_UP_FOCUSED_MOUSEOVER, image);
-}
-
-void GUIButtonImage::setHoveredForegroundImage(video::ITexture *image, const core::rect<s32> &pos)
-{
-	setForegroundImage(gui::EGBIS_IMAGE_UP_MOUSEOVER, image, pos);
-	setForegroundImage(gui::EGBIS_IMAGE_UP_FOCUSED_MOUSEOVER, image, pos);
-}
-
-void GUIButtonImage::setFromStyle(const StyleSpec &style, ISimpleTextureSource *tsrc)
-{
-	GUIButton::setFromStyle(style, tsrc);
+	GUIButton::setFromStyle(style);
 
 	video::IVideoDriver *driver = Environment->getVideoDriver();
 
-	const core::position2di buttonCenter(AbsoluteRect.getCenter());
 	if (style.isNotDefault(StyleSpec::FGIMG)) {
-		video::ITexture *texture = style.getTexture(StyleSpec::FGIMG, tsrc);
+		video::ITexture *texture = style.getTexture(StyleSpec::FGIMG,
+				getTextureSource());
 
 		setForegroundImage(guiScalingImageButton(driver, texture,
-				AbsoluteRect.getWidth(), AbsoluteRect.getHeight()));
+			AbsoluteRect.getWidth(), AbsoluteRect.getHeight()));
 		setScaleImage(true);
-	}
-	if (style.isNotDefault(StyleSpec::FGIMG_HOVERED)) {
-		video::ITexture *hovered_texture = style.getTexture(StyleSpec::FGIMG_HOVERED, tsrc);
-
-		setHoveredForegroundImage(guiScalingImageButton(driver, hovered_texture,
-				AbsoluteRect.getWidth(), AbsoluteRect.getHeight()));
-		setScaleImage(true);
-	}
-	if (style.isNotDefault(StyleSpec::FGIMG_PRESSED)) {
-		video::ITexture *pressed_texture = style.getTexture(StyleSpec::FGIMG_PRESSED, tsrc);
-
-		setPressedForegroundImage(guiScalingImageButton(driver, pressed_texture,
-				AbsoluteRect.getWidth(), AbsoluteRect.getHeight()));
-		setScaleImage(true);
+	} else {
+		setForegroundImage(nullptr);
 	}
 }
 
@@ -161,11 +94,12 @@ void GUIButtonImage::setScaleImage(bool scaleImage)
 }
 
 GUIButtonImage *GUIButtonImage::addButton(IGUIEnvironment *environment,
-		const core::rect<s32> &rectangle, IGUIElement *parent, s32 id,
-		const wchar_t *text, const wchar_t *tooltiptext)
+		const core::rect<s32> &rectangle, ISimpleTextureSource *tsrc,
+		IGUIElement *parent, s32 id, const wchar_t *text,
+		const wchar_t *tooltiptext)
 {
 	GUIButtonImage *button = new GUIButtonImage(environment,
-			parent ? parent : environment->getRootGUIElement(), id, rectangle);
+			parent ? parent : environment->getRootGUIElement(), id, rectangle, tsrc);
 
 	if (text)
 		button->setText(text);

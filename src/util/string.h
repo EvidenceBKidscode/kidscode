@@ -34,6 +34,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 class Translations;
 
+class Translations;
+
 #define STRINGIFY(x) #x
 #define TOSTRING(x) STRINGIFY(x)
 
@@ -811,6 +813,7 @@ std::vector<std::basic_string<T> > split(const std::basic_string<T> &s, T delim)
 }
 
 std::wstring translate_string(const std::wstring &s, Translations *translations);
+
 std::wstring translate_string(const std::wstring &s);
 
 // >> KIDSCODE

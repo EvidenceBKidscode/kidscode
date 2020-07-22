@@ -83,8 +83,10 @@ enum
 };
 
 GUIKeyChangeMenu::GUIKeyChangeMenu(gui::IGUIEnvironment* env,
-				gui::IGUIElement* parent, s32 id, IMenuManager *menumgr) :
-GUIModalMenu(env, parent, id, menumgr)
+		gui::IGUIElement* parent, s32 id, IMenuManager *menumgr,
+		ISimpleTextureSource *tsrc) :
+		GUIModalMenu(env, parent, id, menumgr),
+		m_tsrc(tsrc)
 {
 	init_keys();
 }
@@ -170,7 +172,7 @@ void GUIKeyChangeMenu::regenerateGui(v2u32 screensize)
 				core::rect<s32> rect(0, 0, 150 * s, 40 * s);
 				rect += topleft + v2s32(offset.X + (show_advanced_buttons ? 250 : 150) * s, offset.Y - 5 * s);
 				const wchar_t *text = wgettext(k->key.name());
-				k->button = GUIButton::addButton(Environment, rect, this, k->id, text);
+				k->button = GUIButton::addButton(Environment, rect, m_tsrc, this, k->id, text);
 				delete[] text;
 			}
 
@@ -183,22 +185,7 @@ void GUIKeyChangeMenu::regenerateGui(v2u32 screensize)
 			}
 		}
 	}
-/*
-	{
-		s32 option_x = offset.X;
-		s32 option_y = offset.Y + 5 * s;
-		u32 option_w = 180 * s;
-		{
-			core::rect<s32> rect(0, 0, option_w, 30 * s);
-			rect += topleft + v2s32(option_x, option_y);
-			const wchar_t *text = wgettext("\"Special\" = climb down");
-			Environment->addCheckBox(g_settings->getBool("aux1_descends"), rect, this,
-					GUI_ID_CB_AUX1_DESCENDS, text);
-			delete[] text;
-		}
-		offset += v2s32(0, 25 * s);
-	}
-*/
+
 	if (show_advanced_buttons) {
 	{
 			s32 option_x = offset.X;
@@ -215,41 +202,26 @@ void GUIKeyChangeMenu::regenerateGui(v2u32 screensize)
 			offset += v2s32(0, 25 * s);
 		}
 	}
-/*
-	{
-		s32 option_x = offset.X;
-		s32 option_y = offset.Y + 5 * s;
-		u32 option_w = 280;
-		{
-			core::rect<s32> rect(0, 0, option_w, 30 * s);
-			rect += topleft + v2s32(option_x, option_y);
-			const wchar_t *text = wgettext("Automatic jumping");
-			Environment->addCheckBox(g_settings->getBool("autojump"), rect, this,
-					GUI_ID_CB_AUTOJUMP, text);
-			delete[] text;
-		}
-	}
-*/
 
 	{
 		core::rect < s32 > rect(0, 0, 200 * s, 40 * s);
 		rect += topleft + v2s32(20 * s, size.Y - 50 * s);
 		const wchar_t *text = show_advanced_buttons ? wgettext("Base keys") : wgettext("Advanced");
-		GUIButton::addButton(Environment, rect, this, GUI_ID_ADVC_BUTTON, text);
+		GUIButton::addButton(Environment, rect, m_tsrc, this, GUI_ID_ADVC_BUTTON, text);
 		delete[] text;
 	}
 	{
 		core::rect < s32 > rect(0, 0, 150 * s, 40 * s);
 		rect += topleft + v2s32(size.X / 2 + (show_advanced_buttons ? 370 : 40) * s, size.Y - 50 * s);
 		const wchar_t *text =  wgettext("Save");
-		GUIButton::addButton(Environment, rect, this, GUI_ID_BACK_BUTTON, text);
+		GUIButton::addButton(Environment, rect, m_tsrc, this, GUI_ID_BACK_BUTTON, text);
 		delete[] text;
 	}
 	{
 		core::rect < s32 > rect(0, 0, 100 * s, 40 * s);
 		rect += topleft + v2s32(size.X / 2 + (show_advanced_buttons ? 530 : 205) * s, size.Y - 50 * s);
 		const wchar_t *text = wgettext("Cancel");
-		GUIButton::addButton(Environment, rect, this, GUI_ID_ABORT_BUTTON, text);
+		GUIButton::addButton(Environment, rect, m_tsrc, this, GUI_ID_ABORT_BUTTON, text);
 		delete[] text;
 	}
 }
@@ -392,7 +364,7 @@ bool GUIKeyChangeMenu::OnEvent(const SEvent& event)
 		{
 			if (!canTakeFocus(event.GUIEvent.Element))
 			{
-				dstream << "GUIKeyChangeMenu: Not allowing focus change."
+				infostream << "GUIKeyChangeMenu: Not allowing focus change."
 				<< std::endl;
 				// Returning true disables focus change
 				return true;

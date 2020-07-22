@@ -33,6 +33,16 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #define WATER_DROP_BOOST 4
 
+const static v3s16 liquid_6dirs[6] = {
+	// order: upper before same level before lower
+	v3s16( 0, 1, 0),
+	v3s16( 0, 0, 1),
+	v3s16( 1, 0, 0),
+	v3s16( 0, 0,-1),
+	v3s16(-1, 0, 0),
+	v3s16( 0,-1, 0)
+};
+
 enum NeighborType {
 	NEIGHBOR_UPPER,
 	NEIGHBOR_SAME_LEVEL,
@@ -386,7 +396,7 @@ void LiquidLogicClassic::transform(
 		switch (liquid_type) {
 			case LIQUID_SOURCE:
 				liquid_level = LIQUID_LEVEL_SOURCE;
-				liquid_kind = m_ndef->getId(cf.liquid_alternative_flowing);
+				liquid_kind = cf.liquid_alternative_flowing_id;
 				break;
 			case LIQUID_FLOWING:
 				liquid_level = (n0.param2 & LIQUID_LEVEL_MASK);
@@ -405,7 +415,6 @@ void LiquidLogicClassic::transform(
 		/*
 			Collect information about the environment
 		 */
-		const v3s16 *dirs = g_6dirs;
 		NodeNeighbor sources[6]; // surrounding sources
 		int num_sources = 0;
 		NodeNeighbor flows[6]; // surrounding flowing liquid nodes
@@ -419,16 +428,16 @@ void LiquidLogicClassic::transform(
 		for (u16 i = 0; i < 6; i++) {
 			NeighborType nt = NEIGHBOR_SAME_LEVEL;
 			switch (i) {
-				case 1:
+				case 0:
 					nt = NEIGHBOR_UPPER;
 					break;
-				case 4:
+				case 5:
 					nt = NEIGHBOR_LOWER;
 					break;
 				default:
 					break;
 			}
-			v3s16 npos = p0 + dirs[i];
+			v3s16 npos = p0 + liquid_6dirs[i];
 			NodeNeighbor nb(m_map->getNode(npos), nt, npos);
 			const ContentFeatures &cfnb = m_ndef->get(nb.n);
 			switch (m_ndef->get(nb.n.getContent()).liquid_type) {
@@ -459,20 +468,25 @@ void LiquidLogicClassic::transform(
 				case LIQUID_SOURCE:
 					// if this node is not (yet) of a liquid type, choose the first liquid type we encounter
 					if (liquid_kind == CONTENT_AIR)
-						liquid_kind = m_ndef->getId(cfnb.liquid_alternative_flowing);
-					if (m_ndef->getId(cfnb.liquid_alternative_flowing) != liquid_kind) {
+						liquid_kind = cfnb.liquid_alternative_flowing_id;
+					if (cfnb.liquid_alternative_flowing_id != liquid_kind) {
 						neutrals[num_neutrals++] = nb;
 					} else {
 						// Do not count bottom source, it will screw things up
-						if(dirs[i].Y != -1)
+						if(nt != NEIGHBOR_LOWER)
 							sources[num_sources++] = nb;
 					}
 					break;
 				case LIQUID_FLOWING:
 					// if this node is not (yet) of a liquid type, choose the first liquid type we encounter
-					if (liquid_kind == CONTENT_AIR)
-						liquid_kind = m_ndef->getId(cfnb.liquid_alternative_flowing);
-					if (m_ndef->getId(cfnb.liquid_alternative_flowing) != liquid_kind) {
+					if (nb.t != NEIGHBOR_SAME_LEVEL ||
+						(nb.n.param2 & LIQUID_FLOW_DOWN_MASK) != LIQUID_FLOW_DOWN_MASK) {
+						// if this node is not (yet) of a liquid type, choose the first liquid type we encounter
+						// but exclude falling liquids on the same level, they cannot flow here anyway
+						if (liquid_kind == CONTENT_AIR)
+							liquid_kind = cfnb.liquid_alternative_flowing_id;
+					}
+					if (cfnb.liquid_alternative_flowing_id != liquid_kind) {
 						neutrals[num_neutrals++] = nb;
 					} else {
 						flows[num_flows++] = nb;
@@ -498,7 +512,7 @@ void LiquidLogicClassic::transform(
 			// liquid_kind will be set to either the flowing alternative of the node (if it's a liquid)
 			// or the flowing alternative of the first of the surrounding sources (if it's air), so
 			// it's perfectly safe to use liquid_kind here to determine the new node content.
-			new_node_content = m_ndef->getId(m_ndef->get(liquid_kind).liquid_alternative_source);
+			new_node_content = m_ndef->get(liquid_kind).liquid_alternative_source_id;
 		} else if (num_sources >= 1 && sources[0].t != NEIGHBOR_LOWER) {
 			// liquid_kind is set properly, see above
 			max_node_level = new_node_level = LIQUID_LEVEL_MAX;

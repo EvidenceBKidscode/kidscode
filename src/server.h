@@ -27,12 +27,14 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "content/mods.h"
 #include "inventorymanager.h"
 #include "content/subgames.h"
-#include "tileanimation.h" // struct TileAnimationParams
+#include "tileanimation.h" // TileAnimationParams
+#include "particles.h" // ParticleParams
 #include "network/peerhandler.h"
 #include "network/address.h"
 #include "util/numeric.h"
 #include "util/thread.h"
 #include "util/basic_macros.h"
+#include "util/metricsbackend.h"
 #include "serverenvironment.h"
 #include "clientiface.h"
 #include "chatmessage.h"
@@ -68,6 +70,7 @@ struct StarParams;
 class ServerThread;
 class UpnpServerThread;
 class ServerModManager;
+class ServerInventoryManager;
 
 enum ClientDeletionReason {
 	CDR_LEAVE,
@@ -124,7 +127,7 @@ struct MinimapMode {
 };
 
 class Server : public con::PeerHandler, public MapEventReceiver,
-		public InventoryManager, public IGameDef
+		public IGameDef
 {
 public:
 	/*
@@ -142,7 +145,6 @@ public:
 	~Server();
 	DISABLE_CLASS_COPY(Server);
 
-	void init();
 	void start();
 	void stop();
 	// This is mainly a way to pass the time to the server.
@@ -174,7 +176,6 @@ public:
 	void handleCommand_InventoryAction(NetworkPacket* pkt);
 	void handleCommand_ChatMessage(NetworkPacket* pkt);
 	void handleCommand_Damage(NetworkPacket* pkt);
-	void handleCommand_Password(NetworkPacket* pkt);
 	void handleCommand_PlayerItem(NetworkPacket* pkt);
 	void handleCommand_Respawn(NetworkPacket* pkt);
 	void handleCommand_Interact(NetworkPacket* pkt);
@@ -205,15 +206,9 @@ public:
 	*/
 	void onMapEditEvent(const MapEditEvent &event);
 
-	/*
-		Shall be called with the environment and the connection locked.
-	*/
-	Inventory* getInventory(const InventoryLocation &loc);
-	void setInventoryModified(const InventoryLocation &loc);
-
 	// Connection must be locked when called
 	std::wstring getStatusString();
-	inline double getUptime() const { return m_uptime.m_value; }
+	inline double getUptime() const { return m_uptime_counter->get(); }
 
 	// read shutdown state
 	inline bool isShutdownRequested() const { return m_shutdown_state.is_requested; }
@@ -241,31 +236,19 @@ public:
 
 	void notifyPlayer(const char *name, const std::wstring &msg);
 	void notifyPlayers(const std::wstring &msg);
-	void spawnParticle(const std::string &playername,
-		v3f pos, v3f velocity, v3f acceleration,
-		float expirationtime, float size,
-		bool collisiondetection, bool collision_removal, bool object_collision,
-		f32 bounce_fraction, f32 bounce_threshold, const std::string &texture,
-		const struct TileAnimationParams &animation, u8 glow);
 
-	u32 addParticleSpawner(u16 amount, float spawntime,
-		v3f minpos, v3f maxpos,
-		v3f minvel, v3f maxvel,
-		v3f minacc, v3f maxacc,
-		float minexptime, float maxexptime,
-		float minsize, float maxsize,
-		bool collisiondetection, bool collision_removal, bool object_collision,
-		f32 bounce_fraction, f32 bounce_threshold, ServerActiveObject *attached,
-		const std::string &texture, const std::string &playername,
-		const struct TileAnimationParams &animation,
-		u8 glow);
+	void spawnParticle(const std::string &playername,
+		const ParticleParameters &p);
+
+	u32 addParticleSpawner(const ParticleSpawnerParameters &p,
+		ServerActiveObject *attached, const std::string &playername);
 
 	void deleteParticleSpawner(const std::string &playername, u32 id);
 
-	// Creates or resets inventory
-	Inventory *createDetachedInventory(const std::string &name,
-			const std::string &player = "");
-	bool removeDetachedInventory(const std::string &name);
+	bool dynamicAddMedia(const std::string &filepath);
+
+	ServerInventoryManager *getInventoryMgr() const { return m_inventory_mgr.get(); }
+	void sendDetachedInventory(Inventory *inventory, const std::string &name, session_t peer_id);
 
 	// Envlock and conlock should be locked when using scriptapi
 	ServerScripting *getScriptIface(){ return m_script; }
@@ -327,7 +310,7 @@ public:
 
 	void setClouds(RemotePlayer *player, const CloudParams &params);
 
-	bool overrideDayNightRatio(RemotePlayer *player, bool do_override, float brightness);
+	void overrideDayNightRatio(RemotePlayer *player, bool do_override, float brightness);
 
 	/* con::PeerHandler implementation. */
 	void peerAdded(con::Peer *peer);
@@ -401,6 +384,8 @@ private:
 			float m_timer = 0.0f;
 	};
 
+	void init();
+
 	void SendMovement(session_t peer_id);
 	void SendHP(session_t peer_id, u16 hp);
 	void SendBreath(session_t peer_id, u16 breath);
@@ -464,35 +449,22 @@ private:
 	// Sends blocks to clients (locks env and con on its own)
 	void SendBlocks(float dtime);
 
+	bool addMediaFile(const std::string &filename, const std::string &filepath,
+			std::string *filedata = nullptr, std::string *digest = nullptr);
 	void fillMediaCache();
 	void sendMediaAnnouncement(session_t peer_id, const std::string &lang_code);
 	void sendRequestedMedia(session_t peer_id,
 			const std::vector<std::string> &tosend);
 
-	void sendDetachedInventory(const std::string &name, session_t peer_id);
-
 	// Adds a ParticleSpawner on peer with peer_id (PEER_ID_INEXISTENT == all)
 	void SendAddParticleSpawner(session_t peer_id, u16 protocol_version,
-		u16 amount, float spawntime,
-		v3f minpos, v3f maxpos,
-		v3f minvel, v3f maxvel,
-		v3f minacc, v3f maxacc,
-		float minexptime, float maxexptime,
-		float minsize, float maxsize,
-		bool collisiondetection, bool collision_removal, bool object_collision,
-		f32 bounce_fraction, f32 bounce_threshold, u16 attached_id,
-		const std::string &texture, u32 id,
-		const struct TileAnimationParams &animation, u8 glow);
+		const ParticleSpawnerParameters &p, u16 attached_id, u32 id);
 
 	void SendDeleteParticleSpawner(session_t peer_id, u32 id);
 
 	// Spawns particle on peer with peer_id (PEER_ID_INEXISTENT == all)
 	void SendSpawnParticle(session_t peer_id, u16 protocol_version,
-		v3f pos, v3f velocity, v3f acceleration,
-		float expirationtime, float size,
-		bool collisiondetection, bool collision_removal, bool object_collision,
-		f32 bounce_fraction, f32 bounce_threshold, const std::string &texture,
-		const struct TileAnimationParams &animation, u8 glow);
+		const ParticleParameters &p);
 
 	void SendActiveObjectRemoveAdd(RemoteClient *client, PlayerSAO *playersao);
 	void SendActiveObjectMessages(session_t peer_id, const std::string &datas,
@@ -604,9 +576,6 @@ private:
 	float m_step_dtime = 0.0f;
 	std::mutex m_step_dtime_mutex;
 
-	// current server step lag counter
-	float m_lag;
-
 	// The server mainly operates in this thread
 	ServerThread *m_thread = nullptr;
 
@@ -617,8 +586,6 @@ private:
 	*/
 	// Timer for sending time of day over network
 	float m_time_of_day_send_timer = 0.0f;
-	// Uptime of server in seconds
-	MutexedVariable<double> m_uptime;
 
 	/*
 	 	Client interface
@@ -675,14 +642,6 @@ private:
 	s32 m_next_sound_id = 0; // positive values only
 	s32 nextSoundId();
 
-	/*
-		Detached inventories (behind m_env_mutex)
-	*/
-	// key = name
-	std::map<std::string, Inventory*> m_detached_inventories;
-	// value = "" (visible to all players) or player name
-	std::map<std::string, std::string> m_detached_inventories_player;
-
 	std::unordered_map<std::string, ModMetadata *> m_mod_storages;
 	float m_mod_storage_save_timer = 10.0f;
 
@@ -692,6 +651,22 @@ private:
 
 	// ModChannel manager
 	std::unique_ptr<ModChannelMgr> m_modchannel_mgr;
+
+	// Inventory manager
+	std::unique_ptr<ServerInventoryManager> m_inventory_mgr;
+
+	// Global server metrics backend
+	std::unique_ptr<MetricsBackend> m_metrics_backend;
+
+	// Server metrics
+	MetricCounterPtr m_uptime_counter;
+	MetricGaugePtr m_player_gauge;
+	MetricGaugePtr m_timeofday_gauge;
+	// current server step lag
+	MetricGaugePtr m_lag_gauge;
+	MetricCounterPtr m_aom_buffer_counter;
+	MetricCounterPtr m_packet_recv_counter;
+	MetricCounterPtr m_packet_recv_processed_counter;
 };
 
 /*
