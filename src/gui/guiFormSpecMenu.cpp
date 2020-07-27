@@ -992,10 +992,16 @@ void GUIFormSpecMenu::parseButton(parserData* data, const std::string &element,
 		std::vector<std::string> v_geom = split(parts[1],',');
 		std::string name = parts[2];
 		std::string label = parts[3];
-		// >> KIDSCODE - Color parameter
-		video::SColor color;
-		bool has_color = parts.size() > 4 && parseColorString(parts[4], color, false);
-		// << KIDSCODE
+		// >> KIDSCODE - Color parameter - Deprecated 2020
+		std::string color = "";
+		if (parts.size() > 4) {
+			video::SColor dummy;
+			if (parseColorString(parts[4], dummy, false)) {
+				color = parts[4];
+				warningstream << "Button " << name << " uses deprecated Kidscode color parameter, use style elements instead" << std::endl;
+			}
+		}
+		// << KIDSCODE - Color parameter - Deprecated 2020
 
 		MY_CHECKPOS("button",0);
 		MY_CHECKGEOM("button",1);
@@ -1037,12 +1043,11 @@ void GUIFormSpecMenu::parseButton(parserData* data, const std::string &element,
 				data->current_parent, spec.fid, spec.flabel.c_str());
 
 		auto style = getStyleForElement(type, name, (type != "button") ? "button" : "");
+		// >> KIDSCODE - Color parameter - Deprecated 2020
+		if (color != "")
+			style[StyleSpec::STATE_DEFAULT].set(StyleSpec::BGCOLOR, color);
+		// << KIDSCODE - Color parameter - Deprecated 2020
 		e->setStyles(style);
-
-		// >> KIDSCODE - Color parameter
-		if (has_color)
-			e->setColor(color);
-		// << KIDSCODE
 
 		if (spec.fname == data->focused_fieldname) {
 			Environment->setFocus(e);
@@ -2018,14 +2023,23 @@ void GUIFormSpecMenu::parseImageButton(parserData* data, const std::string &elem
 		std::string image_name = parts[2];
 		std::string name = parts[3];
 		std::string label = parts[4];
-		// >> KIDSCODE - Color parameter
-		video::SColor color;
-		bool has_color = false;
-		if (parts.size() == 6)
-			has_color = parseColorString(parts[5], color, false);
-		if (parts.size() == 9)
-			has_color = parseColorString(parts[8], color, false);
-		// << KIDSCODE
+		// >> KIDSCODE - Color parameter - Deprecated 2020
+		std::string color = "";
+		if (parts.size() == 6) {
+			video::SColor dummy;
+			if (parseColorString(parts[5], dummy, false)) {
+				color = parts[5];
+				warningstream << "ImageButton " << name << " uses deprecated Kidscode color parameter, use style elements instead" << std::endl;
+			}
+		}
+		if (parts.size() == 9) {
+			video::SColor dummy;
+			if (parseColorString(parts[8], dummy, false)) {
+				color = parts[8];
+				warningstream << "ImageButton " << name << " uses deprecated Kidscode color parameter, use style elements instead" << std::endl;
+			}
+		}
+		// << KIDSCODE - Color parameter - Deprecated 2020
 
 		MY_CHECKPOS("imagebutton",0);
 		MY_CHECKGEOM("imagebutton",1);
@@ -2078,10 +2092,10 @@ void GUIFormSpecMenu::parseImageButton(parserData* data, const std::string &elem
 
 		auto style = getStyleForElement("image_button", spec.fname);
 
-		// >> KIDSCODE - Color parameter
-		if (has_color)
-			e->setColor(color);
-		// << KIDSCODE
+		// >> KIDSCODE - Color parameter - Deprecated 2020
+		if (color != "")
+			style[StyleSpec::STATE_DEFAULT].set(StyleSpec::BGCOLOR, color);
+		// << KIDSCODE - Color parameter - Deprecated 2020
 
 		// Override style properties with values specified directly in the element
 		if (!image_name.empty())
@@ -2476,10 +2490,16 @@ void GUIFormSpecMenu::parseItemImageButton(parserData* data, const std::string &
 		std::string item_name = parts[2];
 		std::string name = parts[3];
 		std::string label = parts[4];
-		// >> KIDSCODE - Color parameter
-		video::SColor color;
-		bool has_color = parts.size() > 5 && parseColorString(parts[5], color, false);
-		// << KIDSCODE
+		// >> KIDSCODE - Color parameter - Deprecated 2020
+		std::string color = "";
+		if (parts.size() > 5) {
+			video::SColor dummy;
+			if (parseColorString(parts[5], dummy, false)) {
+				color = parts[5];
+				warningstream << "ItemImageButton " << name << " uses deprecated Kidscode color parameter, use style elements instead" << std::endl;
+			}
+		}
+		// << KIDSCODE - Color parameter - Deprecated 2020
 
 		label = unescape_string(label);
 		item_name = unescape_string(item_name);
@@ -2527,12 +2547,11 @@ void GUIFormSpecMenu::parseItemImageButton(parserData* data, const std::string &
 				item_name, m_client);
 
 		auto style = getStyleForElement("item_image_button", spec_btn.fname, "image_button");
+		// >> KIDSCODE - Color parameter - Deprecated 2020
+		if (color != "")
+			style[StyleSpec::STATE_DEFAULT].set(StyleSpec::BGCOLOR, color);
+		// << KIDSCODE - Color parameter - Deprecated 2020
 		e_btn->setStyles(style);
-
-		// >> KIDSCODE - Color parameter
-		if (has_color)
-			e_btn->setColor(color);
-		// << KIDSCODE
 
 		if (spec_btn.fname == data->focused_fieldname) {
 			Environment->setFocus(e_btn);
