@@ -129,18 +129,24 @@ function formspecs.mapselect.get()
 	if map then
 		if mapmgr.map_is_map(map) then
 			fs = fs ..
-				"button[0.2,8;3,0.6;world_select;" .. fgettext("Choisir cette carte") .. ";#0000ff]" ..
-				"button[0.2,8.7;3,0.6;world_delete;" .. fgettext("Désinstaller la carte") .. ";#ff0000]" ..
+				"style[world_select;bgcolor=#0000ff]" ..
+				"style[world_delete;bgcolor=#ff0000]" ..
+				"button[0.2,8;3,0.6;world_select;" .. fgettext("Choisir cette carte") .. "]" ..
+				"button[0.2,8.7;3,0.6;world_delete;" .. fgettext("Désinstaller la carte") .. "]" ..
 				"button[0.2,7.3;3,0.6;world_rename;" .. fgettext("Renommer la carte") .. "]"
 		end
 
 		if mapmgr.map_is_demand(map) then
 			if mapmgr.can_install_map(map) then
-				fs = fs .. "button[0.2,8;3,0.6;world_install;" .. fgettext("Installer") .. ";#0000ff]"
+				fs = fs ..
+					"style[world_install;bgcolor=#0000ff]" ..
+					"button[0.2,8;3,0.6;world_install;" .. fgettext("Installer") .. "]"
 			end
 
 			if mapmgr.can_ask_map_again(map) then
-				fs = fs .. "button[0.2,8;3,0.6;world_reask;" .. fgettext("Redemander") .. ";#0000ff]"
+				fs = fs ..
+					"style[world_reask;bgcolor=#0000ff]" ..
+					"button[0.2,8;3,0.6;world_reask;" .. fgettext("Redemander") .. "]"
 			end
 		end
 
