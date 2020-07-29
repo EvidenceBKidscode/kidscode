@@ -280,9 +280,14 @@ gui::IGUIFont *FontEngine::initFont(const FontSpec &spec)
 			m_settings->getFloat("gui_scaling") * spec.size);
 
 	if (size == 0) {
+		// >> KIDSCODE - Avoid crash if GUI Scaling too low
+		/*
 		errorstream << "FontEngine: attempt to use font size 0" << std::endl;
 		errorstream << "  display density: " << RenderingEngine::getDisplayDensity() << std::endl;
 		abort();
+		*/
+		size = 1;
+		// << KIDSCODE - Avoid crash if GUI Scaling too low
 	}
 
 	u16 font_shadow       = 0;
