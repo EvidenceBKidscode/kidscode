@@ -333,7 +333,7 @@ function formspecs.mapserver.get()
 	mapprogress = mapprogress or 0
 
 	if serverstatus == "running" then
-		fs = fs .. "button[0.5,7.8;3,0.6;mapserver_stop;Stopper le cartographe]"
+		fs = fs .. "button[0.5,7.8;3,0.6;mapserver_stop;Arrêter le cartographe]"
 
 		local status = ""
 
