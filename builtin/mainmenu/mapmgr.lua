@@ -31,7 +31,7 @@ end
 
 local function check_map_name(name)
 	if name then
-		if name:find("[^%w%s-_]+") then
+		if name:find("[^%w%s-_!#$&\"'()+,.;=@^]+") then
 			return "Le nom ne doit comporter ni accents, ni caractères spéciaux."
 		end
 		if file_exists(core.get_worldpath() .. DIR_DELIM .. name) then
