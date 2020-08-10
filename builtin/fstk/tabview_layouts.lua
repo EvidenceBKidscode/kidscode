@@ -95,12 +95,12 @@ tabview_layouts.vertical = {
 			local tsize = tab and tab.tabsize or {width = view.width, height = view.height}
 			formspec = formspec ..
 				string.format("formspec_version[3]size[%f,%f,%s]bgcolor[#00000000]",
-					tsize.width + 6.5, tsize.height + 4, dump(view.fixed_size))
+					tsize.width + 7.5, tsize.height + 4, dump(view.fixed_size))
 		end
 		formspec = formspec .. self:get_header(view)
 
 		if tab then
-			formspec = formspec .. "container[4.5,0]"
+			formspec = formspec .. "container[5.5,0]"
 
 			local mainbgcolor = view.mainbgcolor or self.mainbgcolor
 
@@ -128,8 +128,8 @@ tabview_layouts.vertical = {
 		local tsize = last_tab and last_tab.tabsize or {width = view.width, height = view.height}
 
 		local fs = {
-			("box[%f,%f;%f,%f;%s]"):format(0, 0, 4.5, tsize.height + 4, mainbgcolor),
-			("box[%f,%f;%f,%f;%s]"):format(0, 0, 4.5, tsize.height + 4, bgcolor)
+			("box[%f,%f;%f,%f;%s]"):format(0, 0, 5.5, tsize.height + 4, mainbgcolor),
+			("box[%f,%f;%f,%f;%s]"):format(0, 0, 5.5, tsize.height + 4, bgcolor)
 		}
 
 		for i, tab in ipairs(view.tablist) do
@@ -161,7 +161,7 @@ tabview_layouts.vertical = {
 				if tab.selectable ~= false then
 					fs[#fs + 1] = "button[0,"
 					fs[#fs + 1] = y
-					fs[#fs + 1] = ";4.5,0.8;"
+					fs[#fs + 1] = ";5.5,0.8;"
 					fs[#fs + 1] = name
 					fs[#fs + 1] = ";]"
 				end
@@ -233,7 +233,7 @@ tabview_layouts.mainmenu = {
 			("size[%f,%f]"):format(tsize.width, tsize.height),
 			"real_coordinates[true]",
 			"bgcolor[#00000000]",
-			("box[%f,%f;%f,%f;%s]"):format(0, 0, 4.5, tsize.height, bgcolor)
+			("box[%f,%f;%f,%f;%s]"):format(0, 0, 5.5, tsize.height, bgcolor)
 		}
 
 		for i = 1, #view.tablist do
@@ -243,7 +243,7 @@ tabview_layouts.mainmenu = {
 
 			fs[#fs + 1] = "button[0,"
 			fs[#fs + 1] = tonumber(y)
-			fs[#fs + 1] = ";4.5,0.8;"
+			fs[#fs + 1] = ";5.5,0.8;"
 			fs[#fs + 1] = name
 			fs[#fs + 1] = ";"
 			fs[#fs + 1] = ESC(tab.caption)

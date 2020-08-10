@@ -119,11 +119,11 @@ function formspecs.mapselect.get()
 	end
 
 	fs = fs ..
-		"button[10.8,7.3;3,0.6;world_import;" .. fgettext("Importer une carte") .. "]" ..
+		"button[9.8,7.3;4,0.6;world_import;" .. fgettext("Importer une carte") .. "]" ..
 		"tooltip[world_import;" ..
 			core.wrap_text("Cliquez ici pour ajouter une carte téléchargée " ..
 				"depuis le site de l'IGN (formats ZIP et RAR acceptés)", 80) .. "]" ..
-		"button[10.8,8;3,0.6;refresh;Actualiser la liste]" ..
+		"button[9.8,8;4,0.6;refresh;Actualiser la liste]" ..
 		"tooltip[refresh;Rafraichir la liste des cartes]"
 
 	if map then
@@ -131,22 +131,22 @@ function formspecs.mapselect.get()
 			fs = fs ..
 				"style[world_select;bgcolor=#0000ff]" ..
 				"style[world_delete;bgcolor=#ff0000]" ..
-				"button[0.2,8;3,0.6;world_select;" .. fgettext("Choisir cette carte") .. "]" ..
-				"button[0.2,8.7;3,0.6;world_delete;" .. fgettext("Désinstaller la carte") .. "]" ..
-				"button[0.2,7.3;3,0.6;world_rename;" .. fgettext("Renommer la carte") .. "]"
+				"button[0.2,8;4,0.6;world_select;" .. fgettext("Choisir cette carte") .. "]" ..
+				"button[0.2,8.7;4,0.6;world_delete;" .. fgettext("Désinstaller la carte") .. "]" ..
+				"button[0.2,7.3;4,0.6;world_rename;" .. fgettext("Renommer la carte") .. "]"
 		end
 
 		if mapmgr.map_is_demand(map) then
 			if mapmgr.can_install_map(map) then
 				fs = fs ..
 					"style[world_install;bgcolor=#0000ff]" ..
-					"button[0.2,8;3,0.6;world_install;" .. fgettext("Installer") .. "]"
+					"button[0.2,8;4,0.6;world_install;" .. fgettext("Installer") .. "]"
 			end
 
 			if mapmgr.can_ask_map_again(map) then
 				fs = fs ..
 					"style[world_reask;bgcolor=#0000ff]" ..
-					"button[0.2,8;3,0.6;world_reask;" .. fgettext("Redemander") .. "]"
+					"button[0.2,8;4,0.6;world_reask;" .. fgettext("Redemander") .. "]"
 			end
 		end
 
@@ -157,11 +157,11 @@ function formspecs.mapselect.get()
 
 	if core.settings:get_bool("advanced_options") then
 		fs = fs ..
-			"button[10.8,8;3,0.6;world_create;" .. fgettext("Nouveau") .. "]"
+			"button[9.8,8;4,0.6;world_create;" .. fgettext("Nouveau") .. "]"
 
 		if map and mapmgr.map_is_map(map) then
 			fs = fs ..
-				"button[10.8,8.7;3,0.6;world_configure;" .. fgettext("Configurer") .. "]"
+				"button[9.8,8.7;4,0.6;world_configure;" .. fgettext("Configurer") .. "]"
 		end
 	end
 
@@ -333,7 +333,7 @@ function formspecs.mapserver.get()
 	mapprogress = mapprogress or 0
 
 	if serverstatus == "running" then
-		fs = fs .. "button[0.5,7.8;3,0.6;mapserver_stop;Arrêter le cartographe]"
+		fs = fs .. "button[0,7.8;4,0.6;mapserver_stop;Arrêter le cartographe]"
 
 		local status = ""
 
@@ -518,7 +518,7 @@ end
 
 -- FS width = 4
 function formspecs.mapinfo.get()
-	local fs = "button[-4,8.5;3,0.6;back;Choisir une autre carte]"
+	local fs = "button[-4.5,8.5;4,0.6;back;Choisir une autre carte]"
 
 	local mapimage = ESC(gamemenu.chosen_map.path .. DIR_DELIM ..
 		"worldmods" .. DIR_DELIM .. "minimap" .. DIR_DELIM ..
