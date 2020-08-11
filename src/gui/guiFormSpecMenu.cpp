@@ -3806,7 +3806,9 @@ void GUIFormSpecMenu::drawMenu()
 	*/
 	core::list<IGUIElement*>::Iterator it = Children.begin();
 	for (; it != Children.end(); ++it)
-		if (AbsoluteClippingRect.isRectCollided((*it)->getAbsolutePosition()))
+		if ((*it)->isNotClipped() ||
+				AbsoluteClippingRect.isRectCollided(
+						(*it)->getAbsolutePosition()))
 			(*it)->draw();
 
 	// >> KIDSCODE - Make backgrounds able to react (needed for image tabs)
