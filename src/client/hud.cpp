@@ -362,11 +362,17 @@ void Hud::drawLuaElements(const v3s16 &camera_offset)
 			case HUD_ELEM_TEXT: {
 				irr::gui::IGUIFont *textfont = font;
 				unsigned int font_size = g_fontengine->getDefaultFontSize();
-				// font_size *= m_hud_scaling; // ? KIDSCODE
-				font_size *= m_scale_factor; // ? KIDSCODE
 
 				if (e->size.X > 0)
 					font_size *= e->size.X;
+
+				// >> KIDSCODE - Font size
+				// Upstream use of e->size.X is totally lacking of
+				// flexibility as e->size.X is an integer and allow only
+				// font upscalling by integer values.
+				if (e->font_size > 0)
+					font_size = e->font_size;
+				// >> KIDSCODE - Font size
 
 				if (font_size != g_fontengine->getDefaultFontSize())
 					textfont = g_fontengine->getFont(font_size);
