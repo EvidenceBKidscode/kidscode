@@ -477,12 +477,12 @@ void Hud::drawLuaElements(const v3s16 &camera_offset)
 				if (e->size.X <= 0 || e->size.Y <= 0)
 					break;
 				// Draw a minimap of size "size"
-				core::rect<s32> rect(0, 0, e->size.X * m_hud_scaling, e->size.Y * m_hud_scaling);
+				core::rect<s32> rect(0, 0, e->size.X * m_scale_factor, e->size.Y * m_scale_factor);
 				// (no percent size as minimap would likely be anamorphosed)
 				v2s32 offset(
 						(e->align.X - 1.0) * e->size.X / 2,
 						(e->align.Y - 1.0) * e->size.Y / 2);
-				rect += pos + offset + v2s32(e->offset.X * m_hud_scaling, e->offset.Y * m_hud_scaling);
+				rect += pos + offset + v2s32(e->offset.X * m_scale_factor, e->offset.Y * m_scale_factor);
 				client->getMinimap()->drawMinimap(rect);
 				break; }
 //<< KIDSCODE - Minimap as HUD
@@ -493,11 +493,11 @@ void Hud::drawLuaElements(const v3s16 &camera_offset)
 					continue;
 
 				// Positionning :
-				v2s32 dstsize (e->size.X * m_hud_scaling, e->size.Y * m_hud_scaling);
+				v2s32 dstsize (e->size.X * m_scale_factor, e->size.Y * m_scale_factor);
 				if (e->size.X < 0)
-					dstsize.X = m_screensize.X * (e->size.X * m_hud_scaling * -0.01);
+					dstsize.X = m_screensize.X * (e->size.X * m_scale_factor * -0.01);
 				if (e->size.Y < 0)
-					dstsize.Y = m_screensize.Y * (e->size.Y * m_hud_scaling * -0.01);
+					dstsize.Y = m_screensize.Y * (e->size.Y * m_scale_factor * -0.01);
 
 				if (dstsize.X <= 0 || dstsize.Y <= 0)
 					return; // Avoid zero divides
@@ -515,7 +515,7 @@ void Hud::drawLuaElements(const v3s16 &camera_offset)
 				dstrect += pos + v2s32(
 								(e->align.X - 1.0) * dstsize.X / 2,
 								(e->align.Y - 1.0) * dstsize.Y / 2) +
-						v2s32(e->offset.X * m_hud_scaling, e->offset.Y * m_hud_scaling);
+						v2s32(e->offset.X * m_scale_factor, e->offset.Y * m_scale_factor);
 
 				switch(e->dir) {
 				case HUD_COMPASS_ROTATE:
