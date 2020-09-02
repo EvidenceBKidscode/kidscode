@@ -34,6 +34,7 @@ struct LiquidInfo {
 	content_t c_source;
 	content_t c_flowing;
 	content_t c_empty;
+	u8 viscosity;
 	// Slide specific
 	content_t c_solid;
 	u8 blocks;
@@ -79,7 +80,7 @@ private:
 		std::map<v3s16, MapBlock*> &modified_blocks, ServerEnvironment *env);
 	void add_flow(v3s16 pos, s8 amount, const LiquidInfo &liquid);
 	s8 transfer(NodeInfo &source, NodeInfo &target,
-		const LiquidInfo &liquid, bool equalize);
+		const LiquidInfo &liquid, bool equalize, int limit);
 	void compute_flow(v3s16 pos);
 	void apply_flow(v3s16 pos, FlowInfo flow,
 		std::map<v3s16, MapBlock*> &modified_blocks, ServerEnvironment *env);

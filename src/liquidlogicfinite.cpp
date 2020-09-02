@@ -185,10 +185,12 @@ LiquidInfo LiquidLogicFinite::get_liquid_info(content_t c_node) {
 		info.c_flowing = m_ndef->getId(cf.liquid_alternative_flowing);
 		info.c_solid = m_ndef->getId(cf.liquid_alternative_solid);
 		info.c_empty = CONTENT_AIR;
+		info.viscosity = cf.liquid_viscosity;
 	} else {
 		info.c_flowing = CONTENT_IGNORE;
 		info.c_solid = CONTENT_IGNORE;
 		info.c_empty = CONTENT_AIR;
+		info.viscosity = 0;
 	}
 
 	if (info.c_solid != CONTENT_IGNORE) {
@@ -202,7 +204,6 @@ LiquidInfo LiquidLogicFinite::get_liquid_info(content_t c_node) {
 		info.break_group = "";
 		info.stop_group = "";
 	}
-
 	m_liquids_info[c_node] = info;
 
 	return info;
@@ -543,7 +544,7 @@ void LiquidLogicFinite::transform_slide(v3s16 pos, FlowInfo &flow,
 }
 
 s8 LiquidLogicFinite::transfer(NodeInfo &source, NodeInfo &target,
-	const LiquidInfo &liquid, bool equalize)
+	const LiquidInfo &liquid, bool equalize, int limit = LIQUID_LEVEL_SOURCE)
 {
 	s8 transfer = equalize ?
 		(source.level - target.level + 1) / 2 :
@@ -552,7 +553,11 @@ s8 LiquidLogicFinite::transfer(NodeInfo &source, NodeInfo &target,
 	if (target.level + transfer > LIQUID_LEVEL_SOURCE)
 		transfer = LIQUID_LEVEL_SOURCE - target.level;
 
-	if (transfer <= 0) return 0;
+	if (transfer <= 0)
+		return 0;
+
+	if (transfer > limit)
+		transfer = limit;
 
 	target.level+= transfer;
 	source.level-= transfer;
@@ -567,6 +572,7 @@ void LiquidLogicFinite::compute_flow(v3s16 pos)
 	// Get source node information
 	LiquidInfo liquid = get_liquid_info(pos);
 	NodeInfo source = get_node_info(pos, liquid);
+	u8 min_source_level = 1 + liquid.viscosity / 2;
 
 	if (!source.wet) return;
 
@@ -631,20 +637,23 @@ void LiquidLogicFinite::compute_flow(v3s16 pos)
 	// Then to others
 	for (auto& target : under)
 		if (source.level > 0 && !target.wet)
-			if (transfer(source, target, liquid, false))
+			if (transfer(source, target, liquid, false,
+					LIQUID_LEVEL_SOURCE - liquid.viscosity))
 				return;
 
 	// Distribute to sides
 	// First distribute to liquids
 	for (auto& target : sides)
 		if (source.level > 0 && target.wet)
-			if (transfer(source, target, liquid, true))
+			if (transfer(source, target, liquid, true,
+					LIQUID_LEVEL_SOURCE - liquid.viscosity))
 				return;
 
 	// Then to others
 	for (auto& target : sides)
-		if (source.level > 1 && !target.wet)
-			transfer(source, target, liquid, true);
+		if (source.level > min_source_level && !target.wet)
+			transfer(source, target, liquid, true,
+					LIQUID_LEVEL_SOURCE - liquid.viscosity);
 }
 
 void LiquidLogicFinite::apply_flow(v3s16 pos, FlowInfo flow,
