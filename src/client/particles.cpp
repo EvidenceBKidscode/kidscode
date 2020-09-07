@@ -599,6 +599,7 @@ void ParticleManager::handleParticleEvent(ClientEvent *event, Client *client, Lo
 		ps->setMaterialFlag(video::EMF_BACK_FACE_CULLING, false);
 		ps->setMaterialFlag(video::EMF_BILINEAR_FILTER, false);
 		ps->setMaterialFlag(video::EMF_FOG_ENABLE, true);
+		ps->setMaterialFlag(video::EMF_ZWRITE_ENABLE, false);
 		ps->setMaterialType(video::EMT_TRANSPARENT_ALPHA_CHANNEL);
 
 		const struct TileAnimationParams &anim = p.animation;
@@ -695,6 +696,7 @@ void ParticleManager::handleParticleEvent(ClientEvent *event, Client *client, Lo
 		ps->setMaterialFlag(video::EMF_BACK_FACE_CULLING, false);
 		ps->setMaterialFlag(video::EMF_BILINEAR_FILTER, false);
 		ps->setMaterialFlag(video::EMF_FOG_ENABLE, true);
+		ps->setMaterialFlag(video::EMF_ZWRITE_ENABLE, false);
 		ps->setMaterialType(video::EMT_TRANSPARENT_ALPHA_CHANNEL);
 		ps->setAutomaticCulling(scene::EAC_OFF);
 		break;
@@ -782,6 +784,7 @@ void ParticleManager::addNodeParticle(IGameDef *gamedef, LocalPlayer *player, v3
 	ps->setMaterialFlag(video::EMF_BACK_FACE_CULLING, false);
 	ps->setMaterialFlag(video::EMF_BILINEAR_FILTER, false);
 	ps->setMaterialFlag(video::EMF_FOG_ENABLE, true);
+	ps->setMaterialFlag(video::EMF_ZWRITE_ENABLE, false);
 	ps->setMaterialType(video::EMT_TRANSPARENT_ALPHA_CHANNEL);
 
 	// Take a square (quarter the size of the texture) at a random position
