@@ -248,3 +248,10 @@ core.mapserver_event_handler = function(ev)
 	core.event_handler("Refresh")
 end
 -- << KIDSCODE - Mapserver event handler
+
+-- >> KIDSCODE - Add sounds
+core.set_formspec_prepend(
+	"style_type[button;sound=click_button]" ..
+	"style_type[image_button;sound=click_button]" ..
+	"style_type[item_image_button;sound=click_button]")
+-- << KIDSCODE

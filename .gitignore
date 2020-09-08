@@ -45,7 +45,6 @@ build/.cmake/
 /textures/*
 !/textures/base/
 /screenshots
-/sounds
 /mods/*
 !/mods/minetest/
 /mods/minetest/*
