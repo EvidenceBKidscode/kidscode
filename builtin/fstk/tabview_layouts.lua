@@ -168,7 +168,7 @@ tabview_layouts.vertical = {
 			end
 		end
 
-		fs[#fs + 1] = "image[0.2,8;4.1,1.3;" ..
+		fs[#fs + 1] = "image[0.2,7.9;5,1.6;" ..
 			ESC(defaulttexturedir .. "header_kidscode_ign.png") .. "]"
 
 		return table.concat(fs, "")
