@@ -46,6 +46,7 @@ public:
 		ALPHA,
 		CONTENT_OFFSET,
 		PADDING,
+		SOUND,         // KIDSCODE - Add sound to formspecs
 		NUM_PROPERTIES,
 		NONE
 	};
@@ -98,6 +99,10 @@ public:
 			return CONTENT_OFFSET;
 		} else if (name == "padding") {
 			return PADDING;
+		// >> KIDSCODE - Add sound to formspecs
+		} else if (name == "sound") {
+			return SOUND;
+		// << KIDSCODE - Add sound to formspecs
 		} else {
 			return NONE;
 		}

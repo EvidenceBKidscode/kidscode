@@ -173,6 +173,7 @@ GUIEngine::GUIEngine(JoystickController *joystick,
 			m_formspecgui,
 			m_buttonhandler,
 			"",
+			m_sound_manager, // KIDSCODE - Sound in formspecs
 			false);
 
 	m_menu->allowClose(false);

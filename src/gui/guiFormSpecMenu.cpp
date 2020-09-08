@@ -73,6 +73,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "guiImageTabControl.h"
 #include "guiListBox.h"
 #include "guiComboBox.h"
+#include "client/sound.h"
 // << KIDSCODE
 
 #define MY_CHECKPOS(a,b)													\
@@ -105,10 +106,12 @@ GUIFormSpecMenu::GUIFormSpecMenu(JoystickController *joystick,
 		gui::IGUIElement *parent, s32 id, IMenuManager *menumgr,
 		Client *client, ISimpleTextureSource *tsrc, IFormSource *fsrc, TextDest *tdst,
 		const std::string &formspecPrepend,
+		ISoundManager *sound_manager, // KIDSCODE - Sound in formspecs
 		bool remap_dbl_click):
 	GUIModalMenu(RenderingEngine::get_gui_env(), parent, id, menumgr),
 	m_invmgr(client),
 	m_tsrc(tsrc),
+	m_sound_manager(sound_manager), // KIDSCODE - Sound in formspecs
 	m_client(client),
 	m_formspec_prepend(formspecPrepend),
 	m_form_src(fsrc),
@@ -159,11 +162,13 @@ GUIFormSpecMenu::~GUIFormSpecMenu()
 
 void GUIFormSpecMenu::create(GUIFormSpecMenu *&cur_formspec, Client *client,
 	JoystickController *joystick, IFormSource *fs_src, TextDest *txt_dest,
-	const std::string &formspecPrepend)
+	const std::string &formspecPrepend,
+	ISoundManager *sound_manager) // KIDSCODE - Sound in formspecs
 {
 	if (cur_formspec == nullptr) {
 		cur_formspec = new GUIFormSpecMenu(joystick, guiroot, -1, &g_menumgr,
-			client, client->getTextureSource(), fs_src, txt_dest, formspecPrepend);
+			client, client->getTextureSource(), fs_src, txt_dest, formspecPrepend,
+			sound_manager); // KIDSCODE - Sound in formspecs
 		cur_formspec->doPause = false;
 
 		/*
@@ -524,6 +529,7 @@ void GUIFormSpecMenu::parseList(parserData *data, const std::string &element)
 				slot_spacing, this, data->inventorylist_options, m_font);
 
 		m_inventorylists.push_back(e);
+
 		m_fields.push_back(spec);
 		return;
 	}
@@ -638,6 +644,9 @@ void GUIFormSpecMenu::parseCheckbox(parserData* data, const std::string &element
 
 		e->grab();
 		m_checkboxes.emplace_back(spec, e);
+
+		spec.sound = style.get(StyleSpec::Property::SOUND, ""); // KIDSCODE - Sounds in formspecs
+
 		m_fields.push_back(spec);
 		return;
 	}
@@ -973,6 +982,8 @@ void GUIFormSpecMenu::parseItemImage(parserData* data, const std::string &elemen
 		// item images should let events through
 		m_clickthrough_elements.push_back(e);
 
+		spec.sound = style.get(StyleSpec::Property::SOUND, ""); // KIDSCODE - Sounds in formspecs
+
 		m_fields.push_back(spec);
 		return;
 	}
@@ -1052,6 +1063,8 @@ void GUIFormSpecMenu::parseButton(parserData* data, const std::string &element,
 		if (spec.fname == data->focused_fieldname) {
 			Environment->setFocus(e);
 		}
+
+		spec.sound = style[StyleSpec::STATE_DEFAULT].get(StyleSpec::Property::SOUND, ""); // KIDSCODE - Sounds in formspecs
 
 		m_fields.push_back(spec);
 		return;
@@ -1332,6 +1345,9 @@ void GUIFormSpecMenu::parseTextList(parserData* data, const std::string &element
 		e->setNotClipped(style.getBool(StyleSpec::NOCLIP, false));
 
 		m_tables.emplace_back(spec, e);
+
+		spec.sound = style.get(StyleSpec::Property::SOUND, ""); // KIDSCODE - Sounds in formspecs
+
 		m_fields.push_back(spec);
 		return;
 	}
@@ -1432,6 +1448,8 @@ void GUIFormSpecMenu::parseDropDown(parserData* data, const std::string &element
 
 		auto style = getDefaultStyleForElement("dropdown", name);
 		e->setNotClipped(style.getBool(StyleSpec::NOCLIP, false));
+
+		spec.sound = style.get(StyleSpec::Property::SOUND, ""); // KIDSCODE - Sounds in formspecs
 
 		m_fields.push_back(spec);
 
@@ -1837,6 +1855,9 @@ void GUIFormSpecMenu::parseHyperText(parserData *data, const std::string &elemen
 			data->current_parent, spec.fid, rect, m_client, m_tsrc);
 	e->drop();
 
+	auto style = getDefaultStyleForElement("hypertext", spec.fname);
+	spec.sound = style.get(StyleSpec::Property::SOUND, ""); // KIDSCODE - Sounds in formspecs
+
 	m_fields.push_back(spec);
 }
 
@@ -2112,6 +2133,8 @@ void GUIFormSpecMenu::parseImageButton(parserData* data, const std::string &elem
 		e->setStyles(style);
 		e->setScaleImage(true);
 
+		spec.sound = style[StyleSpec::STATE_DEFAULT].get(StyleSpec::Property::SOUND, ""); // KIDSCODE - Sounds in formspecs
+
 		m_fields.push_back(spec);
 		return;
 	}
@@ -2349,6 +2372,10 @@ void GUIFormSpecMenu::parseImageTab(parserData* data, const std::string &element
 			e->setActiveTab(tab_index);
 
 		m_backgrounds.push_back(e);
+
+		auto style = getDefaultStyleForElement("tabheader", name);
+		spec.sound = style.get(StyleSpec::Property::SOUND, ""); // KIDSCODE - Sounds in formspecs
+
 		m_fields.push_back(spec);
 		return;
 	}
@@ -2464,6 +2491,8 @@ void GUIFormSpecMenu::parseTabHeader(parserData* data, const std::string &elemen
 				(tab_index < (int) buttons.size()))
 			e->setActiveTab(tab_index);
 
+		spec.sound = style.get(StyleSpec::Property::SOUND, ""); // KIDSCODE - Sounds in formspecs
+
 		m_fields.push_back(spec);
 		return;
 	}
@@ -2560,6 +2589,9 @@ void GUIFormSpecMenu::parseItemImageButton(parserData* data, const std::string &
 		spec_btn.ftype = f_Button;
 		rect += data->basepos-padding;
 		spec_btn.rect = rect;
+
+		spec_btn.sound = style[StyleSpec::STATE_DEFAULT].get(StyleSpec::Property::SOUND, ""); // KIDSCODE - Sounds in formspecs
+
 		m_fields.push_back(spec_btn);
 		return;
 	}
@@ -2612,6 +2644,8 @@ void GUIFormSpecMenu::parseBox(parserData* data, const std::string &element)
 			e->setNotClipped(style.getBool(StyleSpec::NOCLIP, m_formspec_version < 3));
 
 			e->drop();
+
+			spec.sound = style.get(StyleSpec::Property::SOUND, ""); // KIDSCODE - Sounds in formspecs
 
 			m_fields.push_back(spec);
 
@@ -3020,7 +3054,6 @@ bool GUIFormSpecMenu::parseStyle(parserData *data, const std::string &element, b
 			}
 		}
 	}
-
 	return true;
 }
 
@@ -4806,6 +4839,10 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 			for (GUIFormSpecMenu::FieldSpec &s : m_fields) {
 				if ((s.ftype == f_TabHeader) &&
 						(s.fid == event.GUIEvent.Caller->getID())) {
+					if (s.sound != "" && m_sound_manager) {
+						m_sound_manager->playSound(s.sound, false, 1.0f);
+					}
+
 					s.send = true;
 					acceptInput();
 					s.send = false;
@@ -4849,6 +4886,11 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 					continue;
 
 				if (s.ftype == f_Button || s.ftype == f_CheckBox) {
+					// >> KIDSCODE - Sound in formspecs
+					if (s.sound != "" && m_sound_manager)
+						m_sound_manager->playSound(s.sound, false, 1.0f);
+					// << KIDSCODE - Sound in formspecs
+
 					s.send = true;
 					if (s.is_exit) {
 						if (m_allowclose) {
@@ -4865,6 +4907,11 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 					return true;
 
 				} else if (s.ftype == f_DropDown) {
+					// >> KIDSCODE - Sound in formspecs
+					if (s.sound != "" && m_sound_manager)
+						m_sound_manager->playSound(s.sound, false, 1.0f);
+					// << KIDSCODE - Sound in formspecs
+
 					// only send the changed dropdown
 					for (GUIFormSpecMenu::FieldSpec &s2 : m_fields) {
 						if (s2.ftype == f_DropDown) {
@@ -4887,6 +4934,11 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 					acceptInput(quit_mode_no);
 					s.fdefault = L"";
 				} else if (s.ftype == f_Unknown || s.ftype == f_HyperText) {
+					// >> KIDSCODE - Sound in formspecs
+					if (s.sound != "" && m_sound_manager)
+						m_sound_manager->playSound(s.sound, false, 1.0f);
+					// << KIDSCODE - Sound in formspecs
+
 					s.send = true;
 					acceptInput();
 					s.send = false;

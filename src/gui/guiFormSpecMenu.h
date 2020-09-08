@@ -40,6 +40,7 @@ class Client;
 class GUIScrollBar;
 class TexturePool;
 class GUIScrollContainer;
+class ISoundManager; // KIDSCODE - Sound in formspecs
 
 typedef enum {
 	f_Button,
@@ -208,6 +209,7 @@ class GUIFormSpecMenu : public GUIModalMenu
 		core::rect<s32> rect;
 		bool is_dynamic; // KIDSCODE - Makes fields starting wiht "!" send content as soon as key pressed
 		gui::ECURSOR_ICON fcursor_icon;
+		std::string sound; // KIDSCODE - Sounds in formspecs
 	};
 
 	struct TooltipSpec
@@ -235,13 +237,15 @@ public:
 			IFormSource* fs_src,
 			TextDest* txt_dst,
 			const std::string &formspecPrepend,
+			ISoundManager *sound_manager, // KIDSCODE - Sound in formspecs
 			bool remap_dbl_click = true);
 
 	~GUIFormSpecMenu();
 
 	static void create(GUIFormSpecMenu *&cur_formspec, Client *client,
 		JoystickController *joystick, IFormSource *fs_src, TextDest *txt_dest,
-		const std::string &formspecPrepend);
+		const std::string &formspecPrepend,
+		ISoundManager *sound_manager); // KIDSCODE - Sound in formspecs
 
 	void setFormSpec(const std::string &formspec_string,
 			const InventoryLocation &current_inventory_location)
@@ -373,6 +377,7 @@ protected:
 
 	InventoryManager *m_invmgr;
 	ISimpleTextureSource *m_tsrc;
+	ISoundManager *m_sound_manager; // KIDSCODE - Sound in formspecs
 	Client *m_client;
 
 	std::string m_formspec_string;
