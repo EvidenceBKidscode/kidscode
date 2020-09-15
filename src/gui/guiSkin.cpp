@@ -34,9 +34,11 @@ GUISkin::GUISkin(EGUI_SKIN_TYPE type, video::IVideoDriver* driver)
 		Colors[EGDC_3D_FACE]            = video::SColor(101,210,210,210);
 		Colors[EGDC_3D_HIGH_LIGHT]      = video::SColor(101,255,255,255);
 */
-		Colors[EGDC_3D_DARK_SHADOW]     = video::SColor(255, 34, 43, 49); // EGDC_3D_FACE * 0.25
-		Colors[EGDC_3D_SHADOW]          = video::SColor(255, 68, 86, 98); // EGDC_3D_FACE * 0.50
-		Colors[EGDC_3D_FACE]            = video::SColor(255, 136, 172, 197);
+		// Dropdown colors are in guiFormsSpecMenu in parseDropDown
+		// Buttons and tooltip default colors:
+		Colors[EGDC_3D_DARK_SHADOW]     = video::SColor(255, 20, 33, 13); // EGDC_3D_FACE * 0.25
+		Colors[EGDC_3D_SHADOW]          = video::SColor(255, 40, 67, 27); // EGDC_3D_FACE * 0.50
+		Colors[EGDC_3D_FACE]            = video::SColor(255, 79, 134, 54);
 		Colors[EGDC_3D_HIGH_LIGHT]      = video::SColor(255, 255, 255, 255); // EGDC_3D_FACE * 1.5
 		// << KIDSCODE
 		Colors[EGDC_3D_LIGHT]           = video::SColor(101,210,210,210);
@@ -57,7 +59,8 @@ GUISkin::GUISkin(EGUI_SKIN_TYPE type, video::IVideoDriver* driver)
 		Colors[EGDC_WINDOW]             = video::SColor(101,255,255,255); // Text area background
 */
 		Colors[EGDC_SCROLLBAR]          = video::SColor(255, 238, 255, 255); // Scroll bar background (255, 136, 172, 197)*1.75
-		Colors[EGDC_WINDOW]             = video::SColor(255, 70, 115, 147);
+		Colors[EGDC_WINDOW]             = video::SColor(255, 79, 134, 54); // Field background
+//		Colors[EGDC_WINDOW]             = video::SColor(255, 70, 115, 147);
 		// << KIDSCODE - Colors
 		Colors[EGDC_WINDOW_SYMBOL]      = video::SColor(200,10,10,10); // Controls symbols colors
 

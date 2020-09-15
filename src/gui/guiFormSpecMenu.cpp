@@ -1424,7 +1424,7 @@ void GUIFormSpecMenu::parseDropDown(parserData* data, const std::string &element
 		if (has_bg_color) {
 			e->setBackgroundColor(bg_color);
 		} else {
-			video::SColor c = video::SColor(255, 40, 65, 83);
+			video::SColor c = video::SColor(255, 40, 67, 27); // DROPDOWN COLORS
 			e->setBackgroundColor(c);
 		}
 
