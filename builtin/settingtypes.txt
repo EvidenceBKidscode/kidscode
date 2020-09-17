@@ -831,7 +831,7 @@ show_entity_selectionbox (Show entity selection boxes) bool true
 
 #    Speed up item rendering through RTT (render-to-texture)
 #    Set to 0 to disable, numbers > 0 are resolutions in pixels
-item_rtt_speedup_resolution (Item render-to-texture speedup) int 32 0 1024
+item_rtt_speedup_resolution (Item render-to-texture speedup) int 64 0 1024
 
 [*Menus]
 
