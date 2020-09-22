@@ -1,7 +1,6 @@
 local ESC = core.formspec_escape
 
 local header_fs = "hypertext[0.2,0.2;8,1;;<big><b>Tutoriel</b></big>]"
-local back_fs = "hypertext[12.8,0.2;3,1;back;<tag name=action color=#ffffcc hovercolor=#ffff00><action name=>< Retour</big>]"
 
 local chapters = {
 	{"Les différents modes de jeu", [[
@@ -57,9 +56,11 @@ return {
 			end
 		else
 			local chapter =  chapters[tabdata.help]
-			fs = fs .. back_fs ..
-				"hypertext[0.2,1" ..
-				";13.5,8.2;;" ..
+			fs = fs ..
+				"hypertext[0.2,9;8,1;back;" ..
+				"<global margin=10 halign=left>" ..
+				"<tag name=action color=#ffffcc hovercolor=#ffff00><action name=>< Retour</big>]" ..
+				"hypertext[0.2,1;13.5,7.7;;" ..
 				"<global margin=10 size=20 halign=justify>" ..
 				"<tag name=action color=#ffffcc hovercolor=#ffff00>" ..
 				"<tag name=h1 paragraph=yes size=40 bold=yes>" ..
