@@ -347,7 +347,7 @@ void set_default_settings(Settings *settings)
 	settings->setDefault("contentdb_flag_blacklist", "nonfree, desktop_default");
 #endif
 // >> KIDSCODE - Connection to GAR and Edutheque via IGN REST API
-	settings->setDefault("ign_map_api_url", "https://minetestqualif2.siv.cloud/rest/public/api/orders/");
+	settings->setDefault("ign_map_api_url", "https://minetest.ign.fr/rest/public/api/orders/");
 // << KIDSCODE - Connection to GAR and Edutheque via IGN REST API
 
 	// Server
