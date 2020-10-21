@@ -1475,6 +1475,17 @@ profiler_print_interval (Engine profiling data print interval) int 0
 #  KIDSCODE Removed all [Mapgen] settings
 
 [Online Content Repository]
+
+# >> KIDSCODE - Enable proxy for HTTP requests
+
+#	Proxy URL for HTTP requests. Leave empty to disable use of proxy.
+#	Should be "http://proxy.addr/port" with proxy.addr being the proxy
+#	address (IP or domain name) and port being the proxy port.
+#	Protocol should be http.
+http_proxy_address (Proxy URL) string
+
+# << KIDSCODE - Enable proxy for HTTP requests
+
 # >> KIDSCODE - Connection to GAR and Edutheque via IGN REST API
 
 #	URL of the map service API

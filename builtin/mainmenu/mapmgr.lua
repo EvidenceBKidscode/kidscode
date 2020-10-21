@@ -469,8 +469,7 @@ end
 --   OUT zippath
 local function async_download(params)
 	if not core.download_file(params.map.alac.package, params.zippath) then
-		params.log = "Unable to download url " .. params.map.alac.package ..
-			" to " .. tmpfile
+		params.log = "Unable to download url " .. params.map.alac.package
 		params.error = "Cette carte n'est pas téléchargeable."
 	end
 	return params

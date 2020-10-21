@@ -257,6 +257,13 @@ HTTPFetchOngoing::HTTPFetchOngoing(const HTTPFetchRequest &request_,
 		curl_easy_setopt(curl, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
 	}
 
+// >> KIDSCODE - Enable proxy for HTTP requests
+	std::string proxy_address = g_settings->get("http_proxy_address");
+	if (!proxy_address.empty()) {
+		curl_easy_setopt(curl, CURLOPT_PROXY, proxy_address.c_str());
+	}
+// << KIDSCODE - Enable proxy for HTTP requests
+
 #if LIBCURL_VERSION_NUM >= 0x071304
 	// Restrict protocols so that curl vulnerabilities in
 	// other protocols don't affect us.

@@ -349,6 +349,9 @@ void set_default_settings(Settings *settings)
 // >> KIDSCODE - Connection to GAR and Edutheque via IGN REST API
 	settings->setDefault("ign_map_api_url", "https://minetest.ign.fr/rest/public/api/orders/");
 // << KIDSCODE - Connection to GAR and Edutheque via IGN REST API
+// >> KIDSCODE - Enable proxy for HTTP requests
+	settings->setDefault("http_proxy_address", "");
+// << KIDSCODE - Enable proxy for HTTP requests
 
 	// Server
 	settings->setDefault("disable_escape_sequences", "false");
