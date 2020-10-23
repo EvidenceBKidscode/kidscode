@@ -186,8 +186,19 @@ function formspecs.mapselect.get()
 
 	fs = fs ..
 		"tableoptions[background=#00000025;highlight=#45B;border=false]" ..
-		"tablecolumns[" .. options .. "]" ..
-		"table[0.2,0.8;13.6,5.9;sp_worlds;" .. row1 .. menu_render_worldlist() .. ";" .. index .. "]" ..
+		"tablecolumns[" .. options .. "]"
+	if mapmgr.errors.network then
+		fs = fs ..
+			"table[0.2,0.8;13.6,5.4;sp_worlds;" .. row1 .. menu_render_worldlist() .. ";" .. index .. "]" ..
+			"label[0.2,6.5;" ..	minetest.colorize("#F42",
+				"La liste des demandes de cartes n'a pu être téléchargée, verifier vos paramètres réseau et proxy.") ..
+			"]"
+	else
+		fs = fs ..
+			"table[0.2,0.8;13.6,5.9;sp_worlds;" .. row1 .. menu_render_worldlist() .. ";" .. index .. "]"
+	end
+
+	fs = fs ..
 		"label[0.2,7;Sélectionnez une carte dans la liste ou importez une carte " ..
 			"au format .zip ou .rar via le bouton \"importer\".]" ..
 		"label[-10,-10;" .. math.random() .. "]" -- Force refresh

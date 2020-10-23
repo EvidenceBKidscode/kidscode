@@ -17,7 +17,7 @@
 
 -- The real identifiers of maps are order_id and path.
 
-mapmgr = {}
+mapmgr = { errors = {} }
 
 local json_alac_file = "alac.json"
 local json_geo_file  = "geometry.dat"
@@ -167,16 +167,20 @@ local function download_map_demands_list(token)
 	if not core.download_file(baseurl .. token, tmpfile)
 	then
 		minetest.log("error", "Unable to download ign.json file.")
+		mapmgr.errors.network = true
 		core.delete_dir(tempfolder)
 		return
 	end
+	mapmgr.errors.network = nil
 
 	local file = io.open(tmpfile, "rb")
 	if not file then
 		minetest.log("error", "Unable to open ign.json file.")
+		mapmgr.errors.file = true
 		core.delete_dir(tempfolder)
 		return
 	end
+	mapmgr.errors.file = nil
 
 	local data = file:read("*all")
 	file:close()
@@ -185,8 +189,10 @@ local function download_map_demands_list(token)
 	local jsonlist = minetest.parse_json(data)
 	if jsonlist == nil or type(jsonlist) ~= "table" then
 		minetest.log("error", "Failed to parse map demands data")
+		mapmgr.errors.format = true
 		return
 	end
+	mapmgr.errors.format = nil
 
 	local maps = {}
 	for _, json in pairs(jsonlist) do

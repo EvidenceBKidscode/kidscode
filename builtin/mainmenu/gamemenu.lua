@@ -51,7 +51,7 @@ function gamemenu.set_game(new_game)
 	-- Update world filter list
 -- TODO: Filter criteria wont be on game_id any more ?
 --	menudata.worldlist:set_filtercriteria(new_id)
-	menudata.worldlist:refresh()
+--	menudata.worldlist:refresh() -- (Disabled to avoid a second map list fetch)
 
 	gamemenu.update()
 end
