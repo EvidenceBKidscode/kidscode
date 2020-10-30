@@ -178,7 +178,8 @@ local function formspec(tabview, name, tabdata)
 	local shaders_enabled = core.settings:get_bool("enable_shaders")
 
 	local tab_string =
-		"box[0,0.1;3.75,4.5;#999999]" ..
+		"container[0.2,0.2]" ..
+		"box[0,0;3.75,4.5;#999999]" ..
 		"checkbox[0.25,0.4;cb_smooth_lighting;" .. fgettext("Smooth Lighting") .. ";"
 				.. dump(core.settings:get_bool("smooth_lighting")) .. "]" ..
 		"checkbox[0.25,0.9;cb_particles;" .. fgettext("Particles") .. ";"
@@ -194,7 +195,8 @@ local function formspec(tabview, name, tabdata)
 		"dropdown[0.25,3.3;3.3,0.5;dd_node_highlighting;" .. dd_options.node_highlighting[1] .. ";"
 				.. getSettingIndex.NodeHighlighting() .. "]" ..
 		"dropdown[0.25,3.9;3.3,0.5;dd_leaves_style;" .. dd_options.leaves[1] .. ";"
-				.. getSettingIndex.Leaves() .. "]"
+				.. getSettingIndex.Leaves() .. "]" ..
+		"container_end[]"
 
 	if core.settings:get("main_menu_style") == "simple" then
 		-- 'Reset singleplayer world' only functions with simple menu
@@ -203,54 +205,70 @@ local function formspec(tabview, name, tabdata)
 			.. fgettext("Reset singleplayer world") .. "]"
 	else
 		tab_string = tab_string ..
-			"button[4,4.75;3.75,0.6;btn_change_keys;" .. fgettext("Change Keys") .. "]"
+			"button[4.2,8.7;3.75,0.6;btn_change_keys;" .. fgettext("Change Keys") .. "]"
 	end
 
 	if core.settings:get("install") == "teacher" then
 		tab_string = tab_string ..
-			"button[0,4.75;3.75,0.6;btn_advanced_settings;" ..
+			"button[0.2,8.7;3.75,0.6;btn_advanced_settings;" ..
 			fgettext("All Settings") .. "]"
 	end
 
 	if core.settings:get("touchscreen_threshold") ~= nil then
 		tab_string = tab_string ..
-			"label[4.3,4.2;" .. fgettext("Touchthreshold: (px)") .. "]" ..
+			"label[4.5,4.2;" .. fgettext("Touchthreshold: (px)") .. "]" ..
 			"dropdown[4.25,4.65;3.5;dd_touchthreshold;0,10,20,30,40,50;" ..
 			((tonumber(core.settings:get("touchscreen_threshold")) / 10) + 1) ..
-			"]box[4.0,4.5;3.75,1.0;#999999]"
+			"]box[4.2,4.5;3.75,1.0;#999999]"
 	end
 
 	if shaders_enabled then
 		tab_string = tab_string ..
-			"box[4,0.1;3.75,3.9;#999999]" ..
-			"checkbox[4.25,0.5;cb_bumpmapping;" .. fgettext("Bump Mapping") .. ";"
+			"container[4.2,0.2]" ..
+			"box[0,0;3.75,3.9;#999999]" ..
+			"checkbox[0.25,0.4;cb_bumpmapping;" .. fgettext("Bump Mapping") .. ";"
 					.. dump(core.settings:get_bool("enable_bumpmapping")) .. "]" ..
-			"checkbox[4.25,1;cb_tonemapping;" .. fgettext("Tone Mapping") .. ";"
+			"checkbox[0.25,0.9;cb_tonemapping;" .. fgettext("Tone Mapping") .. ";"
 					.. dump(core.settings:get_bool("tone_mapping")) .. "]" ..
-			"checkbox[4.25,1.5;cb_generate_normalmaps;" .. fgettext("Generate Normal Maps") .. ";"
+			"checkbox[0.25,1.4;cb_generate_normalmaps;" .. fgettext("Generate Normal Maps") .. ";"
 					.. dump(core.settings:get_bool("generate_normalmaps")) .. "]" ..
-			"checkbox[4.25,2;cb_parallax;" .. fgettext("Parallax Occlusion") .. ";"
+			"checkbox[0.25,1.9;cb_parallax;" .. fgettext("Parallax Occlusion") .. ";"
 					.. dump(core.settings:get_bool("enable_parallax_occlusion")) .. "]" ..
-			"checkbox[4.25,2.5;cb_waving_water;" .. fgettext("Waving Liquids") .. ";"
+			"checkbox[0.25,2.4;cb_waving_water;" .. fgettext("Waving Liquids") .. ";"
 					.. dump(core.settings:get_bool("enable_waving_water")) .. "]" ..
-			"checkbox[4.25,3;cb_waving_leaves;" .. fgettext("Waving Leaves") .. ";"
+			"checkbox[0.25,2.9;cb_waving_leaves;" .. fgettext("Waving Leaves") .. ";"
 					.. dump(core.settings:get_bool("enable_waving_leaves")) .. "]" ..
-			"checkbox[4.25,3.5;cb_waving_plants;" .. fgettext("Waving Plants") .. ";"
-					.. dump(core.settings:get_bool("enable_waving_plants")) .. "]"
+			"checkbox[0.25,3.4;cb_waving_plants;" .. fgettext("Waving Plants") .. ";"
+					.. dump(core.settings:get_bool("enable_waving_plants")) .. "]" ..
+			"container_end[]"
 	end
 
 	tab_string = tab_string ..
-		"label[" .. (shaders_enabled and 8 or 4) .. ",0.5;" .. minetest.wrap_text(
+		"label[" .. (shaders_enabled and 8.2 or 4.2) .. ",0.5;" .. minetest.wrap_text(
 			"Les réglages graphiques améliorent grandement la qualité visuelle du jeu mais " ..
 			"impactent sévèrement les performances de votre ordinateur. Si votre salle informatique " ..
 			"n'est pas équipée d'ordinateurs récents, laissez toutes les options décochées.",
 			(shaders_enabled and 35 or 70)) .. "]"
+
+	tab_string = tab_string ..
+		"container[0.2,5]" ..
+		"box[0,0;7.75,1.5;#999999]" ..
+		"field[0.25,0.5;6.75,0.5;f_proxy;Adresse du proxy (sous la forme http://adresse:port);" ..
+			core.settings:get("http_proxy_address") .. "]" ..
+		"button[6.75,0.5;0.5,0.5;btn_proxy;Ok]" ..
+		"label[0.25,1.25;Laisser le champ vide si vous n'êtes pas derrière un proxy.]" ..
+		"container_end[]"
 
 	return tab_string
 end
 
 --------------------------------------------------------------------------------
 local function handle_settings_buttons(this, fields, tabname, tabdata)
+	if fields["btn_proxy"] then
+		core.settings:set("http_proxy_address", fields["f_proxy"])
+		return true
+	end
+
 	if fields["btn_advanced_settings"] ~= nil then
 		local adv_settings_dlg = create_adv_settings_dlg()
 		adv_settings_dlg:set_parent(this)
