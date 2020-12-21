@@ -237,9 +237,24 @@ local function create_uid(map)
 	end
 end
 
+local function get_token()
+	local token = core.volatile_settings:get("gartoken")
+
+	-- Trim trailing slashes that could make core:download_file fail
+	-- in some cases
+	-- (21/12/2020 bug, not clearly identifed. Unable to download file
+	-- for token 128 (others worked). wget displays unknown size for
+	-- taht particular case.)
+	token = token:match "^(.-)/*$"
+
+
+	return token
+end
+
 function mapmgr.preparemaplist(data)
 	local maps = get_local_maps()
-	local token = core.volatile_settings:get("gartoken")
+	local token = get_token()
+
 	if token then
 		local demands = download_map_demands_list(token)
 		for _, demand in ipairs(demands or {}) do
@@ -516,8 +531,7 @@ local function async_unzip(params)
 		-- Tell map server that map have been downloaded
 		local url = ("%s%s/%s/recv"):format(
 				minetest.settings:get("ign_map_api_url") or "",
-				core.volatile_settings:get("gartoken"),
-				params.map.alac.order_id)
+				get_token(), params.map.alac.order_id)
 
 		if core.download_file(url, params.tempfolder .. DIR_DELIM .. "recv.tmp") then
 			minetest.log("action",
