@@ -202,16 +202,16 @@ function menu_render_worldlist()
 		retval = retval ..
 			"#ffffff" .. "," ..
 			ESC(v.name):sub(1,50) .. "," ..
+			(status_color[v.status] or "#ffffff") .. "," ..
+			ESC(status_label[v.status] or "?")  .. "," ..
 			"#ffffff" .. "," ..
 			ESC(v.alac and v.alac.delivered_on and v.alac.delivered_on:match("%S*") or "") .. "," ..
 			"#ffffff" .. "," ..
-			ESC(v.origin or "") .. "," ..
+			(v.mapsize and ESC(v.mapsize .. " km²") or "") .. "," ..
 			"#ffffff" .. "," ..
 			ESC(humanReadableSize(v.filesize) or "") .. "," ..
 			"#ffffff" .. "," ..
-			(v.mapsize and ESC(v.mapsize .. " km²") or "") .. "," ..
-			(status_color[v.status] or "#ffffff") .. "," ..
-			ESC(status_label[v.status] or "?")
+			ESC(v.origin or "")
 	end
 
 	return retval

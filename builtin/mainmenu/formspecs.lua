@@ -97,11 +97,11 @@ formspecs.mapselect = {}
 
 local table_columns = {
 	{ "name",     "Carte",   "text,width=15"},
-	{ "demand",   "Date",    "text,width=6"},
-	{ "origin",   "Origine", "text,align=center,width=6"},
-	{ "filesize", "Taille",  "text,align=center,width=6"},
-	{ "mapsize",  "Emprise", "text,align=center,width=7"},
 	{ "status",   "Etat",    "text,align=center,width=6"},
+	{ "demand",   "Date",    "text,width=6"},
+	{ "mapsize",  "Emprise", "text,align=center,width=7"},
+	{ "filesize", "Taille",  "text,align=center,width=6"},
+	{ "origin",   "Origine", "text,align=center,width=6"},
 }
 
 function formspecs.mapselect.get()
