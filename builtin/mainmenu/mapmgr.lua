@@ -499,6 +499,7 @@ end
 -- Params:
 --   IN  zippath
 --   IN  tempfolder
+--   IN  token
 --   OUT unzipedmap
 local function async_unzip(params)
 	-- Create a temp directory for decompressing zip file in it
@@ -531,7 +532,7 @@ local function async_unzip(params)
 		-- Tell map server that map have been downloaded
 		local url = ("%s%s/%s/recv"):format(
 				minetest.settings:get("ign_map_api_url") or "",
-				get_token(), params.map.alac.order_id)
+				params.token, params.map.alac.order_id)
 
 		if core.download_file(url, params.tempfolder .. DIR_DELIM .. "recv.tmp") then
 			minetest.log("action",
@@ -599,6 +600,7 @@ local function install_map(parent, params, askname, mapname)
 	end
 
 	params.mappath = core.get_worldpath() .. DIR_DELIM .. mapname
+	params.token = get_token()
 
 	async_step(parent, "<b><center>Vérification et conversion de la carte", async_verify, params,
 		function(params)
