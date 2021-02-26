@@ -51,13 +51,10 @@ local function add_data_from_json(map, json_data)
 	map.order_id = json_data.order_id
 	map.filesize = json_data.fileSize
 	map.mapsize  = json_data.emprise
-
-	-- Origin building
-	if map.order_id then
-		map.origin = "GAR / " .. (json_data.data_source_topo == 1 and "OSM" or "IGN")
-	else
-		map.origin = "Locale"
-	end
+	map.origin   = json_data.origin or
+		(map.order_id and -- Old way origin was built
+			("GAR / " .. (json_data.data_source_topo == 1 and "OSM" or "IGN")) or
+			"Locale")
 end
 
 local transcode_status = {
@@ -93,6 +90,7 @@ function mapmgr.new_map_from_core_world(core_map_desc)
 		name = core_map_desc.name,
 		status = "installed",
 		path = core_map_desc.path,
+		origin = "Locale",
 		gameid = core_map_desc.gameid, -- Not sure gameid is still usefull
 		coreindex = core_map_desc.coreindex, -- Not sure gameid is still usefull
 	}
@@ -104,10 +102,6 @@ function mapmgr.new_map_from_core_world(core_map_desc)
 		local json = minetest.parse_json(data)
 		if json and type(json) == "table" then
 			add_data_from_json(map, json)
---			if map.alac.order_id then
---				map.origin = "ign" -- TODO: Adapt to new IGN information
---				map.order_id = map.alac.order_id
---			end
 		end
 	end
 
@@ -237,16 +231,26 @@ local function create_uid(map)
 	end
 end
 
+-- Returns the currently connected map origin according to gartoken if it contains any information
+local function get_origin()
+	local mapservice = core.volatile_settings:get("mapservice")
+
+	local remains, origin, token =
+			mapservice:match("^(.-)([^/]-)/([^/]-)/?$")
+
+	return origin
+end
+
 local function get_token()
-	local token = core.volatile_settings:get("gartoken")
+	local mapservice = core.volatile_settings:get("mapservice")
 
 	-- Trim trailing slashes that could make core:download_file fail
 	-- in some cases
 	-- (21/12/2020 bug, not clearly identifed. Unable to download file
 	-- for token 128 (others worked). wget displays unknown size for
 	-- taht particular case.)
-	token = token:match "^(.-)/*$"
-
+	local remains, origin, token =
+			mapservice:match("^(.-)([^/]-)/([^/]-)/?$")
 
 	return token
 end
@@ -551,6 +555,49 @@ end
 -- Params:
 --   IN unzipedmap
 local function async_verify(params)
+
+	-- Add current origin to map json file
+	local json_file = params.unzipedmap .. DIR_DELIM .. "alac.json"
+
+	local file = io.open(json_file, "rb")
+	if not file then
+		-- No file, nothing to do (probably a local map)
+		return params
+	end
+
+	local data = file:read("*all")
+	file:close()
+	local json = minetest.parse_json(data)
+
+	if not json or type(json) ~= "table" then
+		params.log = "Unable to parse " .. json_file .. " for adding origin."
+		params.error = "Erreur lors de l'installation, mais la carte a été importée."
+		return params
+	end
+
+	-- Add origin information to map json file
+	json.origin = params.origin
+
+	local file = io.open(json_file, "wb")
+	if  not file then
+		params.log = "Unable to open " .. json_file .. " for writing after adding origin."
+		params.error = "Erreur lors de l'installation, mais la carte a été importée."
+		return params
+	end
+
+	local data = minetest.write_json(json)
+	if not data then
+		file:close()
+--		io.close(file)
+		params.log = "Unable to encode json data after adding origin."
+		params.error = "Erreur lors de l'installation, mais la carte a été importée."
+		return params
+	end
+
+	file:write(data)
+	file:close()
+--	io.close(file)
+
 	if not core.verify_world(params.unzipedmap) then
 		params.log = "Error when verifying world " .. params.unzipedmap
 		params.error = "Erreur lors de la vérification, la carte n'a pas été importée."
@@ -566,6 +613,7 @@ local function async_install(params)
 		params.log = "Error when copying " .. params.unzipedmap .. " to " .. params.mappath
 		params.error = "Erreur lors de l'installation, la carte n'a pas été importée."
 	end
+
 	return params
 end
 
@@ -601,6 +649,7 @@ local function install_map(parent, params, askname, mapname)
 
 	params.mappath = core.get_worldpath() .. DIR_DELIM .. mapname
 	params.token = get_token()
+	params.origin = get_origin()
 
 	async_step(parent, "<b><center>Vérification et conversion de la carte", async_verify, params,
 		function(params)
