@@ -319,10 +319,12 @@ static void set_allowed_options(OptionList *allowed_options)
 		_("Starts with the console (Windows only)"))));
 #endif
 
-	// >> KIDSCODE - GAR interface
+	// >> KIDSCODE - Mapservice
 	allowed_options->insert(std::make_pair("gartoken", ValueSpec(VALUETYPE_STRING,
-			_("GAR token to be used (IGN/Kidscode)"))));
-	// << KIDSCODE - GAR interface
+			_("Deprecated, use mapservice instead"))));
+	allowed_options->insert(std::make_pair("mapservice", ValueSpec(VALUETYPE_STRING,
+			_("Mapservice to be used (IGN/Kidscode)"))));
+	// << KIDSCODE - Mapservice
 	// >> KIDSCODE - Installation type
 	allowed_options->insert(std::make_pair("install", ValueSpec(VALUETYPE_STRING,
 			_("Installation type"))));
@@ -504,15 +506,19 @@ static bool init_common(const Settings &cmd_args, int argc, char *argv[])
 		g_settings->get("language"), argc, argv);
 
 	// >> KIDSCODE - GAR interface
-	if (cmd_args.exists("gartoken")) {
-		std::string token = cmd_args.get("gartoken");
+	if (cmd_args.exists("mapservice") || cmd_args.exists("gartoken")) {
+		std::string mapservice;
+		if (cmd_args.exists("mapservice"))
+			mapservice = cmd_args.get("mapservice");
+		if (cmd_args.exists("gartoken"))
+			mapservice = cmd_args.get("gartoken");
 
 		// Remove ULR protocol part if url given
-		size_t pos = token.find("://");
+		size_t pos = mapservice.find("://");
 		if (pos != std::string::npos)
-			token = token.substr(pos+3);
+			mapservice = mapservice.substr(pos+3);
 
-		g_volatile_settings->set("gartoken", token);
+		g_volatile_settings->set("mapservice", mapservice);
 	}
 	// << KIDSCODE - GAR interface
 
