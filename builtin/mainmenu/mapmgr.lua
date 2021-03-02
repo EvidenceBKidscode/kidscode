@@ -720,7 +720,7 @@ function mapmgr.install_map_from_web(parent, map)
 	async_step_progress(parent, "<b><center>Téléchargement de la carte", async_download, params,
 		function(params)
 			local dlsize = fsize(params.zippath)
-			if map.filesize then
+			if map.filesize and map.filesize ~= 0 then
 				return ("%s (%.1f%%)"):format(humanReadableSize(dlsize),
 					dlsize / map.filesize * 100)
 			else
