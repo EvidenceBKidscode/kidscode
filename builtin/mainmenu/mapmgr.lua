@@ -231,27 +231,27 @@ local function create_uid(map)
 	end
 end
 
--- Returns the currently connected map origin according to gartoken if it contains any information
-local function get_origin()
+local function get_info_from_mapservice()
 	local mapservice = core.volatile_settings:get("mapservice")
 
 	local remains, origin, token =
 			mapservice:match("^(.-)([^/]-)/([^/]-)/?$")
 
+	-- Legacy, no origin, token at the first and only place
+	if token == "" then
+		return origin, nil
+	end
+
+	return token, origin
+end
+
+local function get_origin()
+	_, origin = get_info_from_mapservice()
 	return origin
 end
 
 local function get_token()
-	local mapservice = core.volatile_settings:get("mapservice")
-
-	-- Trim trailing slashes that could make core:download_file fail
-	-- in some cases
-	-- (21/12/2020 bug, not clearly identifed. Unable to download file
-	-- for token 128 (others worked). wget displays unknown size for
-	-- taht particular case.)
-	local remains, origin, token =
-			mapservice:match("^(.-)([^/]-)/([^/]-)/?$")
-
+	token, _ = get_info_from_mapservice()
 	return token
 end
 
