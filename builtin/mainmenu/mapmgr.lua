@@ -233,6 +233,9 @@ end
 
 local function get_info_from_mapservice()
 	local mapservice = core.volatile_settings:get("mapservice")
+	if not mapservice then
+		return nil, nil
+	end
 
 	local remains, origin, token =
 			mapservice:match("^(.-)([^/]-)/([^/]-)/?$")
