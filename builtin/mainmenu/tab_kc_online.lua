@@ -29,7 +29,7 @@ local function get_formspec(tabview, name, tabdata)
 	selected_server = tabdata.servers[tabdata.selected_server]
 
 	local fs =
-		"hypertext[0.2,0.2;8,1;;<big><b>Rejoindre une partie multijoueur</b></big>]" ..
+		"hypertext[0.2,0.2;14,1;;<big><b>Rejoindre une partie multijoueur</b></big>]" ..
 		"tableoptions[background=#00000000;border=false]"
 
 	if selected_server then
