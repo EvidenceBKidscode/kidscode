@@ -238,10 +238,10 @@ local function get_info_from_mapservice()
 	end
 
 	local remains, origin, token =
-			mapservice:match("^(.-)([^/]-)/([^/]-)/?$")
+			mapservice:match("^(.-)([^/]-)/?([^/]-)/?$")
 
 	-- Legacy, no origin, token at the first and only place
-	if token == "" then
+	if not token or token == "" then
 		return origin, nil
 	end
 
@@ -249,12 +249,12 @@ local function get_info_from_mapservice()
 end
 
 local function get_origin()
-	_, origin = get_info_from_mapservice()
+	local token, origin = get_info_from_mapservice()
 	return origin
 end
 
 local function get_token()
-	token, _ = get_info_from_mapservice()
+	local token, origin = get_info_from_mapservice()
 	return token
 end
 
