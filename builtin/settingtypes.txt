@@ -1489,7 +1489,10 @@ http_proxy_address (Proxy URL) string
 # >> KIDSCODE - Connection to GAR and Edutheque via IGN REST API
 
 #	URL of the map service API
-ign_map_api_url (IGN map services URL) string https://minetestqualif2.siv.cloud/rest/public/api/orders/
+ign_map_api_url (IGN map services URL) string https://minetest.ign.fr/rest/public/api/orders/
+
+#	URL of the update service API
+ign_update_api_url (IGN version services URL) string https://minetest.ign.fr/rest/public/api/update
 
 # << KIDSCODE - Connection to GAR and Edutheque via IGN REST API
 
