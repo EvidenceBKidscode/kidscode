@@ -36,6 +36,7 @@ dofile(basepath .. "fstk" .. DIR_DELIM .. "ui.lua")
 dofile(menupath .. DIR_DELIM .. "mapmgr.lua") -- KIDSCODE
 dofile(menupath .. DIR_DELIM .. "async_event.lua")
 dofile(menupath .. DIR_DELIM .. "common.lua")
+dofile(menupath .. DIR_DELIM .. "updatemgr.lua") -- KIDSCODE
 dofile(menupath .. DIR_DELIM .. "pkgmgr.lua")
 dofile(menupath .. DIR_DELIM .. "formspecs.lua") -- KIDSCODE
 dofile(menupath .. DIR_DELIM .. "gamemenu.lua")

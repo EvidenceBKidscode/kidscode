@@ -169,8 +169,14 @@ tabview_layouts.vertical = {
 		end
 
 		fs[#fs + 1] = "image[0.2,7.9;5,1.6;" ..
-			ESC(defaulttexturedir .. "header_kidscode_ign.png") .. "]" ..
-			"hypertext[0.2,9.3;5,0.5;version;<right><style size=10 color=#888>Version " .. core.get_kidscode_version_string() .. "</style></right>]"
+			ESC(defaulttexturedir .. "header_kidscode_ign.png") .. "]"
+
+		if updatemgr then
+			local update_fs = updatemgr.get_update_info()
+			if update_fs then
+				fs[#fs + 1] = update_fs
+			end
+		end
 
 		return table.concat(fs, "")
 	end,
@@ -180,6 +186,12 @@ tabview_layouts.vertical = {
 			local tab = view.tablist[i]
 			if fields["tab_" .. tab.name] then
 				view:switch_to_tab(i)
+				return true
+			end
+		end
+
+		if updatemgr then
+			if updatemgr.handle_buttons(fields) then
 				return true
 			end
 		end
