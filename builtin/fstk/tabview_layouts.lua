@@ -169,7 +169,8 @@ tabview_layouts.vertical = {
 		end
 
 		fs[#fs + 1] = "image[0.2,7.9;5,1.6;" ..
-			ESC(defaulttexturedir .. "header_kidscode_ign.png") .. "]"
+			ESC(defaulttexturedir .. "header_kidscode_ign.png") .. "]" ..
+			"hypertext[0.2,9.3;5,0.5;version;<right><style size=10 color=#888>Version " .. core.get_kidscode_version_string() .. "</style></right>]"
 
 		return table.concat(fs, "")
 	end,

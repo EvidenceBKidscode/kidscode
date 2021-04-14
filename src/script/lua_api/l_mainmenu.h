@@ -146,6 +146,8 @@ private:
 	static int l_launch_browser(lua_State *L);
 
 	static int l_verify_world(lua_State *L);
+
+	static int l_get_kidscode_version_string(lua_State *L);
 	// << KIDSCODE
 
 	//version compatibility

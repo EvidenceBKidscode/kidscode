@@ -1117,6 +1117,15 @@ int ModApiMainMenu::l_verify_world(lua_State *L)
 }
 // << KIDSCODE - Convert map during import
 
+// >> KIDSCODE - Version for update warning
+/******************************************************************************/
+int ModApiMainMenu::l_get_kidscode_version_string(lua_State *L)
+{
+	lua_pushstring(L, KIDSCODE_VERSION_STRING);
+	return 1;
+}
+// << KIDSCODE - Version for update warning
+
 
 /******************************************************************************/
 int ModApiMainMenu::l_gettext(lua_State *L)
@@ -1239,6 +1248,7 @@ void ModApiMainMenu::Initialize(lua_State *L, int top)
 	API_FCT(get_screen_info);
 	API_FCT(launch_browser); // KIDSCODE
 	API_FCT(verify_world); // KIDSCODE
+	API_FCT(get_kidscode_version_string); // KIDSCODE
 	API_FCT(get_min_supp_proto);
 	API_FCT(get_max_supp_proto);
 	API_FCT(open_url);
@@ -1266,5 +1276,6 @@ void ModApiMainMenu::InitializeAsync(lua_State *L, int top)
 	API_FCT(may_modify_path);
 	API_FCT(download_file);
 	API_FCT(verify_world); // KIDSCODE
+	API_FCT(get_kidscode_version_string); // KIDSCODE
 	//API_FCT(gettext); (gettext lib isn't threadsafe)
 }
